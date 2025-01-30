@@ -5,7 +5,7 @@
 
  </div>
   
-Stakeforge Engine is a successor to [Lina Project](https://github.com/inanevin/LinaEngine) currently cooking, more information to come :eyes:
+Stakeforge Engine is a successor to [Lina Project](https://github.com/inanevin/LinaEngine) and is currently being cooked :cooking:, more information to come :eyes:
 
 ## Used Projects
 
