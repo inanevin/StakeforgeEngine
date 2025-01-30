@@ -28,71 +28,71 @@ SOFTWARE.
 
 #pragma once
 
-#include "SFG/Type/SizeDefinitions.hpp"
-
 namespace SFG
 {
-	class IStream;
-	class OStream;
+	struct MouseEvent;
+	struct MouseDeltaEvent;
+	struct MouseWheelEvent;
+	struct KeyEvent;
+	class Vector2i;
 
-	class Vector2ui
+	class AppDelegate
 	{
 	public:
-		/// <summary>
-		///
-		/// </summary>
-		Vector2ui() = default;
+		AppDelegate() = delete;
+		AppDelegate(uint32 frameRate, uint32 gameFrameRate) : m_targetFrameRate(frameRate), m_targetGameRate(gameFrameRate) {};
+		virtual ~AppDelegate() = default;
 
 		/// <summary>
 		///
 		/// </summary>
-		/// <param name="x"></param>
-		/// <param name="y"></param>
-		Vector2ui(unsigned int x_, unsigned int y_) : x(x_), y(y_) {};
+		/// <param name="event"></param>
+		virtual void OnMouse(const MouseEvent& event) = 0;
 
 		/// <summary>
 		///
 		/// </summary>
-		/// <param name="other"></param>
+		/// <param name="event"></param>
+		virtual void OnKey(const KeyEvent& event) = 0;
+
+		/// <summary>
+		///
+		/// </summary>
+		/// <param name="event"></param>
+		virtual void OnMouseDelta(const MouseDeltaEvent& event) = 0;
+
+		/// <summary>
+		///
+		/// </summary>
+		/// <param name="event"></param>
+		virtual void OnMouseWheel(const MouseWheelEvent& event) = 0;
+
+		/// <summary>
+		///
+		/// </summary>
+		/// <param name="delta"></param>
+		virtual void OnTick(double delta) = 0;
+
+		/// <summary>
+		///
+		/// </summary>
 		/// <returns></returns>
-		Vector2ui Min(const Vector2ui& other) const;
+		inline uint32 GetTargetFrameRate() const
+		{
+			return m_targetFrameRate;
+		}
 
 		/// <summary>
 		///
 		/// </summary>
-		/// <param name="other"></param>
 		/// <returns></returns>
-		Vector2ui Max(const Vector2ui& other) const;
+		inline uint32 GetTargetGameRate() const
+		{
+			return m_targetGameRate;
+		}
 
-		/// <summary>
-		///
-		/// </summary>
-		/// <param name="other"></param>
-		/// <returns></returns>
-		bool Equals(const Vector2ui& other) const;
-
-		/// <summary>
-		///
-		/// </summary>
-		/// <param name="stream"></param>
-		void SaveToStream(OStream& stream) const;
-
-		/// <summary>
-		///
-		/// </summary>
-		/// <param name="stream"></param>
-		void LoadFromStream(IStream& stream);
-
-		static Vector2ui Zero;
-		static Vector2ui One;
-
-		uint32 x = 0;
-		uint32 y = 0;
+	protected:
+		uint32 m_targetFrameRate = 60;
+		uint32 m_targetGameRate	 = 0;
 	};
-
-	inline Vector2ui operator-(const Vector2ui& v1, const Vector2ui& v2)
-	{
-		return Vector2ui(v1.x - v2.x, v1.y - v2.y);
-	}
-
 } // namespace SFG

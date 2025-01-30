@@ -57,6 +57,7 @@ include/SFG/Serialization/*.hpp
 include/SFG/Type/*.hpp
 
 include/SFG/Vendor/LZ4/lz4.h
+include/SFG/Vendor/readerwriterqueue/*.h
 
 )
 

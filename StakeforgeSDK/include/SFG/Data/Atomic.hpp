@@ -26,17 +26,12 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
 
-#include <SFG/Core/GameDelegate.hpp>
+#pragma once
+
+#include <atomic>
 
 namespace SFG
 {
-	AppDelegate* CreateAppDelegate()
-	{
-		return new GameDelegate(240, 0);
-	}
+	template <typename T> using Atomic = std::atomic<T>;
 
-	void DestroyAppDelegate(AppDelegate* delegate)
-	{
-		delete delegate;
-	}
 } // namespace SFG

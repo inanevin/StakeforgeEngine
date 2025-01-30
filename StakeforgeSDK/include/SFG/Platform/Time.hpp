@@ -47,6 +47,11 @@ namespace SFG
 		/// <summary>
 		///
 		/// </summary>
+		static void Shutdown();
+
+		/// <summary>
+		///
+		/// </summary>
 		/// <returns></returns>
 		static int64 GetCPUMicroseconds();
 

@@ -26,17 +26,25 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
 
-#include <SFG/Core/GameDelegate.hpp>
+#pragma once
+
+#include "SFG/Core/AppDelegate.hpp"
 
 namespace SFG
 {
-	AppDelegate* CreateAppDelegate()
+	class GameDelegate : public AppDelegate
 	{
-		return new GameDelegate(240, 0);
-	}
+	public:
+		GameDelegate() = delete;
+		GameDelegate(uint32 frameRate, uint32 gameFrameRate) : AppDelegate(frameRate, gameFrameRate) {};
+		virtual ~GameDelegate() = default;
 
-	void DestroyAppDelegate(AppDelegate* delegate)
-	{
-		delete delegate;
-	}
+		virtual void OnMouse(const MouseEvent& event) override;
+		virtual void OnKey(const KeyEvent& event) override;
+		virtual void OnMouseDelta(const MouseDeltaEvent& event) override;
+		virtual void OnMouseWheel(const MouseWheelEvent& event) override;
+		virtual void OnTick(double delta) override;
+
+	private:
+	};
 } // namespace SFG

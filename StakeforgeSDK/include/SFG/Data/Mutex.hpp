@@ -29,14 +29,10 @@ SOFTWARE.
 #pragma once
 
 #include <mutex>
-#include <atomic>
 
 namespace SFG
 {
-	typedef std::mutex					Mutex;
-	typedef std::lock_guard<std::mutex> LockGuard;
-
-	template <typename T> using Atomic = std::atomic<T>;
+	typedef std::mutex Mutex;
 
 #define DEFINE_MUTEX(NAME)				 std::mutex NAME
 #define LOCK_GUARD(mtx)					 std::lock_guard<Mutex> grd(mtx)

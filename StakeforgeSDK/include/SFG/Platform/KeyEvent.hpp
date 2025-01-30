@@ -32,12 +32,15 @@ namespace SFG
 {
 	enum InputCode;
 	enum class InputAction;
+	class Window;
 
 	struct KeyEvent
 	{
+		Window*		window;
 		InputCode	key;
 		int32		scancode;
 		InputAction action;
+		bool		isHighFrequency;
 	};
 
 } // namespace SFG

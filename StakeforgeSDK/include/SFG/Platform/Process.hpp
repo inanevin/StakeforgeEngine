@@ -32,19 +32,25 @@ SOFTWARE.
 
 namespace SFG
 {
+
+	class AppDelegate;
+
+	extern AppDelegate* CreateAppDelegate();
+	extern void			DestroyAppDelegate(AppDelegate* delegate);
+
 	class Process
 	{
 	public:
 		/// <summary>
 		///
 		/// </summary>
-		void PumpOSMessages();
+		static void PumpOSMessages();
 
 		/// <summary>
 		///
 		/// </summary>
 		/// <param name="url"></param>
-		void OpenURL(const String& url);
+		static void OpenURL(const String& url);
 	};
 
 } // namespace SFG

@@ -75,7 +75,7 @@ int WINAPI WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, _
 		SFG_ERR("Failed setting process priority: {0}", dwError);
 	}
 
-	SFG::App*	app	  = new SFG::App();
+	SFG::App*	app	  = new SFG::App(SFG::CreateAppDelegate());
 	SFG::String error = "";
 
 	if (!app->Initialize(error))
@@ -86,10 +86,11 @@ int WINAPI WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, _
 		return 0;
 	}
 
-	while (!app->GetShouldClose())
+	while (!app->GetShouldClose().load(std::memory_order_acquire))
 		app->Tick();
 
 	app->Shutdown();
+	SFG::DestroyAppDelegate(app->GetDelegate());
 	delete app;
 
 #ifdef SFG_DEBUG

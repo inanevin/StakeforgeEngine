@@ -32,12 +32,15 @@ namespace SFG
 {
 	enum InputCode;
 	enum class InputAction;
+	class Window;
 
 	struct MouseEvent
 	{
+		Window*		window;
 		InputCode	button;
 		InputAction action;
 		Vector2ui	relativePosition;
+		bool		isHighFrequency;
 	};
 
 } // namespace SFG

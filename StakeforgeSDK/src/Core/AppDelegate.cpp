@@ -26,17 +26,8 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
 
-#include <SFG/Core/GameDelegate.hpp>
+#include "SFG/Core/AppDelegate.hpp"
 
 namespace SFG
 {
-	AppDelegate* CreateAppDelegate()
-	{
-		return new GameDelegate(240, 0);
-	}
-
-	void DestroyAppDelegate(AppDelegate* delegate)
-	{
-		delete delegate;
-	}
 } // namespace SFG

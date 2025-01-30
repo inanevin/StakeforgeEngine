@@ -29,13 +29,22 @@ SOFTWARE.
 #pragma once
 
 #include "SFG/Data/String.hpp"
+#include "SFG/Data/Atomic.hpp"
 #include <thread>
 
 namespace SFG
 {
+
+	class Window;
+	class AppDelegate;
+
 	class App
 	{
 	public:
+		App() = delete;
+		App(AppDelegate* delegate) : m_appDelegate(delegate) {};
+		App(App& other) = delete;
+
 		/// <summary>
 		///
 		/// </summary>
@@ -56,10 +65,24 @@ namespace SFG
 		/// <summary>
 		///
 		/// </summary>
+		void RequestClose();
+
+		/// <summary>
+		///
+		/// </summary>
 		/// <returns></returns>
-		inline bool GetShouldClose() const
+		inline Atomic<bool>& GetShouldClose()
 		{
 			return m_shouldClose;
+		}
+
+		/// <summary>
+		///
+		/// </summary>
+		/// <returns></returns>
+		inline AppDelegate* GetDelegate() const
+		{
+			return m_appDelegate;
 		}
 
 	private:
@@ -67,8 +90,11 @@ namespace SFG
 		void RenderLoop();
 
 	private:
-		bool		m_shouldClose = false;
-		std::thread m_updateThread;
-		std::thread m_renderThread;
+		Window*		 m_mainWindow  = nullptr;
+		AppDelegate* m_appDelegate = nullptr;
+
+		std::thread	 m_updateThread;
+		std::thread	 m_renderThread;
+		Atomic<bool> m_shouldClose = false;
 	};
 } // namespace SFG

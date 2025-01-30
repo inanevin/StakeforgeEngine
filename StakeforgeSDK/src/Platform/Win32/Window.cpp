@@ -37,6 +37,7 @@ SOFTWARE.
 #include <shellscalingapi.h>
 #include <dwmapi.h>
 #pragma comment(lib, "dwmapi.lib")
+#pragma comment(lib, "Shcore.lib")
 
 namespace SFG
 {
@@ -150,25 +151,26 @@ namespace SFG
 				const bool	 isRelease = raw->data.keyboard.Flags & RI_KEY_BREAK;
 
 				const KeyEvent ev = {
-					.key	  = static_cast<InputCode>(key),
-					.scancode = static_cast<int32>(scanCode),
-					.action	  = isPress ? InputAction::Pressed : (isRelease ? InputAction::Released : InputAction::Repeated),
+					.window			 = window,
+					.key			 = static_cast<InputCode>(key),
+					.scancode		 = static_cast<int32>(scanCode),
+					.action			 = isPress ? InputAction::Pressed : (isRelease ? InputAction::Released : InputAction::Repeated),
+					.isHighFrequency = true,
 				};
-
-				if (window->m_keyEventsHF.size() == INPUT_EVENT_BUFFER_SIZE_HFQ)
-					window->m_keyEventsHF.pop_front();
-
-				window->m_keyEventsHF.push_back(ev);
+				window->AddKeyEvent(ev);
 			}
 			else if (raw->header.dwType == RIM_TYPEMOUSE)
 			{
 				const int32 xPosRelative = raw->data.mouse.lLastX;
 				const int32 yPosRelative = raw->data.mouse.lLastY;
 
-				if (window->m_mouseDeltaEventsHF.size() == INPUT_EVENT_BUFFER_SIZE_HFQ)
-					window->m_mouseDeltaEventsHF.pop_front();
+				const MouseDeltaEvent mdEvent = {
+					.window			 = window,
+					.delta			 = Vector2i(xPosRelative, yPosRelative),
+					.isHighFrequency = true,
+				};
 
-				window->m_mouseDeltaEventsHF.push_back(Vector2i(xPosRelative, yPosRelative));
+				window->AddMouseDeltaEvent(mdEvent);
 
 				USHORT mouseFlags = raw->data.mouse.usButtonFlags;
 
@@ -179,7 +181,9 @@ namespace SFG
 				const Vector2ui relativeU = Vector2ui(relative.x < 0 ? 0 : static_cast<uint32>(relative.x), relative.y < 0 ? 0 : static_cast<uint32>(relative.y));
 
 				MouseEvent ev = {
+					.window			  = window,
 					.relativePosition = Vector2ui(Math::Clamp(relativeU.x, (uint32)0, window->m_size.x), Math::Clamp(relativeU.y, (uint32)0, window->m_size.y)),
+					.isHighFrequency  = true,
 				};
 				bool mouseEventExists = false;
 
@@ -222,17 +226,18 @@ namespace SFG
 
 				if (mouseEventExists)
 				{
-					if (window->m_mouseEventsHF.size() == INPUT_EVENT_BUFFER_SIZE_LFQ)
-						window->m_mouseEventsHF.pop_front();
-					window->m_mouseEventsHF.push_back(ev);
+					window->AddMouseEvent(ev);
 				}
 
 				if (mouseFlags & RI_MOUSE_WHEEL)
 				{
-					const float wheelDelta = (float)raw->data.mouse.usButtonData * WHEEL_DELTA;
-					if (window->m_mouseWheelEventsHF.size() == INPUT_EVENT_BUFFER_SIZE_LFQ)
-						window->m_mouseWheelEventsHF.pop_front();
-					window->m_mouseWheelEventsHF.push_back(wheelDelta);
+					const float			  wheelDelta = (float)raw->data.mouse.usButtonData * WHEEL_DELTA;
+					const MouseWheelEvent mwe		 = {
+							   .window			= window,
+							   .amount			= wheelDelta,
+							   .isHighFrequency = true,
+					   };
+					window->AddMouseWheelEvent(mwe);
 				}
 			}
 			return 0;
@@ -251,15 +256,14 @@ namespace SFG
 				key = extended == 0 ? VK_LCONTROL : VK_RCONTROL;
 
 			const KeyEvent ev = {
-				.key	  = static_cast<InputCode>(key),
-				.scancode = scanCode,
-				.action	  = InputAction::Pressed,
+				.window			 = window,
+				.key			 = static_cast<InputCode>(key),
+				.scancode		 = scanCode,
+				.action			 = InputAction::Pressed,
+				.isHighFrequency = false,
 			};
 
-			if (window->m_keyEventsLF.size() == INPUT_EVENT_BUFFER_SIZE_LFQ)
-				window->m_keyEventsLF.pop_front();
-
-			window->m_keyEventsLF.push_back(ev);
+			window->AddKeyEvent(ev);
 
 			return 0;
 		}
@@ -277,15 +281,14 @@ namespace SFG
 				key = extended ? VK_LCONTROL : VK_RCONTROL;
 
 			const KeyEvent ev = {
-				.key	  = static_cast<InputCode>(key),
-				.scancode = scanCode,
-				.action	  = InputAction::Released,
+				.window			 = window,
+				.key			 = static_cast<InputCode>(key),
+				.scancode		 = scanCode,
+				.action			 = InputAction::Released,
+				.isHighFrequency = false,
 			};
 
-			if (window->m_keyEventsLF.size() == INPUT_EVENT_BUFFER_SIZE_LFQ)
-				window->m_keyEventsLF.pop_front();
-
-			window->m_keyEventsLF.push_back(ev);
+			window->AddKeyEvent(ev);
 
 			return 0;
 		}
@@ -295,17 +298,30 @@ namespace SFG
 			const int32		yPos	  = GET_Y_LPARAM(lParam);
 			const Vector2i	relative  = Vector2i(xPos, yPos) - window->m_position;
 			const Vector2ui relativeU = Vector2ui(relative.x < 0 ? 0 : static_cast<uint32>(relative.x), relative.y < 0 ? 0 : static_cast<uint32>(relative.y));
-			window->m_mousePosition	  = Vector2ui(Math::Clamp(relativeU.x, (uint32)0, window->m_size.x), Math::Clamp(relativeU.y, (uint32)0, window->m_size.y));
+
+			static Vector2ui previousPosition = Vector2ui::Zero;
+			window->m_mousePosition			  = Vector2ui(Math::Clamp(relativeU.x, (uint32)0, window->m_size.x), Math::Clamp(relativeU.y, (uint32)0, window->m_size.y));
+
+			const Vector2ui delta = window->m_mousePosition - previousPosition;
+
+			const MouseDeltaEvent ev = {
+				.window			 = window,
+				.delta			 = Vector2i(static_cast<int32>(delta.x), static_cast<int32>(delta.y)),
+				.isHighFrequency = false,
+			};
 			return 0;
 		}
 		case WM_MOUSEWHEEL: {
 			const float delta = GET_WHEEL_DELTA_WPARAM(wParam) * WHEEL_DELTA;
 
-			if (window->m_mouseWheelEventsLF.size() == INPUT_EVENT_BUFFER_SIZE_LFQ)
-				window->m_mouseWheelEventsLF.pop_front();
-			window->m_mouseWheelEventsLF.push_back(delta);
+			const MouseWheelEvent mwe = {
+				.window			 = window,
+				.amount			 = delta,
+				.isHighFrequency = false,
+			};
 
-			return 0;
+			window->AddMouseWheelEvent(mwe);
+
 			return 0;
 		}
 		case WM_LBUTTONDOWN: {
@@ -313,15 +329,14 @@ namespace SFG
 			const uint32 y = static_cast<uint32>(GET_Y_LPARAM(lParam));
 
 			const MouseEvent ev = {
+				.window			  = window,
 				.button			  = InputCode::Mouse0,
 				.action			  = InputAction::Pressed,
 				.relativePosition = Vector2ui(x, y),
+				.isHighFrequency  = false,
 			};
 
-			if (window->m_mouseEventsLF.size() == INPUT_EVENT_BUFFER_SIZE_LFQ)
-				window->m_mouseEventsLF.pop_front();
-
-			window->m_mouseEventsLF.push_back(ev);
+			window->AddMouseEvent(ev);
 
 			return 0;
 		}
@@ -330,15 +345,14 @@ namespace SFG
 			const uint32 y = static_cast<uint32>(GET_Y_LPARAM(lParam));
 
 			const MouseEvent ev = {
+				.window			  = window,
 				.button			  = InputCode::Mouse0,
 				.action			  = InputAction::Repeated,
 				.relativePosition = Vector2ui(x, y),
+				.isHighFrequency  = false,
 			};
+			window->AddMouseEvent(ev);
 
-			if (window->m_mouseEventsLF.size() == INPUT_EVENT_BUFFER_SIZE_LFQ)
-				window->m_mouseEventsLF.pop_front();
-
-			window->m_mouseEventsLF.push_back(ev);
 			return 0;
 		}
 		case WM_RBUTTONDOWN: {
@@ -347,15 +361,14 @@ namespace SFG
 			const uint32 y = static_cast<uint32>(GET_Y_LPARAM(lParam));
 
 			const MouseEvent ev = {
+				.window			  = window,
 				.button			  = InputCode::Mouse1,
 				.action			  = InputAction::Pressed,
 				.relativePosition = Vector2ui(x, y),
+				.isHighFrequency  = false,
 			};
 
-			if (window->m_mouseEventsLF.size() == INPUT_EVENT_BUFFER_SIZE_LFQ)
-				window->m_mouseEventsLF.pop_front();
-
-			window->m_mouseEventsLF.push_back(ev);
+			window->AddMouseEvent(ev);
 
 			return 0;
 		}
@@ -364,15 +377,16 @@ namespace SFG
 			const uint32 y = static_cast<uint32>(GET_Y_LPARAM(lParam));
 
 			const MouseEvent ev = {
+				.window			  = window,
 				.button			  = InputCode::Mouse1,
 				.action			  = InputAction::Repeated,
 				.relativePosition = Vector2ui(x, y),
+				.isHighFrequency  = false,
 			};
 
-			if (window->m_mouseEventsLF.size() == INPUT_EVENT_BUFFER_SIZE_LFQ)
-				window->m_mouseEventsLF.pop_front();
+			window->AddMouseEvent(ev);
 
-			window->m_mouseEventsLF.push_back(ev);
+			return 0;
 		}
 		case WM_MBUTTONDOWN: {
 
@@ -380,16 +394,14 @@ namespace SFG
 			const uint32 y = static_cast<uint32>(GET_Y_LPARAM(lParam));
 
 			const MouseEvent ev = {
+				.window			  = window,
 				.button			  = InputCode::Mouse2,
 				.action			  = InputAction::Pressed,
 				.relativePosition = Vector2ui(x, y),
+				.isHighFrequency  = false,
 			};
 
-			if (window->m_mouseEventsLF.size() == INPUT_EVENT_BUFFER_SIZE_LFQ)
-				window->m_mouseEventsLF.pop_front();
-
-			window->m_mouseEventsLF.push_back(ev);
-
+			window->AddMouseEvent(ev);
 			return 0;
 		}
 		case WM_LBUTTONUP: {
@@ -398,15 +410,14 @@ namespace SFG
 			const uint32 y = static_cast<uint32>(GET_Y_LPARAM(lParam));
 
 			const MouseEvent ev = {
+				.window			  = window,
 				.button			  = InputCode::Mouse0,
 				.action			  = InputAction::Released,
 				.relativePosition = Vector2ui(x, y),
+				.isHighFrequency  = false,
 			};
 
-			if (window->m_mouseEventsLF.size() == INPUT_EVENT_BUFFER_SIZE_LFQ)
-				window->m_mouseEventsLF.pop_front();
-
-			window->m_mouseEventsLF.push_back(ev);
+			window->AddMouseEvent(ev);
 
 			return 0;
 		}
@@ -416,15 +427,14 @@ namespace SFG
 			const uint32 y = static_cast<uint32>(GET_Y_LPARAM(lParam));
 
 			const MouseEvent ev = {
+				.window			  = window,
 				.button			  = InputCode::Mouse1,
 				.action			  = InputAction::Released,
 				.relativePosition = Vector2ui(x, y),
+				.isHighFrequency  = false,
 			};
 
-			if (window->m_mouseEventsLF.size() == INPUT_EVENT_BUFFER_SIZE_LFQ)
-				window->m_mouseEventsLF.pop_front();
-
-			window->m_mouseEventsLF.push_back(ev);
+			window->AddMouseEvent(ev);
 
 			return 0;
 		}
@@ -434,15 +444,14 @@ namespace SFG
 			const uint32 y = static_cast<uint32>(GET_Y_LPARAM(lParam));
 
 			const MouseEvent ev = {
+				.window			  = window,
 				.button			  = InputCode::Mouse2,
 				.action			  = InputAction::Released,
 				.relativePosition = Vector2ui(x, y),
+				.isHighFrequency  = false,
 			};
 
-			if (window->m_mouseEventsLF.size() == INPUT_EVENT_BUFFER_SIZE_LFQ)
-				window->m_mouseEventsLF.pop_front();
-
-			window->m_mouseEventsLF.push_back(ev);
+			window->AddMouseEvent(ev);
 
 			return 0;
 		}
@@ -515,6 +524,9 @@ namespace SFG
 		Rid[0].dwFlags	   = RIDEV_INPUTSINK;
 		Rid[0].hwndTarget  = hwnd;
 		RegisterRawInputDevices(Rid, 1, sizeof(Rid[0]));
+
+		window->BringToFront();
+		ShowWindow(hwnd, SW_SHOW);
 		return window;
 	}
 

@@ -26,17 +26,17 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
 
-#include <SFG/Core/GameDelegate.hpp>
+#pragma once
 
 namespace SFG
 {
-	AppDelegate* CreateAppDelegate()
-	{
-		return new GameDelegate(240, 0);
-	}
+	class Window;
 
-	void DestroyAppDelegate(AppDelegate* delegate)
+	struct MouseDeltaEvent
 	{
-		delete delegate;
-	}
+		Window*	 window;
+		Vector2i delta;
+		bool	 isHighFrequency;
+	};
+
 } // namespace SFG

@@ -33,6 +33,8 @@ SOFTWARE.
 
 namespace SFG
 {
+	int64 Time::s_frequency = 0;
+
 	void Time::Initialize()
 	{
 		if (s_frequency == 0)
@@ -50,7 +52,10 @@ namespace SFG
 		}
 	}
 
-	int64 Time::s_frequency = 0;
+	void Time::Shutdown()
+	{
+		timeEndPeriod(1);
+	}
 
 	int64 Time::GetCPUMicroseconds()
 	{
