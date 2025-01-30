@@ -125,7 +125,7 @@ namespace SFG
 
 				const double delta = FIXED_UPDATE_INTERVAL_US * 1e-6;
 				m_appDelegate->OnTick(delta);
-	}
+			}
 
 			std::this_thread::sleep_for(std::chrono::microseconds(100));
 		}
