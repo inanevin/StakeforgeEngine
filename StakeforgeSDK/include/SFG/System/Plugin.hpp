@@ -29,16 +29,17 @@ SOFTWARE.
 #pragma once
 
 #include "SFG/Data/String.hpp"
+#include "SFG/StakeforgeAPI.hpp"
 
 namespace SFG
 {
 	class App;
 
-	class Plugin
+	class SFG_API Plugin
 	{
 	public:
 		Plugin() = delete;
-		Plugin(const String& path, App* app, void* platformHandle) : m_path(path), m_app(app), m_platformHandle(platformHandle){};
+		Plugin(const char* path, App* app, void* platformHandle) : m_path(path), m_app(app), m_platformHandle(platformHandle){};
 		virtual ~Plugin() = default;
 
 		/// <summary>

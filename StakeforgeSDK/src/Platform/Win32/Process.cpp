@@ -44,7 +44,7 @@ namespace SFG
 		}
 	}
 
-	typedef Plugin*(__cdecl* CreatePluginFunc)(const char* path, void* handle, App* app);
+	typedef Plugin*(__cdecl* CreatePluginFunc)(const char* path, App* app, void* handle);
 	typedef void(__cdecl* DestroyPluginFunc)(Plugin*);
 
 	Plugin* Process::LoadPlugin(const char* path, App* app)
@@ -63,7 +63,7 @@ namespace SFG
 
 			if (NULL != createPluginAddr)
 			{
-				plugin = (createPluginAddr)(path, hinstLib, app);
+				plugin = (createPluginAddr)(path, app, hinstLib);
 				plugin->OnLoaded();
 			}
 			else

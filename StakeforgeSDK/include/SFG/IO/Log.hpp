@@ -71,6 +71,7 @@ SOFTWARE.
 #define SFG_NOTIMPLEMENTED SFG_ASSERT(false, "Implementation missing!")
 
 #include "SFG/Data/Mutex.hpp"
+#include "SFG/StakeforgeAPI.hpp"
 #include <iostream>
 #include <sstream>
 #include <string>
@@ -78,7 +79,7 @@ SOFTWARE.
 
 namespace SFG
 {
-	class Log
+	class SFG_API Log
 	{
 	public:
 		enum Level

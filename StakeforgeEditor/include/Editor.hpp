@@ -28,23 +28,23 @@ SOFTWARE.
 
 #pragma once
 
-#include "SFG/Core/AppDelegate.hpp"
+#include "SFG/System/Plugin.hpp"
 
 namespace SFG
 {
-	class GameDelegate : public AppDelegate
+	class Editor : public Plugin
 	{
 	public:
-		GameDelegate() = delete;
-		GameDelegate(uint32 frameRate, uint32 gameFrameRate) : AppDelegate(frameRate, gameFrameRate){};
-		virtual ~GameDelegate() = default;
+		Editor(const char* path, App* app, void* platformHandle) : Plugin(path, app, platformHandle){};
 
-		virtual void OnMouse(const MouseEvent& event) override;
-		virtual void OnKey(const KeyEvent& event) override;
-		virtual void OnMouseDelta(const MouseDeltaEvent& event) override;
-		virtual void OnMouseWheel(const MouseWheelEvent& event) override;
-		virtual void OnTick(double delta) override;
+		/// <summary>
+		///
+		/// </summary>
+		virtual void OnLoaded() override;
 
-	private:
+		/// <summary>
+		///
+		/// </summary>
+		virtual void OnUnloaded() override;
 	};
 } // namespace SFG

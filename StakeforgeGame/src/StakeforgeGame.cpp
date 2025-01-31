@@ -26,26 +26,24 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
 
-#include <SFG/Core/GameDelegate.hpp>
+#include <SFG/IO/Log.hpp>
+#include <SFG/Core/App.hpp>
 
-namespace SFG
+namespace
 {
-	AppDelegate* CreateAppDelegate()
+	SFG::AppSettings GetSFGAppSettings()
 	{
-		return new GameDelegate(240, 0);
+		return {
+			.appFrameRate  = 240,
+			.gameFrameRate = 60,
+			.tryLoadEditor = true,
+		};
 	}
-
-	void DestroyAppDelegate(AppDelegate* delegate)
-	{
-		delete delegate;
-	}
-} // namespace SFG
-
+} // namespace
 #ifdef SFG_PLATFORM_WINDOWS
 
 int WINAPI WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, _In_ LPSTR pCmdLine, _In_ int nCmdShow)
 {
-	/*
 
 #ifdef SFG_DEBUG
 	bool consoleAllocated = false;
@@ -69,10 +67,10 @@ int WINAPI WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, _
 		SFG_ERR("Failed setting process priority: {0}", dwError);
 	}
 
-	SFG::App*	app	  = new SFG::App(SFG::CreateAppDelegate());
 	SFG::String error = "";
+	SFG::App*	app	  = new SFG::App(error, GetSFGAppSettings());
 
-	if (!app->Initialize(error))
+	if (!error.empty())
 	{
 		MessageBox(nullptr, error.c_str(), "Error", MB_OK | MB_ICONERROR);
 		delete app;
@@ -83,15 +81,12 @@ int WINAPI WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, _
 	while (!app->GetShouldClose().load(std::memory_order_acquire))
 		app->Tick();
 
-	app->Shutdown();
-	SFG::DestroyAppDelegate(app->GetDelegate());
 	delete app;
 
 #ifdef SFG_DEBUG
 	if (consoleAllocated)
 		FreeConsole();
 #endif
-*/
 
 	return 0;
 }

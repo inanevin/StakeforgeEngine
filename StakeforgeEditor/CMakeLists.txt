@@ -48,6 +48,8 @@ add_library(SFG::Editor ALIAS ${PROJECT_NAME})
 include(../CMake/Compile.cmake)
 set_target_properties(${PROJECT_NAME} PROPERTIES FOLDER "Stakeforge")
 
+# include(GenerateExportHeader)
+# generate_export_header(${PROJECT_NAME} BASE_NAME SFGEDITOR EXPORT_FILE_NAME ${CMAKE_BINARY_DIR}/StakeforgeEditorAPI.hpp)
 
 # -------------- SETTINGS -------------
 
@@ -58,7 +60,7 @@ include(${CMAKE_SOURCE_DIR}/CMake/ExecutableSettings.cmake)
 target_include_directories(${PROJECT_NAME} PUBLIC ${PROJECT_SOURCE_DIR}/include)
 
 target_link_libraries(${PROJECT_NAME} 
-PUBLIC SFG::SDK
+PUBLIC StakeforgeSDK
 )
 
 # -------------- PROJECT STRUCTURE -------------

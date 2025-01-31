@@ -30,37 +30,33 @@ SOFTWARE.
 
 #include "SFG/Data/String.hpp"
 #include "SFG/Data/Atomic.hpp"
+#include "SFG/StakeforgeAPI.hpp"
 #include <thread>
 
 namespace SFG
 {
-
 	class Window;
-	class AppDelegate;
+	class Plugin;
 
-	class App
+	struct SFG_API AppSettings
+	{
+		uint32 appFrameRate	 = 240;
+		uint32 gameFrameRate = 60;
+		bool   tryLoadEditor = false;
+	};
+
+	class SFG_API App
 	{
 	public:
 		App() = delete;
-		App(AppDelegate* delegate) : m_appDelegate(delegate) {};
+		App(String& errString, const AppSettings& settings);
 		App(App& other) = delete;
-
-		/// <summary>
-		///
-		/// </summary>
-		/// <param name="errString"></param>
-		/// <returns></returns>
-		bool Initialize(String& errString);
+		~App();
 
 		/// <summary>
 		///
 		/// </summary>
 		void Tick();
-
-		/// <summary>
-		///
-		/// </summary>
-		void Shutdown();
 
 		/// <summary>
 		///
@@ -80,19 +76,21 @@ namespace SFG
 		///
 		/// </summary>
 		/// <returns></returns>
-		inline AppDelegate* GetDelegate() const
+		inline AppSettings& GetAppSettings()
 		{
-			return m_appDelegate;
+			return m_settings;
 		}
 
 	private:
 		void UpdateLoop();
 		void RenderLoop();
+		void LoadEditorPlugin();
+		void UnloadEditorPlugin();
 
 	private:
-		Window*		 m_mainWindow  = nullptr;
-		AppDelegate* m_appDelegate = nullptr;
-
+		Window*		 m_mainWindow = nullptr;
+		Plugin*		 m_editor	  = nullptr;
+		AppSettings	 m_settings	  = {};
 		std::thread	 m_updateThread;
 		std::thread	 m_renderThread;
 		Atomic<bool> m_shouldClose = false;

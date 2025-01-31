@@ -28,6 +28,7 @@ SOFTWARE.
 
 #pragma once
 
+#include "SFG/StakeforgeAPI.hpp"
 #include "SFG/Type/SizeDefinitions.hpp"
 #include "SFG/Memory/Memory.hpp"
 #include "SFG/Math/Quaternion.hpp"

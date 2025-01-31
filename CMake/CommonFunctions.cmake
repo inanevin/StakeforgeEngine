@@ -58,6 +58,7 @@ endfunction()
 
 function(group_generated)
     source_group("Generated" FILES ${CMAKE_CURRENT_BINARY_DIR}/CMakeFiles/${PROJECT_NAME}.dir/cmake_pch.cxx)
+    source_group("Generated" FILES ${CMAKE_CURRENT_SOURCE_DIR}/_Resources/${PROJECT_NAME}.rc)
     foreach(config_type ${CMAKE_CONFIGURATION_TYPES})
         source_group("Generated" FILES ${CMAKE_CURRENT_BINARY_DIR}/CMakeFiles/${PROJECT_NAME}.dir/${config_type}/cmake_pch.hxx)
     endforeach()

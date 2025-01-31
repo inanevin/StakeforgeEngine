@@ -3,16 +3,16 @@
 #define SFG_EXPORT_H
 
 #ifdef SFG_STATIC_DEFINE
-#define SFG_EXPORT
+#define SFG_API
 #define SFG_NO_EXPORT
 #else
-#ifndef SFG_EXPORT
+#ifndef SFG_API
 #ifdef StakeforgeSDK_EXPORTS
 /* We are building this library */
-#define SFG_EXPORT __declspec(dllexport)
+#define SFG_API __declspec(dllexport)
 #else
 /* We are using this library */
-#define SFG_EXPORT __declspec(dllimport)
+#define SFG_API __declspec(dllimport)
 #endif
 #endif
 
@@ -26,7 +26,7 @@
 #endif
 
 #ifndef SFG_DEPRECATED_EXPORT
-#define SFG_DEPRECATED_EXPORT SFG_EXPORT SFG_DEPRECATED
+#define SFG_DEPRECATED_EXPORT SFG_API SFG_DEPRECATED
 #endif
 
 #ifndef SFG_DEPRECATED_NO_EXPORT
