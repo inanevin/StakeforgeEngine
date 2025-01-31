@@ -29,7 +29,6 @@ SOFTWARE.
 #include "SFG/Math/Color.hpp"
 #include "SFG/Math/Math.hpp"
 #include "SFG/Math/Vector4.hpp"
-#include "SFG/Data/String.hpp"
 #include "SFG/Data/OStream.hpp"
 #include "SFG/Data/IStream.hpp"
 #include <iomanip>

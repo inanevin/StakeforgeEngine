@@ -36,7 +36,7 @@ namespace SFG
 	{
 	public:
 		GameDelegate() = delete;
-		GameDelegate(uint32 frameRate, uint32 gameFrameRate) : AppDelegate(frameRate, gameFrameRate) {};
+		GameDelegate(uint32 frameRate, uint32 gameFrameRate) : AppDelegate(frameRate, gameFrameRate){};
 		virtual ~GameDelegate() = default;
 
 		virtual void OnMouse(const MouseEvent& event) override;

@@ -29,7 +29,6 @@ SOFTWARE.
 #pragma once
 
 #include "SFG/Type/SizeDefinitions.hpp"
-#include "SFG/Data/String.hpp"
 #include "SFG/Data/Atomic.hpp"
 #include "SFG/Math/Vector2ui.hpp"
 #include "SFG/Math/Vector2i.hpp"
@@ -78,7 +77,7 @@ namespace SFG
 		/// <param name="title"></param>
 		/// <param name="style"></param>
 		/// <returns></returns>
-		static Window* Create(uint32 id, const Vector2i& pos, const Vector2ui& size, const String& title, WindowStyle style);
+		static Window* Create(uint32 id, const Vector2i& pos, const Vector2ui& size, const char* title, WindowStyle style);
 
 		/// <summary>
 		///
@@ -274,7 +273,6 @@ namespace SFG
 			m_sizeDirty		 = false;
 			m_closeRequested = false;
 		}
-
 
 	private:
 		static constexpr int BUFFER_SIZE	 = 256;

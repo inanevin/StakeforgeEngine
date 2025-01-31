@@ -28,7 +28,7 @@ SOFTWARE.
 
 #pragma once
 
-#include "SFG/Data/String.hpp"
+#include "SFG/Data/StringView.hpp"
 
 namespace SFG
 {
@@ -44,7 +44,7 @@ namespace SFG
 		/// <param name="fileInput"></param>
 		/// <param name="targetFilePath"></param>
 		/// <returns></returns>
-		static bool WriteToFile(const String& fileInput, const String& targetFilePath);
+		static bool WriteToFile(StringView fileInput, const char* targetFilePath);
 
 		/// <summary>
 		///

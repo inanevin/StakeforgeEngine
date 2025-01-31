@@ -66,10 +66,10 @@ include(${CMAKE_SOURCE_DIR}/CMake/ExecutableSettings.cmake)
 target_include_directories(${PROJECT_NAME} PUBLIC ${PROJECT_SOURCE_DIR}/include)
 
 target_link_libraries(${PROJECT_NAME} 
-PUBLIC SFG::SFG
+PUBLIC SFG::SDK
 )
 
 # -------------- PROJECT STRUCTURE -------------
-
 include(${CMAKE_SOURCE_DIR}/CMake/CommonFunctions.cmake)
 group_sources(HEADERS SOURCES)
+group_generated()

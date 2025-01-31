@@ -26,43 +26,9 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
 
-#pragma once
+#include "SFG/Type/StringID.hpp"
 
 namespace SFG
 {
-	class App;
-	class AppDelegate;
-	class Plugin;
-
-	extern AppDelegate* CreateAppDelegate();
-	extern void			DestroyAppDelegate(AppDelegate* delegate);
-
-	class Process
-	{
-	public:
-		/// <summary>
-		///
-		/// </summary>
-		static void PumpOSMessages();
-
-		/// <summary>
-		///
-		/// </summary>
-		/// <param name="url"></param>
-		static void OpenURL(const char* url);
-
-		/// <summary>
-		///
-		/// </summary>
-		/// <param name="path"></param>
-		/// <returns></returns>
-		static Plugin* LoadPlugin(const char* path, App* app);
-
-		/// <summary>
-		///
-		/// </summary>
-		/// <param name="plugin"></param>
-		static void UnloadPlugin(Plugin* plugin);
-	};
 
 } // namespace SFG

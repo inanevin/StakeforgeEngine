@@ -32,12 +32,13 @@ cmake_minimum_required (VERSION 3.10...3.31)
 project (Stakeforge)
 
 set(CMAKE_CONFIGURATION_TYPES "Debug;Release;" CACHE STRING "" FORCE)
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
 
 # ------------- COMPILE DEFINITIONS -------------
 add_compile_definitions($<$<CONFIG:Debug>:_ITERATOR_DEBUG_LEVEL=1>)
 add_compile_definitions($<$<CONFIG:Debug>:SFG_DEBUG=1>)
 add_compile_definitions($<$<CONFIG:Release>:_ITERATOR_DEBUG_LEVEL=0>)
-add_compile_definitions($<$<CONFIG:Debug>:SFG_DEBUG=0>)
+add_compile_definitions($<$<CONFIG:Release>:SFG_DEBUG=0>)
 
 add_definitions(-DSFG_CONFIGURATION="$<CONFIGURATION>")
 
@@ -64,7 +65,6 @@ set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_SUPPRESS_REGENERATION true)
 
 if(MSVC)
-
 	# Static runtime library
     # set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
     # set(SFG_MSVC_RUNTIME_STATIC ON)
@@ -85,6 +85,7 @@ endif()
 #--------------------------------------------------------------------
 
 add_subdirectory(StakeforgeSDK)
+add_subdirectory(StakeforgeEditor)
 add_subdirectory(StakeforgeGame)
 
 set_property(GLOBAL PROPERTY USE_FOLDERS ON)

@@ -28,41 +28,49 @@ SOFTWARE.
 
 #pragma once
 
+#include "SFG/Data/String.hpp"
+
 namespace SFG
 {
 	class App;
-	class AppDelegate;
-	class Plugin;
 
-	extern AppDelegate* CreateAppDelegate();
-	extern void			DestroyAppDelegate(AppDelegate* delegate);
-
-	class Process
+	class Plugin
 	{
 	public:
-		/// <summary>
-		///
-		/// </summary>
-		static void PumpOSMessages();
+		Plugin() = delete;
+		Plugin(const String& path, App* app, void* platformHandle) : m_path(path), m_app(app), m_platformHandle(platformHandle){};
+		virtual ~Plugin() = default;
 
 		/// <summary>
 		///
 		/// </summary>
-		/// <param name="url"></param>
-		static void OpenURL(const char* url);
+		virtual void OnLoaded() = 0;
 
 		/// <summary>
 		///
 		/// </summary>
-		/// <param name="path"></param>
+		virtual void OnUnloaded() = 0;
+
+		/// <summary>
+		///
+		/// </summary>
+		inline void* GetPlatformHandle() const
+		{
+			return m_platformHandle;
+		}
+
+		/// <summary>
+		///
+		/// </summary>
 		/// <returns></returns>
-		static Plugin* LoadPlugin(const char* path, App* app);
+		inline const String& GetPath() const
+		{
+			return m_path;
+		}
 
-		/// <summary>
-		///
-		/// </summary>
-		/// <param name="plugin"></param>
-		static void UnloadPlugin(Plugin* plugin);
+	protected:
+		String m_path			= "";
+		App*   m_app			= nullptr;
+		void*  m_platformHandle = nullptr;
 	};
-
 } // namespace SFG

@@ -29,6 +29,7 @@ SOFTWARE.
 #include "SFG/Platform/Process.hpp"
 #include "SFG/IO/Log.hpp"
 #include "SFG/Core/App.hpp"
+#include "SFG/System/Plugin.hpp"
 
 namespace SFG
 {
@@ -43,60 +44,64 @@ namespace SFG
 		}
 	}
 
-	void Process::OpenURL(const String& url)
+	typedef Plugin*(__cdecl* CreatePluginFunc)(const char* path, void* handle, App* app);
+	typedef void(__cdecl* DestroyPluginFunc)(Plugin*);
+
+	Plugin* Process::LoadPlugin(const char* path, App* app)
 	{
-		ShellExecute(0, "open", url.c_str(), NULL, NULL, SW_SHOWNORMAL);
+		HINSTANCE hinstLib;
+		BOOL	  fFreeResult = FALSE;
+		hinstLib			  = LoadLibrary(TEXT(path));
+		Plugin* plugin		  = nullptr;
+
+		// If the handle is valid, try to get the function address.
+		if (hinstLib != NULL)
+		{
+			CreatePluginFunc createPluginAddr = (CreatePluginFunc)GetProcAddress(hinstLib, "CreatePlugin");
+
+			// If the function address is valid, call the function.
+
+			if (NULL != createPluginAddr)
+			{
+				plugin = (createPluginAddr)(path, hinstLib, app);
+				plugin->OnLoaded();
+			}
+			else
+			{
+				SFG_ERR("Could not load plugin create function! {0}", path);
+			}
+		}
+		else
+		{
+			SFG_ERR("Could not find plugin! {0}", path);
+		}
+
+		return plugin;
+	}
+
+	void Process::UnloadPlugin(Plugin* plugin)
+	{
+		HINSTANCE hinstLib = NULL;
+
+		plugin->OnUnloaded();
+		hinstLib = static_cast<HINSTANCE>(plugin->GetPlatformHandle());
+
+		if (hinstLib == NULL)
+		{
+			SFG_ERR("Could not find the plugin to unload! {0}", plugin->GetPath());
+			return;
+		}
+
+		DestroyPluginFunc destroyPluginAddr = (DestroyPluginFunc)GetProcAddress(hinstLib, "DestroyPlugin");
+		if (destroyPluginAddr != NULL)
+			destroyPluginAddr(plugin);
+
+		BOOL fFreeResult = FreeLibrary(hinstLib);
+	}
+
+	void Process::OpenURL(const char* url)
+	{
+		ShellExecute(0, "open", url, NULL, NULL, SW_SHOWNORMAL);
 	}
 
 } // namespace SFG
-
-int WINAPI WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, _In_ LPSTR pCmdLine, _In_ int nCmdShow)
-{
-
-#ifdef SFG_DEBUG
-	bool consoleAllocated = false;
-	if (AllocConsole() == FALSE)
-	{
-		consoleAllocated = true;
-		SFG_ERR("Failed allocating console!");
-	}
-#endif
-
-	SetProcessDpiAwarenessContext(DPI_AWARENESS_CONTEXT_PER_MONITOR_AWARE_V2);
-	SetProcessPriorityBoost(GetCurrentProcess(), FALSE);
-
-	DWORD_PTR mask = 1;
-	SetThreadAffinityMask(GetCurrentThread(), mask);
-
-	DWORD dwError;
-	if (!SetPriorityClass(GetCurrentProcess(), REALTIME_PRIORITY_CLASS))
-	{
-		dwError = GetLastError();
-		SFG_ERR("Failed setting process priority: {0}", dwError);
-	}
-
-	SFG::App*	app	  = new SFG::App(SFG::CreateAppDelegate());
-	SFG::String error = "";
-
-	if (!app->Initialize(error))
-	{
-		MessageBox(nullptr, error.c_str(), "Error", MB_OK | MB_ICONERROR);
-		delete app;
-		FreeConsole();
-		return 0;
-	}
-
-	while (!app->GetShouldClose().load(std::memory_order_acquire))
-		app->Tick();
-
-	app->Shutdown();
-	SFG::DestroyAppDelegate(app->GetDelegate());
-	delete app;
-
-#ifdef SFG_DEBUG
-	if (consoleAllocated)
-		FreeConsole();
-#endif
-
-	return 0;
-}

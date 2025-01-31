@@ -45,12 +45,12 @@ SOFTWARE.
 
 namespace SFG
 {
-	bool FS::DeleteFileInPath(const String& path)
+	bool FS::DeleteFileInPath(const char* path)
 	{
-		return remove(path.c_str());
+		return remove(path);
 	}
 
-	bool FS::CreateFolderInPath(const String& path)
+	bool FS::CreateFolderInPath(const char* path)
 	{
 		Vector<String> directories = {};
 		StringUtil::SplitBy(directories, path, "/");
@@ -60,7 +60,7 @@ namespace SFG
 		{
 			currentPath += dir + "/";
 
-			if (!Exists(currentPath))
+			if (!Exists(currentPath.c_str()))
 			{
 				bool success = std::filesystem::create_directory(currentPath.c_str());
 				if (!success)
@@ -73,11 +73,11 @@ namespace SFG
 		return true;
 	}
 
-	bool FS::DeleteDirectory(const String& path)
+	bool FS::DeleteDirectory(const char* path)
 	{
 		try
 		{
-			bool success = std::filesystem::remove_all(path.c_str());
+			bool success = std::filesystem::remove_all(path);
 		}
 		catch (const std::exception& err)
 		{
@@ -88,10 +88,10 @@ namespace SFG
 		return true;
 	}
 
-	void FS::GetFilesInDirectory(const String& path, Vector<String>& outData, String extensionFilter)
+	void FS::GetFilesInDirectory(const char* path, Vector<String>& outData, String extensionFilter)
 	{
 		outData.clear();
-		for (const auto& entry : std::filesystem::directory_iterator(path.c_str()))
+		for (const auto& entry : std::filesystem::directory_iterator(path))
 		{
 			if (!entry.is_directory())
 			{
@@ -112,24 +112,23 @@ namespace SFG
 		}
 	}
 
-	void FS::GetFilesAndFoldersInDirectory(const String& path, Vector<String>& outData)
+	void FS::GetFilesAndFoldersInDirectory(const char* path, Vector<String>& outData)
 	{
 		outData.clear();
-		for (const auto& entry : std::filesystem::directory_iterator(path.c_str()))
+		for (const auto& entry : std::filesystem::directory_iterator(path))
 		{
 			outData.push_back(FixPath(entry.path().string().c_str()));
 		}
 	}
 
-	bool FS::IsDirectory(const String& path)
+	bool FS::IsDirectory(const char* path)
 	{
 		return std::filesystem::is_directory(path);
 	}
-	bool FS::ChangeDirectoryName(const String& oldPath, const String& newPath)
-	{
 
-		/*	Deletes the file if exists */
-		if (std::rename(oldPath.c_str(), newPath.c_str()) != 0)
+	bool FS::ChangeDirectoryName(const char* oldPath, const char* newPath)
+	{
+		if (std::rename(oldPath, newPath) != 0)
 		{
 			SFG_ERR("Failed to rename directory! Old Name: {0}, New Name: {1}", oldPath, newPath);
 			return false;
@@ -138,12 +137,12 @@ namespace SFG
 		return true;
 	}
 
-	bool FS::Exists(const String& path)
+	bool FS::Exists(const char* path)
 	{
-		return std::filesystem::exists(path.c_str());
+		return std::filesystem::exists(path);
 	}
 
-	String FS::GetLastModifiedDate(const String& path)
+	String FS::GetLastModifiedDate(const char* path)
 	{
 		std::filesystem::file_time_type ftime  = std::filesystem::last_write_time(path);
 		auto							sctp   = std::chrono::time_point_cast<std::chrono::system_clock::duration>(ftime - decltype(ftime)::clock::now() + std::chrono::system_clock::now());
@@ -151,12 +150,12 @@ namespace SFG
 		return std::asctime(std::localtime(&cftime));
 	}
 
-	String FS::GetFilePath(const String& fileName)
+	String FS::GetFileDirectory(const char* path)
 	{
-		const String usedFilename = FixPath(fileName);
-		const char*	 cstr		  = usedFilename.c_str();
-		unsigned int strLength	  = (unsigned int)usedFilename.length();
-		unsigned int end		  = strLength - 1;
+		String		 str	   = path;
+		const char*	 cstr	   = path;
+		unsigned int strLength = (unsigned int)str.length();
+		unsigned int end	   = strLength - 1;
 
 		while (end != 0)
 		{
@@ -167,13 +166,13 @@ namespace SFG
 		}
 
 		if (end == 0)
-			return usedFilename;
+			return str;
 
 		else
 		{
 			unsigned int start = 0;
 			end				   = end + 1;
-			return usedFilename.substr(start, end - start);
+			return str.substr(start, end - start).data();
 		}
 	}
 
@@ -220,12 +219,12 @@ namespace SFG
 		return std::string(a, b);
 	}
 
-	void FS::ReadFileContentsToVector(const String& filePath, Vector<char>& vec)
+	void FS::ReadFileContentsToVector(const char* filePath, Vector<char>& vec)
 	{
-		std::ifstream file(filePath.c_str(), std::ios::binary);
+		std::ifstream file(filePath, std::ios::binary);
 		if (!file)
 		{
-			SFG_ERR("[Font] -> Could not open file! {0}", filePath.c_str());
+			SFG_ERR("[Font] -> Could not open file! {0}", filePath);
 			return;
 		}
 
@@ -312,7 +311,7 @@ namespace SFG
 		}
 	} // namespace
 
-	String FS::Duplicate(const String& path)
+	String FS::Duplicate(const char* path)
 	{
 		try
 		{
@@ -328,7 +327,7 @@ namespace SFG
 					finalPath += "." + FS::GetFileExtension(path);
 				}
 
-				while (FS::Exists(finalPath))
+				while (FS::Exists(finalPath.c_str()))
 				{
 					finalPath.insert(insertBeforeExtension, " (Copy)");
 					insertBeforeExtension += 7;
@@ -364,7 +363,7 @@ namespace SFG
 		return "";
 	}
 
-	String FS::GetRelative(const String& src, const String& target)
+	String FS::GetRelative(const char* src, const char* target)
 	{
 		std::filesystem::path sourcePath(src);
 		std::filesystem::path targetPath(target);
@@ -372,7 +371,7 @@ namespace SFG
 		return relativePath.string();
 	}
 
-	void FS::PerformMove(const String& targetFile, const String& targetDirectory)
+	void FS::PerformMove(const char* targetFile, const char* targetDirectory)
 	{
 		try
 		{
@@ -428,7 +427,7 @@ namespace SFG
 		return oss.str();
 	}
 
-	void FS::CopyDirectory(const String& directory, const String& targetParentFolder)
+	void FS::CopyDirectory(const char* directory, const char* targetParentFolder)
 	{
 		namespace fs = std::filesystem;
 

@@ -39,14 +39,15 @@ src/IO/*.cpp
 src/Math/*.cpp
 src/Memory/*.cpp
 src/Serialization/*.cpp
+src/System/*.cpp
 src/Type/*.cpp
 
-src/Vendor/LZ4/lz4.c
+include/SFG/Vendor/LZ4/lz4.cpp
 
 )
 
 file (GLOB_RECURSE HEADERS
-include/SFG/Stakeforge.hpp
+include/SFG/*.hpp
 include/SFG/Core/*.hpp
 include/SFG/Data/*.hpp
 include/SFG/IO/*.hpp
@@ -54,6 +55,7 @@ include/SFG/Math/*.hpp
 include/SFG/Memory/*.hpp
 include/SFG/Platform/*.hpp
 include/SFG/Serialization/*.hpp
+include/SFG/System/*.hpp
 include/SFG/Type/*.hpp
 
 include/SFG/Vendor/LZ4/lz4.h
@@ -88,11 +90,14 @@ endif()
 
 # -------------- LIBRARY -------------
 
-add_library(${PROJECT_NAME} ${SOURCES} ${HEADERS} ${PLATFORM_HEADERS} ${PLATFORM_SOURCES})
-add_library(SFG::SFG ALIAS ${PROJECT_NAME}) 
+add_library(${PROJECT_NAME} SHARED ${SOURCES} ${HEADERS} ${PLATFORM_HEADERS} ${PLATFORM_SOURCES})
+add_library(SFG::SDK ALIAS ${PROJECT_NAME}) 
+
+# include(GenerateExportHeader)
+# generate_export_header(${PROJECT_NAME} BASE_NAME SFG EXPORT_FILE_NAME ${CMAKE_BINARY_DIR}/StakeforgeAPI.hpp)
 
 include(../CMake/Compile.cmake)
-set_target_properties(${PROJECT_NAME} PROPERTIES FOLDER "StakeforgeSDK")
+set_target_properties(${PROJECT_NAME} PROPERTIES FOLDER "Stakeforge")
 
 # -------------- TARGET -------------
 
@@ -105,14 +110,15 @@ target_include_directories(${PROJECT_NAME} PRIVATE ${PROJECT_SOURCE_DIR}/src)
 # Jolt
 set(CPP_RTTI_ENABLED OFF CACHE BOOL "" FORCE)
 set(CPP_EXCEPTIONS_ENABLED_ENABLED OFF CACHE BOOL "" FORCE)
-set(USE_STATIC_MSVC_RUNTIME_LIBRARY ${SFG_MSVC_RUNTIME_STATIC} CACHE BOOL "" FORCE)
+set(USE_STATIC_MSVC_RUNTIME_LIBRARY OFF CACHE BOOL "" FORCE)
 set(OVERRIDE_CXX_FLAGS OFF CACHE BOOL "" FORCE)
 set(OVERRIDE_MSVCCRT OFF CACHE BOOL "" FORCE)
 set(GENERATE_DEBUG_SYMBOLS ON CACHE BOOL "" FORCE)
 set(INTERPROCEDURAL_OPTIMIZATION OFF CACHE BOOL "" FORCE)
+set(BUILD_SHARED_LIBS ON CACHE BOOL "" FORCE)
 add_subdirectory(Dependencies/Jolt/Build)
 
-set_property(TARGET Jolt PROPERTY FOLDER StakeforgeSDK/Dependencies)
+set_property(TARGET Jolt PROPERTY FOLDER Stakeforge/Dependencies)
 
 target_precompile_headers(${PROJECT_NAME}
 PUBLIC
@@ -147,5 +153,6 @@ endif()
 #--------------------------------------------------------------------
 # Folder structuring
 #--------------------------------------------------------------------
-include(../CMake/CommonFunctions.cmake)
+include(${CMAKE_SOURCE_DIR}/CMake/CommonFunctions.cmake)
 group_sources(HEADERS SOURCES PLATFORM_HEADERS PLATFORM_SOURCES)
+group_generated()

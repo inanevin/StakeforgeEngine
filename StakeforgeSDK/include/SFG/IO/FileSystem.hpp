@@ -40,19 +40,19 @@ namespace SFG
 		/// Use only for files.
 		/// </summary>
 		/// <returns></returns>
-		static bool DeleteFileInPath(const String& path);
+		static bool DeleteFileInPath(const char* path);
 
 		/// <summary>
 		///
 		/// </summary>
 		/// <returns></returns>
-		static bool CreateFolderInPath(const String& path);
+		static bool CreateFolderInPath(const char* path);
 
 		/// <summary>
 		///
 		/// </summary>
 		/// <returns></returns>
-		static bool DeleteDirectory(const String& path);
+		static bool DeleteDirectory(const char* path);
 
 		/// <summary>
 		///
@@ -60,21 +60,21 @@ namespace SFG
 		/// <param name="path"></param>
 		/// <param name="outData"></param>
 		/// <param name="extensionFilter"></param>
-		static void GetFilesInDirectory(const String& path, Vector<String>& outData, String extensionFilter = "");
+		static void GetFilesInDirectory(const char* path, Vector<String>& outData, String extensionFilter = "");
 
 		/// <summary>
 		///
 		/// </summary>
 		/// <param name="path"></param>
 		/// <param name="outData"></param>
-		static void GetFilesAndFoldersInDirectory(const String& path, Vector<String>& outData);
+		static void GetFilesAndFoldersInDirectory(const char* path, Vector<String>& outData);
 
 		/// <summary>
 		///
 		/// </summary>
 		/// <param name="path"></param>
 		/// <returns></returns>
-		static bool IsDirectory(const String& path);
+		static bool IsDirectory(const char* path);
 
 		/// <summary>
 		///
@@ -82,28 +82,28 @@ namespace SFG
 		/// <param name="oldPath"></param>
 		/// <param name="newPath"></param>
 		/// <returns></returns>
-		static bool ChangeDirectoryName(const String& oldPath, const String& newPath);
+		static bool ChangeDirectoryName(const char* oldPath, const char* newPath);
 
 		/// <summary>
 		///
 		/// </summary>
 		/// <param name="path"></param>
 		/// <returns></returns>
-		static bool Exists(const String& path);
+		static bool Exists(const char* path);
 
 		/// <summary>
 		///
 		/// </summary>
 		/// <param name="path"></param>
 		/// <returns></returns>
-		static String GetLastModifiedDate(const String& path);
+		static String GetLastModifiedDate(const char* path);
 
 		/// <summary>
 		///
 		/// </summary>
 		/// <param name="fileName"></param>
 		/// <returns></returns>
-		static String GetFilePath(const String& fileName);
+		static String GetFileDirectory(const char* path);
 
 		/// <summary>
 		///
@@ -171,7 +171,7 @@ namespace SFG
 		/// </summary>
 		/// <param name="path"></param>
 		/// <returns></returns>
-		static String Duplicate(const String& path);
+		static String Duplicate(const char* path);
 
 		/// <summary>
 		///
@@ -179,7 +179,7 @@ namespace SFG
 		/// <param name="src"></param>
 		/// <param name="target"></param>
 		/// <returns></returns>
-		static String GetRelative(const String& src, const String& target);
+		static String GetRelative(const char* src, const char* target);
 
 		/// <summary>
 		///
@@ -199,14 +199,14 @@ namespace SFG
 		/// </summary>
 		/// <param name="filePath"></param>
 		/// <param name="vec"></param>
-		static void ReadFileContentsToVector(const String& filePath, Vector<char>& vec);
+		static void ReadFileContentsToVector(const char* filePath, Vector<char>& vec);
 
 		/// <summary>
 		///
 		/// </summary>
 		/// <param name="targetFile"></param>
 		/// <param name="targetDirectory"></param>
-		static void PerformMove(const String& targetFile, const String& targetDirectory);
+		static void PerformMove(const char* targetFile, const char* targetDirectory);
 
 		/// <summary>
 		///
@@ -221,7 +221,7 @@ namespace SFG
 		/// </summary>
 		/// <param name="directory"></param>
 		/// <param name="targetParentFolder"></param>
-		static void CopyDirectory(const String& directory, const String& targetParentFolder);
+		static void CopyDirectory(const char* copyDir, const char* targetParentFolder);
 	};
 
 } // namespace SFG

@@ -31,7 +31,6 @@ SOFTWARE.
 #include "SFG/Data/OStream.hpp"
 #include "SFG/Data/IStream.hpp"
 
-#define LZ4_STATIC_LINKING_ONLY_DISABLE_MEMORY_ALLOCATION
 #include "SFG/Vendor/LZ4/lz4.h"
 
 namespace SFG

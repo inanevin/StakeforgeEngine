@@ -37,13 +37,13 @@ SOFTWARE.
 
 namespace SFG
 {
-	bool Serialization::WriteToFile(const String& fileInput, const String& targetFilePath)
+	bool Serialization::WriteToFile(StringView fileInput, const char* targetFilePath)
 	{
-		std::ofstream outFile(targetFilePath.c_str());
+		std::ofstream outFile(targetFilePath);
 
 		if (outFile.is_open())
 		{
-			outFile << fileInput;
+			outFile.write(fileInput.data(), fileInput.size());
 			outFile.close();
 		}
 		else

@@ -461,20 +461,20 @@ namespace SFG
 		return DefWindowProcA(hwnd, msg, wParam, lParam);
 	}
 
-	Window* Window::Create(uint32 id, const Vector2i& pos, const Vector2ui& size, const String& title, WindowStyle style)
+	Window* Window::Create(uint32 id, const Vector2i& pos, const Vector2ui& size, const char* title, WindowStyle style)
 	{
 
 		HINSTANCE hinst = GetModuleHandle(0);
 
 		WNDCLASSEX wcx;
-		BOOL	   exists = GetClassInfoEx(hinst, title.c_str(), &wcx);
+		BOOL	   exists = GetClassInfoEx(hinst, title, &wcx);
 
 		if (!exists)
 		{
 			WNDCLASS wc		 = {};
 			wc.lpfnWndProc	 = WndProc;
 			wc.hInstance	 = hinst;
-			wc.lpszClassName = title.c_str();
+			wc.lpszClassName = title;
 			wc.hCursor		 = NULL;
 
 			if (!RegisterClassA(&wc))
@@ -499,7 +499,7 @@ namespace SFG
 			trueSize.y				 = static_cast<uint32>(adjustedHeight);
 		}
 
-		HWND hwnd = CreateWindowExA(exStyle, title.c_str(), title.c_str(), stylew, pos.x, pos.y, trueSize.x, trueSize.y, NULL, NULL, hinst, NULL);
+		HWND hwnd = CreateWindowExA(exStyle, title, title, stylew, pos.x, pos.y, trueSize.x, trueSize.y, NULL, NULL, hinst, NULL);
 
 		if (hwnd == nullptr)
 			return nullptr;
