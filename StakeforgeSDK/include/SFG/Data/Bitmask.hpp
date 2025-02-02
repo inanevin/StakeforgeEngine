@@ -28,8 +28,6 @@ SOFTWARE.
 
 #pragma once
 
-#include "SFG/Type/SizeDefinitions.hpp"
-
 namespace SFG
 {
 	template <typename T> class Bitmask
@@ -37,7 +35,7 @@ namespace SFG
 	public:
 		Bitmask()  = default;
 		~Bitmask() = default;
-		
+
 		Bitmask(T m) : m_mask(m){};
 
 		inline bool IsSet(T m) const
@@ -77,8 +75,7 @@ namespace SFG
 		T m_mask = 0;
 	};
 
-	typedef Bitmask<uint8>	Bitmask8;
-	typedef Bitmask<uint16> Bitmask16;
-	typedef Bitmask<uint32> Bitmask32;
+	typedef Bitmask<uint8_t>  Bitmask8;
+	typedef Bitmask<uint16_t> Bitmask16;
+	typedef Bitmask<uint32_t> Bitmask32;
 } // namespace SFG
-

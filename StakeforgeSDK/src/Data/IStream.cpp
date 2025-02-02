@@ -31,11 +31,11 @@ SOFTWARE.
 
 namespace SFG
 {
-	void IStream::Create(uint8* data, size_t size)
+	void IStream::Create(uint8_t* data, size_t size)
 	{
 		Destroy();
 		const size_t unaligned = size;
-		m_data				   = new uint8[size];
+		m_data				   = new uint8_t[size];
 
 		if (data != nullptr)
 			MEMCPY(m_data, data, unaligned);
@@ -64,11 +64,11 @@ namespace SFG
 	{
 		if (Endianness::ShouldSwap())
 		{
-			uint8*		  data = &m_data[m_index];
-			Vector<uint8> v;
+			uint8_t*		data = &m_data[m_index];
+			Vector<uint8_t> v;
 			v.insert(v.end(), data, data + size);
 
-			Vector<uint8> v2;
+			Vector<uint8_t> v2;
 			v2.resize(v.size());
 			std::reverse_copy(v.begin(), v.end(), v2.begin());
 
@@ -83,7 +83,7 @@ namespace SFG
 		m_index += size;
 	}
 
-	void IStream::ReadToRaw(uint8* ptr, size_t size)
+	void IStream::ReadToRaw(uint8_t* ptr, size_t size)
 	{
 		MEMCPY(ptr, &m_data[m_index], size);
 		m_index += size;

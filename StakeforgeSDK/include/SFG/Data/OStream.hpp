@@ -28,7 +28,6 @@ SOFTWARE.
 
 #pragma once
 
-#include "SFG/Type/SizeDefinitions.hpp"
 #include "SFG/Serialization/Endianness.hpp"
 #include "SFG/Memory/Memory.hpp"
 #include <fstream>
@@ -52,7 +51,7 @@ namespace SFG
 
 	template <typename Stream, typename Key, typename Value> void SerializeHashMap(Stream& stream, const HashMap<Key, Value>& map)
 	{
-		stream << static_cast<uint32_t>(map.size());
+		stream << static_cast<uint32_t_t>(map.size());
 		for (const auto& [key, value] : map)
 		{
 			stream << key << value;
@@ -61,11 +60,11 @@ namespace SFG
 
 	template <typename Stream, typename Key, typename Value> void DeserializeHashMap(Stream& stream, HashMap<Key, Value>& map)
 	{
-		uint32_t size = 0;
+		uint32_t_t size = 0;
 		stream >> size;
 		Key	  key;
 		Value value;
-		for (uint32_t i = 0; i < size; ++i)
+		for (uint32_t_t i = 0; i < size; ++i)
 		{
 			stream >> key >> value;
 			map[key] = value;
@@ -87,12 +86,12 @@ namespace SFG
 
 	template <typename Stream, typename U> void DeserializeVector(Stream& stream, Vector<U>& vec)
 	{
-		uint32 sz = 0;
+		uint32_t sz = 0;
 		stream >> sz;
 		vec.resize(sz);
 		if constexpr (std::is_pointer<U>::value)
 		{
-			for (uint32 i = 0; i < sz; i++)
+			for (uint32_t i = 0; i < sz; i++)
 			{
 				using UnderlyingType = typename std::remove_pointer<U>::type;
 				vec[i]				 = new UnderlyingType();
@@ -101,14 +100,14 @@ namespace SFG
 		}
 		else
 		{
-			for (uint32 i = 0; i < sz; i++)
+			for (uint32_t i = 0; i < sz; i++)
 				stream >> vec[i];
 		}
 	}
 
 	template <typename Stream, typename U> void SerializeVector(Stream& stream, Vector<U>& vec)
 	{
-		const uint32 sz = static_cast<uint32>(vec.size());
+		const uint32_t sz = static_cast<uint32_t>(vec.size());
 		stream << sz;
 
 		if constexpr (std::is_pointer<U>::value)
@@ -125,7 +124,7 @@ namespace SFG
 
 	template <typename Stream, typename U> void SerializeVector(Stream& stream, const Vector<U>& vec)
 	{
-		const uint32 sz = static_cast<uint32>(vec.size());
+		const uint32_t sz = static_cast<uint32_t>(vec.size());
 		stream << sz;
 
 		if constexpr (std::is_pointer<U>::value)
@@ -166,14 +165,14 @@ namespace SFG
 		/// </summary>
 		/// <param name="ptr"></param>
 		/// <param name="size"></param>
-		void WriteRawEndianSafe(const uint8* ptr, size_t size);
+		void WriteRawEndianSafe(const uint8_t* ptr, size_t size);
 
 		/// <summary>
 		///
 		/// </summary>
 		/// <param name="ptr"></param>
 		/// <param name="size"></param>
-		void WriteRaw(const uint8* ptr, size_t size);
+		void WriteRaw(const uint8_t* ptr, size_t size);
 
 		/// <summary>
 		///
@@ -185,8 +184,8 @@ namespace SFG
 			if (m_data == nullptr)
 				Create(sizeof(T));
 
-			uint8* ptr	= (uint8*)&t;
-			size_t size = sizeof(T);
+			uint8_t* ptr  = (uint8_t*)&t;
+			size_t	 size = sizeof(T);
 
 			CheckGrow(size);
 			MEMCPY(&m_data[m_currentSize], ptr, size);
@@ -206,7 +205,7 @@ namespace SFG
 		///
 		/// </summary>
 		/// <returns></returns>
-		inline uint8* GetDataRaw() const
+		inline uint8_t* GetDataRaw() const
 		{
 			return m_data;
 		}
@@ -224,9 +223,9 @@ namespace SFG
 		void CheckGrow(size_t sz);
 
 	private:
-		uint8* m_data		 = nullptr;
-		size_t m_currentSize = 0;
-		size_t m_totalSize	 = 0;
+		uint8_t* m_data		   = nullptr;
+		size_t	 m_currentSize = 0;
+		size_t	 m_totalSize   = 0;
 	};
 
 	template <typename T> OStream& operator<<(OStream& stream, T& val)
@@ -238,15 +237,15 @@ namespace SFG
 				Endianness::SwapEndian(copy);
 			stream.Write<T>(copy);
 		}
-		//else if constexpr (std::is_same_v<T, String> || std::is_same_v<T, const String>)
+		// else if constexpr (std::is_same_v<T, String> || std::is_same_v<T, const String>)
 		//{
-		//	const uint32 sz = static_cast<uint32>(val.size());
+		//	const uint32_t sz = static_cast<uint32_t>(val.size());
 		//	stream << sz;
-		//	stream.WriteRawEndianSafe((uint8*)val.data(), val.size());
-		//}
+		//	stream.WriteRawEndianSafe((uint8_t*)val.data(), val.size());
+		// }
 		else if constexpr (std::is_enum_v<T>)
 		{
-			const uint8 u8 = static_cast<uint8>(val);
+			const uint8_t u8 = static_cast<uint8_t>(val);
 			stream << u8;
 		}
 		//	else if constexpr (is_vector_v<T>)

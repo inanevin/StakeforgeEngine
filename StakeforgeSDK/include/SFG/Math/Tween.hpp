@@ -28,7 +28,6 @@ SOFTWARE.
 
 #pragma once
 
-#include "SFG/Type/SizeDefinitions.hpp"
 #include "SFG/Data/Functional.hpp"
 
 namespace SFG
@@ -55,7 +54,7 @@ namespace SFG
 		/// <param name="end"></param>
 		/// <param name="duration"></param>
 		/// <param name="type"></param>
-		Tween(float start = 0.0f, float end = 1.0f, float duration = 1.0f, TweenType type = TweenType::Linear) : m_value(start), m_start(start), m_end(end), m_duration(duration), m_type(type) {};
+		Tween(float start = 0.0f, float end = 1.0f, float duration = 1.0f, TweenType type = TweenType::Linear) : m_value(start), m_start(start), m_end(end), m_duration(duration), m_type(type){};
 		~Tween() = default;
 
 		/// <summary>
@@ -112,7 +111,7 @@ namespace SFG
 		/// </summary>
 		/// <param name="count"></param>
 		/// <returns></returns>
-		inline Tween* SetRestarts(int32 count)
+		inline Tween* SetRestarts(int32_t count)
 		{
 			m_restartCount = count;
 			return this;
@@ -203,8 +202,8 @@ namespace SFG
 		float			 m_duration		= 0.0f;
 		float			 m_currentTime	= 0.0f;
 		float			 m_timeScale	= 1.0f;
-		int32			 m_restarts		= 0;
-		int32			 m_restartCount = 0;
+		int32_t			 m_restarts		= 0;
+		int32_t			 m_restartCount = 0;
 		bool			 m_passedDelay	= false;
 		bool			 m_isCompleted	= false;
 		TweenType		 m_type			= TweenType::Linear;

@@ -33,17 +33,17 @@ SOFTWARE.
 
 namespace SFG
 {
-	void RawStream::Create(uint8* data, size_t size)
+	void RawStream::Create(uint8_t* data, size_t size)
 	{
 		Destroy();
-		m_data = {new uint8[size], size};
+		m_data = {new uint8_t[size], size};
 		MEMCPY(m_data.data(), data, size);
 	}
 
 	void RawStream::Create(OStream& stream)
 	{
 		Destroy();
-		m_data = {new uint8[stream.GetCurrentSize()], stream.GetCurrentSize()};
+		m_data = {new uint8_t[stream.GetCurrentSize()], stream.GetCurrentSize()};
 		MEMCPY(m_data.data(), stream.GetDataRaw(), stream.GetCurrentSize());
 	}
 
@@ -57,7 +57,7 @@ namespace SFG
 
 	void RawStream::SaveToStream(OStream& stream) const
 	{
-		const uint32 sz = static_cast<uint32>(m_data.size());
+		const uint32_t sz = static_cast<uint32_t>(m_data.size());
 		stream.Write(sz);
 		if (sz != 0)
 			stream.WriteRaw(m_data.data(), m_data.size());
@@ -65,13 +65,13 @@ namespace SFG
 
 	void RawStream::LoadFromStream(IStream& stream)
 	{
-		uint32 size = 0;
+		uint32_t size = 0;
 		stream.Read(size);
 		if (size != 0)
 		{
 			const size_t sz = static_cast<size_t>(size);
 			Destroy();
-			m_data = {new uint8[sz], sz};
+			m_data = {new uint8_t[sz], sz};
 			stream.ReadToRaw(m_data.data(), m_data.size());
 		}
 	}

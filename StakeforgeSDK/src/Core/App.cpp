@@ -63,17 +63,17 @@ namespace SFG
 			Sleep for chilling CPU if settings permit.
 		*/
 
-		const int64 INPUT_INTERVAL_US = m_settings.inputUpdateRate == 0 ? 0 : (int64)1000000 / static_cast<int64>(m_settings.inputUpdateRate);
-		const int64 APP_INTERVAL_US	  = m_settings.appUpdateRate == 0 ? 0 : (int64)1000000 / static_cast<int64>(m_settings.appUpdateRate);
-		int64		previousTime	  = Time::GetCPUMicroseconds();
-		int64		inputAccumulator  = INPUT_INTERVAL_US + 1;
-		int64		appAccumulator	  = INPUT_INTERVAL_US + 1;
+		const int64_t INPUT_INTERVAL_US = m_settings.inputUpdateRate == 0 ? 0 : (int64_t)1000000 / static_cast<int64_t>(m_settings.inputUpdateRate);
+		const int64_t APP_INTERVAL_US	= m_settings.appUpdateRate == 0 ? 0 : (int64_t)1000000 / static_cast<int64_t>(m_settings.appUpdateRate);
+		int64_t		  previousTime		= Time::GetCPUMicroseconds();
+		int64_t		  inputAccumulator	= INPUT_INTERVAL_US + 1;
+		int64_t		  appAccumulator	= INPUT_INTERVAL_US + 1;
 
 		while (!m_shouldClose.load(std::memory_order_acquire))
 		{
-			const int64 currentTime		  = Time::GetCPUMicroseconds();
-			const int64 deltaMicroseconds = currentTime - previousTime;
-			previousTime				  = currentTime;
+			const int64_t currentTime		= Time::GetCPUMicroseconds();
+			const int64_t deltaMicroseconds = currentTime - previousTime;
+			previousTime					= currentTime;
 
 			inputAccumulator += deltaMicroseconds;
 
@@ -92,7 +92,7 @@ namespace SFG
 
 				if (window->GetCloseRequested())
 				{
-					const uint32 id = window->GetID();
+					const uint32_t id = window->GetID();
 
 					it = UtilVector::Remove(m_windows, window);
 					Window::Destroy(window);
@@ -158,7 +158,7 @@ namespace SFG
 		m_shouldClose.store(true, std::memory_order_release);
 	}
 
-	Window* App::CreateAppWindow(uint32 id, const char* title, const Vector2i& pos, const Vector2ui& size, WindowStyle style)
+	Window* App::CreateAppWindow(uint32_t id, const char* title, const Vector2i& pos, const Vector2ui& size, WindowStyle style)
 	{
 		Window* window = Window::Create(id, pos, size, title, style);
 
@@ -168,7 +168,7 @@ namespace SFG
 		return window;
 	}
 
-	Window* App::GetWindow(uint32 id)
+	Window* App::GetWindow(uint32_t id)
 	{
 		Window* retVal = nullptr;
 		UtilVector::Find(m_windows, retVal, [id](Window* w) -> bool { return w->GetID() == id; });

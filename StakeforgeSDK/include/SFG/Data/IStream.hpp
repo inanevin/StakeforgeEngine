@@ -28,7 +28,6 @@ SOFTWARE.
 
 #pragma once
 
-#include "SFG/Type/SizeDefinitions.hpp"
 #include "SFG/Serialization/Endianness.hpp"
 #include "SFG/Memory/Memory.hpp"
 #include <fstream>
@@ -43,7 +42,7 @@ namespace SFG
 		/// </summary>
 		/// <param name="data"></param>
 		/// <param name="size"></param>
-		void Create(uint8* data, size_t size);
+		void Create(uint8_t* data, size_t size);
 
 		/// <summary>
 		///
@@ -68,7 +67,7 @@ namespace SFG
 		/// </summary>
 		/// <param name="ptr"></param>
 		/// <param name="size"></param>
-		void ReadToRaw(uint8* ptr, size_t size);
+		void ReadToRaw(uint8_t* ptr, size_t size);
 
 		/// <summary>
 		///
@@ -77,7 +76,7 @@ namespace SFG
 		/// <param name="t"></param>
 		template <typename T> void Read(T& t)
 		{
-			MEMCPY(reinterpret_cast<uint8*>(&t), &m_data[m_index], sizeof(T));
+			MEMCPY(reinterpret_cast<uint8_t*>(&t), &m_data[m_index], sizeof(T));
 			m_index += sizeof(T);
 		}
 
@@ -130,7 +129,7 @@ namespace SFG
 		///
 		/// </summary>
 		/// <returns></returns>
-		inline uint8* GetDataRaw() const
+		inline uint8_t* GetDataRaw() const
 		{
 			return m_data;
 		}
@@ -139,7 +138,7 @@ namespace SFG
 		///
 		/// </summary>
 		/// <returns></returns>
-		inline uint8* GetDataCurrent()
+		inline uint8_t* GetDataCurrent()
 		{
 			return &m_data[m_index];
 		}
@@ -154,9 +153,9 @@ namespace SFG
 		}
 
 	private:
-		uint8* m_data  = nullptr;
-		size_t m_index = 0;
-		size_t m_size  = 0;
+		uint8_t* m_data	 = nullptr;
+		size_t	 m_index = 0;
+		size_t	 m_size	 = 0;
 	};
 
 	template <typename T> IStream& operator>>(IStream& stream, T& val)
@@ -171,7 +170,7 @@ namespace SFG
 		}
 		// else if constexpr (std::is_same_v<T, String> || std::is_same_v<T, std::string>)
 		// {
-		// 	uint32 sz = 0;
+		// 	uint32_t sz = 0;
 		// 	stream >> sz;
 		// 	void* d = MALLOC(sz);
 		// 	stream.ReadToRawEndianSafe(d, static_cast<size_t>(sz));
@@ -181,7 +180,7 @@ namespace SFG
 		// }
 		else if constexpr (std::is_enum_v<T>)
 		{
-			uint8 u8 = 0;
+			uint8_t u8 = 0;
 			stream >> u8;
 			val = static_cast<T>(u8);
 		}

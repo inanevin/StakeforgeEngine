@@ -29,25 +29,70 @@ SOFTWARE.
 #pragma once
 
 #include "SFG/Data/String.hpp"
-#include "SFG/Type/StringID.hpp"
+#include "SFG/StakeforgeAPI.hpp"
 
 namespace SFG
 {
-	class FileWatcher
+	class Color;
+
+	class SFG_API ColorUtils
 	{
+
 	public:
-		FileWatcher() = default;
-		FileWatcher(const char* path, uint32_t frames);
+		/// <summary>
+		///
+		/// </summary>
+		/// <param name="hex"></param>
+		static Color FromHex(const String& hex);
 
 		/// <summary>
 		///
 		/// </summary>
-		bool Watch();
+		/// <returns></returns>
+		static String ToHex(const Color& color);
 
-	private:
-		String	 m_path		= "";
-		StringID m_sid		= 0;
-		uint32_t m_frames	= 0;
-		uint32_t m_frameCtr = 0;
+		/// <summary>
+		/// Calculate angle from hue-saturation and conver
+		/// </summary>
+		/// <returns></returns>
+		static Color HS2SRGB(const Color& color);
+
+		/// <summary>
+		///
+		/// </summary>
+		/// <returns></returns>
+		static Color SRGB2HSV(const Color& color);
+
+		/// <summary>
+		///
+		/// </summary>
+		/// <returns></returns>
+		static Color HSV2SRGB(const Color& color);
+
+		/// <summary>
+		///
+		/// </summary>
+		/// <returns></returns>
+		static Color SRGB2Linear(const Color& color);
+
+		/// <summary>
+		///
+		/// </summary>
+		/// <returns></returns>
+		static Color Linear2SRGB(const Color& color);
+
+		/// <summary>
+		/// Lerps to white by amt.
+		/// </summary>
+		/// <param name="amt"></param>
+		/// <returns></returns>
+		static Color Brighten(const Color& color, float amt);
+
+		/// <summary>
+		/// Lerps to black by amt.
+		/// </summary>
+		/// <returns></returns>
+		static Color Darken(const Color& color, float amt);
 	};
+
 } // namespace SFG

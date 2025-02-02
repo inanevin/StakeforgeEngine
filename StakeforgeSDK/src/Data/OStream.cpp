@@ -33,7 +33,7 @@ namespace SFG
 {
 	void OStream::Create(size_t size)
 	{
-		m_data		  = new uint8[size];
+		m_data		  = new uint8_t[size];
 		m_totalSize	  = size;
 		m_currentSize = 0;
 	}
@@ -47,7 +47,7 @@ namespace SFG
 		m_data		  = nullptr;
 	}
 
-	void OStream::WriteRawEndianSafe(const uint8* ptr, size_t size)
+	void OStream::WriteRawEndianSafe(const uint8_t* ptr, size_t size)
 	{
 		if (m_data == nullptr)
 			Create(size);
@@ -56,10 +56,10 @@ namespace SFG
 
 		if (Endianness::ShouldSwap())
 		{
-			Vector<uint8> v;
+			Vector<uint8_t> v;
 			v.insert(v.end(), ptr, (ptr) + size);
 
-			Vector<uint8> v2;
+			Vector<uint8_t> v2;
 			v2.resize(v.size());
 			std::reverse_copy(v.begin(), v.end(), v2.begin());
 			MEMCPY(&m_data[m_currentSize], v2.data(), size);
@@ -73,7 +73,7 @@ namespace SFG
 		m_currentSize += size;
 	}
 
-	void OStream::WriteRaw(const uint8* ptr, size_t size)
+	void OStream::WriteRaw(const uint8_t* ptr, size_t size)
 	{
 		if (m_data == nullptr)
 			Create(size);
@@ -87,8 +87,8 @@ namespace SFG
 	{
 		if (m_currentSize + sz > m_totalSize)
 		{
-			m_totalSize	   = static_cast<size_t>((static_cast<float>(m_currentSize + sz) * 2.0f));
-			uint8* newData = new uint8[m_totalSize];
+			m_totalSize		 = static_cast<size_t>((static_cast<float>(m_currentSize + sz) * 2.0f));
+			uint8_t* newData = new uint8_t[m_totalSize];
 			MEMCPY(newData, m_data, m_currentSize);
 			delete[] m_data;
 			m_data = newData;

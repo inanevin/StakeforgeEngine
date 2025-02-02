@@ -36,7 +36,7 @@ namespace SFG
 		Vector2ui workSize	= Vector2ui::Zero;
 		Vector2ui fullSize	= Vector2ui::Zero;
 		float	  dpiScale	= 1.0f;
-		uint32	  dpi		= 0;
+		uint32_t  dpi		= 0;
 		bool	  isPrimary = false;
 	};
 } // namespace SFG

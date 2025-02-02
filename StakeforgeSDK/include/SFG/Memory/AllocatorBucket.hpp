@@ -28,7 +28,6 @@ SOFTWARE.
 
 #pragma once
 
-#include "SFG/Type/SizeDefinitions.hpp"
 #include "SFG/Data/Functional.hpp"
 #include "SFG/Data/Span.hpp"
 #include "SFG/Data/Queue.hpp"
@@ -42,14 +41,14 @@ namespace SFG
 	public:
 		static constexpr size_t ALIGN = std::alignment_of<T>::value;
 
-		AllocatorBucket(uint8 bucketIndex = 0)
+		AllocatorBucket(uint8_t bucketIndex = 0)
 		{
-			static_assert(N < UINT16_MAX, "Max pool count is max uint16!");
+			static_assert(N < UINT16_MAX, "Max pool count is max uint16_t!");
 
 			m_bucketIndex = bucketIndex;
 
 			const size_t alignedSize = GetAlignedSize();
-			m_rawMemory				 = new uint8[alignedSize];
+			m_rawMemory				 = new uint8_t[alignedSize];
 			MEMSET(m_rawMemory, 0, alignedSize);
 			AdjustSpan(alignedSize);
 		};
@@ -59,10 +58,10 @@ namespace SFG
 			if (m_nextBucket != nullptr)
 				delete m_nextBucket;
 
-			for (uint32 i = 0; i < N; i++)
+			for (uint32_t i = 0; i < N; i++)
 			{
-				uint8* ptr = m_span.data() + i * sizeof(T);
-				T*	   obj = reinterpret_cast<T*>(ptr);
+				uint8_t* ptr = m_span.data() + i * sizeof(T);
+				T*		 obj = reinterpret_cast<T*>(ptr);
 
 				if (obj->m_bucketIdent.isValid == 0)
 					continue;
@@ -76,7 +75,7 @@ namespace SFG
 		void Clear()
 		{
 			m_head	  = 0;
-			m_freeIDs = Queue<uint16>();
+			m_freeIDs = Queue<uint16_t>();
 
 			if (m_nextBucket != nullptr)
 				m_nextBucket->Clear();
@@ -84,7 +83,7 @@ namespace SFG
 
 		template <typename... Args> T* Allocate(Args&&... args)
 		{
-			uint16 target = 0;
+			uint16_t target = 0;
 
 			if (!m_freeIDs.empty())
 			{
@@ -109,8 +108,8 @@ namespace SFG
 				return m_nextBucket->Allocate(std::forward<Args>(args)...);
 			}
 
-			const uint8* ptr   = m_span.data() + target * sizeof(T);
-			T*			 obj   = new ((void*)ptr) T(args...);
+			const uint8_t* ptr = m_span.data() + target * sizeof(T);
+			T*			   obj = new ((void*)ptr) T(args...);
 			obj->m_bucketIdent = {
 				.allocationIndex = target,
 				.bucketIndex	 = m_bucketIndex,
@@ -127,7 +126,7 @@ namespace SFG
 				return;
 			}
 
-			const uint16 targetId = obj->m_bucketIdent.allocationIndex;
+			const uint16_t targetId = obj->m_bucketIdent.allocationIndex;
 			m_freeIDs.push(targetId);
 			obj->m_bucketIdent = {
 				.allocationIndex = 0,
@@ -138,13 +137,13 @@ namespace SFG
 			obj->~T();
 		};
 
-		void View(Delegate<bool(T* item, uint32 index)>&& callback, uint32 startIdx = 0) const
+		void View(Delegate<bool(T* item, uint32_t index)>&& callback, uint32_t startIdx = 0) const
 		{
-			uint32 idx = startIdx;
-			for (uint32 i = 0; i < N; i++)
+			uint32_t idx = startIdx;
+			for (uint32_t i = 0; i < N; i++)
 			{
-				uint8* ptr = m_span.data() + i * sizeof(T);
-				T*	   obj = reinterpret_cast<T*>(ptr);
+				uint8_t* ptr = m_span.data() + i * sizeof(T);
+				T*		 obj = reinterpret_cast<T*>(ptr);
 
 				if (obj->m_bucketIdent.isValid == 0)
 					continue;
@@ -160,10 +159,10 @@ namespace SFG
 
 		T* Find(Delegate<bool(T* inst)> predicate) const
 		{
-			for (uint32 i = 0; i < N; i++)
+			for (uint32_t i = 0; i < N; i++)
 			{
-				uint8* ptr = m_span.data() + i * sizeof(T);
-				T*	   obj = reinterpret_cast<T*>(ptr);
+				uint8_t* ptr = m_span.data() + i * sizeof(T);
+				T*		 obj = reinterpret_cast<T*>(ptr);
 
 				if (obj->m_bucketIdent.isValid == 0)
 					continue;
@@ -178,14 +177,14 @@ namespace SFG
 			return nullptr;
 		}
 
-		uint32 GetActiveItemCount(uint32 prior = 0) const
+		uint32_t GetActiveItemCount(uint32_t prior = 0) const
 		{
-			uint32 count = prior;
+			uint32_t count = prior;
 
-			for (uint32 i = 0; i < N; i++)
+			for (uint32_t i = 0; i < N; i++)
 			{
-				uint8* ptr = m_span.data() + i * sizeof(T);
-				T*	   obj = reinterpret_cast<T*>(ptr);
+				uint8_t* ptr = m_span.data() + i * sizeof(T);
+				T*		 obj = reinterpret_cast<T*>(ptr);
 
 				if (obj->m_bucketIdent.isValid == 0)
 					continue;
@@ -198,9 +197,9 @@ namespace SFG
 			return count;
 		}
 
-		uint32 GetElement(uint32 id, uint32 startIdx = 0) const
+		uint32_t GetElement(uint32_t id, uint32_t startIdx = 0) const
 		{
-			uint32 idx = startIdx;
+			uint32_t idx = startIdx;
 		}
 
 	private:
@@ -217,11 +216,11 @@ namespace SFG
 		}
 
 	private:
-		Queue<uint16> m_freeIDs;
-		Span<uint8>	  m_span;
-		uint8*		  m_rawMemory	= nullptr;
-		uint16		  m_head		= 0;
-		uint8		  m_bucketIndex = 0;
+		Queue<uint16_t> m_freeIDs;
+		Span<uint8_t>	m_span;
+		uint8_t*		m_rawMemory	  = nullptr;
+		uint16_t		m_head		  = 0;
+		uint8_t			m_bucketIndex = 0;
 
 		AllocatorBucket<T, N>* m_nextBucket = nullptr;
 	};

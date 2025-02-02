@@ -39,8 +39,8 @@ namespace SFG
 
 	Vector2i::Vector2i(const Vector2& v2)
 	{
-		x = static_cast<int32>(v2.x);
-		y = static_cast<int32>(v2.y);
+		x = static_cast<int32_t>(v2.x);
+		y = static_cast<int32_t>(v2.y);
 	}
 
 	bool Vector2i::Equals(const Vector2i& other, int epsilon) const

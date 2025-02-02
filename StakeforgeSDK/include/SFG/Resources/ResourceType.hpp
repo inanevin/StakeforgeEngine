@@ -28,26 +28,18 @@ SOFTWARE.
 
 #pragma once
 
-#include "SFG/Data/String.hpp"
-#include "SFG/Type/StringID.hpp"
-
 namespace SFG
 {
-	class FileWatcher
+	enum ResourceType
 	{
-	public:
-		FileWatcher() = default;
-		FileWatcher(const char* path, uint32_t frames);
-
-		/// <summary>
-		///
-		/// </summary>
-		bool Watch();
-
-	private:
-		String	 m_path		= "";
-		StringID m_sid		= 0;
-		uint32_t m_frames	= 0;
-		uint32_t m_frameCtr = 0;
+		RESOURCE_TYPE_UNKNOWN = 0,
+		RESOURCE_TYPE_TEXTURE,
+		RESOURCE_TYPE_TEXTURE_SAMPLER,
+		RESOURCE_TYPE_SHADER,
+		RESOURCE_TYPE_MATERIAL,
+		RESOURCE_TYPE_FONT,
+		RESOURCE_TYPE_WIDGET,
+		RESOURCE_TYPE_AUDIO,
+		RESOURCE_TYPE_PHYSICS_MATERIAL,
 	};
 } // namespace SFG

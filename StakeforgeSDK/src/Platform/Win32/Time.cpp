@@ -33,7 +33,7 @@ SOFTWARE.
 
 namespace SFG
 {
-	int64 Time::s_frequency = 0;
+	int64_t Time::s_frequency = 0;
 
 	void Time::Initialize()
 	{
@@ -57,7 +57,7 @@ namespace SFG
 		timeEndPeriod(1);
 	}
 
-	int64 Time::GetCPUMicroseconds()
+	int64_t Time::GetCPUMicroseconds()
 	{
 		LARGE_INTEGER cycles;
 		QueryPerformanceCounter(&cycles);
@@ -74,31 +74,31 @@ namespace SFG
 		return static_cast<double>(cycles.QuadPart) * 1.0 / static_cast<double>(s_frequency);
 	}
 
-	int64 Time::GetCPUCycles()
+	int64_t Time::GetCPUCycles()
 	{
 		LARGE_INTEGER Cycles;
 		QueryPerformanceCounter(&Cycles);
 		return Cycles.QuadPart;
 	}
 
-	double Time::GetDeltaSeconds64(int64 fromCycles, int64 toCycles)
+	double Time::GetDeltaSeconds64(int64_t fromCycles, int64_t toCycles)
 	{
 		return static_cast<double>(toCycles - fromCycles) * 1.0 / (static_cast<double>(s_frequency));
 	}
 
-	int64 Time::GetDeltaMicroseconds64(int64 fromCycles, int64 toCycles)
+	int64_t Time::GetDeltaMicroseconds64(int64_t fromCycles, int64_t toCycles)
 	{
 		return ((toCycles - fromCycles) * 1000000ll) / s_frequency;
 	}
 
-	void Time::Throttle(int64 microseconds)
+	void Time::Throttle(int64_t microseconds)
 	{
 		if (microseconds < 0)
 			return;
 
-		int64		now	   = GetCPUMicroseconds();
-		const int64 target = now + microseconds;
-		int64		sleep  = microseconds;
+		int64_t		  now	 = GetCPUMicroseconds();
+		const int64_t target = now + microseconds;
+		int64_t		  sleep	 = microseconds;
 
 		for (;;)
 		{
@@ -109,11 +109,11 @@ namespace SFG
 				break;
 			}
 
-			int64 diff = target - now;
+			int64_t diff = target - now;
 
 			if (diff > 2000)
 			{
-				uint32 ms = static_cast<uint32>((double)(diff - 2000) / 1000.0);
+				uint32_t ms = static_cast<uint32_t>((double)(diff - 2000) / 1000.0);
 				Sleep(ms);
 			}
 			else
@@ -123,7 +123,7 @@ namespace SFG
 		}
 	}
 
-	void Time::Sleep(uint32 milliseconds)
+	void Time::Sleep(uint32_t milliseconds)
 	{
 		if (milliseconds == 0)
 			YieldProcessor();

@@ -28,7 +28,6 @@ SOFTWARE.
 
 #pragma once
 
-#include "SFG/Type/SizeDefinitions.hpp"
 #include <cmath>
 #include <cstdlib>
 #include <random>
@@ -77,9 +76,9 @@ namespace SFG
 		/// </summary>
 		/// <param name="val"></param>
 		/// <returns></returns>
-		static inline int32 TruncToInt(float val)
+		static inline int32_t TruncToInt(float val)
 		{
-			return (int32)val;
+			return (int32_t)val;
 		}
 
 		/// <summary>
@@ -97,7 +96,7 @@ namespace SFG
 		/// </summary>
 		/// <param name="val"></param>
 		/// <returns></returns>
-		static inline int32 FloorToInt(float val)
+		static inline int32_t FloorToInt(float val)
 		{
 			return TruncToInt(FloorToFloat(val));
 		}
@@ -138,7 +137,7 @@ namespace SFG
 		/// </summary>
 		/// <param name="val"></param>
 		/// <returns></returns>
-		static inline int32 RoundToInt(float val)
+		static inline int32_t RoundToInt(float val)
 		{
 			return CeilToInt(val - 0.5f);
 		}
@@ -148,7 +147,7 @@ namespace SFG
 		/// </summary>
 		/// <param name="val"></param>
 		/// <returns></returns>
-		static inline int32 RoundToIntEven(float val)
+		static inline int32_t RoundToIntEven(float val)
 		{
 			const int res = CeilToInt(val - 0.5f);
 			return res % 2 == 0 ? res : res - 1;
@@ -169,7 +168,7 @@ namespace SFG
 		/// </summary>
 		/// <param name="val"></param>
 		/// <returns></returns>
-		static inline int32 CeilToInt(float val)
+		static inline int32_t CeilToInt(float val)
 		{
 			return TruncToInt(ceilf(val));
 		}
@@ -397,8 +396,8 @@ namespace SFG
 		static inline bool IsNaN(float val)
 		{
 			union {
-				float  f;
-				uint32 i;
+				float	 f;
+				uint32_t i;
 			} f;
 			f.f = val;
 			return (f.i & 0x7FFFFFFF) > 0x7F800000;
@@ -412,8 +411,8 @@ namespace SFG
 		static inline bool IsFinite(float val)
 		{
 			union {
-				float  f;
-				uint32 i;
+				float	 f;
+				uint32_t i;
 			} f;
 			f.f = val;
 			return (f.i & 0x7F800000) != 0x7F800000;
@@ -423,7 +422,7 @@ namespace SFG
 		///
 		/// </summary>
 		/// <returns></returns>
-		static inline int32 Rand()
+		static inline int32_t Rand()
 		{
 			return ::rand();
 		}
@@ -434,18 +433,18 @@ namespace SFG
 		/// <param name="min"></param>
 		/// <param name="max"></param>
 		/// <returns></returns>
-		static inline int32 Rand(int32 min, int32 max)
+		static inline int32_t Rand(int32_t min, int32_t max)
 		{
-			return (int32)Lerp((float)min, (float)max, RandF());
+			return (int32_t)Lerp((float)min, (float)max, RandF());
 		}
 
 		/// <summary>
 		///
 		/// </summary>
 		/// <param name="seed"></param>
-		static inline void SeedRand(int32 seed)
+		static inline void SeedRand(int32_t seed)
 		{
-			srand((uint32)seed);
+			srand((uint32_t)seed);
 		}
 
 		/// <summary>
@@ -473,9 +472,9 @@ namespace SFG
 		/// </summary>
 		/// <param name="val"></param>
 		/// <returns></returns>
-		static inline uint32 FloorLog2(uint32 val)
+		static inline uint32_t FloorLog2(uint32_t val)
 		{
-			uint32 pos = 0;
+			uint32_t pos = 0;
 			if (val >= 1 << 16)
 			{
 				val >>= 16;
@@ -508,7 +507,7 @@ namespace SFG
 		/// </summary>
 		/// <param name="val"></param>
 		/// <returns></returns>
-		static inline uint32 GetNumLeadingZeroes(uint32 val)
+		static inline uint32_t GetNumLeadingZeroes(uint32_t val)
 		{
 			if (val == 0)
 			{
@@ -522,7 +521,7 @@ namespace SFG
 		/// </summary>
 		/// <param name="val"></param>
 		/// <returns></returns>
-		static inline uint32 CeilLog2(uint32 val)
+		static inline uint32_t CeilLog2(uint32_t val)
 		{
 			if (val <= 1)
 			{
@@ -536,7 +535,7 @@ namespace SFG
 		/// </summary>
 		/// <param name="val"></param>
 		/// <returns></returns>
-		static inline uint32 RoundUpToNextPowerOf2(uint32 val)
+		static inline uint32_t RoundUpToNextPowerOf2(uint32_t val)
 		{
 			return 1 << CeilLog2(val);
 		}

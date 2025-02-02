@@ -29,7 +29,6 @@ SOFTWARE.
 #pragma once
 
 #include "SFG/StakeforgeAPI.hpp"
-#include "SFG/Type/SizeDefinitions.hpp"
 #include "SFG/Memory/Memory.hpp"
 #include "SFG/Math/Quaternion.hpp"
 #include "SFG/Math/Matrix4x4.hpp"
@@ -47,6 +46,7 @@ SOFTWARE.
 
 #include "SFG/IO/Log.hpp"
 #include "SFG/Data/Vector.hpp"
+#include "SFG/Data//Atomic.hpp"
 #include "SFG/Data/Queue.hpp"
 #include "SFG/Data/String.hpp"
 #include "SFG/Data/Mutex.hpp"

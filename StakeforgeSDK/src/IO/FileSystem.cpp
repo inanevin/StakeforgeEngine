@@ -404,7 +404,7 @@ namespace SFG
 		return oss.str();
 	}
 
-	void FS::GetSystemTimeInts(int32& hours, int32& minutes, int32& seconds)
+	void FS::GetSystemTimeInts(int32_t& hours, int32_t& minutes, int32_t& seconds)
 	{
 		std::time_t now		  = std::time(nullptr);
 		std::tm*	localTime = std::localtime(&now);
@@ -413,7 +413,7 @@ namespace SFG
 		seconds				  = localTime->tm_sec;
 	}
 
-	String FS::GetTimeStrFromMicroseconds(int64 microseconds)
+	String FS::GetTimeStrFromMicroseconds(int64_t microseconds)
 	{
 		int64_t totalSeconds = microseconds / 1000000;
 

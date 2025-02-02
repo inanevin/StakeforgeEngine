@@ -50,10 +50,10 @@ namespace SFG
 			return composition_enabled && success;
 		}
 
-		uint32 GetStyle(WindowStyle s)
+		uint32_t GetStyle(WindowStyle s)
 		{
 			if (s == WindowStyle::ApplicationWindow)
-				return static_cast<uint32>(WS_OVERLAPPEDWINDOW);
+				return static_cast<uint32_t>(WS_OVERLAPPEDWINDOW);
 			else
 			{
 				DWORD style = 0;
@@ -76,9 +76,9 @@ namespace SFG
 
 			UINT	dpiX, dpiY;
 			HRESULT temp2  = GetDpiForMonitor(monitor, MDT_EFFECTIVE_DPI, &dpiX, &dpiY);
-			info.fullSize  = {static_cast<uint32>(monitorInfo.rcMonitor.right - monitorInfo.rcMonitor.left), static_cast<uint32>(monitorInfo.rcMonitor.bottom - monitorInfo.rcMonitor.top)};
-			info.workSize  = {static_cast<uint32>(monitorInfo.rcWork.right - monitorInfo.rcWork.left), static_cast<uint32>(monitorInfo.rcWork.bottom - monitorInfo.rcWork.top)};
-			info.position  = {static_cast<int32>(monitorInfo.rcWork.left), static_cast<int32>(monitorInfo.rcWork.top)};
+			info.fullSize  = {static_cast<uint32_t>(monitorInfo.rcMonitor.right - monitorInfo.rcMonitor.left), static_cast<uint32_t>(monitorInfo.rcMonitor.bottom - monitorInfo.rcMonitor.top)};
+			info.workSize  = {static_cast<uint32_t>(monitorInfo.rcWork.right - monitorInfo.rcWork.left), static_cast<uint32_t>(monitorInfo.rcWork.bottom - monitorInfo.rcWork.top)};
+			info.position  = {static_cast<int32_t>(monitorInfo.rcWork.left), static_cast<int32_t>(monitorInfo.rcWork.top)};
 			info.isPrimary = (monitorInfo.dwFlags & MONITORINFOF_PRIMARY) != 0;
 			info.dpi	   = dpiX;
 			info.dpiScale  = static_cast<float>(dpiX) / 96.0f;
@@ -110,8 +110,8 @@ namespace SFG
 			return 0;
 		}
 		case WM_MOVE: {
-			const int32 x	   = static_cast<int32>((short)LOWORD(lParam));
-			const int32 y	   = static_cast<int32>((short)HIWORD(lParam));
+			const int32_t x	   = static_cast<int32_t>((short)LOWORD(lParam));
+			const int32_t y	   = static_cast<int32_t>((short)HIWORD(lParam));
 			window->m_position = Vector2i(x, y);
 			return 0;
 		}
@@ -158,7 +158,7 @@ namespace SFG
 					.window			 = window,
 					.type			 = WindowEventType::Key,
 					.action			 = isRelease ? InputAction::Released : InputAction::Pressed,
-					.value			 = Vector2i(static_cast<int32>(scanCode), 0),
+					.value			 = Vector2i(static_cast<int32_t>(scanCode), 0),
 					.isHighFrequency = true,
 				};
 				window->AddEvent(ev);
@@ -168,7 +168,7 @@ namespace SFG
 				USHORT mouseFlags = raw->data.mouse.usButtonFlags;
 				POINT  cursorPos;
 				GetCursorPos(&cursorPos);
-				const Vector2i relative = Vector2i(static_cast<int32>(cursorPos.x), static_cast<int32>(cursorPos.y)) - window->m_position;
+				const Vector2i relative = Vector2i(static_cast<int32_t>(cursorPos.x), static_cast<int32_t>(cursorPos.y)) - window->m_position;
 
 				WindowEvent ev = {
 					.window			 = window,
@@ -220,8 +220,8 @@ namespace SFG
 					window->AddEvent(ev);
 				else if (mouseFlags & RI_MOUSE_WHEEL)
 				{
-					const uint16 wheelDelta = (uint16)raw->data.mouse.usButtonData;
-					const short	 wheel		= (short)raw->data.mouse.usButtonData / (short)WHEEL_DELTA;
+					const uint16_t wheelDelta = (uint16_t)raw->data.mouse.usButtonData;
+					const short	   wheel	  = (short)raw->data.mouse.usButtonData / (short)WHEEL_DELTA;
 
 					const WindowEvent mwe = {
 						.window			 = window,
@@ -233,8 +233,8 @@ namespace SFG
 				}
 				else
 				{
-					const int32 xPosRelative = raw->data.mouse.lLastX;
-					const int32 yPosRelative = raw->data.mouse.lLastY;
+					const int32_t xPosRelative = raw->data.mouse.lLastX;
+					const int32_t yPosRelative = raw->data.mouse.lLastY;
 
 					const WindowEvent mdEvent = {
 						.window			 = window,
@@ -257,7 +257,7 @@ namespace SFG
 			const WORD scanCode	  = LOBYTE(keyFlags);
 			const int  extended	  = (lParam & 0x01000000) != 0;
 			const bool isRepeated = (HIWORD(lParam) & KF_REPEAT) != 0;
-			uint32	   key		  = static_cast<uint32>(wParam);
+			uint32_t   key		  = static_cast<uint32_t>(wParam);
 
 			if (wParam == VK_SHIFT)
 				key = extended == 0 ? VK_LSHIFT : VK_RSHIFT;
@@ -285,7 +285,7 @@ namespace SFG
 			const WORD scanCode	  = LOBYTE(keyFlags);
 			const int  extended	  = (lParam & 0x01000000) != 0;
 			const bool isRepeated = (HIWORD(lParam) & KF_REPEAT) != 0;
-			uint32	   key		  = static_cast<uint32>(wParam);
+			uint32_t   key		  = static_cast<uint32_t>(wParam);
 
 			if (wParam == VK_SHIFT)
 				key = extended ? VK_LSHIFT : VK_RSHIFT;
@@ -307,8 +307,8 @@ namespace SFG
 
 		case WM_MOUSEMOVE: {
 
-			const int32 xPos = GET_X_LPARAM(lParam);
-			const int32 yPos = GET_Y_LPARAM(lParam);
+			const int32_t xPos = GET_X_LPARAM(lParam);
+			const int32_t yPos = GET_Y_LPARAM(lParam);
 
 			static Vector2i previousPosition = Vector2i::Zero;
 			window->m_mousePosition			 = Vector2i(xPos, yPos);
@@ -335,7 +335,7 @@ namespace SFG
 			if (window->m_highFrequencyInputMode)
 				return 0;
 
-			const int16		  delta = GET_WHEEL_DELTA_WPARAM(wParam) / (int16)(WHEEL_DELTA);
+			const int16_t	  delta = GET_WHEEL_DELTA_WPARAM(wParam) / (int16_t)(WHEEL_DELTA);
 			const WindowEvent mwe	= {
 				  .window		   = window,
 				  .type			   = WindowEventType::MouseWheel,
@@ -352,8 +352,8 @@ namespace SFG
 			if (window->m_highFrequencyInputMode)
 				return 0;
 
-			const int32 x = static_cast<int32>(GET_X_LPARAM(lParam));
-			const int32 y = static_cast<int32>(GET_Y_LPARAM(lParam));
+			const int32_t x = static_cast<int32_t>(GET_X_LPARAM(lParam));
+			const int32_t y = static_cast<int32_t>(GET_Y_LPARAM(lParam));
 
 			const WindowEvent ev = {
 				.window			 = window,
@@ -370,8 +370,8 @@ namespace SFG
 		}
 		case WM_LBUTTONDBLCLK: {
 
-			const int32 x = static_cast<int32>(GET_X_LPARAM(lParam));
-			const int32 y = static_cast<int32>(GET_Y_LPARAM(lParam));
+			const int32_t x = static_cast<int32_t>(GET_X_LPARAM(lParam));
+			const int32_t y = static_cast<int32_t>(GET_Y_LPARAM(lParam));
 
 			const WindowEvent ev = {
 				.window			 = window,
@@ -390,8 +390,8 @@ namespace SFG
 			if (window->m_highFrequencyInputMode)
 				return 0;
 
-			const int32 x = static_cast<int32>(GET_X_LPARAM(lParam));
-			const int32 y = static_cast<int32>(GET_Y_LPARAM(lParam));
+			const int32_t x = static_cast<int32_t>(GET_X_LPARAM(lParam));
+			const int32_t y = static_cast<int32_t>(GET_Y_LPARAM(lParam));
 
 			const WindowEvent ev = {
 				.window			 = window,
@@ -408,8 +408,8 @@ namespace SFG
 		}
 		case WM_RBUTTONDBLCLK: {
 
-			const int32 x = static_cast<int32>(GET_X_LPARAM(lParam));
-			const int32 y = static_cast<int32>(GET_Y_LPARAM(lParam));
+			const int32_t x = static_cast<int32_t>(GET_X_LPARAM(lParam));
+			const int32_t y = static_cast<int32_t>(GET_Y_LPARAM(lParam));
 
 			const WindowEvent ev = {
 				.window			 = window,
@@ -429,8 +429,8 @@ namespace SFG
 			if (window->m_highFrequencyInputMode)
 				return 0;
 
-			const int32 x = static_cast<int32>(GET_X_LPARAM(lParam));
-			const int32 y = static_cast<int32>(GET_Y_LPARAM(lParam));
+			const int32_t x = static_cast<int32_t>(GET_X_LPARAM(lParam));
+			const int32_t y = static_cast<int32_t>(GET_Y_LPARAM(lParam));
 
 			const WindowEvent ev = {
 				.window			 = window,
@@ -449,8 +449,8 @@ namespace SFG
 			if (window->m_highFrequencyInputMode)
 				return 0;
 
-			const int32 x = static_cast<int32>(GET_X_LPARAM(lParam));
-			const int32 y = static_cast<int32>(GET_Y_LPARAM(lParam));
+			const int32_t x = static_cast<int32_t>(GET_X_LPARAM(lParam));
+			const int32_t y = static_cast<int32_t>(GET_Y_LPARAM(lParam));
 
 			const WindowEvent ev = {
 				.window			 = window,
@@ -470,8 +470,8 @@ namespace SFG
 			if (window->m_highFrequencyInputMode)
 				return 0;
 
-			const int32 x = static_cast<int32>(GET_X_LPARAM(lParam));
-			const int32 y = static_cast<int32>(GET_Y_LPARAM(lParam));
+			const int32_t x = static_cast<int32_t>(GET_X_LPARAM(lParam));
+			const int32_t y = static_cast<int32_t>(GET_Y_LPARAM(lParam));
 
 			const WindowEvent ev = {
 				.window			 = window,
@@ -491,8 +491,8 @@ namespace SFG
 			if (window->m_highFrequencyInputMode)
 				return 0;
 
-			const int32 x = static_cast<int32>(GET_X_LPARAM(lParam));
-			const int32 y = static_cast<int32>(GET_Y_LPARAM(lParam));
+			const int32_t x = static_cast<int32_t>(GET_X_LPARAM(lParam));
+			const int32_t y = static_cast<int32_t>(GET_Y_LPARAM(lParam));
 
 			const WindowEvent ev = {
 				.window			 = window,
@@ -513,7 +513,7 @@ namespace SFG
 		return DefWindowProcA(hwnd, msg, wParam, lParam);
 	}
 
-	Window* Window::Create(uint32 id, const Vector2i& pos, const Vector2ui& size, const char* title, WindowStyle style)
+	Window* Window::Create(uint32_t id, const Vector2i& pos, const Vector2ui& size, const char* title, WindowStyle style)
 	{
 
 		HINSTANCE hinst = GetModuleHandle(0);
@@ -548,8 +548,8 @@ namespace SFG
 			AdjustWindowRect(&windowRect, stylew, FALSE);
 			const int adjustedWidth	 = windowRect.right - windowRect.left;
 			const int adjustedHeight = windowRect.bottom - windowRect.top;
-			trueSize.x				 = static_cast<uint32>(adjustedWidth);
-			trueSize.y				 = static_cast<uint32>(adjustedHeight);
+			trueSize.x				 = static_cast<uint32_t>(adjustedWidth);
+			trueSize.y				 = static_cast<uint32_t>(adjustedHeight);
 		}
 
 		HWND hwnd = CreateWindowExA(exStyle, title, title, stylew, pos.x, pos.y, trueSize.x, trueSize.y, NULL, NULL, hinst, NULL);
@@ -615,8 +615,8 @@ namespace SFG
 
 			const int adjustedWidth	 = windowRect.right - windowRect.left;
 			const int adjustedHeight = windowRect.bottom - windowRect.top;
-			m_trueSize.x			 = static_cast<uint32>(adjustedWidth);
-			m_trueSize.y			 = static_cast<uint32>(adjustedHeight);
+			m_trueSize.x			 = static_cast<uint32_t>(adjustedWidth);
+			m_trueSize.y			 = static_cast<uint32_t>(adjustedHeight);
 		}
 
 		SetWindowPos(hwnd, NULL, 0, 0, m_trueSize.x, m_trueSize.y, SWP_NOMOVE | SWP_NOZORDER);

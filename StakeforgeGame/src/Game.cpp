@@ -29,6 +29,9 @@ SOFTWARE.
 #include "Game.hpp"
 
 #include <SFG/Core/App.hpp>
+#include <SFG/Math/Color.hpp>
+#include <SFG/Math/ColorUtils.hpp>
+#include <SFG/IO/Log.hpp>
 #include <SFG/Platform/Window.hpp>
 #include <SFG/Platform/WindowStyle.hpp>
 
@@ -45,6 +48,7 @@ namespace
 		settings.appUpdateRate	   = 120;
 		settings.throttleCPU	   = true;
 		settings.delegate		   = new SFG::Game(app);
+		SFG::ColorUtils::HS2SRGB(SFG::Color(0, 0, 0, 0));
 	}
 } // namespace
 

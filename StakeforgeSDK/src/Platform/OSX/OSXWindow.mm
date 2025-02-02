@@ -36,7 +36,7 @@ namespace SFG
 {
 	mach_timebase_info_data_t PlatformTime::s_timebaseInfo = {0, 0};
 
-	int64 PlatformTime::GetCPUMicroseconds()
+	int64_t PlatformTime::GetCPUMicroseconds()
 	{
 		auto time = mach_absolute_time();
 		return (time * s_timebaseInfo.numer) / (s_timebaseInfo.denom * 1000);
@@ -48,29 +48,29 @@ namespace SFG
 		return static_cast<double>((time * s_timebaseInfo.numer) / s_timebaseInfo.denom) / 1e9;
 	}
 
-	int64 PlatformTime::GetCPUCycles()
+	int64_t PlatformTime::GetCPUCycles()
 	{
 		return mach_absolute_time();
 	}
 
-	double PlatformTime::GetDeltaSeconds64(int64 fromCycles, int64 toCycles)
+	double PlatformTime::GetDeltaSeconds64(int64_t fromCycles, int64_t toCycles)
 	{
 		return static_cast<double>((toCycles - fromCycles) * s_timebaseInfo.numer) / (s_timebaseInfo.denom * 1e9);
 	}
 
-	int64 PlatformTime::GetDeltaMicroseconds64(int64 fromCycles, int64 toCycles)
+	int64_t PlatformTime::GetDeltaMicroseconds64(int64_t fromCycles, int64_t toCycles)
 	{
 		return ((toCycles - fromCycles) * s_timebaseInfo.numer) / (s_timebaseInfo.denom * 1000);
 	}
 
-	void PlatformTime::Throttle(int64 microseconds)
+	void PlatformTime::Throttle(int64_t microseconds)
 	{
 		if (microseconds < 0)
 			return;
 
-		int64		now	   = GetCPUMicroseconds();
-		const int64 target = now + microseconds;
-		int64		sleep  = microseconds;
+		int64_t		now	   = GetCPUMicroseconds();
+		const int64_t target = now + microseconds;
+		int64_t		sleep  = microseconds;
 
 		for (;;)
 		{
@@ -81,11 +81,11 @@ namespace SFG
 				break;
 			}
 
-			int64 diff = target - now;
+			int64_t diff = target - now;
 
 			if (diff > 2000)
 			{
-				uint32 ms = static_cast<uint32>((double)(diff - 2000) / 1000.0);
+				uint32_t ms = static_cast<uint32_t>((double)(diff - 2000) / 1000.0);
 				Sleep(ms);
 			}
 			else
@@ -95,7 +95,7 @@ namespace SFG
 		}
 	}
 
-	void PlatformTime::Sleep(uint32 milliseconds)
+	void PlatformTime::Sleep(uint32_t milliseconds)
 	{
 		usleep(milliseconds * 1000);
 	}

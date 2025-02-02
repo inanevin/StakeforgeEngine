@@ -28,8 +28,6 @@ SOFTWARE.
 
 #pragma once
 
-#include "SFG/Data/String.hpp"
-
 namespace SFG
 {
 	class Vector4;
@@ -40,7 +38,7 @@ namespace SFG
 	{
 
 	public:
-		Color(float rv = 1.0f, float gv = 1.0f, float bv = 1.0f, float av = 1.0f) : x(rv), y(gv), z(bv), w(av) {};
+		Color(float rv = 1.0f, float gv = 1.0f, float bv = 1.0f, float av = 1.0f) : x(rv), y(gv), z(bv), w(av){};
 
 		/// <summary>
 		///
@@ -51,81 +49,6 @@ namespace SFG
 		/// <param name="a"></param>
 		/// <returns></returns>
 		static Color Color255(float r, float g, float b, float a);
-
-		/// <summary>
-		///
-		/// </summary>
-		/// <param name="r"></param>
-		/// <param name="g"></param>
-		/// <param name="b"></param>
-		/// <param name="a"></param>
-		/// <returns></returns>
-		static Color ColorLinear(float r, float g, float b, float a);
-
-		/// <summary>
-		///
-		/// </summary>
-		/// <param name="r"></param>
-		/// <param name="g"></param>
-		/// <param name="b"></param>
-		/// <param name=""></param>
-		/// <returns></returns>
-		static Color Color255Linear(float r, float g, float b, float);
-
-		/// <summary>
-		///
-		/// </summary>
-		/// <param name="hex"></param>
-		static Color FromHex(const String& hex);
-
-		/// <summary>
-		///
-		/// </summary>
-		/// <returns></returns>
-		static String ToHex(const Color& color);
-
-		/// <summary>
-		/// Lerps to white by amt.
-		/// </summary>
-		/// <param name="amt"></param>
-		/// <returns></returns>
-		Color Brighten(float amt) const;
-
-		/// <summary>
-		/// Lerps to black by amt.
-		/// </summary>
-		/// <returns></returns>
-		Color Darken(float amt) const;
-
-		/// <summary>
-		/// Calculate angle from hue-saturation and conver
-		/// </summary>
-		/// <returns></returns>
-		Color HS2SRGB() const;
-
-		/// <summary>
-		///
-		/// </summary>
-		/// <returns></returns>
-		Color SRGB2HSV() const;
-
-		/// <summary>
-		///
-		/// </summary>
-		/// <returns></returns>
-		Color HSV2SRGB() const;
-
-		/// <summary>
-		///
-		/// </summary>
-		/// <returns></returns>
-		Color SRGB2Linear() const;
-
-		/// <summary>
-		///
-		/// </summary>
-		/// <returns></returns>
-		Color Linear2SRGB() const;
 
 		/// <summary>
 		///
@@ -210,7 +133,7 @@ namespace SFG
 
 	struct ColorGrad
 	{
-		ColorGrad() {};
+		ColorGrad(){};
 		ColorGrad(const Color& col)
 		{
 			start = col;

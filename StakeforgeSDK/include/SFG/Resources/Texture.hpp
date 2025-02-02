@@ -28,26 +28,7 @@ SOFTWARE.
 
 #pragma once
 
-#include "SFG/Data/String.hpp"
-#include "SFG/Type/StringID.hpp"
-
 namespace SFG
 {
-	class FileWatcher
-	{
-	public:
-		FileWatcher() = default;
-		FileWatcher(const char* path, uint32_t frames);
 
-		/// <summary>
-		///
-		/// </summary>
-		bool Watch();
-
-	private:
-		String	 m_path		= "";
-		StringID m_sid		= 0;
-		uint32_t m_frames	= 0;
-		uint32_t m_frameCtr = 0;
-	};
 } // namespace SFG

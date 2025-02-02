@@ -41,6 +41,7 @@ src/Memory/*.cpp
 src/Serialization/*.cpp
 src/System/*.cpp
 src/Type/*.cpp
+src/Resources/*.cpp
 
 include/SFG/Vendor/LZ4/lz4.cpp
 
@@ -57,6 +58,7 @@ include/SFG/Platform/*.hpp
 include/SFG/Serialization/*.hpp
 include/SFG/System/*.hpp
 include/SFG/Type/*.hpp
+include/SFG/Resources/*.hpp
 
 include/SFG/Vendor/LZ4/lz4.h
 include/SFG/Vendor/readerwriterqueue/*.h
