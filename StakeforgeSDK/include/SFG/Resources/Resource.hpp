@@ -29,6 +29,7 @@ SOFTWARE.
 #pragma once
 
 #include "SFG/Data/String.hpp"
+#include "SFG/Type/SizeDefinitions.hpp"
 
 namespace SFG
 {
@@ -39,7 +40,7 @@ namespace SFG
 	{
 		String		  path;
 		String		  name;
-		uint64_t	  guid;
+		GUID		  guid;
 		ResourceType  type;
 		ResourceState state;
 		void*		  metadata;

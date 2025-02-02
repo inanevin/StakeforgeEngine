@@ -34,6 +34,7 @@ SOFTWARE.
 #include <iostream>
 #include <cwchar>
 #include <cstring>
+#include <algorithm>
 
 #ifdef SFG_COMPILER_MSVC
 #pragma warning(push)
@@ -150,14 +151,14 @@ namespace SFG
 		}
 		return fin;
 	}
-	float StringUtil::StringToFloat(const String& str, uint32_t& outDecimals)
+	float StringUtil::StringToFloat(const String& str, uint32& outDecimals)
 	{
 		try
 		{
 			const String fin = StringUtil::ReplaceAll(str, ",", ".");
 			std::size_t	 pos = fin.find('.');
 			if (pos != std::string::npos)
-				outDecimals = static_cast<uint32_t>(fin.length() - pos - 1);
+				outDecimals = static_cast<uint32>(fin.length() - pos - 1);
 
 			return std::stof(fin);
 		}
@@ -181,11 +182,11 @@ namespace SFG
 		}
 	}
 
-	uint64_t StringUtil::StringToBigInt(const String& str)
+	uint64 StringUtil::StringToBigInt(const String& str)
 	{
 		try
 		{
-			return static_cast<uint64_t>(std::stoull(str));
+			return static_cast<uint64>(std::stoull(str));
 		}
 		catch (const std::exception& e)
 		{
@@ -239,7 +240,7 @@ namespace SFG
 		return copy;
 	}
 
-	String StringUtil::FloatToString(float val, uint32_t decimals)
+	String StringUtil::FloatToString(float val, uint32 decimals)
 	{
 		char buffer[32]; // Adjust size if needed.
 		auto [ptr, ec] = std::to_chars(buffer, buffer + sizeof(buffer), val, std::chars_format::fixed, decimals);

@@ -1,11 +1,11 @@
 /*
-This file is a part of: Stakeforge Engine
-https://github.com/inanevin/StakeforgeEngine
+This file is a part of: Lina Engine
+https://github.com/inanevin/LinaEngine
 
 Author: Inan Evin
 http://www.inanevin.com
 
-Copyright (c) [2025-] [Inan Evin]
+Copyright (c) [2018-] [Inan Evin]
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -28,56 +28,16 @@ SOFTWARE.
 
 #pragma once
 
-#include "SFG/Type/SizeDefinitions.hpp"
+typedef signed char		   int8;
+typedef short			   int16;
+typedef int				   int32;
+typedef long long		   int64;
+typedef unsigned char	   uint8;
+typedef unsigned short	   uint16;
+typedef unsigned int	   uint32;
+typedef unsigned long long uint64;
 
 namespace SFG
 {
-	template <typename T> class Bitmask
-	{
-	public:
-		Bitmask()  = default;
-		~Bitmask() = default;
-
-		Bitmask(T m) : m_mask(m){};
-
-		inline bool IsSet(T m) const
-		{
-			return (m_mask & m) != 0;
-		}
-
-		inline bool IsAllSet(T bits) const
-		{
-			return (m_mask & bits) == bits;
-		}
-
-		inline void Set(T m)
-		{
-			m_mask |= m;
-		}
-
-		inline void Set(T m, bool isSet)
-		{
-			if (isSet)
-				m_mask |= m;
-			else
-				m_mask &= ~m;
-		}
-
-		inline void Remove(T m)
-		{
-			m_mask &= ~m;
-		}
-
-		inline T GetValue() const
-		{
-			return m_mask;
-		}
-
-	private:
-		T m_mask = 0;
-	};
-
-	typedef Bitmask<uint8>	Bitmask8;
-	typedef Bitmask<uint16> Bitmask16;
-	typedef Bitmask<uint32> Bitmask32;
-} // namespace SFG
+	typedef unsigned long long GUID;
+}

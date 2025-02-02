@@ -28,6 +28,7 @@ SOFTWARE.
 
 #pragma once
 
+#include "SFG/Type/SizeDefinitions.hpp"
 #include "SFG/Data/Vector.hpp"
 #include "SFG/Data/String.hpp"
 
@@ -77,7 +78,7 @@ namespace SFG
 		/// <param name="val"></param>
 		/// <param name="decimals"></param>
 		/// <returns></returns>
-		static String FloatToString(float val, uint32_t decimals);
+		static String FloatToString(float val, uint32 decimals);
 
 		/// <summary>
 		///
@@ -159,7 +160,7 @@ namespace SFG
 		/// <param name="str"></param>
 		/// <param name="outDecimals"></param>
 		/// <returns></returns>
-		static float StringToFloat(const String& str, uint32_t& outDecimals);
+		static float StringToFloat(const String& str, uint32& outDecimals);
 
 		/// <summary>
 		///
@@ -173,7 +174,7 @@ namespace SFG
 		/// </summary>
 		/// <param name="str"></param>
 		/// <returns></returns>
-		static uint64_t StringToBigInt(const String& str);
+		static uint64 StringToBigInt(const String& str);
 	};
 
 } // namespace SFG

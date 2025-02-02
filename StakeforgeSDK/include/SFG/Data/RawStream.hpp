@@ -28,6 +28,7 @@ SOFTWARE.
 
 #pragma once
 
+#include "SFG/Type/SizeDefinitions.hpp"
 #include "SFG/Data/Span.hpp"
 
 namespace SFG
@@ -53,7 +54,7 @@ namespace SFG
 		/// </summary>
 		/// <param name="data"></param>
 		/// <param name="size"></param>
-		void Create(uint8_t* data, size_t size);
+		void Create(uint8* data, size_t size);
 
 		/// <summary>
 		///
@@ -76,7 +77,7 @@ namespace SFG
 		///
 		/// </summary>
 		/// <returns></returns>
-		inline Span<uint8_t> GetSpan()
+		inline Span<uint8> GetSpan()
 		{
 			return m_data;
 		}
@@ -85,7 +86,7 @@ namespace SFG
 		///
 		/// </summary>
 		/// <returns></returns>
-		inline uint8_t* GetRaw() const
+		inline uint8* GetRaw() const
 		{
 			return m_data.data();
 		}
@@ -109,7 +110,7 @@ namespace SFG
 		}
 
 	private:
-		Span<uint8_t> m_data;
+		Span<uint8> m_data;
 	};
 
 } // namespace SFG

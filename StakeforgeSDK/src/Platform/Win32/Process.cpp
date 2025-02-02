@@ -29,6 +29,7 @@ SOFTWARE.
 #include "SFG/Platform/Process.hpp"
 #include "SFG/IO/Log.hpp"
 #include "SFG/System/Plugin.hpp"
+#include <Windows.h>
 
 namespace SFG
 {

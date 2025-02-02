@@ -31,7 +31,7 @@ SOFTWARE.
 
 namespace SFG
 {
-	FileWatcher::FileWatcher(const char* path, uint32_t frames)
+	FileWatcher::FileWatcher(const char* path, uint32 frames)
 	{
 		m_path	 = path;
 		m_frames = frames;

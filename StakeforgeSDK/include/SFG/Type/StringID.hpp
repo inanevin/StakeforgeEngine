@@ -28,14 +28,15 @@ SOFTWARE.
 
 #pragma once
 
+#include "SFG/Type/SizeDefinitions.hpp"
 #include <string>
 
 // Headers here.
 namespace SFG
 {
-	typedef uint32_t StringID;
-	typedef uint32_t TypeID;
-	typedef uint64_t GUID;
+	typedef uint32 StringID;
+	typedef uint32 TypeID;
+	typedef uint64 GUID;
 
 	// https://gist.github.com/hwei/1950649d523afd03285c
 	class FnvHash

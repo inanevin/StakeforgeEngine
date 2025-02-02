@@ -43,9 +43,9 @@ namespace SFG
 
 	OStream Compressor::Compress(OStream& stream)
 	{
-		const uint32_t streamSize		= static_cast<uint32_t>(stream.GetCurrentSize());
-		const uint8_t  shouldCompress	= (streamSize < 150000000 && streamSize > 750000) ? 1 : 0;
-		const uint32_t uncompressedSize = streamSize + sizeof(uint8_t) + sizeof(uint32_t);
+		const uint32 streamSize		  = static_cast<uint32>(stream.GetCurrentSize());
+		const uint8	 shouldCompress	  = (streamSize < 150000000 && streamSize > 750000) ? 1 : 0;
+		const uint32 uncompressedSize = streamSize + sizeof(uint8) + sizeof(uint32);
 
 		stream << shouldCompress;
 		stream << uncompressedSize;
@@ -79,9 +79,9 @@ namespace SFG
 	IStream Compressor::Decompress(IStream& stream)
 	{
 		// Read uncompressed size of archive.
-		uint8_t	 shouldDecompress = 0;
-		uint32_t uncompressedSize = 0;
-		stream.Seek(stream.GetSize() - sizeof(uint32_t) - sizeof(uint8_t));
+		uint8  shouldDecompress = 0;
+		uint32 uncompressedSize = 0;
+		stream.Seek(stream.GetSize() - sizeof(uint32) - sizeof(uint8));
 		stream.Read(shouldDecompress);
 		stream.Read(uncompressedSize);
 		stream.Seek(0);
@@ -89,7 +89,7 @@ namespace SFG
 		if (!shouldDecompress)
 		{
 			IStream copy;
-			copy.Create(stream.GetDataRaw(), stream.GetSize() - sizeof(uint32_t) - sizeof(uint8_t));
+			copy.Create(stream.GetDataRaw(), stream.GetSize() - sizeof(uint32) - sizeof(uint8));
 			return copy;
 		}
 
@@ -99,7 +99,7 @@ namespace SFG
 		void*	  src			   = stream.GetDataRaw();
 		void*	  ptr			   = decompressedStream.GetDataRaw();
 		const int decompressedSize = LZ4_decompress_safe((char*)src, (char*)ptr, static_cast<int>(size), static_cast<int>(uncompressedSize));
-		decompressedStream.Shrink(static_cast<size_t>(decompressedSize) - sizeof(uint32_t) - sizeof(uint8_t));
+		decompressedStream.Shrink(static_cast<size_t>(decompressedSize) - sizeof(uint32) - sizeof(uint8));
 		return decompressedStream;
 	}
 } // namespace SFG

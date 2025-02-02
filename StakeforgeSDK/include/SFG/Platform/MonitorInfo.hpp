@@ -28,6 +28,8 @@ SOFTWARE.
 
 #pragma once
 
+#include "SFG/Type/SizeDefinitions.hpp"
+
 namespace SFG
 {
 	struct MonitorInfo
@@ -36,7 +38,7 @@ namespace SFG
 		Vector2ui workSize	= Vector2ui::Zero;
 		Vector2ui fullSize	= Vector2ui::Zero;
 		float	  dpiScale	= 1.0f;
-		uint32_t  dpi		= 0;
+		uint32	  dpi		= 0;
 		bool	  isPrimary = false;
 	};
 } // namespace SFG

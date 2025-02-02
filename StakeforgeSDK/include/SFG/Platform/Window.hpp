@@ -28,6 +28,7 @@ SOFTWARE.
 
 #pragma once
 
+#include "SFG/Type/SizeDefinitions.hpp"
 #include "SFG/StakeforgeAPI.hpp"
 #include "SFG/Data/Atomic.hpp"
 #include "SFG/Data/Queue.hpp"
@@ -53,7 +54,7 @@ namespace SFG
 		Window(Window& window) = delete;
 
 #ifdef SFG_PLATFORM_WINDOWS
-		static LRESULT WndProc(HWND__* hwnd, unsigned int msg, unsigned __int64 wParam, __int64 lParam);
+		static __int64 WndProc(HWND__* hwnd, unsigned int msg, unsigned __int64 wParam, __int64 lParam);
 #endif
 
 	private:
@@ -71,7 +72,7 @@ namespace SFG
 		/// <param name="title"></param>
 		/// <param name="style"></param>
 		/// <returns></returns>
-		static Window* Create(uint32_t id, const Vector2i& pos, const Vector2ui& size, const char* title, WindowStyle style);
+		static Window* Create(uint32 id, const Vector2i& pos, const Vector2ui& size, const char* title, WindowStyle style);
 
 		/// <summary>
 		///
@@ -116,9 +117,9 @@ namespace SFG
 		/// </summary>
 		inline void CenterToMonitor()
 		{
-			const uint32_t centerX = m_monitorInfo.position.x + static_cast<int32_t>(m_monitorInfo.fullSize.x) / 2;
-			const uint32_t centerY = m_monitorInfo.position.y + static_cast<int32_t>(m_monitorInfo.fullSize.y) / 2;
-			SetPosition(Vector2i(centerX - static_cast<int32_t>(m_trueSize.x) / 2, centerY - static_cast<int32_t>(m_trueSize.y) / 2));
+			const uint32 centerX = m_monitorInfo.position.x + static_cast<int32>(m_monitorInfo.fullSize.x) / 2;
+			const uint32 centerY = m_monitorInfo.position.y + static_cast<int32>(m_monitorInfo.fullSize.y) / 2;
+			SetPosition(Vector2i(centerX - static_cast<int32>(m_trueSize.x) / 2, centerY - static_cast<int32>(m_trueSize.y) / 2));
 		}
 
 		/// <summary>
@@ -134,7 +135,7 @@ namespace SFG
 		///
 		/// </summary>
 		/// <returns></returns>
-		inline uint32_t GetID() const
+		inline uint32 GetID() const
 		{
 			return m_id;
 		}
@@ -265,7 +266,7 @@ namespace SFG
 		Vector2i	m_mousePosition			 = Vector2i::Zero;
 		void*		m_osHandle				 = nullptr;
 		void*		m_windowHandle			 = nullptr;
-		uint32_t	m_id					 = 0;
+		uint32		m_id					 = 0;
 		WindowStyle m_style					 = WindowStyle::ApplicationWindow;
 		bool		m_sizeDirty				 = false;
 		bool		m_hasFocus				 = false;

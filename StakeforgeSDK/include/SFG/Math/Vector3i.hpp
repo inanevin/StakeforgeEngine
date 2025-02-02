@@ -28,6 +28,8 @@ SOFTWARE.
 
 #pragma once
 
+#include "SFG/Type/SizeDefinitions.hpp"
+
 namespace SFG
 {
 	class IStream;
@@ -87,9 +89,9 @@ namespace SFG
 		static Vector3i Zero;
 		static Vector3i One;
 
-		int32_t x = 0;
-		int32_t y = 0;
-		int32_t z = 0;
+		int32 x = 0;
+		int32 y = 0;
+		int32 z = 0;
 	};
 
 } // namespace SFG

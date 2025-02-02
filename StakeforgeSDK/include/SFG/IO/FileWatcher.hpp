@@ -28,6 +28,7 @@ SOFTWARE.
 
 #pragma once
 
+#include "SFG/Type/SizeDefinitions.hpp"
 #include "SFG/Data/String.hpp"
 #include "SFG/Type/StringID.hpp"
 
@@ -37,7 +38,7 @@ namespace SFG
 	{
 	public:
 		FileWatcher() = default;
-		FileWatcher(const char* path, uint32_t frames);
+		FileWatcher(const char* path, uint32 frames);
 
 		/// <summary>
 		///
@@ -47,7 +48,7 @@ namespace SFG
 	private:
 		String	 m_path		= "";
 		StringID m_sid		= 0;
-		uint32_t m_frames	= 0;
-		uint32_t m_frameCtr = 0;
+		uint32	 m_frames	= 0;
+		uint32	 m_frameCtr = 0;
 	};
 } // namespace SFG

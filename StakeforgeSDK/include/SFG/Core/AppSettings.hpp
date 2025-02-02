@@ -36,8 +36,8 @@ namespace SFG
 
 	struct SFG_API AppSettings
 	{
-		int64_t		 inputUpdateRate = 1000;
-		uint32_t	 appUpdateRate	 = 60;
+		int64		 inputUpdateRate = 1000;
+		uint32		 appUpdateRate	 = 60;
 		bool		 throttleCPU	 = false;
 		AppDelegate* delegate		 = nullptr;
 	};

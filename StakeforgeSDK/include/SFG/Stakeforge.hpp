@@ -28,6 +28,7 @@ SOFTWARE.
 
 #pragma once
 
+/*
 #include "SFG/StakeforgeAPI.hpp"
 #include "SFG/Memory/Memory.hpp"
 #include "SFG/Math/Quaternion.hpp"
@@ -54,7 +55,10 @@ SOFTWARE.
 #include "SFG/Data/HashMap.hpp"
 #include "SFG/Data/Functional.hpp"
 
-namespace SFG
-{
+#ifdef SFG_PLATFORM_WINDOWS
+#include <Windows.h>
+#endif
 
-} // namespace SFG
+#include <Jolt/Jolt.h>
+
+*/

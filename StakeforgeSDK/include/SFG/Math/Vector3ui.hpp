@@ -28,6 +28,8 @@ SOFTWARE.
 
 #pragma once
 
+#include "SFG/Type/SizeDefinitions.hpp"
+
 namespace SFG
 {
 	class IStream;
@@ -45,7 +47,7 @@ namespace SFG
 		/// <param name="x"></param>
 		/// <param name="y"></param>
 		/// <param name="z"></param>
-		Vector3ui(uint32_t x_, uint32_t y_, uint32_t z_) : x(x_), y(y_), z(z_){};
+		Vector3ui(uint32 x_, uint32 y_, uint32 z_) : x(x_), y(y_), z(z_){};
 
 		/// <summary>
 		///
@@ -59,8 +61,8 @@ namespace SFG
 		/// <param name="stream"></param>
 		void LoadFromStream(IStream& stream);
 
-		uint32_t x = 0;
-		uint32_t y = 0;
-		uint32_t z = 0;
+		uint32 x = 0;
+		uint32 y = 0;
+		uint32 z = 0;
 	};
 } // namespace SFG

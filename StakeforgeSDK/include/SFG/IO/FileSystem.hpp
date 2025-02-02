@@ -192,7 +192,7 @@ namespace SFG
 		/// </summary>
 		/// <param name="microseconds"></param>
 		/// <returns></returns>
-		static String GetTimeStrFromMicroseconds(int64_t microseconds);
+		static String GetTimeStrFromMicroseconds(int64 microseconds);
 
 		/// <summary>
 		///
@@ -214,7 +214,7 @@ namespace SFG
 		/// <param name="hours"></param>
 		/// <param name="minutes"></param>
 		/// <param name="seconds"></param>
-		static void GetSystemTimeInts(int32_t& hours, int32_t& minutes, int32_t& seconds);
+		static void GetSystemTimeInts(int32& hours, int32& minutes, int32& seconds);
 
 		/// <summary>
 		///

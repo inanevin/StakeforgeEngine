@@ -28,6 +28,7 @@ SOFTWARE.
 
 #pragma once
 
+#include "SFG/Type/SizeDefinitions.hpp"
 #include "SFG/Data/Functional.hpp"
 
 namespace SFG
@@ -111,7 +112,7 @@ namespace SFG
 		/// </summary>
 		/// <param name="count"></param>
 		/// <returns></returns>
-		inline Tween* SetRestarts(int32_t count)
+		inline Tween* SetRestarts(int32 count)
 		{
 			m_restartCount = count;
 			return this;
@@ -202,8 +203,8 @@ namespace SFG
 		float			 m_duration		= 0.0f;
 		float			 m_currentTime	= 0.0f;
 		float			 m_timeScale	= 1.0f;
-		int32_t			 m_restarts		= 0;
-		int32_t			 m_restartCount = 0;
+		int32			 m_restarts		= 0;
+		int32			 m_restartCount = 0;
 		bool			 m_passedDelay	= false;
 		bool			 m_isCompleted	= false;
 		TweenType		 m_type			= TweenType::Linear;

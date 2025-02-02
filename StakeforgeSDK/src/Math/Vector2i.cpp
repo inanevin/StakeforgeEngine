@@ -27,10 +27,6 @@ SOFTWARE.
 */
 
 #include "SFG/Math/Vector2i.hpp"
-#include "SFG/Math/Vector2.hpp"
-#include "SFG/Math/Math.hpp"
-#include "SFG/Data/IStream.hpp"
-#include "SFG/Data/OStream.hpp"
 
 namespace SFG
 {
@@ -39,22 +35,23 @@ namespace SFG
 
 	Vector2i::Vector2i(const Vector2& v2)
 	{
-		x = static_cast<int32_t>(v2.x);
-		y = static_cast<int32_t>(v2.y);
+		// x = static_cast<int32>(v2.x);
+		// y = static_cast<int32>(v2.y);
 	}
 
 	bool Vector2i::Equals(const Vector2i& other, int epsilon) const
 	{
-		return Math::Equals(x, other.x, epsilon) && Math::Equals(y, other.y, epsilon);
+		return 0;
+		// return Math::Equals(x, other.x, epsilon) && Math::Equals(y, other.y, epsilon);
 	}
 
 	void Vector2i::SaveToStream(OStream& stream) const
 	{
-		stream << x << y;
+		// stream << x << y;
 	}
 
 	void Vector2i::LoadFromStream(IStream& stream)
 	{
-		stream >> x >> y;
+		// stream >> x >> y;
 	}
 } // namespace SFG

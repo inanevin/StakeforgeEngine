@@ -28,6 +28,8 @@ SOFTWARE.
 
 #pragma once
 
+#include "SFG/Type/SizeDefinitions.hpp"
+
 #ifdef SFG_PLATFORM_OSX
 #include <mach/mach_time.h>
 #endif
@@ -51,13 +53,13 @@ namespace SFG
 		///
 		/// </summary>
 		/// <returns></returns>
-		static int64_t GetCPUMicroseconds();
+		static int64 GetCPUMicroseconds();
 
 		/// <summary>
 		///
 		/// </summary>
 		/// <returns></returns>
-		static int64_t GetCPUCycles();
+		static int64 GetCPUCycles();
 
 		/// <summary>
 		///
@@ -76,7 +78,7 @@ namespace SFG
 		/// <param name="fromCycles"></param>
 		/// <param name="toCycles"></param>
 		/// <returns></returns>
-		static double GetDeltaSeconds64(int64_t fromCycles, int64_t toCycles);
+		static double GetDeltaSeconds64(int64 fromCycles, int64 toCycles);
 
 		/// <summary>
 		///
@@ -84,19 +86,19 @@ namespace SFG
 		/// <param name="fromCycles"></param>
 		/// <param name="toCycles"></param>
 		/// <returns></returns>
-		static int64_t GetDeltaMicroseconds64(int64_t fromCycles, int64_t toCycles);
+		static int64 GetDeltaMicroseconds64(int64 fromCycles, int64 toCycles);
 
 		/// <summary>
 		///
 		/// </summary>
 		/// <param name="microseconds"></param>
-		static void Throttle(int64_t microseconds);
+		static void Throttle(int64 microseconds);
 
 		/// <summary>
 		///
 		/// </summary>
 		/// <param name="milliseconds"></param>
-		static void Sleep(uint32_t milliseconds);
+		static void Sleep(uint32 milliseconds);
 
 		/// <summary>
 		///
@@ -109,7 +111,7 @@ namespace SFG
 #endif
 
 #ifdef SFG_PLATFORM_WINDOWS
-		static int64_t s_frequency;
+		static int64 s_frequency;
 #endif
 	};
 

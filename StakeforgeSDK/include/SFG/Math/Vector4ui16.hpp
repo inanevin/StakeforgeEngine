@@ -28,6 +28,8 @@ SOFTWARE.
 
 #pragma once
 
+#include "SFG/Type/SizeDefinitions.hpp"
+
 namespace SFG
 {
 	class IStream;
@@ -48,7 +50,7 @@ namespace SFG
 		/// <param name="y"></param>
 		/// <param name="z"></param>
 		/// <param name="w"></param>
-		Vector4ui16(uint16_t x_, uint16_t y_, uint16_t z_, uint16_t w_) : x(x_), y(y_), z(z_), w(w_){};
+		Vector4ui16(uint16 x_, uint16 y_, uint16 z_, uint16 w_) : x(x_), y(y_), z(z_), w(w_){};
 
 		/// <summary>
 		///
@@ -62,10 +64,10 @@ namespace SFG
 		/// <param name="stream"></param>
 		void LoadFromStream(IStream& stream);
 
-		uint16_t x = 0;
-		uint16_t y = 0;
-		uint16_t z = 0;
-		uint16_t w = 0;
+		uint16 x = 0;
+		uint16 y = 0;
+		uint16 z = 0;
+		uint16 w = 0;
 	};
 
 	inline Vector4ui16 operator-(Vector4ui16 const& v, Vector4ui16 const& v2)

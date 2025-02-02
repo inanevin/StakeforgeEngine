@@ -28,6 +28,7 @@ SOFTWARE.
 
 #pragma once
 
+#include "SFG/Type/SizeDefinitions.hpp"
 #include "SFG/Data/String.hpp"
 #include "SFG/Data/Vector.hpp"
 #include "SFG/Data/Atomic.hpp"
@@ -66,14 +67,14 @@ namespace SFG
 		/// <param name="title"></param>
 		/// <param name="size"></param>
 		/// <returns></returns>
-		Window* CreateAppWindow(uint32_t id, const char* title, const Vector2i& pos, const Vector2ui& size, WindowStyle style);
+		Window* CreateAppWindow(uint32 id, const char* title, const Vector2i& pos, const Vector2ui& size, WindowStyle style);
 
 		/// <summary>
 		///
 		/// </summary>
 		/// <param name="id"></param>
 		/// <returns></returns>
-		Window* GetWindow(uint32_t id);
+		Window* GetWindow(uint32 id);
 
 		/// <summary>
 		///

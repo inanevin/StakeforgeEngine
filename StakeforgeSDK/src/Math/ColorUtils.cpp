@@ -30,6 +30,7 @@ SOFTWARE.
 #include "SFG/Math/Color.hpp"
 #include "SFG/Math/Math.hpp"
 #include <iomanip>
+#include <sstream>
 
 namespace SFG
 {
@@ -41,7 +42,7 @@ namespace SFG
 		if (hex[0] != '#')
 			return Color::Black;
 
-		uint32_t r, g, b;
+		uint32 r, g, b;
 
 #ifdef SFG_PLATFORM_WINDOWS
 		sscanf_s(hex.c_str(), "#%02x%02x%02x", &r, &g, &b);
@@ -53,9 +54,9 @@ namespace SFG
 
 	String ColorUtils::ToHex(const Color& color)
 	{
-		const int32_t	  r = static_cast<int32_t>(color.x * 255);
-		const int32_t	  g = static_cast<int32_t>(color.y * 255);
-		const int32_t	  b = static_cast<int32_t>(color.z * 255);
+		const int32		  r = static_cast<int32>(color.x * 255);
+		const int32		  g = static_cast<int32>(color.y * 255);
+		const int32		  b = static_cast<int32>(color.z * 255);
 		std::stringstream ss;
 		ss << "#" << std::hex << std::setfill('0') << std::setw(2) << r << std::setw(2) << g << std::setw(2) << b;
 		return ss.str();

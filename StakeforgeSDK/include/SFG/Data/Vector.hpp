@@ -28,6 +28,7 @@ SOFTWARE.
 
 #pragma once
 
+#include "SFG/Type/SizeDefinitions.hpp"
 #include <vector>
 
 namespace SFG
@@ -76,11 +77,11 @@ namespace SFG
 		/// <param name="vec"></param>
 		/// <param name="value"></param>
 		/// <returns></returns>
-		template <typename T> inline int32_t IndexOf(const Vector<T>& vec, const T& value)
+		template <typename T> inline int32 IndexOf(const Vector<T>& vec, const T& value)
 		{
-			const int32_t sz = static_cast<int32_t>(vec.size());
+			const int32 sz = static_cast<int32>(vec.size());
 
-			for (int32_t i = 0; i < sz; ++i)
+			for (int32 i = 0; i < sz; ++i)
 			{
 				if (vec[i] == value)
 					return i;
@@ -96,9 +97,9 @@ namespace SFG
 		/// <param name="vec"></param>
 		/// <param name="value"></param>
 		/// <returns></returns>
-		template <typename T> inline int32_t FindNextIndexIfItemIsRemoved(const Vector<T>& vec, const T& value)
+		template <typename T> inline int32 FindNextIndexIfItemIsRemoved(const Vector<T>& vec, const T& value)
 		{
-			const int32_t currentIndex = IndexOf(vec, value);
+			const int32 currentIndex = IndexOf(vec, value);
 
 			if (currentIndex == 0)
 			{

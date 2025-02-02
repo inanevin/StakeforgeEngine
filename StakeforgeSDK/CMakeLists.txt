@@ -125,13 +125,8 @@ set_property(TARGET Jolt PROPERTY FOLDER Stakeforge/Dependencies)
 
 target_precompile_headers(${PROJECT_NAME}
 PUBLIC
-	Dependencies/Jolt/Jolt/Jolt.h
 	include/SFG/Stakeforge.hpp
 )
-
-if(WIN32)
-    target_precompile_headers(${PROJECT_NAME} PUBLIC <Windows.h>)
-endif()
 
 target_link_libraries(${PROJECT_NAME} 
 	PUBLIC Jolt

@@ -29,8 +29,8 @@ SOFTWARE.
 #include "SFG/IO/Log.hpp"
 #include "SFG/Data/String.hpp"
 
-#ifndef SFG_PLATFORM_WINDOWS
-#include <sstream>
+#ifdef SFG_PLATFORM_WINDOWS
+#include <Windows.h>
 #endif
 
 namespace SFG

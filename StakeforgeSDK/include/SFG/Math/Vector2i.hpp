@@ -28,6 +28,8 @@ SOFTWARE.
 
 #pragma once
 
+#include "SFG/Type/SizeDefinitions.hpp"
+
 namespace SFG
 {
 	class IStream;
@@ -47,7 +49,7 @@ namespace SFG
 		/// </summary>
 		/// <param name="x"></param>
 		/// <param name="y"></param>
-		Vector2i(int32_t x_, int32_t y_) : x(x_), y(y_){};
+		Vector2i(int32 x_, int32 y_) : x(x_), y(y_){};
 
 		/// <summary>
 		///
@@ -92,8 +94,8 @@ namespace SFG
 		static Vector2i Zero;
 		static Vector2i One;
 
-		int32_t x = 0;
-		int32_t y = 0;
+		int32 x = 0;
+		int32 y = 0;
 	};
 
 	inline Vector2i operator-(Vector2i const& v, Vector2i const& v2)
