@@ -26,40 +26,19 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
 
-#include "SFG/Math/Transformation.hpp"
-#include "SFG/Math/Matrix4x4.hpp"
-#include "SFG/Math/Easing.hpp"
-#include "SFG/Data/OStream.hpp"
-#include "SFG/Data/IStream.hpp"
+#include "SFG/Math/FastPow.hpp"
 
 namespace SFG
 {
-	Transformation Transformation::Interpolate(const Transformation& from, const Transformation& to, float t)
+	double FastPow::Pow(double a, double b)
 	{
-		return Transformation(Vector3::Lerp(from.m_position, to.m_position, t), Quaternion::Slerp(from.m_rotation, to.m_rotation, t), Vector3::Lerp(from.m_scale, to.m_scale, t));
-	}
-
-	void Transformation::SaveToStream(OStream& stream) const
-	{
-		stream << m_position << m_rotation << m_scale;
-		stream << m_localPosition << m_localRotation << m_localScale;
-		stream << m_localRotationAngles << m_rotationAngles;
-	}
-
-	void Transformation::LoadFromStream(IStream& stream)
-	{
-		stream >> m_position >> m_rotation >> m_scale;
-		stream >> m_localPosition >> m_localRotation >> m_localScale;
-		stream >> m_localRotationAngles >> m_rotationAngles;
-	}
-
-	Matrix4x4 Transformation::ToMatrix() const
-	{
-		return Matrix4x4::TransformMatrix(m_position, m_rotation, m_scale);
-	}
-
-	Matrix4x4 Transformation::ToLocalMatrix() const
-	{
-		return Matrix4x4::TransformMatrix(m_localPosition, m_localRotation, m_localScale);
+		// https://martin.ankerl.com/2012/01/25/optimized-approximative-pow-in-c-and-cpp/
+		union {
+			double d;
+			int	   x[2];
+		} u	   = {a};
+		u.x[1] = (int)(b * (u.x[1] - 1072632447) + 1072632447);
+		u.x[0] = 0;
+		return u.d;
 	}
 } // namespace SFG

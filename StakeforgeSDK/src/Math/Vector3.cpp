@@ -30,6 +30,8 @@ SOFTWARE.
 #include "SFG/Math/Vector2.hpp"
 #include "SFG/Math/Quaternion.hpp"
 #include "SFG/Math/Math.hpp"
+#include "SFG/Math/Easing.hpp"
+#include "SFG/Math/Equals.hpp"
 #include "SFG/Data/IStream.hpp"
 #include "SFG/Data/OStream.hpp"
 
@@ -41,6 +43,11 @@ namespace SFG
 	Vector3 Vector3::Forward = Vector3(0.0f, 0.0f, 1.0f);
 	Vector3 Vector3::Up		 = Vector3(0.0f, 1.0f, 0.0f);
 	Vector3 Vector3::Right	 = Vector3(1.0f, 0.0f, 0.0f);
+
+	Vector3 Vector3::Lerp(const Vector3& v1, const Vector3& v2, float a)
+	{
+		return Vector3(Easing::Lerp(v1.x, v2.x, a), Easing::Lerp(v1.y, v2.y, a), Easing::Lerp(v1.z, v2.z, a));
+	}
 
 	Vector3 Vector3::Clamp(const Vector3& min, const Vector3& max) const
 	{
@@ -120,7 +127,7 @@ namespace SFG
 
 	bool Vector3::Equals(const Vector3& other, float epsilon) const
 	{
-		return Math::Equals(x, other.x, epsilon) && Math::Equals(y, other.y, epsilon) && Math::Equals(z, other.z, epsilon);
+		return Equals::Value(x, other.x, epsilon) && Equals::Value(y, other.y, epsilon) && Equals::Value(z, other.z, epsilon);
 	}
 
 	void Vector3::SaveToStream(OStream& stream) const

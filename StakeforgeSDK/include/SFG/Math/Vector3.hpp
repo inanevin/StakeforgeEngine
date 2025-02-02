@@ -46,7 +46,16 @@ namespace SFG
 		/// <param name="x"></param>
 		/// <param name="y"></param>
 		/// <param name="z"></param>
-		Vector3(float x_, float y_, float z_) : x(x_), y(y_), z(z_) {};
+		Vector3(float x_, float y_, float z_) : x(x_), y(y_), z(z_){};
+
+		/// <summary>
+		///
+		/// </summary>
+		/// <param name="v1"></param>
+		/// <param name="v2"></param>
+		/// <param name="a"></param>
+		/// <returns></returns>
+		static Vector3 Lerp(const Vector3& v1, const Vector3& v2, float a);
 
 		/// <summary>
 		///

@@ -29,13 +29,15 @@ SOFTWARE.
 #include "SFG/Math/Tween.hpp"
 
 #include "SFG/Math/Transformation.hpp"
+#include "SFG/Math/Easing.hpp"
+#include "SFG/Math/Equals.hpp"
 #include "SFG/Math/Math.hpp"
 
 namespace SFG
 {
 	bool Tween::Tick(float delta)
 	{
-		if (Math::Equals(m_timeScale, 0.0f, 0.001f))
+		if (Equals::Zero(m_timeScale, 0.0))
 			return false;
 
 		if (!m_passedDelay)
@@ -84,28 +86,28 @@ namespace SFG
 		switch (m_type)
 		{
 		case TweenType::Linear:
-			m_value = Math::Linear(m_start, m_end, t);
+			m_value = Easing::Lerp(m_start, m_end, t);
 			break;
 		case TweenType::EaseIn:
-			m_value = Math::EaseIn(m_start, m_end, t);
+			m_value = Easing::EaseIn(m_start, m_end, t);
 			break;
 		case TweenType::EaseOut:
-			m_value = Math::EaseOut(m_start, m_end, t);
+			m_value = Easing::EaseOut(m_start, m_end, t);
 			break;
 		case TweenType::EaseInOut:
-			m_value = Math::EaseInOut(m_start, m_end, t);
+			m_value = Easing::EaseInOut(m_start, m_end, t);
 			break;
 		case TweenType::Cubic:
-			m_value = Math::Cubic(m_start, m_end, t);
+			m_value = Easing::Cubic(m_start, m_end, t);
 			break;
 		case TweenType::Sinusoidal:
-			m_value = Math::Sinusodial(m_start, m_end, t);
+			m_value = Easing::Sinusodial(m_start, m_end, t);
 			break;
 		case TweenType::Exponential:
-			m_value = Math::Exponential(m_start, m_end, t);
+			m_value = Easing::Exponential(m_start, m_end, t);
 			break;
 		case TweenType::Bounce:
-			m_value = Math::Bounce(m_start, m_end, t);
+			m_value = Easing::Bounce(m_start, m_end, t);
 			break;
 		}
 

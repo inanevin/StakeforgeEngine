@@ -29,7 +29,10 @@ SOFTWARE.
 #include "SFG/Platform/Process.hpp"
 #include "SFG/IO/Log.hpp"
 #include "SFG/System/Plugin.hpp"
+
+#define WIN32_LEAN_AND_MEAN
 #include <Windows.h>
+#include <shellapi.h>
 
 namespace SFG
 {

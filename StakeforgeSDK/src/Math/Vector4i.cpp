@@ -28,6 +28,7 @@ SOFTWARE.
 
 #include "SFG/Math/Vector4i.hpp"
 #include "SFG/Math/Math.hpp"
+#include "SFG/Math/Equals.hpp"
 #include "SFG/Data/OStream.hpp"
 #include "SFG/Data/IStream.hpp"
 
@@ -38,7 +39,7 @@ namespace SFG
 
 	bool Vector4i::Equals(const Vector4i& other, int epsilon) const
 	{
-		return Math::Equals(x, other.x, epsilon) && Math::Equals(y, other.y, epsilon) && Math::Equals(z, other.z, epsilon) && Math::Equals(w, other.w, epsilon);
+		return Equals::Value(x, other.x, epsilon) && Equals::Value(y, other.y, epsilon) && Equals::Value(z, other.z, epsilon) && Equals::Value(w, other.w, epsilon);
 	}
 
 	void Vector4i::SaveToStream(OStream& stream) const

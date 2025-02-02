@@ -32,6 +32,7 @@ SOFTWARE.
 #include "SFG/Math/Quaternion.hpp"
 #include "SFG/Math/Color.hpp"
 #include "SFG/Math/Math.hpp"
+#include "SFG/Math/Equals.hpp"
 #include "SFG/Data/IStream.hpp"
 #include "SFG/Data/OStream.hpp"
 
@@ -117,7 +118,7 @@ namespace SFG
 
 	bool Vector4::Equals(const Vector4& other, float epsilon) const
 	{
-		return Math::Equals(x, other.x, epsilon) && Math::Equals(y, other.y, epsilon) && Math::Equals(z, other.z, epsilon) && Math::Equals(w, other.w, epsilon);
+		return Equals::Value(x, other.x, epsilon) && Equals::Value(y, other.y, epsilon) && Equals::Value(z, other.z, epsilon) && Equals::Value(w, other.w, epsilon);
 	}
 
 	void Vector4::SaveToStream(OStream& stream) const

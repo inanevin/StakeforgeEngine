@@ -29,6 +29,7 @@ SOFTWARE.
 #pragma once
 
 /*
+
 #include "SFG/StakeforgeAPI.hpp"
 #include "SFG/Memory/Memory.hpp"
 #include "SFG/Math/Quaternion.hpp"
@@ -56,6 +57,7 @@ SOFTWARE.
 #include "SFG/Data/Functional.hpp"
 
 #ifdef SFG_PLATFORM_WINDOWS
+#define WIN32_LEAN_AND_MEAN
 #include <Windows.h>
 #endif
 

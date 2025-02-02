@@ -29,6 +29,7 @@ SOFTWARE.
 #include "SFG/Math/Vector2.hpp"
 #include "SFG/Math/Vector2i.hpp"
 #include "SFG/Math/Math.hpp"
+#include "SFG/Math/Equals.hpp"
 #include "SFG/Data/IStream.hpp"
 #include "SFG/Data/OStream.hpp"
 
@@ -114,12 +115,12 @@ namespace SFG
 
 	bool Vector2::Equals(const Vector2& other, float epsilon) const
 	{
-		return Math::Equals(x, other.x, epsilon) && Math::Equals(y, other.y, epsilon);
+		return Equals::Value(x, other.x, epsilon) && Equals::Value(y, other.y, epsilon);
 	}
 
 	bool Vector2::IsZero(float marg) const
 	{
-		return Math::Equals(x, 0.0f, marg) && Math::Equals(x, 0.0f, marg);
+		return Equals::Zero(x, marg) && Equals::Zero(y, marg);
 	}
 
 	float Vector2::Dot(const Vector2& other) const

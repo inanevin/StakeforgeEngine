@@ -28,80 +28,67 @@ SOFTWARE.
 
 #pragma once
 
-#include "SFG/Data/String.hpp"
-#include "SFG/StakeforgeAPI.hpp"
+#include "SFG/Type/SizeDefinitions.hpp"
 
 namespace SFG
 {
-	class Color;
-
-	class SFG_API ColorUtils
+	class Equals
 	{
-
 	public:
 		/// <summary>
 		///
 		/// </summary>
-		/// <param name="c1"></param>
-		/// <param name="c2"></param>
-		/// <param name="a"></param>
+		/// <param name="val"></param>
 		/// <returns></returns>
-		static Color Lerp(const Color& c1, const Color& c2, float a);
+		static inline bool NaN(float val)
+		{
+			union {
+				float  f;
+				uint32 i;
+			} f;
+			f.f = val;
+			return (f.i & 0x7FFFFFFF) > 0x7F800000;
+		}
 
 		/// <summary>
 		///
 		/// </summary>
-		/// <param name="hex"></param>
-		static Color FromHex(const String& hex);
+		/// <param name="val"></param>
+		/// <returns></returns>
+		static inline bool Finite(float val)
+		{
+			union {
+				float  f;
+				uint32 i;
+			} f;
+			f.f = val;
+			return (f.i & 0x7F800000) != 0x7F800000;
+		}
 
 		/// <summary>
 		///
 		/// </summary>
+		/// <typeparam name="T"></typeparam>
+		/// <param name="val1"></param>
+		/// <param name="val2"></param>
+		/// <param name="errorMargin"></param>
 		/// <returns></returns>
-		static String ToHex(const Color& color);
-
-		/// <summary>
-		/// Calculate angle from hue-saturation and conver
-		/// </summary>
-		/// <returns></returns>
-		static Color HS2SRGB(const Color& color);
-
-		/// <summary>
-		///
-		/// </summary>
-		/// <returns></returns>
-		static Color SRGB2HSV(const Color& color);
+		template <typename T> static bool Value(const T& val1, const T& val2, const T& errorMargin)
+		{
+			const float t = val1 - val2;
+			return (t < 0.0f ? -t : t) < errorMargin;
+		}
 
 		/// <summary>
 		///
 		/// </summary>
+		/// <typeparam name="T"></typeparam>
+		/// <param name="val"></param>
 		/// <returns></returns>
-		static Color HSV2SRGB(const Color& color);
-
-		/// <summary>
-		///
-		/// </summary>
-		/// <returns></returns>
-		static Color SRGB2Linear(const Color& color);
-
-		/// <summary>
-		///
-		/// </summary>
-		/// <returns></returns>
-		static Color Linear2SRGB(const Color& color);
-
-		/// <summary>
-		/// Lerps to white by amt.
-		/// </summary>
-		/// <param name="amt"></param>
-		/// <returns></returns>
-		static Color Brighten(const Color& color, float amt);
-
-		/// <summary>
-		/// Lerps to black by amt.
-		/// </summary>
-		/// <returns></returns>
-		static Color Darken(const Color& color, float amt);
+		template <typename T> static bool Zero(const T& val, float marg = 0.00001f)
+		{
+			const float t = val - (T)0;
+			return (t < 0.0f ? -t : t) <= (T)marg;
+		}
 	};
-
 } // namespace SFG

@@ -29,11 +29,17 @@ SOFTWARE.
 #include "SFG/Math/ColorUtils.hpp"
 #include "SFG/Math/Color.hpp"
 #include "SFG/Math/Math.hpp"
+#include "SFG/Math/Easing.hpp"
 #include <iomanip>
 #include <sstream>
 
 namespace SFG
 {
+	Color ColorUtils::Lerp(const Color& c1, const Color& c2, float a)
+	{
+		return Color(Easing::Lerp(c1.x, c2.x, a), Easing::Lerp(c1.y, c2.y, a), Easing::Lerp(c1.z, c2.z, a), Easing::Lerp(c1.w, c2.w, a));
+	}
+
 	Color ColorUtils::FromHex(const String& hex)
 	{
 		if (hex.size() != 7)
@@ -70,7 +76,7 @@ namespace SFG
 		const float r		   = Math::Clamp(Math::Abs(angle - 3.0f) - 1.0f, 0.0f, 1.0f);
 		const float g		   = Math::Clamp(2.0f - Math::Abs(angle - 2.0f), 0.0f, 1.0f);
 		const float b		   = Math::Clamp(2.0f - Math::Abs(angle - 4.0f), 0.0f, 1.0f);
-		return Math::Lerp(Color::White, Color(r, g, b, 1.0f), saturation);
+		return Lerp(Color::White, Color(r, g, b, 1.0f), saturation);
 	}
 
 	Color ColorUtils::SRGB2HSV(const Color& color)
@@ -201,12 +207,12 @@ namespace SFG
 
 	Color ColorUtils::Brighten(const Color& color, float amt)
 	{
-		return Math::Lerp(color, Color::White, amt);
+		return Lerp(color, Color::White, amt);
 	}
 
 	Color ColorUtils::Darken(const Color& color, float amt)
 	{
-		return Math::Lerp(color, Color::White, amt);
+		return Lerp(color, Color::White, amt);
 	}
 
 } // namespace SFG

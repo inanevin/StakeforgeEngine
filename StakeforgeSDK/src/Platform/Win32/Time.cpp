@@ -28,6 +28,8 @@ SOFTWARE.
 
 #include "SFG/Platform/Time.hpp"
 #include "SFG/IO/Log.hpp"
+
+#define WIN32_LEAN_AND_MEAN
 #include <Windows.h>
 #include <timeapi.h>
 #pragma comment(lib, "Winmm.lib")
