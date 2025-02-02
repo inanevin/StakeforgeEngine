@@ -26,17 +26,49 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
 
-#pragma once
+#include "SFG/IO/Filewatcher.hpp"
+#include "SFG/IO/FileSystem.hpp"
 
 namespace SFG
 {
-	class Window;
-
-	struct MouseDeltaEvent
+	FileWatcher::FileWatcher(const char* path, uint32 frames)
 	{
-		Window*	 window;
-		Vector2i delta;
-		bool	 isHighFrequency;
-	};
+		m_path	 = path;
+		m_frames = frames;
+
+		if (m_path.empty())
+			return;
+
+		if (!FS::Exists(m_path.c_str()))
+			return;
+
+		const String date = FS::GetLastModifiedDate(path);
+		m_sid			  = TO_SID(date);
+	}
+
+	bool FileWatcher::Watch()
+	{
+		if (m_path.empty())
+			return false;
+
+		if (m_frameCtr < m_frames)
+		{
+			m_frameCtr++;
+			return false;
+		}
+
+		if (!FS::Exists(m_path.c_str()))
+			return false;
+
+		m_frameCtr			= 0;
+		const String   date = FS::GetLastModifiedDate(m_path.c_str());
+		const StringID sid	= TO_SID(date);
+
+		if (m_sid == sid)
+			return false;
+
+		m_sid = sid;
+		return true;
+	}
 
 } // namespace SFG

@@ -27,6 +27,8 @@ SOFTWARE.
 */
 
 #include "SFG/Core/App.hpp"
+#include "SFG/Core/AppDelegate.hpp"
+#include "SFG/IO/FileSystem.hpp"
 #include "SFG/Platform/Time.hpp"
 #include "SFG/Platform/Process.hpp"
 #include "SFG/Platform/Window.hpp"
@@ -34,31 +36,21 @@ SOFTWARE.
 namespace SFG
 {
 
-	App::App(String& errString, const AppSettings& settings)
+	App::App(String& errString)
 	{
-		m_settings = settings;
 		Time::Initialize();
 
-		m_mainWindow = Window::Create(0, Vector2i::Zero, Vector2ui(500, 500), "SFG", WindowStyle::ApplicationWindow);
-		m_mainWindow->CenterToMonitor();
-
-		m_updateThread = std::thread(&App::UpdateLoop, this);
-		m_renderThread = std::thread(&App::RenderLoop, this);
-
-		if (m_settings.tryLoadEditor)
-			LoadEditorPlugin();
+		// m_renderThread = std::thread(&App::RenderLoop, this);
 	}
 
 	App::~App()
 	{
-		if (m_updateThread.joinable())
-			m_updateThread.join();
+		// if (m_renderThread.joinable())
+		//	m_renderThread.join();
 
-		if (m_renderThread.joinable())
-			m_renderThread.join();
-
-		Window::Destroy(m_mainWindow);
-		m_mainWindow = nullptr;
+		for (Window* window : m_windows)
+			Window::Destroy(window);
+		m_windows.clear();
 
 		Time::Shutdown();
 	}
@@ -66,78 +58,94 @@ namespace SFG
 	void App::Tick()
 	{
 		/*
-			Pump OS messages at 1000Hz.
-			Accumulate for consistency.
-			Sleep for chilling CPU.
+			Pump OS messages and update app at fixed rate.
+			No accumulation for OS messages, but accumulate the app.
+			Sleep for chilling CPU if settings permit.
 		*/
 
-		Process::PumpOSMessages();
-
-		if (m_mainWindow->GetCloseRequested())
-		{
-			RequestClose();
-			return;
-		}
-
-		constexpr int64 TARGET_INTERVAL_US = 1000;
-		static int64	accumulator		   = 0;
-		static int64	previous		   = Time::GetCPUMicroseconds();
-		const int64		current			   = Time::GetCPUMicroseconds();
-		const int64		deltaMicroseconds  = current - previous;
-		previous						   = current;
-
-		accumulator += deltaMicroseconds;
-		if (accumulator < TARGET_INTERVAL_US)
-		{
-			const int64 sleepTimeUs = TARGET_INTERVAL_US - accumulator;
-			std::this_thread::sleep_for(std::chrono::microseconds(sleepTimeUs));
-		}
-		accumulator -= TARGET_INTERVAL_US;
-	}
-
-	void App::UpdateLoop()
-	{
-		const int64 targetFrameRate			 = static_cast<int64>(m_settings.appFrameRate);
-		const int64 FIXED_UPDATE_INTERVAL_US = (int64)1000000 / targetFrameRate;
-		int64		accumulator				 = 0;
-		int64		previousTime			 = Time::GetCPUMicroseconds();
+		const int64 INPUT_INTERVAL_US = m_settings.inputUpdateRate == 0 ? 0 : (int64)1000000 / static_cast<int64>(m_settings.inputUpdateRate);
+		const int64 APP_INTERVAL_US	  = m_settings.appUpdateRate == 0 ? 0 : (int64)1000000 / static_cast<int64>(m_settings.appUpdateRate);
+		int64		previousTime	  = Time::GetCPUMicroseconds();
+		int64		inputAccumulator  = INPUT_INTERVAL_US + 1;
+		int64		appAccumulator	  = INPUT_INTERVAL_US + 1;
 
 		while (!m_shouldClose.load(std::memory_order_acquire))
 		{
 			const int64 currentTime		  = Time::GetCPUMicroseconds();
 			const int64 deltaMicroseconds = currentTime - previousTime;
 			previousTime				  = currentTime;
-			accumulator += deltaMicroseconds;
 
-			while (accumulator >= FIXED_UPDATE_INTERVAL_US)
+			inputAccumulator += deltaMicroseconds;
+
+			if (inputAccumulator > INPUT_INTERVAL_US)
 			{
-				accumulator -= FIXED_UPDATE_INTERVAL_US;
-
-				/*
-					Try popping all the events produced by the main thread (PumpOSMessages)
-					Pass them down to application delegate.
-				*/
-				// MouseEvent mouseEvent = {};
-				// while (m_mainWindow->PopMouseEvent(mouseEvent))
-				//	m_appDelegate->OnMouse(mouseEvent);
-				//
-				// KeyEvent keyEvent = {};
-				// while (m_mainWindow->PopKeyEvent(keyEvent))
-				//	m_appDelegate->OnKey(keyEvent);
-				//
-				// MouseWheelEvent mouseWheelEvent = {};
-				// while (m_mainWindow->PopMouseWheelEvent(mouseWheelEvent))
-				//	m_appDelegate->OnMouseWheel(mouseWheelEvent);
-				//
-				// MouseDeltaEvent mouseDeltaEvent = {};
-				// while (m_mainWindow->PopMouseDeltaEvent(mouseDeltaEvent))
-				//	m_appDelegate->OnMouseDelta(mouseDeltaEvent);
-				//
-				// const double delta = FIXED_UPDATE_INTERVAL_US * 1e-6;
-				// m_appDelegate->OnTick(delta);
+				Process::PumpOSMessages();
+				inputAccumulator = 0;
 			}
 
-			std::this_thread::sleep_for(std::chrono::microseconds(100));
+			/*
+				Go through windows, destroy the ones marked dead.
+			*/
+			for (Vector<Window*>::iterator it = m_windows.begin(); it != m_windows.end();)
+			{
+				Window* window = *it;
+
+				if (window->GetCloseRequested())
+				{
+					const uint32 id = window->GetID();
+
+					it = UtilVector::Remove(m_windows, window);
+					Window::Destroy(window);
+
+					// main window
+					if (id == 0)
+						RequestClose();
+
+					continue;
+				}
+
+				if (window->GetIsSizeDirty())
+				{
+				}
+
+				window->Consume();
+
+				++it;
+			}
+
+			/*
+				Main app loop w/ accumulator, sleep/yield if throttle requested afterwards
+			*/
+			appAccumulator += deltaMicroseconds;
+			while (appAccumulator > APP_INTERVAL_US)
+			{
+				appAccumulator -= APP_INTERVAL_US;
+
+				if (!m_settings.delegate)
+					continue;
+
+				/*
+					Collect all window events buffered so far & pass them to delegate.
+				*/
+				static Vector<WindowEvent> bufferedEvents = {};
+				bufferedEvents.resize(0);
+
+				for (Window* window : m_windows)
+				{
+					WindowEvent ev = {};
+					while (window->PopEvent(ev))
+						bufferedEvents.push_back(ev);
+				}
+
+				for (const WindowEvent& ev : bufferedEvents)
+					m_settings.delegate->OnWindowEvent(ev);
+
+				const double delta = APP_INTERVAL_US * 1e-6;
+				m_settings.delegate->OnTick(delta);
+			}
+
+			if (m_settings.throttleCPU)
+				Time::Sleep(1);
 		}
 	}
 
@@ -145,25 +153,31 @@ namespace SFG
 	{
 	}
 
-	void App::LoadEditorPlugin()
-	{
-#ifdef SFG_PLATFORM_WINDOWS
-		m_editor = Process::LoadPlugin("StakeforgeEditor.dll", this);
-#else
-		m_editor = Process::LoadPlugin("libSakeforgeEditor.dylib", this);
-#endif
-	}
-
-	void App::UnloadEditorPlugin()
-	{
-		if (m_editor)
-			Process::UnloadPlugin(m_editor);
-		m_editor = nullptr;
-	}
-
 	void App::RequestClose()
 	{
 		m_shouldClose.store(true, std::memory_order_release);
+	}
+
+	Window* App::CreateAppWindow(uint32 id, const char* title, const Vector2i& pos, const Vector2ui& size, WindowStyle style)
+	{
+		Window* window = Window::Create(id, pos, size, title, style);
+
+		if (window)
+			m_windows.push_back(window);
+
+		return window;
+	}
+
+	Window* App::GetWindow(uint32 id)
+	{
+		Window* retVal = nullptr;
+		UtilVector::Find(m_windows, retVal, [id](Window* w) -> bool { return w->GetID() == id; });
+		return retVal;
+	}
+
+	void App::DestroyAppWindow(Window* window)
+	{
+		window->Close();
 	}
 
 } // namespace SFG

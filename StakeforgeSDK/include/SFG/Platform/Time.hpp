@@ -100,6 +100,11 @@ namespace SFG
 		/// <param name="milliseconds"></param>
 		static void Sleep(uint32 milliseconds);
 
+		/// <summary>
+		///
+		/// </summary>
+		static void YieldThread();
+
 	private:
 #ifdef SFG_PLATFORM_OSX
 		static mach_timebase_info_data_t s_timebaseInfo;

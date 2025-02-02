@@ -37,23 +37,17 @@ src/*.cpp
 )
 
 file (GLOB_RECURSE HEADERS
-include/*.hpp
+include/SFG/Editor/*.hpp
 )
 
 # -------------- LIBRARY -------------
 
-add_library(${PROJECT_NAME} SHARED ${SOURCES} ${HEADERS})
+
+add_library(${PROJECT_NAME} SHARED ${SOURCES} ${HEADERS} )
 add_library(SFG::Editor ALIAS ${PROJECT_NAME}) 
 
-include(../CMake/Compile.cmake)
+include(${CMAKE_SOURCE_DIR}/Utils/CMake/Compile.cmake)
 set_target_properties(${PROJECT_NAME} PROPERTIES FOLDER "Stakeforge")
-
-# include(GenerateExportHeader)
-# generate_export_header(${PROJECT_NAME} BASE_NAME SFGEDITOR EXPORT_FILE_NAME ${CMAKE_BINARY_DIR}/StakeforgeEditorAPI.hpp)
-
-# -------------- SETTINGS -------------
-
-include(${CMAKE_SOURCE_DIR}/CMake/ExecutableSettings.cmake)
 
 # -------------- TARGET -------------
 
@@ -65,6 +59,6 @@ PUBLIC StakeforgeSDK
 
 # -------------- PROJECT STRUCTURE -------------
 
-include(${CMAKE_SOURCE_DIR}/CMake/CommonFunctions.cmake)
+include(${CMAKE_SOURCE_DIR}/Utils/CMake/CommonFunctions.cmake)
 group_sources(HEADERS SOURCES)
 group_generated()

@@ -28,23 +28,28 @@ SOFTWARE.
 
 #pragma once
 
-#include "SFG/System/Plugin.hpp"
-
 namespace SFG
 {
-	class Editor : public Plugin
+	enum InputCode;
+	enum class InputAction;
+	class Window;
+
+	enum class WindowEventType
 	{
-	public:
-		Editor(const char* path, App* app, void* platformHandle) : Plugin(path, app, platformHandle){};
-
-		/// <summary>
-		///
-		/// </summary>
-		virtual void OnLoaded() override;
-
-		/// <summary>
-		///
-		/// </summary>
-		virtual void OnUnloaded() override;
+		Key,
+		MouseButton,
+		MouseDelta,
+		MouseWheel,
 	};
+
+	struct WindowEvent
+	{
+		Window*			window;
+		WindowEventType type;
+		InputCode		button;
+		InputAction		action;
+		Vector2i		value;
+		bool			isHighFrequency;
+	};
+
 } // namespace SFG

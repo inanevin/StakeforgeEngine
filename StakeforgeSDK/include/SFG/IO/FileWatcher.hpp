@@ -28,37 +28,27 @@ SOFTWARE.
 
 #pragma once
 
+#include "SFG/Data/String.hpp"
+#include "SFG/Type/StringID.hpp"
+#include "SFG/Type/SizeDefinitions.hpp"
+
 namespace SFG
 {
-	class App;
-	class Plugin;
-
-	class Process
+	class FileWatcher
 	{
 	public:
-		/// <summary>
-		///
-		/// </summary>
-		static void PumpOSMessages();
+		FileWatcher() = default;
+		FileWatcher(const char* path, uint32 frames);
 
 		/// <summary>
 		///
 		/// </summary>
-		/// <param name="url"></param>
-		static void OpenURL(const char* url);
+		bool Watch();
 
-		/// <summary>
-		///
-		/// </summary>
-		/// <param name="path"></param>
-		/// <returns></returns>
-		static Plugin* LoadPlugin(const char* path, App* app);
-
-		/// <summary>
-		///
-		/// </summary>
-		/// <param name="plugin"></param>
-		static void UnloadPlugin(Plugin* plugin);
+	private:
+		String	 m_path		= "";
+		StringID m_sid		= 0;
+		uint32	 m_frames	= 0;
+		uint32	 m_frameCtr = 0;
 	};
-
 } // namespace SFG

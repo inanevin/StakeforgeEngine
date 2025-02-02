@@ -467,4 +467,43 @@ namespace SFG
 		}
 	}
 
+	void FS::CopyFileToDirectory(const char* file, const char* targetParentFolder)
+	{
+		try
+		{
+			std::filesystem::path sourceFile		= file;
+			std::filesystem::path destinationFolder = targetParentFolder;
+
+			// Ensure source file exists
+			if (!std::filesystem::exists(sourceFile) || !std::filesystem::is_regular_file(sourceFile))
+			{
+				SFG_ERR("Error: Source file does not exist or is not a valid file. {0} {1}", file, targetParentFolder);
+				return;
+			}
+
+			// Ensure target directory exists
+			if (!std::filesystem::exists(destinationFolder))
+			{
+				SFG_ERR("Error: Target directory does not exist. {0} {1}", file, targetParentFolder);
+				return;
+			}
+
+			if (!std::filesystem::is_directory(destinationFolder))
+			{
+				SFG_ERR("Error: Target path is not a directory. {0} {1}", file, targetParentFolder);
+				return;
+			}
+
+			// Construct destination path
+			std::filesystem::path destinationFile = destinationFolder / sourceFile.filename();
+
+			// Copy file
+			std::filesystem::copy_file(sourceFile, destinationFile, std::filesystem::copy_options::overwrite_existing);
+		}
+		catch (const std::filesystem::filesystem_error& e)
+		{
+			SFG_ERR("Filesystem error : {0} { 1 }", file, targetParentFolder);
+		}
+	}
+
 } // namespace SFG

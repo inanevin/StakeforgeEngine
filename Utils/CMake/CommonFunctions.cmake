@@ -27,9 +27,39 @@
 # SOFTWARE.
 #-------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
-if(APPLE)
-   set_target_properties(${PROJECT_NAME} PROPERTIES
-       MACOSX_BUNDLE TRUE
-   )
-endif()
 
+function(group_sources)
+    set(lists ${ARGV})
+    list(LENGTH lists num_lists)
+    math(EXPR num_pairs "${num_lists} / 2 - 1")
+
+    foreach(pair RANGE ${num_pairs})
+        math(EXPR headers_index "${pair} * 2")
+        math(EXPR sources_index "${headers_index} + 1")
+        list(GET lists ${headers_index} headers)
+        list(GET lists ${sources_index} sources)
+
+        if(MSVC_IDE OR APPLE)
+            foreach(source IN LISTS ${headers} ${sources})
+                get_filename_component(source_path "${source}" PATH)
+                string(REPLACE "${CMAKE_CURRENT_SOURCE_DIR}" "" relative_source_path "${source_path}")
+
+                if (MSVC_IDE)
+                    string(REPLACE "/" "\\" source_path_ide "${relative_source_path}")
+                elseif (APPLE)
+                    set(source_path_ide "${relative_source_path}")
+                endif()
+
+                source_group("${source_path_ide}" FILES "${source}")
+            endforeach()
+        endif()
+    endforeach()
+endfunction()
+
+function(group_generated)
+    source_group("Generated" FILES ${CMAKE_CURRENT_BINARY_DIR}/CMakeFiles/${PROJECT_NAME}.dir/cmake_pch.cxx)
+    source_group("Generated" FILES ${CMAKE_CURRENT_SOURCE_DIR}/_Resources/Game.rc)
+    foreach(config_type ${CMAKE_CONFIGURATION_TYPES})
+        source_group("Generated" FILES ${CMAKE_CURRENT_BINARY_DIR}/CMakeFiles/${PROJECT_NAME}.dir/${config_type}/cmake_pch.hxx)
+    endforeach()
+endfunction()

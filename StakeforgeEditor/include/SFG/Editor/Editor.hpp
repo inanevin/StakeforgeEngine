@@ -30,13 +30,9 @@ SOFTWARE.
 
 namespace SFG
 {
-	class Window;
-
-	struct MouseWheelEvent
+	class Editor
 	{
-		Window* window;
-		float	amount;
-		bool	isHighFrequency;
+	public:
+		void Test();
 	};
-
 } // namespace SFG

@@ -26,20 +26,22 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
 
+#include "Game.hpp"
+
 #include <SFG/IO/Log.hpp>
 #include <SFG/Core/App.hpp>
 
+#ifdef SFG_EDITOR
+#include <SFG/Editor/Editor.hpp>
+#endif
+
 namespace
 {
-	SFG::AppSettings GetSFGAppSettings()
+	void SetupApp(SFG::App* app)
 	{
-		return {
-			.appFrameRate  = 240,
-			.gameFrameRate = 60,
-			.tryLoadEditor = true,
-		};
 	}
 } // namespace
+
 #ifdef SFG_PLATFORM_WINDOWS
 
 int WINAPI WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, _In_ LPSTR pCmdLine, _In_ int nCmdShow)
@@ -68,7 +70,8 @@ int WINAPI WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, _
 	}
 
 	SFG::String error = "";
-	SFG::App*	app	  = new SFG::App(error, GetSFGAppSettings());
+
+	SFG::App* app = new SFG::App(error);
 
 	if (!error.empty())
 	{
@@ -78,9 +81,7 @@ int WINAPI WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, _
 		return 0;
 	}
 
-	while (!app->GetShouldClose().load(std::memory_order_acquire))
-		app->Tick();
-
+	app->Tick();
 	delete app;
 
 #ifdef SFG_DEBUG
@@ -94,3 +95,15 @@ int WINAPI WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, _
 #else
 
 #endif
+
+namespace SFG
+{
+	void Game::OnWindowEvent(const WindowEvent& ev)
+	{
+	}
+
+	void Game::OnTick(double delta)
+	{
+	}
+
+} // namespace SFG

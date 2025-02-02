@@ -28,19 +28,22 @@ SOFTWARE.
 
 #pragma once
 
+#include "SFG/Core/AppDelegate.hpp"
+
 namespace SFG
 {
-	enum InputCode;
-	enum class InputAction;
-	class Window;
-
-	struct KeyEvent
+	class Game : public AppDelegate
 	{
-		Window*		window;
-		InputCode	key;
-		int32		scancode;
-		InputAction action;
-		bool		isHighFrequency;
-	};
+	public:
+		/// <summary>
+		///
+		/// </summary>
+		virtual void OnWindowEvent(const WindowEvent& ev) override;
 
+		/// <summary>
+		///
+		/// </summary>
+		/// <param name="delta"></param>
+		virtual void OnTick(double delta) override;
+	};
 } // namespace SFG

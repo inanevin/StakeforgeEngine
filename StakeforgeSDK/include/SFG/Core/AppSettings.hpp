@@ -28,10 +28,19 @@ SOFTWARE.
 
 #pragma once
 
-
+#include "SFG//Type/SizeDefinitions.hpp"
+#include "SFG/StakeforgeAPI.hpp"
 
 namespace SFG
 {
-	
-	
+	class AppDelegate;
+
+	struct SFG_API AppSettings
+	{
+		int64		 inputUpdateRate = 1000;
+		uint32		 appUpdateRate	 = 60;
+		bool		 throttleCPU	 = false;
+		const char*	 title			 = nullptr;
+		AppDelegate* delegate		 = nullptr;
+	};
 } // namespace SFG

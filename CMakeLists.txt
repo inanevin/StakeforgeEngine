@@ -31,16 +31,35 @@ cmake_minimum_required (VERSION 3.10...3.31)
 
 project (Stakeforge)
 
-set(CMAKE_CONFIGURATION_TYPES "Debug;Release;" CACHE STRING "" FORCE)
+set(CMAKE_CONFIGURATION_TYPES "Debug;DebugEditor;Release;ReleaseEditor;" CACHE STRING "" FORCE)
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
+set(CMAKE_SKIP_INSTALL_RULES ON)
+set(SFG_GAME_NAME "MyGameProject" CACHE STRING "Name of the game project")
 
 # ------------- COMPILE DEFINITIONS -------------
 add_compile_definitions($<$<CONFIG:Debug>:_ITERATOR_DEBUG_LEVEL=1>)
-add_compile_definitions($<$<CONFIG:Debug>:SFG_DEBUG=1>)
+add_compile_definitions($<$<CONFIG:Debug>:SFG_DEBUG>)
+
+add_compile_definitions($<$<CONFIG:DebugEditor>:_ITERATOR_DEBUG_LEVEL=1>)
+add_compile_definitions($<$<CONFIG:DebugEditor>:SFG_DEBUG>)
+add_compile_definitions($<$<CONFIG:DebugEditor>:SFG_EDITOR>)
+add_compile_definitions($<$<CONFIG:DebugEditor>:_DEBUG>)
+
+if(MSVC)
+    add_compile_options($<$<CONFIG:DebugEditor>:/MDd>)
+endif()
+
 add_compile_definitions($<$<CONFIG:Release>:_ITERATOR_DEBUG_LEVEL=0>)
-add_compile_definitions($<$<CONFIG:Release>:SFG_DEBUG=0>)
+
+add_compile_definitions($<$<CONFIG:ReleaseEditor>:_ITERATOR_DEBUG_LEVEL=0>)
+add_compile_definitions($<$<CONFIG:ReleaseEditor>:SFG_EDITOR>)
+
+if(MSVC)
+    add_compile_options($<$<CONFIG:ReleaseEditor>:/MD>)
+endif()
 
 add_definitions(-DSFG_CONFIGURATION="$<CONFIGURATION>")
+add_definitions(-DSFG_APPNAME="${SFG_GAME_NAME}")
 
 if (WIN32)
     add_compile_definitions(SFG_PLATFORM_WINDOWS=1)
@@ -59,18 +78,11 @@ else()
     add_compile_definitions(SFG_COMPILER_UNKOWN=1)
 endif()
 
-# -------------- LANGUAGE -------------
-
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_SUPPRESS_REGENERATION true)
 
 if(MSVC)
-	# Static runtime library
-    # set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
-    # set(SFG_MSVC_RUNTIME_STATIC ON)
-
     # Dynamic runtime library
-    set(SFG_MSVC_RUNTIME_STATIC OFF)
     add_definitions("/MP")
 
 	# Disable RTTI
@@ -78,6 +90,18 @@ if(MSVC)
 
 	add_compile_definitions(_SILENCE_ALL_MS_EXT_DEPRECATION_WARNINGS)
 endif()
+
+
+set(CMAKE_CXX_FLAGS_DEBUGEDITOR "${CMAKE_CXX_FLAGS_DEBUG}")
+set(CMAKE_C_FLAGS_DEBUGEDITOR "${CMAKE_C_FLAGS_DEBUG}")
+set(CMAKE_EXE_LINKER_FLAGS_DEBUGEDITOR "${CMAKE_EXE_LINKER_FLAGS_DEBUG}")
+set(CMAKE_SHARED_LINKER_FLAGS_DEBUGEDITOR "${CMAKE_SHARED_LINKER_FLAGS_DEBUG}")
+
+
+set(CMAKE_CXX_FLAGS_RELEASEEDITOR "${CMAKE_CXX_FLAGS_RELEASE}")
+set(CMAKE_C_FLAGS_RELEASEEDITOR "${CMAKE_C_FLAGS_RELEASE}")
+set(CMAKE_EXE_LINKER_FLAGS_RELEASEEDITOR "${CMAKE_EXE_LINKER_FLAGS_RELEASE}")
+set(CMAKE_SHARED_LINKER_FLAGS_RELEASEEDITOR "${CMAKE_SHARED_LINKER_FLAGS_RELEASE}")
 
 
 #--------------------------------------------------------------------
@@ -90,5 +114,5 @@ add_subdirectory(StakeforgeGame)
 
 set_property(GLOBAL PROPERTY USE_FOLDERS ON)
 set_property(GLOBAL PROPERTY PREDEFINED_TARGETS_FOLDER "CustomTargets")
-set_property(DIRECTORY ${CMAKE_SOURCE_DIR} PROPERTY VS_STARTUP_PROJECT StakeforgeGame)
+set_property(DIRECTORY ${CMAKE_SOURCE_DIR} PROPERTY VS_STARTUP_PROJECT ${SFG_GAME_NAME})
 

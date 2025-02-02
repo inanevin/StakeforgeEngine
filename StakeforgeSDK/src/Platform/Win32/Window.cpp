@@ -98,7 +98,7 @@ namespace SFG
 			break;
 		}
 		case WM_CLOSE: {
-			window->m_closeRequested = true;
+			window->Close();
 			return 0;
 		}
 		case WM_KILLFOCUS: {
@@ -138,6 +138,9 @@ namespace SFG
 		}
 		case WM_INPUT: {
 
+			if (!window->m_highFrequencyInputMode)
+				return 0;
+
 			UINT		dwSize = sizeof(RAWINPUT);
 			static BYTE lpb[sizeof(RAWINPUT)];
 			GetRawInputData((HRAWINPUT)lParam, RID_INPUT, lpb, &dwSize, sizeof(RAWINPUTHEADER));
@@ -150,99 +153,102 @@ namespace SFG
 				const bool	 isPress   = raw->data.keyboard.Flags & RI_KEY_MAKE;
 				const bool	 isRelease = raw->data.keyboard.Flags & RI_KEY_BREAK;
 
-				const KeyEvent ev = {
+				const WindowEvent ev = {
 					.window			 = window,
-					.key			 = static_cast<InputCode>(key),
-					.scancode		 = static_cast<int32>(scanCode),
+					.type			 = WindowEventType::Key,
 					.action			 = isPress ? InputAction::Pressed : (isRelease ? InputAction::Released : InputAction::Repeated),
+					.value			 = Vector2i(static_cast<int32>(scanCode), 0),
 					.isHighFrequency = true,
 				};
-				window->AddKeyEvent(ev);
+				window->AddEvent(ev);
 			}
 			else if (raw->header.dwType == RIM_TYPEMOUSE)
 			{
-				const int32 xPosRelative = raw->data.mouse.lLastX;
-				const int32 yPosRelative = raw->data.mouse.lLastY;
+				USHORT mouseFlags = raw->data.mouse.usButtonFlags;
+				POINT  cursorPos;
+				GetCursorPos(&cursorPos);
+				const Vector2i relative = Vector2i(static_cast<int32>(cursorPos.x), static_cast<int32>(cursorPos.y)) - window->m_position;
 
-				const MouseDeltaEvent mdEvent = {
+				WindowEvent ev = {
 					.window			 = window,
-					.delta			 = Vector2i(xPosRelative, yPosRelative),
+					.type			 = WindowEventType::MouseButton,
+					.value			 = relative,
 					.isHighFrequency = true,
 				};
 
-				window->AddMouseDeltaEvent(mdEvent);
-
-				USHORT mouseFlags = raw->data.mouse.usButtonFlags;
-
-				POINT cursorPos;
-				GetCursorPos(&cursorPos);
-
-				const Vector2i	relative  = Vector2i(static_cast<int32>(cursorPos.x), static_cast<int32>(cursorPos.y)) - window->m_position;
-				const Vector2ui relativeU = Vector2ui(relative.x < 0 ? 0 : static_cast<uint32>(relative.x), relative.y < 0 ? 0 : static_cast<uint32>(relative.y));
-
-				MouseEvent ev = {
-					.window			  = window,
-					.relativePosition = Vector2ui(Math::Clamp(relativeU.x, (uint32)0, window->m_size.x), Math::Clamp(relativeU.y, (uint32)0, window->m_size.y)),
-					.isHighFrequency  = true,
-				};
-				bool mouseEventExists = false;
+				bool WindowEventExists = false;
 
 				if (mouseFlags & RI_MOUSE_LEFT_BUTTON_DOWN)
 				{
-					ev.button		 = InputCode::Mouse0;
-					ev.action		 = InputAction::Pressed;
-					mouseEventExists = true;
+					ev.button		  = InputCode::Mouse0;
+					ev.action		  = InputAction::Pressed;
+					WindowEventExists = true;
 				}
 				if (mouseFlags & RI_MOUSE_LEFT_BUTTON_UP)
 				{
-					ev.button		 = InputCode::Mouse0;
-					ev.action		 = InputAction::Released;
-					mouseEventExists = true;
+					ev.button		  = InputCode::Mouse0;
+					ev.action		  = InputAction::Released;
+					WindowEventExists = true;
 				}
 				if (mouseFlags & RI_MOUSE_RIGHT_BUTTON_DOWN)
 				{
-					ev.button		 = InputCode::Mouse1;
-					ev.action		 = InputAction::Pressed;
-					mouseEventExists = true;
+					ev.button		  = InputCode::Mouse1;
+					ev.action		  = InputAction::Pressed;
+					WindowEventExists = true;
 				}
 				if (mouseFlags & RI_MOUSE_RIGHT_BUTTON_UP)
 				{
-					ev.button		 = InputCode::Mouse1;
-					ev.action		 = InputAction::Released;
-					mouseEventExists = true;
+					ev.button		  = InputCode::Mouse1;
+					ev.action		  = InputAction::Released;
+					WindowEventExists = true;
 				}
 				if (mouseFlags & RI_MOUSE_MIDDLE_BUTTON_DOWN)
 				{
-					ev.button		 = InputCode::Mouse2;
-					ev.action		 = InputAction::Pressed;
-					mouseEventExists = true;
+					ev.button		  = InputCode::Mouse2;
+					ev.action		  = InputAction::Pressed;
+					WindowEventExists = true;
 				}
 				if (mouseFlags & RI_MOUSE_MIDDLE_BUTTON_UP)
 				{
-					ev.button		 = InputCode::Mouse2;
-					ev.action		 = InputAction::Released;
-					mouseEventExists = true;
+					ev.button		  = InputCode::Mouse2;
+					ev.action		  = InputAction::Released;
+					WindowEventExists = true;
 				}
 
-				if (mouseEventExists)
+				if (WindowEventExists)
+					window->AddEvent(ev);
+				else if (mouseFlags & RI_MOUSE_WHEEL)
 				{
-					window->AddMouseEvent(ev);
-				}
-
-				if (mouseFlags & RI_MOUSE_WHEEL)
-				{
-					const float			  wheelDelta = (float)raw->data.mouse.usButtonData * WHEEL_DELTA;
-					const MouseWheelEvent mwe		 = {
+					const int32		  wheelDelta = (int32)raw->data.mouse.usButtonData * WHEEL_DELTA;
+					const WindowEvent mwe		 = {
 							   .window			= window,
-							   .amount			= wheelDelta,
+							   .type			= WindowEventType::MouseWheel,
+							   .value			= Vector2i(0, wheelDelta),
 							   .isHighFrequency = true,
 					   };
-					window->AddMouseWheelEvent(mwe);
+					window->AddEvent(mwe);
+				}
+				else
+				{
+					const int32 xPosRelative = raw->data.mouse.lLastX;
+					const int32 yPosRelative = raw->data.mouse.lLastY;
+
+					const WindowEvent mdEvent = {
+						.window			 = window,
+						.type			 = WindowEventType::MouseDelta,
+						.value			 = Vector2i(xPosRelative, yPosRelative),
+						.isHighFrequency = true,
+					};
+
+					window->AddEvent(mdEvent);
 				}
 			}
 			return 0;
 		}
 		case WM_KEYDOWN: {
+
+			if (window->m_highFrequencyInputMode)
+				return 0;
 
 			const WORD keyFlags	  = HIWORD(lParam);
 			const WORD scanCode	  = LOBYTE(keyFlags);
@@ -255,19 +261,22 @@ namespace SFG
 			else if (wParam == VK_CONTROL)
 				key = extended == 0 ? VK_LCONTROL : VK_RCONTROL;
 
-			const KeyEvent ev = {
+			const WindowEvent ev = {
 				.window			 = window,
-				.key			 = static_cast<InputCode>(key),
-				.scancode		 = scanCode,
+				.button			 = static_cast<InputCode>(key),
 				.action			 = InputAction::Pressed,
+				.value			 = Vector2i(scanCode, 0),
 				.isHighFrequency = false,
 			};
 
-			window->AddKeyEvent(ev);
+			window->AddEvent(ev);
 
 			return 0;
 		}
 		case WM_KEYUP: {
+
+			if (window->m_highFrequencyInputMode)
+				return 0;
 
 			const WORD keyFlags	  = HIWORD(lParam);
 			const WORD scanCode	  = LOBYTE(keyFlags);
@@ -280,20 +289,21 @@ namespace SFG
 			else if (wParam == VK_CONTROL)
 				key = extended ? VK_LCONTROL : VK_RCONTROL;
 
-			const KeyEvent ev = {
+			const WindowEvent ev = {
 				.window			 = window,
-				.key			 = static_cast<InputCode>(key),
-				.scancode		 = scanCode,
+				.button			 = static_cast<InputCode>(key),
 				.action			 = InputAction::Released,
+				.value			 = Vector2i(scanCode, 0),
 				.isHighFrequency = false,
 			};
 
-			window->AddKeyEvent(ev);
+			window->AddEvent(ev);
 
 			return 0;
 		}
 
 		case WM_MOUSEMOVE: {
+
 			const int32		xPos	  = GET_X_LPARAM(lParam);
 			const int32		yPos	  = GET_Y_LPARAM(lParam);
 			const Vector2i	relative  = Vector2i(xPos, yPos) - window->m_position;
@@ -302,156 +312,197 @@ namespace SFG
 			static Vector2ui previousPosition = Vector2ui::Zero;
 			window->m_mousePosition			  = Vector2ui(Math::Clamp(relativeU.x, (uint32)0, window->m_size.x), Math::Clamp(relativeU.y, (uint32)0, window->m_size.y));
 
+			if (window->m_highFrequencyInputMode)
+				return 0;
+
 			const Vector2ui delta = window->m_mousePosition - previousPosition;
 
-			const MouseDeltaEvent ev = {
+			const WindowEvent ev = {
 				.window			 = window,
-				.delta			 = Vector2i(static_cast<int32>(delta.x), static_cast<int32>(delta.y)),
+				.type			 = WindowEventType::MouseDelta,
+				.value			 = Vector2i(static_cast<int32>(delta.x), static_cast<int32>(delta.y)),
 				.isHighFrequency = false,
 			};
+
+			window->AddEvent(ev);
+
 			return 0;
 		}
 		case WM_MOUSEWHEEL: {
-			const float delta = GET_WHEEL_DELTA_WPARAM(wParam) * WHEEL_DELTA;
 
-			const MouseWheelEvent mwe = {
+			if (window->m_highFrequencyInputMode)
+				return 0;
+
+			const int32 delta = GET_WHEEL_DELTA_WPARAM(wParam) * WHEEL_DELTA;
+
+			const WindowEvent mwe = {
 				.window			 = window,
-				.amount			 = delta,
+				.type			 = WindowEventType::MouseWheel,
+				.value			 = Vector2i(0, delta),
 				.isHighFrequency = false,
 			};
 
-			window->AddMouseWheelEvent(mwe);
+			window->AddEvent(mwe);
 
 			return 0;
 		}
 		case WM_LBUTTONDOWN: {
-			const uint32 x = static_cast<uint32>(GET_X_LPARAM(lParam));
-			const uint32 y = static_cast<uint32>(GET_Y_LPARAM(lParam));
 
-			const MouseEvent ev = {
-				.window			  = window,
-				.button			  = InputCode::Mouse0,
-				.action			  = InputAction::Pressed,
-				.relativePosition = Vector2ui(x, y),
-				.isHighFrequency  = false,
+			if (window->m_highFrequencyInputMode)
+				return 0;
+
+			const int32 x = static_cast<int32>(GET_X_LPARAM(lParam));
+			const int32 y = static_cast<int32>(GET_Y_LPARAM(lParam));
+
+			const WindowEvent ev = {
+				.window			 = window,
+				.type			 = WindowEventType::MouseButton,
+				.button			 = InputCode::Mouse0,
+				.action			 = InputAction::Pressed,
+				.value			 = Vector2i(x, y),
+				.isHighFrequency = false,
 			};
 
-			window->AddMouseEvent(ev);
+			window->AddEvent(ev);
 
 			return 0;
 		}
 		case WM_LBUTTONDBLCLK: {
-			const uint32 x = static_cast<uint32>(GET_X_LPARAM(lParam));
-			const uint32 y = static_cast<uint32>(GET_Y_LPARAM(lParam));
 
-			const MouseEvent ev = {
-				.window			  = window,
-				.button			  = InputCode::Mouse0,
-				.action			  = InputAction::Repeated,
-				.relativePosition = Vector2ui(x, y),
-				.isHighFrequency  = false,
+			const int32 x = static_cast<int32>(GET_X_LPARAM(lParam));
+			const int32 y = static_cast<int32>(GET_Y_LPARAM(lParam));
+
+			const WindowEvent ev = {
+				.window			 = window,
+				.type			 = WindowEventType::MouseButton,
+				.button			 = InputCode::Mouse0,
+				.action			 = InputAction::Repeated,
+				.value			 = Vector2i(x, y),
+				.isHighFrequency = false,
 			};
-			window->AddMouseEvent(ev);
+			window->AddEvent(ev);
 
 			return 0;
 		}
 		case WM_RBUTTONDOWN: {
 
-			const uint32 x = static_cast<uint32>(GET_X_LPARAM(lParam));
-			const uint32 y = static_cast<uint32>(GET_Y_LPARAM(lParam));
+			if (window->m_highFrequencyInputMode)
+				return 0;
 
-			const MouseEvent ev = {
-				.window			  = window,
-				.button			  = InputCode::Mouse1,
-				.action			  = InputAction::Pressed,
-				.relativePosition = Vector2ui(x, y),
-				.isHighFrequency  = false,
+			const int32 x = static_cast<int32>(GET_X_LPARAM(lParam));
+			const int32 y = static_cast<int32>(GET_Y_LPARAM(lParam));
+
+			const WindowEvent ev = {
+				.window			 = window,
+				.type			 = WindowEventType::MouseButton,
+				.button			 = InputCode::Mouse1,
+				.action			 = InputAction::Pressed,
+				.value			 = Vector2i(x, y),
+				.isHighFrequency = false,
 			};
 
-			window->AddMouseEvent(ev);
+			window->AddEvent(ev);
 
 			return 0;
 		}
 		case WM_RBUTTONDBLCLK: {
-			const uint32 x = static_cast<uint32>(GET_X_LPARAM(lParam));
-			const uint32 y = static_cast<uint32>(GET_Y_LPARAM(lParam));
 
-			const MouseEvent ev = {
-				.window			  = window,
-				.button			  = InputCode::Mouse1,
-				.action			  = InputAction::Repeated,
-				.relativePosition = Vector2ui(x, y),
-				.isHighFrequency  = false,
+			const int32 x = static_cast<int32>(GET_X_LPARAM(lParam));
+			const int32 y = static_cast<int32>(GET_Y_LPARAM(lParam));
+
+			const WindowEvent ev = {
+				.window			 = window,
+				.type			 = WindowEventType::MouseButton,
+				.button			 = InputCode::Mouse1,
+				.action			 = InputAction::Repeated,
+				.value			 = Vector2i(x, y),
+				.isHighFrequency = false,
 			};
 
-			window->AddMouseEvent(ev);
+			window->AddEvent(ev);
 
 			return 0;
 		}
 		case WM_MBUTTONDOWN: {
 
-			const uint32 x = static_cast<uint32>(GET_X_LPARAM(lParam));
-			const uint32 y = static_cast<uint32>(GET_Y_LPARAM(lParam));
+			if (window->m_highFrequencyInputMode)
+				return 0;
 
-			const MouseEvent ev = {
-				.window			  = window,
-				.button			  = InputCode::Mouse2,
-				.action			  = InputAction::Pressed,
-				.relativePosition = Vector2ui(x, y),
-				.isHighFrequency  = false,
+			const int32 x = static_cast<int32>(GET_X_LPARAM(lParam));
+			const int32 y = static_cast<int32>(GET_Y_LPARAM(lParam));
+
+			const WindowEvent ev = {
+				.window			 = window,
+				.type			 = WindowEventType::MouseButton,
+				.button			 = InputCode::Mouse2,
+				.action			 = InputAction::Pressed,
+				.value			 = Vector2i(x, y),
+				.isHighFrequency = false,
 			};
 
-			window->AddMouseEvent(ev);
+			window->AddEvent(ev);
 			return 0;
 		}
 		case WM_LBUTTONUP: {
 
-			const uint32 x = static_cast<uint32>(GET_X_LPARAM(lParam));
-			const uint32 y = static_cast<uint32>(GET_Y_LPARAM(lParam));
+			if (window->m_highFrequencyInputMode)
+				return 0;
 
-			const MouseEvent ev = {
-				.window			  = window,
-				.button			  = InputCode::Mouse0,
-				.action			  = InputAction::Released,
-				.relativePosition = Vector2ui(x, y),
-				.isHighFrequency  = false,
+			const int32 x = static_cast<int32>(GET_X_LPARAM(lParam));
+			const int32 y = static_cast<int32>(GET_Y_LPARAM(lParam));
+
+			const WindowEvent ev = {
+				.window			 = window,
+				.type			 = WindowEventType::MouseButton,
+				.button			 = InputCode::Mouse0,
+				.action			 = InputAction::Released,
+				.value			 = Vector2i(x, y),
+				.isHighFrequency = false,
 			};
 
-			window->AddMouseEvent(ev);
+			window->AddEvent(ev);
 
 			return 0;
 		}
 		case WM_RBUTTONUP: {
 
-			const uint32 x = static_cast<uint32>(GET_X_LPARAM(lParam));
-			const uint32 y = static_cast<uint32>(GET_Y_LPARAM(lParam));
+			if (window->m_highFrequencyInputMode)
+				return 0;
 
-			const MouseEvent ev = {
-				.window			  = window,
-				.button			  = InputCode::Mouse1,
-				.action			  = InputAction::Released,
-				.relativePosition = Vector2ui(x, y),
-				.isHighFrequency  = false,
+			const int32 x = static_cast<int32>(GET_X_LPARAM(lParam));
+			const int32 y = static_cast<int32>(GET_Y_LPARAM(lParam));
+
+			const WindowEvent ev = {
+				.window			 = window,
+				.type			 = WindowEventType::MouseButton,
+				.button			 = InputCode::Mouse1,
+				.action			 = InputAction::Released,
+				.value			 = Vector2i(x, y),
+				.isHighFrequency = false,
 			};
 
-			window->AddMouseEvent(ev);
+			window->AddEvent(ev);
 
 			return 0;
 		}
 		case WM_MBUTTONUP: {
 
-			const uint32 x = static_cast<uint32>(GET_X_LPARAM(lParam));
-			const uint32 y = static_cast<uint32>(GET_Y_LPARAM(lParam));
+			if (window->m_highFrequencyInputMode)
+				return 0;
 
-			const MouseEvent ev = {
-				.window			  = window,
-				.button			  = InputCode::Mouse2,
-				.action			  = InputAction::Released,
-				.relativePosition = Vector2ui(x, y),
-				.isHighFrequency  = false,
+			const int32 x = static_cast<int32>(GET_X_LPARAM(lParam));
+			const int32 y = static_cast<int32>(GET_Y_LPARAM(lParam));
+
+			const WindowEvent ev = {
+				.window			 = window,
+				.type			 = WindowEventType::MouseButton,
+				.button			 = InputCode::Mouse2,
+				.action			 = InputAction::Released,
+				.value			 = Vector2i(x, y),
+				.isHighFrequency = false,
 			};
 
-			window->AddMouseEvent(ev);
+			window->AddEvent(ev);
 
 			return 0;
 		}
@@ -533,6 +584,7 @@ namespace SFG
 	void Window::Destroy(Window* window)
 	{
 		DestroyWindow(static_cast<HWND>(window->m_windowHandle));
+		delete window;
 	}
 
 	void Window::SetPosition(const Vector2i& position)
@@ -545,8 +597,9 @@ namespace SFG
 	{
 		HWND hwnd = static_cast<HWND>(m_windowHandle);
 
-		m_size	   = size;
-		m_trueSize = m_size;
+		m_size		= size;
+		m_trueSize	= m_size;
+		m_sizeDirty = true;
 
 		if (m_style == WindowStyle::ApplicationWindow)
 		{

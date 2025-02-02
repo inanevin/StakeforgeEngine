@@ -26,74 +26,11 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
 
-#include "Editor.hpp"
-#include "SFG/System/Plugin.hpp"
-#include "StakeforgeEditorAPI.hpp"
-
-#ifdef SFG_PLATFORM_WINDOWS
-
-extern "C" SFGEDITOR_API SFG::Plugin* CreatePlugin(const char* path, void* platformHandle, SFG::App* app)
-{
-	return new SFG::Editor(path, app, platformHandle);
-}
-
-extern "C" SFGEDITOR_API void DestroyPlugin(SFG::Plugin* plugin)
-{
-	SFG::Editor* editor = static_cast<SFG::Editor*>(plugin);
-	delete editor;
-}
-
-BOOL WINAPI DllMain(HINSTANCE hinstDLL,	 // handle to DLL module
-					DWORD	  fdwReason, // reason for calling function
-					LPVOID	  lpReserved)	 // reserved
-{
-	// Perform actions based on the reason for calling.
-	switch (fdwReason)
-	{
-	case DLL_PROCESS_ATTACH: {
-
-		break;
-	}
-	case DLL_THREAD_ATTACH:
-		// Do thread-specific initialization.
-		break;
-
-	case DLL_THREAD_DETACH:
-		// Do thread-specific cleanup.
-		break;
-
-	case DLL_PROCESS_DETACH:
-		// Perform any necessary cleanup.
-		break;
-	}
-
-	// Successful. If this is FALSE, the process will be terminated eventually
-	// https://docs.microsoft.com/en-us/windows/win32/dlls/dynamic-link-library-entry-point-function#entry-point-function-return-value
-	return TRUE;
-}
-
-#else
-
-extern "C" SFG::Plugin* CreatePlugin(const SFG::String& path, void* platformHandle, SFG::App* app)
-{
-	return new SFG::Editor(path, app, platformHandle);
-}
-
-extern "C" void DestroyPlugin(SFG::Plugin* plugin)
-{
-	SFG::Editor* editor = static_cast<SFG::Editor*>(plugin);
-	delete editor;
-}
-
-#endif
+#include "SFG/Editor/Editor.hpp"
 
 namespace SFG
 {
-	void Editor::OnLoaded()
-	{
-	}
-
-	void Editor::OnUnloaded()
+	void Editor::Test()
 	{
 	}
 } // namespace SFG

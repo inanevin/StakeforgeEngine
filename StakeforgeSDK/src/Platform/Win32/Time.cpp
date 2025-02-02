@@ -61,7 +61,10 @@ namespace SFG
 	{
 		LARGE_INTEGER cycles;
 		QueryPerformanceCounter(&cycles);
-		return (cycles.QuadPart * 1000000ll) / s_frequency;
+
+		// directly converting cycles to microseconds will overflow
+		// first dividing with frequency will turn it into seconds and loose precision.
+		return (cycles.QuadPart / s_frequency) * 1000000ll + ((cycles.QuadPart % s_frequency) * 1000000ll) / s_frequency;
 	}
 
 	double Time::GetCPUSeconds()
@@ -126,6 +129,11 @@ namespace SFG
 			YieldProcessor();
 		else
 			::Sleep(milliseconds);
+	}
+
+	void Time::YieldThread()
+	{
+		YieldProcessor();
 	}
 
 } // namespace SFG

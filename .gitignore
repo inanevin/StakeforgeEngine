@@ -14,7 +14,10 @@
 #Project Files
 [Gg]enerated_project_files
 [Bb]uild_x64
+[Bb]uild
+_[Bb]uild
 _[Bb]in
+_[Aa]ssets
 *.DS_Store
 
 # Build results

@@ -28,7 +28,7 @@
 #-------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
 cmake_minimum_required (VERSION 3.10...3.31)
-project(StakeforgeGame)
+project(${SFG_GAME_NAME})
 
 # -------------- FILES -------------
 
@@ -43,11 +43,11 @@ include/*.hpp
 # -------------- EXE -------------
 
 if(WIN32)
-set(ICON ${PROJECT_SOURCE_DIR}/_Resources/${PROJECT_NAME}.rc)
+set(ICON ${PROJECT_SOURCE_DIR}/_Resources/Game.rc)
 endif()
 
 if(APPLE)
-set(ICON ${PROJECT_SOURCE_DIR}/_Resources/${PROJECT_NAME}.icns)
+set(ICON ${PROJECT_SOURCE_DIR}/_Resources/Game.icns)
 endif()
 
 if(WIN32)
@@ -59,7 +59,7 @@ endif()
 
 # -------------- SETTINGS -------------
 
-include(${CMAKE_SOURCE_DIR}/CMake/ExecutableSettings.cmake)
+include(${CMAKE_SOURCE_DIR}/Utils/CMake/ExecutableSettings.cmake)
 
 # -------------- TARGET -------------
 
@@ -67,10 +67,13 @@ target_include_directories(${PROJECT_NAME} PUBLIC ${PROJECT_SOURCE_DIR}/include)
 
 target_link_libraries(${PROJECT_NAME} 
 PUBLIC StakeforgeSDK
+$<$<CONFIG:DebugEditor>:StakeforgeEditor>
+$<$<CONFIG:ReleaseEditor>:StakeforgeEditor>
 )
+
 
 # -------------- PROJECT STRUCTURE -------------
 
-include(${CMAKE_SOURCE_DIR}/CMake/CommonFunctions.cmake)
+include(${CMAKE_SOURCE_DIR}/Utils/CMake/CommonFunctions.cmake)
 group_sources(HEADERS SOURCES)
 group_generated()

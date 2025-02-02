@@ -222,6 +222,13 @@ namespace SFG
 		/// <param name="directory"></param>
 		/// <param name="targetParentFolder"></param>
 		static void CopyDirectory(const char* copyDir, const char* targetParentFolder);
+
+		/// <summary>
+		///
+		/// </summary>
+		/// <param name="directory"></param>
+		/// <param name="targetParentFolder"></param>
+		static void CopyFileToDirectory(const char* file, const char* targetParentFolder);
 	};
 
 } // namespace SFG

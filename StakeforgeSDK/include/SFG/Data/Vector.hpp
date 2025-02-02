@@ -37,6 +37,18 @@ namespace SFG
 
 	namespace UtilVector
 	{
+
+		/// <summary>
+		///
+		/// </summary>
+		/// <typeparam name="T"></typeparam>
+		/// <param name="vec"></param>
+		/// <param name="value"></param>
+		template <typename T> inline Vector<T>::iterator Remove(Vector<T>& vec, T& value)
+		{
+			return vec.erase(std::remove(vec.begin(), vec.end(), value), vec.end());
+		}
+
 		/// <summary>
 		///
 		/// </summary>

@@ -60,6 +60,7 @@ include/SFG/Type/*.hpp
 
 include/SFG/Vendor/LZ4/lz4.h
 include/SFG/Vendor/readerwriterqueue/*.h
+include/SFG/Vendor/json/*.hpp
 
 )
 
@@ -96,7 +97,7 @@ add_library(SFG::SDK ALIAS ${PROJECT_NAME})
 # include(GenerateExportHeader)
 # generate_export_header(${PROJECT_NAME} BASE_NAME SFG EXPORT_FILE_NAME ${CMAKE_BINARY_DIR}/StakeforgeAPI.hpp)
 
-include(../CMake/Compile.cmake)
+include(${CMAKE_SOURCE_DIR}/Utils/CMake/Compile.cmake)
 set_target_properties(${PROJECT_NAME} PROPERTIES FOLDER "Stakeforge")
 
 # -------------- TARGET -------------
@@ -116,7 +117,7 @@ set(OVERRIDE_MSVCCRT OFF CACHE BOOL "" FORCE)
 set(GENERATE_DEBUG_SYMBOLS ON CACHE BOOL "" FORCE)
 set(INTERPROCEDURAL_OPTIMIZATION OFF CACHE BOOL "" FORCE)
 set(BUILD_SHARED_LIBS ON CACHE BOOL "" FORCE)
-add_subdirectory(Dependencies/Jolt/Build)
+add_subdirectory(Dependencies/Jolt/ConfigBuild)
 
 set_property(TARGET Jolt PROPERTY FOLDER Stakeforge/Dependencies)
 
@@ -153,6 +154,6 @@ endif()
 #--------------------------------------------------------------------
 # Folder structuring
 #--------------------------------------------------------------------
-include(${CMAKE_SOURCE_DIR}/CMake/CommonFunctions.cmake)
+include(${CMAKE_SOURCE_DIR}/Utils/CMake/CommonFunctions.cmake)
 group_sources(HEADERS SOURCES PLATFORM_HEADERS PLATFORM_SOURCES)
 group_generated()

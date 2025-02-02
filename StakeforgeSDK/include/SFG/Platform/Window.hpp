@@ -30,17 +30,13 @@ SOFTWARE.
 
 #include "SFG/Type/SizeDefinitions.hpp"
 #include "SFG/Data/Atomic.hpp"
+#include "SFG/Data/Queue.hpp"
 #include "SFG/Math/Vector2ui.hpp"
 #include "SFG/Math/Vector2i.hpp"
 #include "SFG/Math/Vector2.hpp"
 
-#include "SFG/Platform/KeyEvent.hpp"
-#include "SFG/Platform/MouseEvent.hpp"
-#include "SFG/Platform/MouseWheelEvent.hpp"
-#include "SFG/Platform/MouseDeltaEvent.hpp"
+#include "SFG/Platform/WindowEvent.hpp"
 #include "SFG/Platform/MonitorInfo.hpp"
-
-#include <SFG/Vendor/readerwriterqueue/readerwriterqueue.h>
 
 #ifdef SFG_PLATFORM_WINDOWS
 struct HWND__;
@@ -54,19 +50,22 @@ namespace SFG
 		Borderless,
 	};
 
-	template <typename T> using InputQueue = moodycamel::BlockingReaderWriterQueue<T>;
-
 #define INPUT_EVENT_BUFFER_SIZE 100
 
 	class Window
 	{
 	public:
-		Window()  = default;
-		~Window() = default;
+		Window(Window& window) = delete;
 
 #ifdef SFG_PLATFORM_WINDOWS
 		static LRESULT WndProc(HWND__* hwnd, unsigned int msg, unsigned __int64 wParam, __int64 lParam);
 #endif
+
+	private:
+		friend class App;
+
+		Window()  = default;
+		~Window() = default;
 
 		/// <summary>
 		///
@@ -85,6 +84,7 @@ namespace SFG
 		/// <param name="window"></param>
 		static void Destroy(Window* window);
 
+	public:
 		/// <summary>
 		///
 		/// </summary>
@@ -111,77 +111,19 @@ namespace SFG
 		/// <summary>
 		///
 		/// </summary>
+		inline void Close()
+		{
+			m_closeRequested = true;
+		}
+
+		/// <summary>
+		///
+		/// </summary>
 		inline void CenterToMonitor()
 		{
 			const uint32 centerX = m_monitorInfo.position.x + static_cast<int32>(m_monitorInfo.fullSize.x) / 2;
 			const uint32 centerY = m_monitorInfo.position.y + static_cast<int32>(m_monitorInfo.fullSize.y) / 2;
 			SetPosition(Vector2i(centerX - static_cast<int32>(m_trueSize.x) / 2, centerY - static_cast<int32>(m_trueSize.y) / 2));
-		}
-
-		/// <summary>
-		///
-		/// </summary>
-		/// <param name="ev"></param>
-		inline void AddMouseEvent(const MouseEvent& ev)
-		{
-			m_mouseEvents.try_enqueue(ev);
-		}
-
-		inline bool PopMouseEvent(MouseEvent& ev)
-		{
-			return m_mouseEvents.try_dequeue(ev);
-		}
-
-		/// <summary>
-		///
-		/// </summary>
-		/// <param name="ev"></param>
-		inline void AddMouseWheelEvent(const MouseWheelEvent& ev)
-		{
-			m_mouseWheelEvents.try_enqueue(ev);
-		}
-
-		inline bool PopMouseWheelEvent(MouseWheelEvent& ev)
-		{
-			return m_mouseWheelEvents.try_dequeue(ev);
-		}
-
-		/// <summary>
-		///
-		/// </summary>
-		/// <param name="ev"></param>
-		inline void AddMouseDeltaEvent(const MouseDeltaEvent& ev)
-		{
-			m_mouseDeltaEvents.try_enqueue(ev);
-		}
-
-		/// <summary>
-		///
-		/// </summary>
-		/// <param name="ev"></param>
-		/// <returns></returns>
-		inline bool PopMouseDeltaEvent(MouseDeltaEvent& ev)
-		{
-			return m_mouseDeltaEvents.try_dequeue(ev);
-		}
-
-		/// <summary>
-		///
-		/// </summary>
-		/// <param name="ev"></param>
-		inline void AddKeyEvent(const KeyEvent& ev)
-		{
-			m_keyEvents.try_enqueue(ev);
-		}
-
-		/// <summary>
-		///
-		/// </summary>
-		/// <param name="ev"></param>
-		/// <returns></returns>
-		inline bool PopKeyEvent(KeyEvent& ev)
-		{
-			return m_keyEvents.try_dequeue(ev);
 		}
 
 		/// <summary>
@@ -265,6 +207,11 @@ namespace SFG
 			return m_closeRequested;
 		}
 
+		inline bool GetIsSizeDirty() const
+		{
+			return m_sizeDirty;
+		}
+
 		/// <summary>
 		///
 		/// </summary>
@@ -274,26 +221,60 @@ namespace SFG
 			m_closeRequested = false;
 		}
 
+		/// <summary>
+		///
+		/// </summary>
+		/// <param name="hf"></param>
+		inline void SetHighFrequencyInputMode(bool hf)
+		{
+			m_highFrequencyInputMode = hf;
+		}
+
 	private:
-		static constexpr int BUFFER_SIZE	 = 256;
-		static constexpr int BUFFER_SIZE_BIG = 512;
+		/// <summary>
+		///
+		/// </summary>
+		/// <param name="ev"></param>
+		inline void AddEvent(const WindowEvent& ev)
+		{
+			if (m_windowEvents.size() == BUFFER_SIZE)
+				m_windowEvents.pop();
 
-		InputQueue<KeyEvent>		m_keyEvents		   = InputQueue<KeyEvent>(BUFFER_SIZE);
-		InputQueue<MouseEvent>		m_mouseEvents	   = InputQueue<MouseEvent>(BUFFER_SIZE);
-		InputQueue<MouseDeltaEvent> m_mouseDeltaEvents = InputQueue<MouseDeltaEvent>(BUFFER_SIZE_BIG);
-		InputQueue<MouseWheelEvent> m_mouseWheelEvents = InputQueue<MouseWheelEvent>(BUFFER_SIZE);
+			m_windowEvents.push(ev);
+		}
 
-		MonitorInfo m_monitorInfo	 = {};
-		Vector2i	m_position		 = Vector2i::Zero;
-		Vector2ui	m_size			 = Vector2ui::Zero;
-		Vector2ui	m_trueSize		 = Vector2ui::Zero;
-		Vector2ui	m_mousePosition	 = Vector2ui::Zero;
-		void*		m_osHandle		 = nullptr;
-		void*		m_windowHandle	 = nullptr;
-		uint32		m_id			 = 0;
-		WindowStyle m_style			 = WindowStyle::ApplicationWindow;
-		bool		m_sizeDirty		 = false;
-		bool		m_hasFocus		 = false;
-		bool		m_closeRequested = false;
+		/// <summary>
+		///
+		/// </summary>
+		/// <param name="ev"></param>
+		/// <returns></returns>
+		inline bool PopEvent(WindowEvent& ev)
+		{
+			if (m_windowEvents.empty())
+				return false;
+
+			ev = m_windowEvents.front();
+			m_windowEvents.pop();
+			return true;
+		}
+
+	private:
+		static constexpr int BUFFER_SIZE = 256;
+
+		Queue<WindowEvent> m_windowEvents = Queue<WindowEvent>();
+
+		MonitorInfo m_monitorInfo			 = {};
+		Vector2i	m_position				 = Vector2i::Zero;
+		Vector2ui	m_size					 = Vector2ui::Zero;
+		Vector2ui	m_trueSize				 = Vector2ui::Zero;
+		Vector2ui	m_mousePosition			 = Vector2ui::Zero;
+		void*		m_osHandle				 = nullptr;
+		void*		m_windowHandle			 = nullptr;
+		uint32		m_id					 = 0;
+		WindowStyle m_style					 = WindowStyle::ApplicationWindow;
+		bool		m_sizeDirty				 = false;
+		bool		m_hasFocus				 = false;
+		bool		m_closeRequested		 = false;
+		bool		m_highFrequencyInputMode = false;
 	};
 } // namespace SFG
