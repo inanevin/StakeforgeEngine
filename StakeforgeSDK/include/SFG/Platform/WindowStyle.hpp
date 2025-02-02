@@ -28,28 +28,11 @@ SOFTWARE.
 
 #pragma once
 
-#include "SFG/StakeforgeAPI.hpp"
-
 namespace SFG
 {
-	struct WindowEvent;
-
-	class SFG_API AppDelegate
+	enum class WindowStyle
 	{
-	public:
-		AppDelegate()		   = default;
-		virtual ~AppDelegate() = default;
-
-		/// <summary>
-		///
-		/// </summary>
-		/// <param name="ev"></param>
-		virtual void OnWindowEvent(const WindowEvent& ev) = 0;
-
-		/// <summary>
-		///
-		/// </summary>
-		/// <param name="delta"></param>
-		virtual void OnTick(double delta) = 0;
+		ApplicationWindow,
+		Borderless,
 	};
 } // namespace SFG

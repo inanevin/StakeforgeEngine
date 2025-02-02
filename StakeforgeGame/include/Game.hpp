@@ -32,9 +32,14 @@ SOFTWARE.
 
 namespace SFG
 {
+	class App;
+
 	class Game : public AppDelegate
 	{
 	public:
+		Game(App* app);
+		virtual ~Game();
+
 		/// <summary>
 		///
 		/// </summary>
@@ -45,5 +50,8 @@ namespace SFG
 		/// </summary>
 		/// <param name="delta"></param>
 		virtual void OnTick(double delta) override;
+
+	private:
+		App* m_app = nullptr;
 	};
 } // namespace SFG

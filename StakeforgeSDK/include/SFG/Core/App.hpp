@@ -70,6 +70,13 @@ namespace SFG
 		/// <summary>
 		///
 		/// </summary>
+		/// <param name="id"></param>
+		/// <returns></returns>
+		Window* GetWindow(uint32 id);
+
+		/// <summary>
+		///
+		/// </summary>
 		/// <param name="window"></param>
 		void DestroyAppWindow(Window* window);
 

@@ -28,8 +28,9 @@ SOFTWARE.
 
 #include "Game.hpp"
 
-#include <SFG/IO/Log.hpp>
 #include <SFG/Core/App.hpp>
+#include <SFG/Platform/Window.hpp>
+#include <SFG/Platform/WindowStyle.hpp>
 
 #ifdef SFG_EDITOR
 #include <SFG/Editor/Editor.hpp>
@@ -39,6 +40,11 @@ namespace
 {
 	void SetupApp(SFG::App* app)
 	{
+		SFG::AppSettings& settings = app->GetAppSettings();
+		settings.inputUpdateRate   = 1000;
+		settings.appUpdateRate	   = 120;
+		settings.throttleCPU	   = true;
+		settings.delegate		   = new SFG::Game(app);
 	}
 } // namespace
 
@@ -72,6 +78,7 @@ int WINAPI WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, _
 	SFG::String error = "";
 
 	SFG::App* app = new SFG::App(error);
+	SetupApp(app);
 
 	if (!error.empty())
 	{
@@ -82,6 +89,9 @@ int WINAPI WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, _
 	}
 
 	app->Tick();
+
+	SFG::Game* game = static_cast<SFG::Game*>(app->GetAppSettings().delegate);
+	delete game;
 	delete app;
 
 #ifdef SFG_DEBUG
@@ -92,18 +102,28 @@ int WINAPI WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, _
 	return 0;
 }
 
-#else
-
 #endif
 
 namespace SFG
 {
+	Game::Game(App* app) : AppDelegate(), m_app(app)
+	{
+		Window* window = app->CreateAppWindow(0, SFG_APPNAME, {}, Vector2ui(1000, 1000), WindowStyle::ApplicationWindow);
+		window->CenterToMonitor();
+		//	window->SetHighFrequencyInputMode(true);
+	}
+
+	Game::~Game()
+	{
+	}
+
 	void Game::OnWindowEvent(const WindowEvent& ev)
 	{
 	}
 
 	void Game::OnTick(double delta)
 	{
+		// SFG_TRACE("Game ticking {0}", delta);
 	}
 
 } // namespace SFG

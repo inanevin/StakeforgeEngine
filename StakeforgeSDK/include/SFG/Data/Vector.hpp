@@ -42,6 +42,27 @@ namespace SFG
 		///
 		/// </summary>
 		/// <typeparam name="T"></typeparam>
+		/// <typeparam name="Predicate"></typeparam>
+		/// <param name="vec"></param>
+		/// <param name="outValue"></param>
+		/// <param name="pred"></param>
+		/// <returns></returns>
+		template <typename T, class Predicate> inline bool Find(const Vector<T>& vec, T& outValue, Predicate pred)
+		{
+			auto it = std::find_if(vec.begin(), vec.end(), pred);
+			if (it != vec.end())
+			{
+				outValue = *it;
+				return true;
+			}
+
+			return false;
+		}
+
+		/// <summary>
+		///
+		/// </summary>
+		/// <typeparam name="T"></typeparam>
 		/// <param name="vec"></param>
 		/// <param name="value"></param>
 		template <typename T> inline Vector<T>::iterator Remove(Vector<T>& vec, T& value)

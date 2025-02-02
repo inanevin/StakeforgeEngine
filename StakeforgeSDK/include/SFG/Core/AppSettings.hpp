@@ -40,7 +40,6 @@ namespace SFG
 		int64		 inputUpdateRate = 1000;
 		uint32		 appUpdateRate	 = 60;
 		bool		 throttleCPU	 = false;
-		const char*	 title			 = nullptr;
 		AppDelegate* delegate		 = nullptr;
 	};
 } // namespace SFG

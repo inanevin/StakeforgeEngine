@@ -29,6 +29,7 @@ SOFTWARE.
 #pragma once
 
 #include "SFG/Type/SizeDefinitions.hpp"
+#include "SFG/StakeforgeAPI.hpp"
 #include "SFG/Data/Atomic.hpp"
 #include "SFG/Data/Queue.hpp"
 #include "SFG/Math/Vector2ui.hpp"
@@ -36,6 +37,7 @@ SOFTWARE.
 #include "SFG/Math/Vector2.hpp"
 
 #include "SFG/Platform/WindowEvent.hpp"
+#include "SFG/Platform/WindowStyle.hpp"
 #include "SFG/Platform/MonitorInfo.hpp"
 
 #ifdef SFG_PLATFORM_WINDOWS
@@ -44,15 +46,9 @@ struct HWND__;
 
 namespace SFG
 {
-	enum class WindowStyle
-	{
-		ApplicationWindow,
-		Borderless,
-	};
-
 #define INPUT_EVENT_BUFFER_SIZE 100
 
-	class Window
+	class SFG_API Window
 	{
 	public:
 		Window(Window& window) = delete;
@@ -166,7 +162,7 @@ namespace SFG
 		///
 		/// </summary>
 		/// <returns></returns>
-		inline const Vector2ui& GetMousePosition() const
+		inline const Vector2i& GetMousePosition() const
 		{
 			return m_mousePosition;
 		}
@@ -267,7 +263,7 @@ namespace SFG
 		Vector2i	m_position				 = Vector2i::Zero;
 		Vector2ui	m_size					 = Vector2ui::Zero;
 		Vector2ui	m_trueSize				 = Vector2ui::Zero;
-		Vector2ui	m_mousePosition			 = Vector2ui::Zero;
+		Vector2i	m_mousePosition			 = Vector2i::Zero;
 		void*		m_osHandle				 = nullptr;
 		void*		m_windowHandle			 = nullptr;
 		uint32		m_id					 = 0;

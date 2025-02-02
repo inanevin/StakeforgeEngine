@@ -145,6 +145,7 @@ namespace SFG
 			static BYTE lpb[sizeof(RAWINPUT)];
 			GetRawInputData((HRAWINPUT)lParam, RID_INPUT, lpb, &dwSize, sizeof(RAWINPUTHEADER));
 			RAWINPUT* raw = (RAWINPUT*)lpb;
+
 			if (raw->header.dwType == RIM_TYPEKEYBOARD)
 			{
 				// Handle keyboard input
@@ -156,7 +157,7 @@ namespace SFG
 				const WindowEvent ev = {
 					.window			 = window,
 					.type			 = WindowEventType::Key,
-					.action			 = isPress ? InputAction::Pressed : (isRelease ? InputAction::Released : InputAction::Repeated),
+					.action			 = isRelease ? InputAction::Released : InputAction::Pressed,
 					.value			 = Vector2i(static_cast<int32>(scanCode), 0),
 					.isHighFrequency = true,
 				};
@@ -219,13 +220,15 @@ namespace SFG
 					window->AddEvent(ev);
 				else if (mouseFlags & RI_MOUSE_WHEEL)
 				{
-					const int32		  wheelDelta = (int32)raw->data.mouse.usButtonData * WHEEL_DELTA;
-					const WindowEvent mwe		 = {
-							   .window			= window,
-							   .type			= WindowEventType::MouseWheel,
-							   .value			= Vector2i(0, wheelDelta),
-							   .isHighFrequency = true,
-					   };
+					const uint16 wheelDelta = (uint16)raw->data.mouse.usButtonData;
+					const short	 wheel		= (short)raw->data.mouse.usButtonData / (short)WHEEL_DELTA;
+
+					const WindowEvent mwe = {
+						.window			 = window,
+						.type			 = WindowEventType::MouseWheel,
+						.value			 = Vector2i(0, wheel),
+						.isHighFrequency = true,
+					};
 					window->AddEvent(mwe);
 				}
 				else
@@ -264,7 +267,7 @@ namespace SFG
 			const WindowEvent ev = {
 				.window			 = window,
 				.button			 = static_cast<InputCode>(key),
-				.action			 = InputAction::Pressed,
+				.action			 = isRepeated ? InputAction::Repeated : InputAction::Pressed,
 				.value			 = Vector2i(scanCode, 0),
 				.isHighFrequency = false,
 			};
@@ -304,23 +307,22 @@ namespace SFG
 
 		case WM_MOUSEMOVE: {
 
-			const int32		xPos	  = GET_X_LPARAM(lParam);
-			const int32		yPos	  = GET_Y_LPARAM(lParam);
-			const Vector2i	relative  = Vector2i(xPos, yPos) - window->m_position;
-			const Vector2ui relativeU = Vector2ui(relative.x < 0 ? 0 : static_cast<uint32>(relative.x), relative.y < 0 ? 0 : static_cast<uint32>(relative.y));
+			const int32 xPos = GET_X_LPARAM(lParam);
+			const int32 yPos = GET_Y_LPARAM(lParam);
 
-			static Vector2ui previousPosition = Vector2ui::Zero;
-			window->m_mousePosition			  = Vector2ui(Math::Clamp(relativeU.x, (uint32)0, window->m_size.x), Math::Clamp(relativeU.y, (uint32)0, window->m_size.y));
+			static Vector2i previousPosition = Vector2i::Zero;
+			window->m_mousePosition			 = Vector2i(xPos, yPos);
+
+			const Vector2i delta = window->m_mousePosition - previousPosition;
+			previousPosition	 = window->m_mousePosition;
 
 			if (window->m_highFrequencyInputMode)
 				return 0;
 
-			const Vector2ui delta = window->m_mousePosition - previousPosition;
-
 			const WindowEvent ev = {
 				.window			 = window,
 				.type			 = WindowEventType::MouseDelta,
-				.value			 = Vector2i(static_cast<int32>(delta.x), static_cast<int32>(delta.y)),
+				.value			 = delta,
 				.isHighFrequency = false,
 			};
 
@@ -333,14 +335,13 @@ namespace SFG
 			if (window->m_highFrequencyInputMode)
 				return 0;
 
-			const int32 delta = GET_WHEEL_DELTA_WPARAM(wParam) * WHEEL_DELTA;
-
-			const WindowEvent mwe = {
-				.window			 = window,
-				.type			 = WindowEventType::MouseWheel,
-				.value			 = Vector2i(0, delta),
-				.isHighFrequency = false,
-			};
+			const int16		  delta = GET_WHEEL_DELTA_WPARAM(wParam) / (int16)(WHEEL_DELTA);
+			const WindowEvent mwe	= {
+				  .window		   = window,
+				  .type			   = WindowEventType::MouseWheel,
+				  .value		   = Vector2i(0, delta),
+				  .isHighFrequency = false,
+			  };
 
 			window->AddEvent(mwe);
 
@@ -527,6 +528,7 @@ namespace SFG
 			wc.hInstance	 = hinst;
 			wc.lpszClassName = title;
 			wc.hCursor		 = NULL;
+			wc.style		 = CS_DBLCLKS;
 
 			if (!RegisterClassA(&wc))
 			{
@@ -569,12 +571,17 @@ namespace SFG
 		SetWindowLongPtr(hwnd, GWLP_USERDATA, reinterpret_cast<LONG_PTR>(window));
 
 		// Listen to raw input WM_INPUT
-		RAWINPUTDEVICE Rid[1];
+		RAWINPUTDEVICE Rid[2];
 		Rid[0].usUsagePage = HID_USAGE_PAGE_GENERIC;
 		Rid[0].usUsage	   = HID_USAGE_GENERIC_MOUSE;
 		Rid[0].dwFlags	   = RIDEV_INPUTSINK;
 		Rid[0].hwndTarget  = hwnd;
-		RegisterRawInputDevices(Rid, 1, sizeof(Rid[0]));
+
+		Rid[1].usUsagePage = HID_USAGE_PAGE_GENERIC;
+		Rid[1].usUsage	   = HID_USAGE_GENERIC_KEYBOARD;
+		Rid[1].dwFlags	   = RIDEV_INPUTSINK;
+		Rid[1].hwndTarget  = hwnd;
+		RegisterRawInputDevices(Rid, 2, sizeof(Rid[0]));
 
 		window->BringToFront();
 		ShowWindow(hwnd, SW_SHOW);
