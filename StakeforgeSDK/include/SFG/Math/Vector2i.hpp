@@ -34,7 +34,8 @@ namespace SFG
 {
 	class IStream;
 	class OStream;
-	class Vector2;
+    class Vector2;
+	class Vector2ui;
 
 	class Vector2i
 	{
@@ -57,6 +58,13 @@ namespace SFG
 		/// <param name="x"></param>
 		/// <param name="y"></param>
 		Vector2i(const Vector2& v2);
+        
+        /// <summary>
+        ///
+        /// </summary>
+        /// <param name="x"></param>
+        /// <param name="y"></param>
+        Vector2i(const Vector2ui& v2);
 
 		/// <summary>
 		///
@@ -77,6 +85,15 @@ namespace SFG
 		/// </summary>
 		/// <param name="stream"></param>
 		void LoadFromStream(IStream& stream);
+        
+        /// <summary>
+        ///
+        /// </summary>
+        /// <param name="other"></param>
+        /// <param name="v1"></param>
+        /// <param name="v2"></param>
+        /// <returns></returns>
+        static Vector2i Clamp(const Vector2i& val, const Vector2i& v1, const Vector2i& v2);
 
 		Vector2i& operator+=(Vector2i const& v)
 		{

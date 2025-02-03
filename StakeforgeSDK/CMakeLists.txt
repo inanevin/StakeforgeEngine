@@ -133,8 +133,8 @@ target_link_libraries(${PROJECT_NAME}
 )
 
 if(APPLE)
-	# target_link_libraries(${PROJECT_NAME}
-	# 	PUBLIC "-framework AppKit"
+	 target_link_libraries(${PROJECT_NAME}
+	 	PUBLIC "-framework AppKit")
 	# 	PUBLIC "-framework Foundation"
 	# 	PUBLIC "-framework QuartzCore"
 	# 	PUBLIC "-framework UniformTypeIdentifiers"

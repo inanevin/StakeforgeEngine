@@ -30,7 +30,7 @@ SOFTWARE.
 
 namespace SFG
 {
-	enum InputCode;
+	enum class InputCode;
 	enum class InputAction;
 	class Window;
 

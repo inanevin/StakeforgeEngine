@@ -33,6 +33,17 @@ project (Stakeforge)
 
 set(CMAKE_CONFIGURATION_TYPES "Debug;DebugEditor;Release;ReleaseEditor;" CACHE STRING "" FORCE)
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
+
+if(APPLE)
+	# dylib's are treated as library on macOS.
+	set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
+
+	# dylib export settings.
+	set(CMAKE_CXX_VISIBILITY_PRESET hidden)
+	set(CMAKE_VISIBILITY_INLINES_HIDDEN 1)
+
+endif()
+
 set(CMAKE_SKIP_INSTALL_RULES ON)
 set(SFG_GAME_NAME "MyGameProject" CACHE STRING "Name of the game project")
 

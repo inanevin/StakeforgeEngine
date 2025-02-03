@@ -226,7 +226,7 @@ namespace SFG
 			m_highFrequencyInputMode = hf;
 		}
 
-	private:
+	
 		/// <summary>
 		///
 		/// </summary>
@@ -253,6 +253,16 @@ namespace SFG
 			m_windowEvents.pop();
 			return true;
 		}
+        
+        /// <summary>
+        ///
+        /// </summary>
+        /// <param name="ev"></param>
+        /// <returns></returns>
+        inline void SetMousePosition(const Vector2i& pos)
+        {
+            m_mousePosition = pos;
+        }
 
 	private:
 		static constexpr int BUFFER_SIZE = 256;

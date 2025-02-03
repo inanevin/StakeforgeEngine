@@ -28,9 +28,8 @@ SOFTWARE.
 
 #include "Game.hpp"
 
+#include <SFG/Platform/Main.hpp>
 #include <SFG/Core/App.hpp>
-#include <SFG/Math/Color.hpp>
-#include <SFG/Math/ColorUtils.hpp>
 #include <SFG/IO/Log.hpp>
 #include <SFG/Platform/Window.hpp>
 #include <SFG/Platform/WindowStyle.hpp>
@@ -39,80 +38,35 @@ SOFTWARE.
 #include <SFG/Editor/Editor.hpp>
 #endif
 
-namespace
-{
-	void SetupApp(SFG::App* app)
-	{
-		SFG::AppSettings& settings = app->GetAppSettings();
-		settings.inputUpdateRate   = 1000;
-		settings.appUpdateRate	   = 120;
-		settings.throttleCPU	   = true;
-		settings.delegate		   = new SFG::Game(app);
-		SFG::ColorUtils::HS2SRGB(SFG::Color(0, 0, 0, 0));
-	}
-} // namespace
-
-#ifdef SFG_PLATFORM_WINDOWS
-
-#define WINDOWS_MEAN_AND_LEAN
-#include <Windows.h>
-
-int WINAPI WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, _In_ LPSTR pCmdLine, _In_ int nCmdShow)
-{
-
-#ifdef SFG_DEBUG
-	bool consoleAllocated = false;
-	if (AllocConsole() == FALSE)
-	{
-		consoleAllocated = true;
-		SFG_ERR("Failed allocating console!");
-	}
-#endif
-
-	SetProcessDpiAwarenessContext(DPI_AWARENESS_CONTEXT_PER_MONITOR_AWARE_V2);
-	SetProcessPriorityBoost(GetCurrentProcess(), FALSE);
-
-	DWORD_PTR mask = 1;
-	SetThreadAffinityMask(GetCurrentThread(), mask);
-
-	DWORD dwError;
-	if (!SetPriorityClass(GetCurrentProcess(), REALTIME_PRIORITY_CLASS))
-	{
-		dwError = GetLastError();
-		SFG_ERR("Failed setting process priority: {0}", dwError);
-	}
-
-	SFG::String error = "";
-
-	SFG::App* app = new SFG::App(error);
-	SetupApp(app);
-
-	if (!error.empty())
-	{
-		MessageBox(nullptr, error.c_str(), "Error", MB_OK | MB_ICONERROR);
-		delete app;
-		FreeConsole();
-		return 0;
-	}
-
-	app->Tick();
-
-	SFG::Game* game = static_cast<SFG::Game*>(app->GetAppSettings().delegate);
-	delete game;
-	delete app;
-
-#ifdef SFG_DEBUG
-	if (consoleAllocated)
-		FreeConsole();
-#endif
-
-	return 0;
-}
-
-#endif
-
 namespace SFG
 {
+
+
+void AppInit(App* app)
+{
+    SFG::AppSettings& settings = app->GetAppSettings();
+    settings.inputUpdateRate   = 1000;
+    settings.appUpdateRate       = 120;
+    settings.throttleCPU       = true;
+    settings.delegate           = new SFG::Game(app);
+}
+
+void AppShutdown(App* app)
+{
+    Game* game = static_cast<Game*>(app->GetAppSettings().delegate);
+    delete game;
+    app->GetAppSettings().delegate = nullptr;
+}
+
+struct AppWrap
+{
+    AppWrap() {
+        g_sfgAppInit = AppInit;
+        g_sfgAppShutdown = AppShutdown;
+    };
+  
+} appWrap;
+
 	Game::Game(App* app) : AppDelegate(), m_app(app)
 	{
 		Window* window = app->CreateAppWindow(0, SFG_APPNAME, {}, Vector2ui(1000, 1000), WindowStyle::ApplicationWindow);
@@ -126,6 +80,12 @@ namespace SFG
 
 	void Game::OnWindowEvent(const WindowEvent& ev)
 	{
+        if(ev.type != WindowEventType::MouseDelta)
+            return;
+        
+        //SFG_TRACE("HUH");
+       SFG_TRACE("POS {0} - {1}", ev.window->GetMousePosition().x, ev.window->GetMousePosition().y);
+       // SFG_TRACE("VALUE {0} - {1}", ev.value.x, ev.value.y);
 	}
 
 	void Game::OnTick(double delta)

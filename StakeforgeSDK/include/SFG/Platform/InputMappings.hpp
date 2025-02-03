@@ -188,7 +188,7 @@ namespace SFG
 
 #endif
 
-#ifdef SFG_PLATFORM_APPLE
+#ifdef SFG_PLATFORM_OSX
 
 #define SFG_MOUSE_0		 0
 #define SFG_MOUSE_1		 1
@@ -334,7 +334,7 @@ namespace SFG
 
 #endif
 
-	enum InputCode
+	enum class InputCode
 	{
 		KeyUnknown		  = SFG_KEY_UNKNOWN,
 		KeyA			  = SFG_KEY_A,

@@ -28,6 +28,8 @@ SOFTWARE.
 
 #include "SFG/Math/Vector2i.hpp"
 #include "SFG/Math/Vector2.hpp"
+#include "SFG/Math/Vector2ui.hpp"
+#include "SFG/Math/Math.hpp"
 #include "SFG/Math/Equals.hpp"
 #include "SFG/Data/OStream.hpp"
 #include "SFG/Data/IStream.hpp"
@@ -43,6 +45,12 @@ namespace SFG
 		y = static_cast<int32>(v2.y);
 	}
 
+    Vector2i::Vector2i(const Vector2ui& v2)
+    {
+        x = static_cast<int32>(v2.x);
+        y = static_cast<int32>(v2.y);
+    }
+
 	bool Vector2i::Equals(const Vector2i& other, int epsilon) const
 	{
 		return Equals::Value(x, other.x, epsilon) && Equals::Value(y, other.y, epsilon);
@@ -57,4 +65,9 @@ namespace SFG
 	{
 		stream >> x >> y;
 	}
+
+    Vector2i Vector2i::Clamp(const Vector2i &val, const Vector2i &v1, const Vector2i &v2)
+    {
+        return Vector2i(Math::Clamp(val.x, v1.x, v2.x), Math::Clamp(val.y, v1.y, v2.y));
+    }
 } // namespace SFG

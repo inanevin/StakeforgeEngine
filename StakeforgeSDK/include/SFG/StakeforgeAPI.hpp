@@ -9,10 +9,24 @@
 #ifndef SFG_API
 #ifdef StakeforgeSDK_EXPORTS
 /* We are building this library */
-#define SFG_API __declspec(dllexport)
+#ifdef SFG_PLATFORM_WINDOWS
+    #define SFG_API __declspec(dllexport)
+#endif
+
+#ifdef SFG_PLATFORM_OSX
+    #define SFG_API __attribute__((visibility("default")))
+#endif
 #else
 /* We are using this library */
-#define SFG_API __declspec(dllimport)
+
+#ifdef SFG_PLATFORM_WINDOWS
+    #define SFG_API __declspec(dllimport)
+#endif
+
+#ifdef SFG_PLATFORM_OSX
+    #define SFG_API
+#endif
+
 #endif
 #endif
 
@@ -38,5 +52,6 @@
 #define SFG_NO_DEPRECATED
 #endif
 #endif
+
 
 #endif /* SFG_EXPORT_H */

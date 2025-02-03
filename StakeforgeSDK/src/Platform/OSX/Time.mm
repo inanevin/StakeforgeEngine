@@ -26,44 +26,52 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
 
-#include "Common/Platform/PlatformTime.hpp"
+#include "SFG/Platform/Time.hpp"
 #include <unistd.h>
 #include <sched.h>
-#include <cstdint>
-#include <cmath>
+
 
 namespace SFG
 {
-	mach_timebase_info_data_t PlatformTime::s_timebaseInfo = {0, 0};
+	mach_timebase_info_data_t Time::s_timebaseInfo = {0, 0};
 
-	int64 PlatformTime::GetCPUMicroseconds()
+    void Time::Initialize()
+    {
+        mach_timebase_info(&s_timebaseInfo);
+    }
+    
+    void Time::Shutdown()
+    {
+        
+    }
+	int64 Time::GetCPUMicroseconds()
 	{
 		auto time = mach_absolute_time();
 		return (time * s_timebaseInfo.numer) / (s_timebaseInfo.denom * 1000);
 	}
 
-	double PlatformTime::GetCPUSeconds()
+	double Time::GetCPUSeconds()
 	{
 		auto time = mach_absolute_time();
 		return static_cast<double>((time * s_timebaseInfo.numer) / s_timebaseInfo.denom) / 1e9;
 	}
 
-	int64 PlatformTime::GetCPUCycles()
+	int64 Time::GetCPUCycles()
 	{
 		return mach_absolute_time();
 	}
 
-	double PlatformTime::GetDeltaSeconds64(int64 fromCycles, int64 toCycles)
+	double Time::GetDeltaSeconds64(int64 fromCycles, int64 toCycles)
 	{
 		return static_cast<double>((toCycles - fromCycles) * s_timebaseInfo.numer) / (s_timebaseInfo.denom * 1e9);
 	}
 
-	int64 PlatformTime::GetDeltaMicroseconds64(int64 fromCycles, int64 toCycles)
+	int64 Time::GetDeltaMicroseconds64(int64 fromCycles, int64 toCycles)
 	{
 		return ((toCycles - fromCycles) * s_timebaseInfo.numer) / (s_timebaseInfo.denom * 1000);
 	}
 
-	void PlatformTime::Throttle(int64 microseconds)
+	void Time::Throttle(int64 microseconds)
 	{
 		if (microseconds < 0)
 			return;
@@ -95,14 +103,16 @@ namespace SFG
 		}
 	}
 
-	void PlatformTime::Sleep(uint32 milliseconds)
+	void Time::Sleep(uint32 milliseconds)
 	{
 		usleep(milliseconds * 1000);
 	}
 
-	void PlatformTime::Initialize()
-	{
-		mach_timebase_info(&s_timebaseInfo);
-	}
+    void Time::YieldThread()
+    {
+        sched_yield();
+    }
+
+
 
 } // namespace SFG

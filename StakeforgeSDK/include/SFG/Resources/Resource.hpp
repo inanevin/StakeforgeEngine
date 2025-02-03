@@ -33,7 +33,7 @@ SOFTWARE.
 
 namespace SFG
 {
-	enum ResourceType;
+	enum class ResourceType;
 	enum class ResourceState;
 
 	struct Resource

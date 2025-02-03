@@ -28,20 +28,17 @@ SOFTWARE.
 
 #pragma once
 
+#include "SFG/StakeforgeAPI.hpp"
+
 namespace SFG
 {
-	enum ResourceType
-	{
-		Unknown = 0,
-        Texture,
-        TextureSampler,
-        Font,
-        Material,
-        Shader,
-        Widget,
-        EntityTemplate,
-        Audio,
-        World,
-        PhysicsMaterial,
-	};
+
+class App;
+
+typedef void (*SFGAppInit)(App* app);
+typedef void (*SFGAppShutdown)(App* app);
+
+extern SFG_API SFGAppInit g_sfgAppInit;
+extern SFG_API SFGAppShutdown g_sfgAppShutdown;
+
 } // namespace SFG
