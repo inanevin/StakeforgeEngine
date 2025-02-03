@@ -30,12 +30,6 @@ SOFTWARE.
 #include "SFG/Core/App.hpp"
 #include <Cocoa/Cocoa.h>
 
-namespace SFG
-{
-    SFGAppInit g_sfgAppInit = nullptr;
-    SFGAppShutdown g_sfgAppShutdown = nullptr;
-} // namespace SFG
-
 
 @interface                                         OSXAppDelegate : NSObject <NSApplicationDelegate>
 @property(assign) void*                             myApp;

@@ -52,6 +52,7 @@ namespace SFG
 		/* Main window */
 		Window* window = app->CreateAppWindow(0, SFG_APPNAME, {}, Vector2ui(1000, 1000), WindowStyle::ApplicationWindow);
 		window->CenterToMonitor();
+        window->SetHighFrequencyInputMode(true);
 	}
 
 	Game::~Game()
@@ -64,7 +65,7 @@ namespace SFG
 			return;
 
 		// SFG_TRACE("HUH");
-		SFG_TRACE("POS {0} - {1}", ev.window->GetMousePosition().x, ev.window->GetMousePosition().y);
+		SFG_TRACE("POS {0} - {1}", ev.window->GetMousePositionAbs().x, ev.window->GetMousePositionAbs().y);
 		// SFG_TRACE("VALUE {0} - {1}", ev.value.x, ev.value.y);
 	}
 

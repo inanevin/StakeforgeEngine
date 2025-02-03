@@ -166,6 +166,15 @@ namespace SFG
 		{
 			return m_mousePosition;
 		}
+        
+        /// <summary>
+        ///
+        /// </summary>
+        /// <returns></returns>
+        inline const Vector2i& GetMousePositionAbs() const
+        {
+            return m_mousePositionAbs;
+        }
 
 		/// <summary>
 		///
@@ -263,6 +272,24 @@ namespace SFG
         {
             m_mousePosition = pos;
         }
+        
+        /// <summary>
+        ///
+        /// </summary>
+        /// <param name="ev"></param>
+        /// <returns></returns>
+        inline void SetMousePositionAbs(const Vector2i& pos)
+        {
+            m_mousePositionAbs = pos;
+        }
+        
+        /// <summary>
+        ///
+        /// </summary>
+        inline bool GetIsHighFrequencyMode() const
+        {
+            return m_highFrequencyInputMode;
+        }
 
 	private:
 		static constexpr int BUFFER_SIZE = 256;
@@ -273,7 +300,8 @@ namespace SFG
 		Vector2i	m_position				 = Vector2i::Zero;
 		Vector2ui	m_size					 = Vector2ui::Zero;
 		Vector2ui	m_trueSize				 = Vector2ui::Zero;
-		Vector2i	m_mousePosition			 = Vector2i::Zero;
+        Vector2i    m_mousePosition             = Vector2i::Zero;
+		Vector2i	m_mousePositionAbs			 = Vector2i::Zero;
 		void*		m_osHandle				 = nullptr;
 		void*		m_windowHandle			 = nullptr;
 		uint32		m_id					 = 0;

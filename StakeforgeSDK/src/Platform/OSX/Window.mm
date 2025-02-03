@@ -282,19 +282,25 @@ namespace
     
     const SFG::Vector2i delta = pos - prev;
     prev = pos;
-    
-   
-    const SFG::WindowEvent ev = {
-        .window = sfgWindow,
-        .type = SFG::WindowEventType::MouseDelta,
-        .value = delta,
-        .isHighFrequency = false,
-    };
-    
-    sfgWindow->AddEvent(ev);
+ 
+    // We only send mouse delta event if the mouse is moved inside the window, or if we are running in high frequency input mode.
+    bool outside = false;
+    if(pos.x < 0 || pos.x > static_cast<int32>(sfgWindow->GetSize().x) || pos.y < 0 || pos.y > static_cast<int32>(sfgWindow->GetSize().y))
+        outside = true;
+    if(!outside || (outside && sfgWindow->GetIsHighFrequencyMode()))
+    {
+        const SFG::WindowEvent ev = {
+            .window = sfgWindow,
+            .type = SFG::WindowEventType::MouseDelta,
+            .value = delta,
+            .isHighFrequency = false,
+        };
+        sfgWindow->AddEvent(ev);
+    }
     
     const SFG::Vector2i clamped = SFG::Vector2i::Clamp(pos, SFG::Vector2i::Zero, sfgWindow->GetSize());
     sfgWindow->SetMousePosition(clamped);
+    sfgWindow->SetMousePositionAbs(sfgWindow->GetPosition() + pos);
 }
 
 -(BOOL)acceptsMouseMovedEvents

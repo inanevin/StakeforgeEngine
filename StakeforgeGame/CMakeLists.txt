@@ -33,11 +33,11 @@ project(${SFG_GAME_NAME})
 # -------------- FILES -------------
 
 file (GLOB_RECURSE SOURCES
-src/*.cpp
+src/Game.cpp
 )
 
 file (GLOB_RECURSE HEADERS
-include/*.hpp
+include/Game.hpp
 )
 
 if(WIN32)
