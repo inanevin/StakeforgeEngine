@@ -28,7 +28,6 @@ SOFTWARE.
 
 #include "Game.hpp"
 
-#include <SFG/Platform/Main.hpp>
 #include <SFG/Core/App.hpp>
 #include <SFG/IO/Log.hpp>
 #include <SFG/Platform/Window.hpp>
@@ -40,38 +39,19 @@ SOFTWARE.
 
 namespace SFG
 {
-
-
-void AppInit(App* app)
-{
-    SFG::AppSettings& settings = app->GetAppSettings();
-    settings.inputUpdateRate   = 1000;
-    settings.appUpdateRate       = 120;
-    settings.throttleCPU       = true;
-    settings.delegate           = new SFG::Game(app);
-}
-
-void AppShutdown(App* app)
-{
-    Game* game = static_cast<Game*>(app->GetAppSettings().delegate);
-    delete game;
-    app->GetAppSettings().delegate = nullptr;
-}
-
-struct AppWrap
-{
-    AppWrap() {
-        g_sfgAppInit = AppInit;
-        g_sfgAppShutdown = AppShutdown;
-    };
-  
-} appWrap;
-
 	Game::Game(App* app) : AppDelegate(), m_app(app)
 	{
+
+		/* App Init */
+		SFG::AppSettings& settings = app->GetAppSettings();
+		settings.inputUpdateRate   = 1000;
+		settings.appUpdateRate	   = 120;
+		settings.throttleCPU	   = true;
+		settings.delegate		   = this;
+
+		/* Main window */
 		Window* window = app->CreateAppWindow(0, SFG_APPNAME, {}, Vector2ui(1000, 1000), WindowStyle::ApplicationWindow);
 		window->CenterToMonitor();
-		//	window->SetHighFrequencyInputMode(true);
 	}
 
 	Game::~Game()
@@ -80,12 +60,12 @@ struct AppWrap
 
 	void Game::OnWindowEvent(const WindowEvent& ev)
 	{
-        if(ev.type != WindowEventType::MouseDelta)
-            return;
-        
-        //SFG_TRACE("HUH");
-       SFG_TRACE("POS {0} - {1}", ev.window->GetMousePosition().x, ev.window->GetMousePosition().y);
-       // SFG_TRACE("VALUE {0} - {1}", ev.value.x, ev.value.y);
+		if (ev.type != WindowEventType::MouseDelta)
+			return;
+
+		// SFG_TRACE("HUH");
+		SFG_TRACE("POS {0} - {1}", ev.window->GetMousePosition().x, ev.window->GetMousePosition().y);
+		// SFG_TRACE("VALUE {0} - {1}", ev.value.x, ev.value.y);
 	}
 
 	void Game::OnTick(double delta)

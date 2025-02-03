@@ -40,6 +40,27 @@ file (GLOB_RECURSE HEADERS
 include/*.hpp
 )
 
+if(WIN32)
+	file (GLOB_RECURSE PLATFORM_SOURCES
+	src/Platform/Win32/*.cpp
+	)
+
+	file (GLOB_RECURSE PLATFORM_HEADERS
+	include/Platform/Win32/*.hpp
+	)
+endif()
+
+if(APPLE)
+	file (GLOB_RECURSE PLATFORM_SOURCES
+	src/Platform/OSX/*.mm
+	)
+
+	file (GLOB_RECURSE PLATFORM_HEADERS
+	include/Platform/OSX/*.hpp
+	)
+endif()
+
+
 # -------------- EXE -------------
 
 if(WIN32)
@@ -51,9 +72,9 @@ set(ICON ${PROJECT_SOURCE_DIR}/_Resources/Game.icns)
 endif()
 
 if(WIN32)
-	add_executable(${PROJECT_NAME} WIN32 ${SOURCES} ${HEADERS} ${ICON})
+	add_executable(${PROJECT_NAME} WIN32 ${SOURCES} ${HEADERS} ${PLATFORM_HEADERS} ${PLATFORM_SOURCES} ${ICON})
 else()
-	add_executable(${PROJECT_NAME} MACOSX_BUNDLE ${SOURCES} ${HEADERS} ${ICON})
+	add_executable(${PROJECT_NAME} MACOSX_BUNDLE ${SOURCES} ${HEADERS} ${PLATFORM_HEADERS} ${PLATFORM_SOURCES} ${ICON})
 endif()
 
 
@@ -75,5 +96,5 @@ $<$<CONFIG:ReleaseEditor>:StakeforgeEditor>
 # -------------- PROJECT STRUCTURE -------------
 
 include(${CMAKE_SOURCE_DIR}/Utils/CMake/CommonFunctions.cmake)
-group_sources(HEADERS SOURCES)
+group_sources(HEADERS SOURCES PLATFORM_HEADERS PLATFORM_SOURCES)
 group_generated()

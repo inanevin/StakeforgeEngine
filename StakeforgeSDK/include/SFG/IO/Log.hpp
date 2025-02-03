@@ -44,32 +44,6 @@ SOFTWARE.
 
 #endif
 
-#ifdef SFG_PLATFORM_WINDOWS
-#define DBG_BRK __debugbreak();
-#else
-#define DBG_BRK __builtin_trap();
-#endif
-
-#ifdef SFG_DEBUG
-#define SFG_ASSERT(x, ...)                                                                                                                                                                                                                                         \
-	if (!(x))                                                                                                                                                                                                                                                      \
-	{                                                                                                                                                                                                                                                              \
-		SFG_ERR(__VA_ARGS__);                                                                                                                                                                                                                                      \
-		DBG_BRK                                                                                                                                                                                                                                                    \
-	}
-
-#define SFG_ASSERT_F(x)                                                                                                                                                                                                                                            \
-	if (!(x))                                                                                                                                                                                                                                                      \
-	{                                                                                                                                                                                                                                                              \
-		DBG_BRK                                                                                                                                                                                                                                                    \
-	}
-
-#else
-#define SFG_ASSERT(x, ...)
-#endif
-
-#define SFG_NOTIMPLEMENTED SFG_ASSERT(false, "Implementation missing!")
-
 #include "SFG/Data/Mutex.hpp"
 #include "SFG/StakeforgeAPI.hpp"
 #include <iostream>

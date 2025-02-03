@@ -26,7 +26,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
 
-#include "SFG/Platform/Main.hpp"
+#include "Game.hpp"
 #include "SFG/Core/App.hpp"
 #include <Cocoa/Cocoa.h>
 
@@ -110,10 +110,8 @@ SFG_API int main(int argc, char* argv[])
 
         SFG::String errString = "";
         SFG::App* sfgApp = new SFG::App(errString);
-        
-        if(SFG::g_sfgAppInit)
-            SFG::g_sfgAppInit(sfgApp);
-        
+        SFG::Game* game = new SFG::Game(sfgApp);
+
         [osxAppDelegate setMyApp:sfgApp];
 
         if (!errString.empty())
@@ -138,9 +136,7 @@ SFG_API int main(int argc, char* argv[])
             sfgApp->Tick();
         }
 
-        if(SFG::g_sfgAppShutdown)
-            SFG::g_sfgAppShutdown(sfgApp);
-      
+        delete game;
         delete sfgApp;
 
         [app terminate:nil];

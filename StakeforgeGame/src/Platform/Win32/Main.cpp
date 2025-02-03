@@ -26,19 +26,62 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
 
-#pragma once
+#include "Game.hpp"
 
-#include "SFG/StakeforgeAPI.hpp"
+#include "SFG/Data/String.hpp"
+#include "SFG/IO/Log.hpp"
+#include "SFG/Core/App.hpp"
 
-namespace SFG
+#define WINDOWS_MEAN_AND_LEAN
+#include <Windows.h>
+
+int WINAPI WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, _In_ LPSTR pCmdLine, _In_ int nCmdShow)
 {
 
-class App;
+#ifdef SFG_DEBUG
+	bool consoleAllocated = false;
+	if (AllocConsole() == FALSE)
+	{
+		consoleAllocated = true;
+		SFG_ERR("Failed allocating console!");
+	}
+#endif
 
-typedef void (*SFGAppInit)(App* app);
-typedef void (*SFGAppShutdown)(App* app);
+	SetProcessDpiAwarenessContext(DPI_AWARENESS_CONTEXT_PER_MONITOR_AWARE_V2);
+	SetProcessPriorityBoost(GetCurrentProcess(), FALSE);
 
-extern SFG_API SFGAppInit g_sfgAppInit;
-extern SFG_API SFGAppShutdown g_sfgAppShutdown;
+	DWORD_PTR mask = 1;
+	SetThreadAffinityMask(GetCurrentThread(), mask);
 
-} // namespace SFG
+	DWORD dwError;
+	if (!SetPriorityClass(GetCurrentProcess(), REALTIME_PRIORITY_CLASS))
+	{
+		dwError = GetLastError();
+		SFG_ERR("Failed setting process priority: {0}", dwError);
+	}
+
+	SFG::String error = "";
+
+	SFG::App*  app	= new SFG::App(error);
+	SFG::Game* game = new SFG::Game(app);
+
+	if (!error.empty())
+	{
+		MessageBox(nullptr, error.c_str(), "Error", MB_OK | MB_ICONERROR);
+		delete app;
+		FreeConsole();
+		return 0;
+	}
+
+	app->Tick();
+
+	delete game;
+	delete app;
+
+#ifdef SFG_DEBUG
+	if (consoleAllocated)
+		FreeConsole();
+#endif
+
+	return 0;
+}

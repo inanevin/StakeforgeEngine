@@ -170,6 +170,8 @@ namespace SFG
 				GetCursorPos(&cursorPos);
 				const Vector2i relative = Vector2i(static_cast<int32>(cursorPos.x), static_cast<int32>(cursorPos.y)) - window->m_position;
 
+				window->m_mousePosition = Vector2i::Clamp(relative, Vector2i::Zero, window->m_size);
+
 				WindowEvent ev = {
 					.window			 = window,
 					.type			 = WindowEventType::MouseButton,

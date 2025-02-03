@@ -5,7 +5,7 @@ https://github.com/inanevin/StakeforgeEngine
 Author: Inan Evin
 http://www.inanevin.com
 
-Copyright (c) [2018-] [Inan Evin]
+Copyright (c) [2025-] [Inan Evin]
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -28,21 +28,32 @@ SOFTWARE.
 
 #pragma once
 
+#include "SFG/Type/SizeDefinitions.hpp"
+
 namespace SFG
 {
-#define MEMCPY(...)	 memcpy(__VA_ARGS__)
-#define MEMMOVE(...) memmove(__VA_ARGS__)
-#define MEMSET(...)	 memset(__VA_ARGS__)
-#define MALLOC(...)	 malloc(__VA_ARGS__)
-#define FREE(...)	 free(__VA_ARGS__)
+	template <typename T> class Handle
+	{
+	public:
+		uint32 GetIndex() const
+		{
+			return m_index;
+		}
 
-#ifdef SFG_COMPILER_MSVC
-#include <malloc.h>
-#define ALIGNED_MALLOC(...) _aligned_malloc(__VA_ARGS__)
-#define ALIGNED_FREE(...)	_aligned_free(__VA_ARGS__)
-#else
-#include <cstdlib>
-#define ALIGNED_MALLOC(...) std::aligned_alloc(__VA_ARGS__)
-#define ALIGNED_FREEC(...)	std::free(__VA_ARGS__)
-#endif
+		bool Alive() const
+		{
+			return m_generation != 0;
+		}
+
+		bool operator==(const Handle<T>& handle)
+		{
+			return handle.m_generation == m_generation && handle.m_index == m_index;
+		}
+
+	private:
+		template <typename T> friend class Pool;
+
+		uint16 m_index		= 0;
+		uint16 m_generation = 0;
+	};
 } // namespace SFG
