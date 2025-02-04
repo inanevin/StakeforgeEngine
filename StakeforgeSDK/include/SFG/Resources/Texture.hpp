@@ -28,7 +28,36 @@ SOFTWARE.
 
 #pragma once
 
+#include "SFG/Resources/ResourceHeader.hpp"
+#include "SFG/Resources/TextureBuffer.hpp"
+#include "SFG/Data/Vector.hpp"
+
 namespace SFG
 {
+	class IStream;
+	class TextureLoadOptions;
 
+	class Texture
+	{
+	public:
+		/// <summary>
+		///
+		/// </summary>
+		/// <param name="file"></param>
+		/// <returns></returns>
+		bool LoadFromFile(const char* file, const TextureLoadOptions& options);
+
+		/// <summary>
+		///
+		/// </summary>
+		/// <param name="stream"></param>
+		void LoadFromStream(IStream& stream);
+
+	private:
+		void DestroyBuffers();
+
+	private:
+		ResourceHeader		  m_header	= {};
+		Vector<TextureBuffer> m_buffers = {};
+	};
 } // namespace SFG

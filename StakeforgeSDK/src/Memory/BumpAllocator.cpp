@@ -26,7 +26,25 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
 
+#include "SFG/Memory/BumpAllocator.hpp"
+#include "SFG/Memory/Memory.hpp"
+
 namespace SFG
 {
+	BumpAllocator::BumpAllocator(size_t sz)
+	{
+		m_raw = (uint8*)MALLOC(sz);
+	}
 
+	BumpAllocator::~BumpAllocator()
+	{
+		FREE(m_raw);
+	}
+
+	uint8* BumpAllocator::Allocate(size_t size)
+	{
+		uint8* ptr = reinterpret_cast<uint8*>(m_raw + m_head);
+		m_head += static_cast<uint32>(size);
+		return ptr;
+	}
 } // namespace SFG

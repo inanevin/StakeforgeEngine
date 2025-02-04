@@ -52,7 +52,7 @@ namespace SFG
 		/* Main window */
 		Window* window = app->CreateAppWindow(0, SFG_APPNAME, {}, Vector2ui(1000, 1000), WindowStyle::ApplicationWindow);
 		window->CenterToMonitor();
-        window->SetHighFrequencyInputMode(true);
+		// window->SetHighFrequencyInputMode(true);
 	}
 
 	Game::~Game()

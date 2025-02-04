@@ -28,21 +28,15 @@ SOFTWARE.
 
 #pragma once
 
-#include "SFG/Data/String.hpp"
 #include "SFG/Type/SizeDefinitions.hpp"
 
 namespace SFG
 {
-	enum class ResourceType;
-	enum class ResourceState;
-
-	struct Resource
+	struct TextureLoadOptions
 	{
-		String		  path;
-		String		  name;
-		GUID		  guid;
-		ResourceType  type;
-		ResourceState state;
-		void*		  metadata;
+		uint8 desiredChannels = 0;
+		bool  force8Bit		  = false;
+		bool  generateMipmaps = false;
 	};
+
 } // namespace SFG

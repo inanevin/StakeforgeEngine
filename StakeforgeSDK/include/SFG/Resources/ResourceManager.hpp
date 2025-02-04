@@ -28,9 +28,6 @@ SOFTWARE.
 
 #pragma once
 
-#include "SFG/Resources/Resource.hpp"
-#include "SFG/Data/Pool.hpp"
-
 namespace SFG
 {
 #define RESOURCE_BUFFER_SIZE 1024
@@ -39,6 +36,5 @@ namespace SFG
 	{
 	public:
 	private:
-		Pool<Resource, 256> m_resources;
 	};
 } // namespace SFG

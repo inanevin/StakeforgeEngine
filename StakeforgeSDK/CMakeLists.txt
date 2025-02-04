@@ -63,6 +63,8 @@ include/SFG/Resources/*.hpp
 include/SFG/Vendor/LZ4/lz4.h
 include/SFG/Vendor/readerwriterqueue/*.h
 include/SFG/Vendor/json/*.hpp
+include/SFG/Vendor/tinygltf/*.h
+include/SFG/Vendor/stb/*.h
 
 )
 

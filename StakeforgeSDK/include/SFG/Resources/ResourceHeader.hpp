@@ -26,7 +26,22 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
 
+#pragma once
+
+#include "SFG/Data/String.hpp"
+#include "SFG/Type/SizeDefinitions.hpp"
+
 namespace SFG
 {
+	enum class ResourceType;
+	enum class ResourceState;
 
+	struct ResourceHeader
+	{
+		String		  path	= "";
+		String		  name	= "";
+		GUID		  guid	= 0;
+		ResourceType  type	= (ResourceType)0;
+		ResourceState state = (ResourceState)0;
+	};
 } // namespace SFG

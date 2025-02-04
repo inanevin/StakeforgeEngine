@@ -168,8 +168,10 @@ namespace SFG
 				USHORT mouseFlags = raw->data.mouse.usButtonFlags;
 				POINT  cursorPos;
 				GetCursorPos(&cursorPos);
-				const Vector2i relative = Vector2i(static_cast<int32>(cursorPos.x), static_cast<int32>(cursorPos.y)) - window->m_position;
 
+				window->m_mousePositionAbs = Vector2i(static_cast<int32>(cursorPos.x), static_cast<int32>(cursorPos.y));
+
+				const Vector2i relative = window->m_mousePositionAbs - window->m_position;
 				window->m_mousePosition = Vector2i::Clamp(relative, Vector2i::Zero, window->m_size);
 
 				WindowEvent ev = {
@@ -309,17 +311,18 @@ namespace SFG
 
 		case WM_MOUSEMOVE: {
 
+			if (window->m_highFrequencyInputMode)
+				return 0;
+
 			const int32 xPos = GET_X_LPARAM(lParam);
 			const int32 yPos = GET_Y_LPARAM(lParam);
 
 			static Vector2i previousPosition = Vector2i::Zero;
 			window->m_mousePosition			 = Vector2i(xPos, yPos);
+			window->m_mousePositionAbs		 = window->GetPosition() + window->m_mousePosition;
 
 			const Vector2i delta = window->m_mousePosition - previousPosition;
 			previousPosition	 = window->m_mousePosition;
-
-			if (window->m_highFrequencyInputMode)
-				return 0;
 
 			const WindowEvent ev = {
 				.window			 = window,

@@ -26,7 +26,28 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
 
+#pragma once
+
+#include "SFG/Type/SizeDefinitions.hpp"
+
 namespace SFG
 {
+	struct TextureBuffer
+	{
+		uint8* data		= nullptr;
+		uint16 width	= 0;
+		uint16 height	= 0;
+		uint8  channels = 0;
+		uint8  bitDepth = 8;
 
+		inline uint8 bytesPerPixel() const
+		{
+			return static_cast<size_t>(channels * (bitDepth / 8));
+		}
+
+		inline size_t size() const
+		{
+			return static_cast<size_t>(width) * static_cast<size_t>(height) * bytesPerPixel();
+		}
+	};
 } // namespace SFG
