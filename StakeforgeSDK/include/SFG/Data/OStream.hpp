@@ -189,7 +189,7 @@ namespace SFG
 			size_t size = sizeof(T);
 
 			CheckGrow(size);
-			MEMCPY(&m_data[m_currentSize], ptr, size);
+			SFG_MEMCPY(&m_data[m_currentSize], ptr, size);
 			m_currentSize += size;
 		}
 

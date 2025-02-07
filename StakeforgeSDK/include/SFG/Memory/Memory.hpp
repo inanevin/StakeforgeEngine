@@ -28,21 +28,23 @@ SOFTWARE.
 
 #pragma once
 
-namespace SFG
-{
-#define MEMCPY(...)	 memcpy(__VA_ARGS__)
-#define MEMMOVE(...) memmove(__VA_ARGS__)
-#define MEMSET(...)	 memset(__VA_ARGS__)
-#define MALLOC(...)	 malloc(__VA_ARGS__)
-#define FREE(...)	 free(__VA_ARGS__)
+#define SFG_MEMCPY(...)	 memcpy(__VA_ARGS__)
+#define SFG_MEMMOVE(...) memmove(__VA_ARGS__)
+#define SFG_MEMSET(...)	 memset(__VA_ARGS__)
+#define SFG_MALLOC(...)	 malloc(__VA_ARGS__)
+#define SFG_FREE(...)	 free(__VA_ARGS__)
 
 #ifdef SFG_COMPILER_MSVC
 #include <malloc.h>
-#define ALIGNED_MALLOC(...) _aligned_malloc(__VA_ARGS__)
-#define ALIGNED_FREE(...)	_aligned_free(__VA_ARGS__)
+#define SFG_ALIGNED_MALLOC(...) _aligned_malloc(__VA_ARGS__)
+#define SFG_ALIGNED_FREE(...)	_aligned_free(__VA_ARGS__)
 #else
 #include <cstdlib>
-#define ALIGNED_MALLOC(...) std::aligned_alloc(__VA_ARGS__)
-#define ALIGNED_FREEC(...)	std::free(__VA_ARGS__)
+#define SFG_ALIGNED_MALLOC(...) std::aligned_alloc(__VA_ARGS__)
+#define SFG_ALIGNED_FREEC(...)	std::free(__VA_ARGS__)
 #endif
+
+namespace SFG
+{
+
 } // namespace SFG

@@ -62,13 +62,13 @@ namespace SFG
 			Vector<uint8> v2;
 			v2.resize(v.size());
 			std::reverse_copy(v.begin(), v.end(), v2.begin());
-			MEMCPY(&m_data[m_currentSize], v2.data(), size);
+			SFG_MEMCPY(&m_data[m_currentSize], v2.data(), size);
 
 			v.clear();
 			v2.clear();
 		}
 		else
-			MEMCPY(&m_data[m_currentSize], ptr, size);
+			SFG_MEMCPY(&m_data[m_currentSize], ptr, size);
 
 		m_currentSize += size;
 	}
@@ -79,7 +79,7 @@ namespace SFG
 			Create(size);
 
 		CheckGrow(size);
-		MEMCPY(&m_data[m_currentSize], ptr, size);
+		SFG_MEMCPY(&m_data[m_currentSize], ptr, size);
 		m_currentSize += size;
 	}
 
@@ -89,7 +89,7 @@ namespace SFG
 		{
 			m_totalSize	   = static_cast<size_t>((static_cast<float>(m_currentSize + sz) * 2.0f));
 			uint8* newData = new uint8[m_totalSize];
-			MEMCPY(newData, m_data, m_currentSize);
+			SFG_MEMCPY(newData, m_data, m_currentSize);
 			delete[] m_data;
 			m_data = newData;
 		}

@@ -40,14 +40,15 @@ src/Math/*.cpp
 src/Memory/*.cpp
 src/Serialization/*.cpp
 src/System/*.cpp
-src/Type/*.cpp
 src/Resources/*.cpp
+src/Type/*.cpp
+src/Gfx/*.cpp
 
 include/SFG/Vendor/LZ4/lz4.cpp
 
 )
 
-file (GLOB_RECURSE HEADERS
+file (GLOB HEADERS
 include/SFG/*.hpp
 include/SFG/Core/*.hpp
 include/SFG/Data/*.hpp
@@ -59,35 +60,42 @@ include/SFG/Serialization/*.hpp
 include/SFG/System/*.hpp
 include/SFG/Type/*.hpp
 include/SFG/Resources/*.hpp
+include/SFG/Gfx/*.hpp
 
 include/SFG/Vendor/LZ4/lz4.h
 include/SFG/Vendor/readerwriterqueue/*.h
 include/SFG/Vendor/json/*.hpp
 include/SFG/Vendor/tinygltf/*.h
 include/SFG/Vendor/stb/*.h
+include/SFG/Vendor/parallel_hashmap/*.h
 
 )
 
 if(WIN32)
 
-file (GLOB_RECURSE PLATFORM_HEADERS
+file (GLOB PLATFORM_HEADERS
 include/SFG/Platform/Win32/*.hpp
+include/SFG/Vendor/vulkan/*.h
+include/SFG/Gfx/Backend/Vulkan/*.hpp
 )
 
-file (GLOB_RECURSE PLATFORM_SOURCES
+file (GLOB PLATFORM_SOURCES
 src/Platform/Win32/*.cpp
+src/Gfx/Backend/Vulkan/*.cpp
+include/SFG/Vendor/vulkan/*.cpp
 )
 
 endif()
 
 if(APPLE)
 
-file (GLOB_RECURSE PLATFORM_HEADERS
+file (GLOB PLATFORM_HEADERS
 include/SFG/Platform/OSX/*.hpp
 )
 
-file (GLOB_RECURSE PLATFORM_SOURCES
+file (GLOB PLATFORM_SOURCES
 src/Platform/OSX/*.mm
+src/Gfx/Backend/Metal/*.mm
 )
 
 endif()
@@ -111,6 +119,13 @@ target_include_directories(${PROJECT_NAME} PRIVATE ${PROJECT_SOURCE_DIR}/src)
 
 
 # -------------- DEPENDENCIES -------------
+
+if(WIN32)
+	find_package(Vulkan REQUIRED)
+	target_link_libraries(${PROJECT_NAME} 
+		PRIVATE Vulkan::Vulkan
+	)
+endif()
 
 # Jolt
 set(CPP_RTTI_ENABLED OFF CACHE BOOL "" FORCE)

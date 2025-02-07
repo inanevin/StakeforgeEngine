@@ -38,7 +38,7 @@ namespace SFG
 		m_data				   = new uint8[size];
 
 		if (data != nullptr)
-			MEMCPY(m_data, data, unaligned);
+			SFG_MEMCPY(m_data, data, unaligned);
 
 		m_index = 0;
 		m_size	= size;
@@ -72,20 +72,20 @@ namespace SFG
 			v2.resize(v.size());
 			std::reverse_copy(v.begin(), v.end(), v2.begin());
 
-			MEMCPY(ptr, v2.data(), size);
+			SFG_MEMCPY(ptr, v2.data(), size);
 
 			v.clear();
 			v2.clear();
 		}
 		else
-			MEMCPY(ptr, &m_data[m_index], size);
+			SFG_MEMCPY(ptr, &m_data[m_index], size);
 
 		m_index += size;
 	}
 
 	void IStream::ReadToRaw(uint8* ptr, size_t size)
 	{
-		MEMCPY(ptr, &m_data[m_index], size);
+		SFG_MEMCPY(ptr, &m_data[m_index], size);
 		m_index += size;
 	}
 

@@ -29,22 +29,26 @@ SOFTWARE.
 #pragma once
 
 #include "SFG/Type/SizeDefinitions.hpp"
+#include <utility>
 
 namespace SFG
 {
 	class BumpAllocator
 	{
 	public:
-		BumpAllocator() = delete;
 		BumpAllocator(size_t sz);
 		~BumpAllocator();
+
+		BumpAllocator()										 = delete;
+		BumpAllocator& operator=(const BumpAllocator& other) = delete;
+		BumpAllocator(const BumpAllocator& other)			 = delete;
 
 		/// <summary>
 		///
 		/// </summary>
 		/// <param name="size"></param>
 		/// <returns></returns>
-		uint8* Allocate(size_t size);
+		void* Allocate(size_t size, size_t alignment = 1);
 
 		/// <summary>
 		///
@@ -61,16 +65,18 @@ namespace SFG
 		/// <typeparam name="...Args"></typeparam>
 		/// <param name="...args"></param>
 		/// <returns></returns>
-		template <typename T, typename... Args> T* Allocate(Args&&... args)
+		template <typename T, typename... Args> T* Allocate(size_t count, Args&&... args)
 		{
-			uint8* ptr = Allocate(sizeof(T));
-			new ((void)ptr) T(std::forward<Args>(args...));
-			return ptr;
+			void* ptr	   = Allocate(sizeof(T) * count, std::alignment_of<T>::value);
+			T*	  arrayPtr = reinterpret_cast<T*>(ptr);
+			for (size_t i = 0; i < count; ++i)
+				new (&arrayPtr[i]) T(std::forward<Args>(args)...);
+			return arrayPtr;
 		}
 
 	private:
 		size_t m_size = 0;
 		uint32 m_head = 0;
-		uint8* m_raw  = nullptr;
+		void*  m_raw  = nullptr;
 	};
 } // namespace SFG

@@ -29,10 +29,13 @@ SOFTWARE.
 #pragma once
 
 #include "SFG/Type/SizeDefinitions.hpp"
+#include "SFG/StakeforgeAPI.hpp"
 #include "SFG/Data/String.hpp"
 #include "SFG/Data/Vector.hpp"
 #include "SFG/Data/Atomic.hpp"
-#include "SFG/Core/AppSettings.hpp"
+#include "SFG/Data/Semaphore.hpp"
+#include "SFG/Gfx/Renderer.hpp"
+#include "SFG/Gfx/RenderFrame.hpp"
 #include <thread>
 
 namespace SFG
@@ -41,14 +44,26 @@ namespace SFG
 	class Plugin;
 	class Vector2ui;
 	class Vector2i;
+	class RenderFrame;
+	class AppDelegate;
 	enum class WindowStyle;
 
 	class SFG_API App
 	{
 	public:
-		App() = delete;
+		struct Settings
+		{
+			AppDelegate* delegate			   = nullptr;
+			uint32		 fixedUpdateRate	   = 60;
+			uint32		 maxAccumulatedUpdates = 4;
+			bool		 throttleCPU		   = false;
+		};
+
+		App()							 = delete;
+		App(const App& other)			 = delete;
+		App& operator=(const App& other) = delete;
+
 		App(String& errString);
-		App(App& other) = delete;
 		~App();
 
 		/// <summary>
@@ -95,7 +110,7 @@ namespace SFG
 		///
 		/// </summary>
 		/// <returns></returns>
-		inline AppSettings& GetAppSettings()
+		inline Settings& GetAppSettings()
 		{
 			return m_settings;
 		}
@@ -104,9 +119,14 @@ namespace SFG
 		void RenderLoop();
 
 	private:
+		Renderer		m_renderer;
+		RenderFrame		m_renderFrames[2];
 		Vector<Window*> m_windows;
-		AppSettings		m_settings = {};
+		Settings		m_settings = {};
 		std::thread		m_renderThread;
-		Atomic<bool>	m_shouldClose = false;
+		BinarySemaphore m_frameAvailableSemaphore{0};
+		uint32			m_updateRenderFrameIndex  = 0;
+		Atomic<uint32>	m_currentRenderFrameIndex = 0;
+		Atomic<bool>	m_shouldClose			  = false;
 	};
 } // namespace SFG

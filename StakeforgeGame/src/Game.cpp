@@ -37,17 +37,19 @@ SOFTWARE.
 #include <SFG/Editor/Editor.hpp>
 #endif
 
+#include <random>
+#include <chrono>
+#include <thread>
+
 namespace SFG
 {
 	Game::Game(App* app) : AppDelegate(), m_app(app)
 	{
 
 		/* App Init */
-		SFG::AppSettings& settings = app->GetAppSettings();
-		settings.inputUpdateRate   = 1000;
-		settings.appUpdateRate	   = 120;
-		settings.throttleCPU	   = true;
-		settings.delegate		   = this;
+		SFG::App::Settings& settings = app->GetAppSettings();
+		settings.throttleCPU		 = true;
+		settings.delegate			 = this;
 
 		/* Main window */
 		Window* window = app->CreateAppWindow(0, SFG_APPNAME, {}, Vector2ui(1000, 1000), WindowStyle::ApplicationWindow);
@@ -65,13 +67,25 @@ namespace SFG
 			return;
 
 		// SFG_TRACE("HUH");
-		SFG_TRACE("POS {0} - {1}", ev.window->GetMousePositionAbs().x, ev.window->GetMousePositionAbs().y);
+		// SFG_TRACE("POS {0} - {1}", ev.window->GetMousePositionAbs().x, ev.window->GetMousePositionAbs().y);
 		// SFG_TRACE("VALUE {0} - {1}", ev.value.x, ev.value.y);
 	}
 
-	void Game::OnTick(double delta)
+	void Game::OnTick()
 	{
 		// SFG_TRACE("Game ticking {0}", delta);
 	}
 
+	void Game::OnSimulate(double delta)
+	{
+		static std::mt19937				   rng(std::random_device{}());
+		std::uniform_int_distribution<int> sleepDist(10, 15); // Milliseconds
+
+		int sleepTime = sleepDist(rng);
+		std::this_thread::sleep_for(std::chrono::milliseconds(sleepTime));
+	}
+
+	void Game::OnGenerateFrame(RenderFrame& frame, double interpolation)
+	{
+	}
 } // namespace SFG

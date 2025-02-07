@@ -32,12 +32,20 @@ SOFTWARE.
 
 namespace SFG
 {
-	template <typename T> class Handle
+	class Handle
 	{
 	public:
-		uint32 GetIndex() const
+		Handle(){};
+		Handle(uint16 idx, uint16 gen) : m_index(idx), m_generation(gen){};
+
+		uint16 GetIndex() const
 		{
 			return m_index;
+		}
+
+		uint16 GetGeneration() const
+		{
+			return m_generation;
 		}
 
 		bool Alive() const
@@ -45,14 +53,12 @@ namespace SFG
 			return m_generation != 0;
 		}
 
-		bool operator==(const Handle<T>& handle)
+		bool operator==(const Handle& handle)
 		{
 			return handle.m_generation == m_generation && handle.m_index == m_index;
 		}
 
 	private:
-		template <typename T> friend class Pool;
-
 		uint16 m_index		= 0;
 		uint16 m_generation = 0;
 	};

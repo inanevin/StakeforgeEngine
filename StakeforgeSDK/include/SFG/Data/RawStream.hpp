@@ -40,8 +40,10 @@ namespace SFG
 	{
 	public:
 		RawStream() : m_data({}){};
-		RawStream(const RawStream& other) = delete;
-		~RawStream()					  = default;
+		~RawStream() = default;
+
+		RawStream(const RawStream& other)			 = delete;
+		RawStream& operator=(const RawStream& other) = delete;
 
 		/// <summary>
 		///

@@ -49,7 +49,19 @@ namespace SFG
 		///
 		/// </summary>
 		/// <param name="delta"></param>
-		virtual void OnTick(double delta) override;
+		virtual void OnTick() override;
+
+		/// <summary>
+		///
+		/// </summary>
+		/// <param name="delta"></param>
+		virtual void OnSimulate(double delta) override;
+
+		/// <summary>
+		///
+		/// </summary>
+		/// <param name="frame"></param>
+		virtual void OnGenerateFrame(RenderFrame& frame, double interpolation) override;
 
 	private:
 		App* m_app = nullptr;

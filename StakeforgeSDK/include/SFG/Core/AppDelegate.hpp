@@ -33,6 +33,7 @@ SOFTWARE.
 namespace SFG
 {
 	struct WindowEvent;
+	class RenderFrame;
 
 	class SFG_API AppDelegate
 	{
@@ -50,6 +51,18 @@ namespace SFG
 		///
 		/// </summary>
 		/// <param name="delta"></param>
-		virtual void OnTick(double delta) = 0;
+		virtual void OnTick() = 0;
+
+		/// <summary>
+		///
+		/// </summary>
+		/// <param name="delta"></param>
+		virtual void OnSimulate(double delta) = 0;
+
+		/// <summary>
+		///
+		/// </summary>
+		/// <param name="frame"></param>
+		virtual void OnGenerateFrame(RenderFrame& frame, double interpolation) = 0;
 	};
 } // namespace SFG

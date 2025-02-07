@@ -94,7 +94,7 @@ namespace SFG
 	void Texture::DestroyBuffers()
 	{
 		for (const TextureBuffer& buffer : m_buffers)
-			FREE(buffer.data);
+			SFG_FREE(buffer.data);
 		m_buffers.resize(0);
 	}
 } // namespace SFG

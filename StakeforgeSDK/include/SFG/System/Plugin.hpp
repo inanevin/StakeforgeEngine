@@ -38,7 +38,9 @@ namespace SFG
 	class SFG_API Plugin
 	{
 	public:
-		Plugin() = delete;
+		Plugin()						 = delete;
+		Plugin(const Plugin&)			 = delete;
+		Plugin& operator=(const Plugin&) = delete;
 		Plugin(const char* path, App* app, void* platformHandle) : m_path(path), m_app(app), m_platformHandle(platformHandle){};
 		virtual ~Plugin() = default;
 

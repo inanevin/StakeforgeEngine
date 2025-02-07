@@ -55,9 +55,9 @@ namespace SFG
 		~Pool()
 		{
 			if (ALIGN_CACHE)
-				ALIGNED_FREE(m_raw);
+				SFG_ALIGNED_FREE(m_raw);
 			else
-				FREE(m_raw);
+				SFG_FREE(m_raw);
 		}
 
 		/// <summary>
@@ -66,16 +66,14 @@ namespace SFG
 		/// <typeparam name="...Args"></typeparam>
 		/// <param name="...args"></param>
 		/// <returns></returns>
-		template <typename... Args> Handle<T> Create(Args&&... args)
+		template <typename... Args> Handle Create(Args&&... args)
 		{
 			if (m_stackIndicesPos >= N)
 			{
 				Grow();
 			}
 
-			Handle<T> handle;
-			handle.m_index		= m_stackIndices[m_stackIndicesPos];
-			handle.m_generation = m_gens[handle.m_index];
+			Handle handle = Handle(m_stackIndices[m_stackIndicesPos], m_gens[handle.m_index]);
 			m_stackIndicesPos++;
 
 			const void* ptr = (void*)(m_raw + handle.GetIndex());
@@ -88,7 +86,7 @@ namespace SFG
 		///
 		/// </summary>
 		/// <param name="handle"></param>
-		void Free(const Handle<T>& handle)
+		inline void Free(const Handle<T>& handle)
 		{
 			SFG_ASSERT(handle.Alive(), "");
 			const uint32 index = handle.GetIndex();
@@ -98,10 +96,15 @@ namespace SFG
 			m_stackIndices[m_stackIndicesPos] = index;
 		}
 
+		inline bool IsValid(const Handle& handle)
+		{
+			return m_gens[handle.GetIndex()] == handle.GetGeneration();
+		}
+
 		/// <summary>
 		///
 		/// </summary>
-		void IsEmpty() const
+		inline void IsEmpty() const
 		{
 			m_stackIndicesPos = 0;
 		}
@@ -109,7 +112,7 @@ namespace SFG
 		/// <summary>
 		///
 		/// </summary>
-		void GetSize() const
+		inline void GetSize() const
 		{
 			return m_stackIndicesPos;
 		}
@@ -120,7 +123,7 @@ namespace SFG
 			const size_t perElement = sizeof(T) + sizeof(uint16) + sizeof(uint32);
 			const size_t cache		= 64;
 			const size_t totalSize	= ALIGN_CACHE ? (((perElement * N + (cache - 1)) / cache) * cache) : (perElement * m_size);
-			m_raw = reinterpret_cast<T*>(ALIGN_CACHE ? (ALIGNED_MALLOC(totalSize, cache) : MALLOC(totalSize)));
+			m_raw = reinterpret_cast<T*>(ALIGN_CACHE ? (SFG_ALIGNED_MALLOC(totalSize, cache) : SFG_MALLOC(totalSize)));
 			m_gens					= reinterpret_cast<uint16*>(reinterpret_cast<uint8*>(m_raw) + (m_size * sizeof(T)));
 			m_stackIndices			= reinterpret_cast<uint32*>(reinterpret_cast<uint8*>(m_raw) + m_size * (sizeof(T) + sizeof(uint16)));
 		}
@@ -135,8 +138,8 @@ namespace SFG
 			m_size *= 2;
 			Reserve();
 
-			MEMCPY(m_raw, prev, prevSize * sizeof(T));
-			MEMCPY(m_gens, prevGens, prevSize * sizeof(uint16));
+			SFG_MEMCPY(m_raw, prev, prevSize * sizeof(T));
+			SFG_MEMCPY(m_gens, prevGens, prevSize * sizeof(uint16));
 
 			for (uint32 i = prevSize; i < m_size; i++)
 			{

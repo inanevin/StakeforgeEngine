@@ -26,54 +26,36 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
 
-#include "SFG/Data/RawStream.hpp"
-#include "SFG/Data/OStream.hpp"
-#include "SFG/Data/IStream.hpp"
-#include "SFG/Memory/Memory.hpp"
+#include "SFG/Gfx/RenderFrame.hpp"
+#include "SFG/Data/Handle.hpp"
+#include "SFG/IO/Assert.hpp"
+#include "SFG/Memory/BumpAllocator.hpp"
 
 namespace SFG
 {
-	void RawStream::Create(uint8* data, size_t size)
+	void RenderFrame::Initialize(const Definition& definition)
 	{
-		Destroy();
-		m_data = {new uint8[size], size};
-		SFG_MEMCPY(m_data.data(), data, size);
+		SFG_ASSERT(m_allocator == nullptr);
+		m_allocator		 = new BumpAllocator(definition.bumpAllocatorSize);
+		m_commandStreams = m_allocator->Allocate<Handle>(definition.maxCommandStreams);
+		m_definition	 = definition;
 	}
 
-	void RawStream::Create(OStream& stream)
+	void RenderFrame::Shutdown()
 	{
-		Destroy();
-		m_data = {new uint8[stream.GetCurrentSize()], stream.GetCurrentSize()};
-		SFG_MEMCPY(m_data.data(), stream.GetDataRaw(), stream.GetCurrentSize());
+		delete m_allocator;
 	}
 
-	void RawStream::Destroy()
+	void RenderFrame::Reset()
 	{
-		if (IsEmpty())
-			return;
-		delete[] m_data.data();
-		m_data = {};
+		m_allocator->Reset();
+		m_commandStreamsCount = 0;
 	}
 
-	void RawStream::SaveToStream(OStream& stream) const
+	void RenderFrame::AddCommandStream(const Handle& handle)
 	{
-		const uint32 sz = static_cast<uint32>(m_data.size());
-		stream.Write(sz);
-		if (sz != 0)
-			stream.WriteRaw(m_data.data(), m_data.size());
+		SFG_ASSERT(m_commandStreamsCount < m_definition.maxCommandStreams);
+		m_commandStreams[m_commandStreamsCount] = handle;
+		m_commandStreamsCount++;
 	}
-
-	void RawStream::LoadFromStream(IStream& stream)
-	{
-		uint32 size = 0;
-		stream.Read(size);
-		if (size != 0)
-		{
-			const size_t sz = static_cast<size_t>(size);
-			Destroy();
-			m_data = {new uint8[sz], sz};
-			stream.ReadToRaw(m_data.data(), m_data.size());
-		}
-	}
-
 } // namespace SFG

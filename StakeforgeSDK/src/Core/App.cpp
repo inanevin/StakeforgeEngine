@@ -32,21 +32,42 @@ SOFTWARE.
 #include "SFG/Platform/Time.hpp"
 #include "SFG/Platform/Process.hpp"
 #include "SFG/Platform/Window.hpp"
+#include "SFG/Gfx/RenderFrame.hpp"
+#include "SFG/IO/Log.hpp"
 
 namespace SFG
 {
-
 	App::App(String& errString)
 	{
 		Time::Initialize();
+		m_renderer.Initialize(errString);
 
-		// m_renderThread = std::thread(&App::RenderLoop, this);
+		m_renderFrames[0].Initialize({
+			.bumpAllocatorSize = 1024 * 1024,
+			.maxCommandStreams = 32,
+		});
+
+		m_renderFrames[1].Initialize({
+			.bumpAllocatorSize = 1024 * 1024,
+			.maxCommandStreams = 32,
+		});
+
+		if (!errString.empty())
+			m_shouldClose.store(true);
+
+		m_currentRenderFrameIndex.store(0);
+		m_updateRenderFrameIndex = 1;
+		m_renderThread			 = std::thread(&App::RenderLoop, this);
 	}
 
 	App::~App()
 	{
-		// if (m_renderThread.joinable())
-		//	m_renderThread.join();
+		if (m_renderThread.joinable())
+			m_renderThread.join();
+
+		m_renderFrames[0].Shutdown();
+		m_renderFrames[1].Shutdown();
+		m_renderer.Shutdown();
 
 		for (Window* window : m_windows)
 			Window::Destroy(window);
@@ -63,11 +84,9 @@ namespace SFG
 			Sleep for chilling CPU if settings permit.
 		*/
 
-		const int64 INPUT_INTERVAL_US = m_settings.inputUpdateRate == 0 ? 0 : (int64)1000000 / static_cast<int64>(m_settings.inputUpdateRate);
-		const int64 APP_INTERVAL_US	  = m_settings.appUpdateRate == 0 ? 0 : (int64)1000000 / static_cast<int64>(m_settings.appUpdateRate);
+		const int64 FIXED_INTERVAL_US = m_settings.fixedUpdateRate == 0 ? 0 : (int64)1000000 / static_cast<int64>(m_settings.fixedUpdateRate);
 		int64		previousTime	  = Time::GetCPUMicroseconds();
-		int64		inputAccumulator  = INPUT_INTERVAL_US + 1;
-		int64		appAccumulator	  = INPUT_INTERVAL_US + 1;
+		int64		accumulator		  = FIXED_INTERVAL_US;
 
 		while (!m_shouldClose.load(std::memory_order_acquire))
 		{
@@ -75,13 +94,7 @@ namespace SFG
 			const int64 deltaMicroseconds = currentTime - previousTime;
 			previousTime				  = currentTime;
 
-			inputAccumulator += deltaMicroseconds;
-
-			if (inputAccumulator > INPUT_INTERVAL_US)
-			{
-				Process::PumpOSMessages();
-				inputAccumulator = 0;
-			}
+			Process::PumpOSMessages();
 
 			/*
 				Go through windows, destroy the ones marked dead.
@@ -113,23 +126,34 @@ namespace SFG
 				++it;
 			}
 
-			/*
-				Main app loop w/ accumulator, sleep/yield if throttle requested afterwards
-			*/
-			appAccumulator += deltaMicroseconds;
-			while (appAccumulator > APP_INTERVAL_US)
+			if (!m_settings.delegate)
 			{
-				appAccumulator -= APP_INTERVAL_US;
+				if (m_settings.throttleCPU)
+					Time::Sleep(1);
 
-				if (!m_settings.delegate)
-					continue;
+				continue;
+			}
 
-				/*
+			/*
+				Main app loop w/ accumulator.
+				OnTick() is for high frequency actions, called as fast as the loop's running.
+				OnSimulate() is discrete timestep simulation.
+				Sleep/yield if throttle requested.
+			*/
+
+			m_settings.delegate->OnTick();
+
+			accumulator += deltaMicroseconds;
+
+			/*
 					Collect all window events buffered so far & pass them to delegate.
-				*/
-				static Vector<WindowEvent> bufferedEvents = {};
-				bufferedEvents.resize(0);
+			*/
+			static Vector<WindowEvent> bufferedEvents = {};
+			bufferedEvents.resize(0);
 
+			// Time to collect events.
+			if (accumulator >= FIXED_INTERVAL_US)
+			{
 				for (Window* window : m_windows)
 				{
 					WindowEvent ev = {};
@@ -139,10 +163,23 @@ namespace SFG
 
 				for (const WindowEvent& ev : bufferedEvents)
 					m_settings.delegate->OnWindowEvent(ev);
-
-				const double delta = APP_INTERVAL_US * 1e-6;
-				m_settings.delegate->OnTick(delta);
 			}
+
+			while (accumulator >= FIXED_INTERVAL_US)
+			{
+				const double delta = FIXED_INTERVAL_US * 1e-6;
+				accumulator -= FIXED_INTERVAL_US;
+				m_settings.delegate->OnSimulate(delta);
+			}
+
+			/* Generate a new render frame & signal render thread. */
+			const double interpolation = static_cast<double>(accumulator) / FIXED_INTERVAL_US;
+			RenderFrame& frameToWrite  = m_renderFrames[m_updateRenderFrameIndex];
+			frameToWrite.Reset();
+			m_settings.delegate->OnGenerateFrame(frameToWrite, interpolation);
+			m_currentRenderFrameIndex.store(m_updateRenderFrameIndex, std::memory_order_release);
+			m_updateRenderFrameIndex = (m_updateRenderFrameIndex + 1) % 2;
+			m_frameAvailableSemaphore.release();
 
 			if (m_settings.throttleCPU)
 				Time::Sleep(1);
@@ -151,6 +188,15 @@ namespace SFG
 
 	void App::RenderLoop()
 	{
+		while (!m_shouldClose.load(std::memory_order_acquire))
+		{
+			m_frameAvailableSemaphore.acquire();
+			const uint32	   index	   = m_currentRenderFrameIndex.load(std::memory_order_acquire);
+			const RenderFrame& frameToRead = m_renderFrames[index];
+			m_renderer.Render(frameToRead);
+
+			std::this_thread::sleep_for(std::chrono::milliseconds(16));
+		}
 	}
 
 	void App::RequestClose()

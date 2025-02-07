@@ -26,19 +26,9 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
 
-#pragma once
-
-#include "SFG/StakeforgeAPI.hpp"
+#include "SFG/Gfx/Backend/Vulkan/VkQueue.hpp"
 
 namespace SFG
 {
-	class AppDelegate;
 
-	struct SFG_API AppSettings
-	{
-		int64		 inputUpdateRate = 1000;
-		uint32		 appUpdateRate	 = 60;
-		bool		 throttleCPU	 = false;
-		AppDelegate* delegate		 = nullptr;
-	};
 } // namespace SFG

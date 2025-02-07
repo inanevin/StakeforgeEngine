@@ -27,24 +27,36 @@ SOFTWARE.
 */
 
 #include "SFG/Memory/BumpAllocator.hpp"
+#include "SFG/IO/Assert.hpp"
 #include "SFG/Memory/Memory.hpp"
+#include <memory>
 
 namespace SFG
 {
 	BumpAllocator::BumpAllocator(size_t sz)
 	{
-		m_raw = (uint8*)MALLOC(sz);
+		SFG_ASSERT(sz != 0);
+		m_size = sz;
+		m_raw  = SFG_MALLOC(sz);
 	}
 
 	BumpAllocator::~BumpAllocator()
 	{
-		FREE(m_raw);
+		SFG_FREE(m_raw);
 	}
 
-	uint8* BumpAllocator::Allocate(size_t size)
+	void* BumpAllocator::Allocate(size_t size, size_t alignment)
 	{
-		uint8* ptr = reinterpret_cast<uint8*>(m_raw + m_head);
-		m_head += static_cast<uint32>(size);
-		return ptr;
+		SFG_ASSERT(m_head + size < m_size);
+
+		void*  currentPtr = (void*)((uint8*)m_raw + m_head);
+		size_t space	  = m_size - m_head;
+
+		void* alignedPtr = std::align(alignment, size, currentPtr, space);
+		if (alignedPtr == nullptr)
+			return nullptr;
+
+		m_head = m_size - space + size;
+		return alignedPtr;
 	}
 } // namespace SFG

@@ -77,7 +77,7 @@ namespace SFG
 		/// <param name="t"></param>
 		template <typename T> void Read(T& t)
 		{
-			MEMCPY(reinterpret_cast<uint8*>(&t), &m_data[m_index], sizeof(T));
+			SFG_MEMCPY(reinterpret_cast<uint8*>(&t), &m_data[m_index], sizeof(T));
 			m_index += sizeof(T);
 		}
 
@@ -173,11 +173,11 @@ namespace SFG
 		// {
 		// 	uint32 sz = 0;
 		// 	stream >> sz;
-		// 	void* d = MALLOC(sz);
+		// 	void* d = SFG_MALLOC(sz);
 		// 	stream.ReadToRawEndianSafe(d, static_cast<size_t>(sz));
 		// 	String s((char*)d, sz);
 		// 	val = s;
-		// 	FREE(d);
+		// 	SFG_FREE(d);
 		// }
 		else if constexpr (std::is_enum_v<T>)
 		{
