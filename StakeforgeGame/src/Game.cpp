@@ -45,7 +45,6 @@ namespace SFG
 {
 	Game::Game(App* app) : AppDelegate(), m_app(app)
 	{
-
 		/* App Init */
 		SFG::App::Settings& settings = app->GetAppSettings();
 		settings.throttleCPU		 = true;

@@ -86,7 +86,7 @@ namespace SFG
 		///
 		/// </summary>
 		/// <param name="handle"></param>
-		inline void Free(const Handle<T>& handle)
+		inline void Free(const Handle& handle)
 		{
 			SFG_ASSERT(handle.Alive(), "");
 			const uint32 index = handle.GetIndex();
@@ -123,7 +123,7 @@ namespace SFG
 			const size_t perElement = sizeof(T) + sizeof(uint16) + sizeof(uint32);
 			const size_t cache		= 64;
 			const size_t totalSize	= ALIGN_CACHE ? (((perElement * N + (cache - 1)) / cache) * cache) : (perElement * m_size);
-			m_raw = reinterpret_cast<T*>(ALIGN_CACHE ? (SFG_ALIGNED_MALLOC(totalSize, cache) : SFG_MALLOC(totalSize)));
+			m_raw					= reinterpret_cast<T*>(ALIGN_CACHE ? SFG_ALIGNED_MALLOC(totalSize, cache) : SFG_MALLOC(totalSize));
 			m_gens					= reinterpret_cast<uint16*>(reinterpret_cast<uint8*>(m_raw) + (m_size * sizeof(T)));
 			m_stackIndices			= reinterpret_cast<uint32*>(reinterpret_cast<uint8*>(m_raw) + m_size * (sizeof(T) + sizeof(uint16)));
 		}

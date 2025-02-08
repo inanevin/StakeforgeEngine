@@ -28,8 +28,14 @@ SOFTWARE.
 
 #include "SFG/Gfx/Backend/Vulkan/VkBackend.hpp"
 #include "SFG/Data/Vector.hpp"
-#include "SFG/Vendor/Vulkan/VkBootstrap.h"
+#include "SFG/IO/Assert.hpp"
 #include "SFG/IO/Log.hpp"
+#include "SFG/Memory/PoolAllocator.hpp"
+
+#include "SFG/Vendor/Vulkan/VkBootstrap.h"
+#include "SFG/Gfx/Backend/Vulkan/VkSubmitQueue.hpp"
+
+#include <algorithm>
 #include <vulkan/vulkan.h>
 
 namespace SFG
@@ -54,26 +60,56 @@ namespace SFG
 	}
 #endif
 
+#define VK_CHECK_RESULT(item, err)                                                                                                                                                                                                                                 \
+	{                                                                                                                                                                                                                                                              \
+		SFG_ASSERT(item == VK_SUCCESS, "Vulkan operation failed: {0}", item);                                                                                                                                                                                      \
+		if (item != VK_SUCCESS)                                                                                                                                                                                                                                    \
+			throw std::runtime_error(err);                                                                                                                                                                                                                         \
+	}
+
+	enum class CPUVisibleGPUMemoryType
+	{
+		None,
+		NonCoherent,
+		Coherent,
+	};
+
+	enum class QueueAvailabilityType
+	{
+		Default,
+		Dedicated,
+		Separate,
+	};
+
 	struct VulkanBackendUserData
 	{
-		VkInstance				 instance			 = nullptr;
-		VkDebugUtilsMessengerEXT debugMessenger		 = nullptr;
-		VkAllocationCallbacks*	 allocationCallbacks = nullptr;
-		VkDevice				 device				 = nullptr;
-
-		// Function pointers
 		PFN_vkCmdBeginRenderingKHR		 vkCmdBeginRenderingKHR		  = nullptr;
 		PFN_vkCmdEndRenderingKHR		 vkCmdEndRenderingKHR		  = nullptr;
 		PFN_vkSetDebugUtilsObjectNameEXT vkSetDebugUtilsObjectNameEXT = nullptr;
 		PFN_vkCmdBeginDebugUtilsLabelEXT vkCmdBeginDebugUtilsLabelEXT = nullptr;
 		PFN_vkCmdEndDebugUtilsLabelEXT	 vkCmdEndDebugUtilsLabelEXT	  = nullptr;
+
+		VkInstance				 instance				   = nullptr;
+		VkDevice				 device					   = nullptr;
+		VkDebugUtilsMessengerEXT debugMessenger			   = nullptr;
+		VkAllocationCallbacks*	 allocationCallbacks	   = nullptr;
+		VkQueue					 transferQueue			   = nullptr;
+		VkQueue					 computeQueue			   = nullptr;
+		VkQueue					 graphicsQueue			   = nullptr;
+		int32					 transferQueueFamilyIndex  = -1;
+		int32					 computeQueueFamilyIndex   = -1;
+		QueueAvailabilityType	 transferQueueAvailability = QueueAvailabilityType::Default;
+		QueueAvailabilityType	 computeQueueAvailability  = QueueAvailabilityType::Default;
+		CPUVisibleGPUMemoryType	 cpuVisibleGPUMemoryType   = CPUVisibleGPUMemoryType::None;
+
+		Pool<VkSubmitQueue, 3> queues;
 	};
 
 	static VulkanBackendUserData g_vkUserData = {};
 
 	void VkBackend::Create(String& errString)
 	{
-
+		SFG_INFO("************* Initializing Vulkan backend... *************");
 		constexpr uint32 VK_MAJOR = 1;
 		constexpr uint32 VK_MINOR = 2;
 
@@ -204,6 +240,13 @@ namespace SFG
 				properties += "LazilyAllocated ";
 
 			SFG_INFO("Vulkan: Memory Type {0}: Heap {1} | {2}", i, heapIndex, properties);
+
+			if ((flags & VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT) && (flags & VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT))
+			{
+				const bool isCoherent = (flags & VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
+				SFG_INFO("CPU visible GPU memory is available! Is Coherent: {0}", isCoherent);
+				g_vkUserData.cpuVisibleGPUMemoryType = isCoherent ? CPUVisibleGPUMemoryType::Coherent : CPUVisibleGPUMemoryType::NonCoherent;
+			}
 		}
 
 		/*
@@ -227,8 +270,71 @@ namespace SFG
 			return;
 		}
 
-		vkb::Device vkbDevice = deviceBuilderResult.value();
-		g_vkUserData.device	  = vkbDevice.device;
+		vkb::Device vkbDevice	   = deviceBuilderResult.value();
+		g_vkUserData.device		   = vkbDevice.device;
+		g_vkUserData.graphicsQueue = vkbDevice.get_queue(vkb::QueueType::graphics).value();
+
+		/*
+			Queue checkup.
+		*/
+		Vector<VkQueueFamilyProperties> queueFamilies = physicalDevice.get_queue_families();
+		std::sort(queueFamilies.begin(), queueFamilies.end(), [](const VkQueueFamilyProperties& a, const VkQueueFamilyProperties& b) {
+			return a.queueCount > b.queueCount; // Prefer more queues
+		});
+
+		auto itDedicatedTransfer = std::ranges::find_if(queueFamilies, [](const VkQueueFamilyProperties& qf) { return (qf.queueFlags & VK_QUEUE_TRANSFER_BIT) && !(qf.queueFlags & VK_QUEUE_COMPUTE_BIT) && !(qf.queueFlags & VK_QUEUE_GRAPHICS_BIT); });
+		if (itDedicatedTransfer != queueFamilies.end())
+		{
+			g_vkUserData.transferQueueFamilyIndex  = static_cast<int32>(std::distance(queueFamilies.begin(), itDedicatedTransfer));
+			g_vkUserData.transferQueueAvailability = QueueAvailabilityType::Dedicated;
+			SFG_INFO("Vulkan: Found dedicated transfer queue.");
+		}
+		else
+		{
+			auto itSeparateTransfer = std::ranges::find_if(queueFamilies, [](const VkQueueFamilyProperties& qf) { return (qf.queueFlags & VK_QUEUE_TRANSFER_BIT) && !(qf.queueFlags & VK_QUEUE_GRAPHICS_BIT); });
+			if (itSeparateTransfer != queueFamilies.end())
+			{
+				g_vkUserData.transferQueueFamilyIndex  = static_cast<int32>(std::distance(queueFamilies.begin(), itSeparateTransfer));
+				g_vkUserData.transferQueueAvailability = QueueAvailabilityType::Separate;
+				SFG_INFO("Vulkan: Found separate transfer queue.");
+			}
+			else
+			{
+				auto itAnyTransfer = std::ranges::find_if(queueFamilies, [](const VkQueueFamilyProperties& qf) { return (qf.queueFlags & VK_QUEUE_TRANSFER_BIT); });
+				SFG_ASSERT(itAnyTransfer != queueFamilies.end());
+				g_vkUserData.transferQueueFamilyIndex = static_cast<int32>(std::distance(queueFamilies.begin(), itAnyTransfer));
+				SFG_INFO("Vulkan: Transfer queue is graphics queue.");
+			}
+		}
+
+		vkGetDeviceQueue(vkbDevice.device, g_vkUserData.transferQueueFamilyIndex, 0, &g_vkUserData.transferQueue);
+
+		auto itDedicatedCompute = std::ranges::find_if(queueFamilies, [](const VkQueueFamilyProperties& qf) { return (qf.queueFlags & VK_QUEUE_COMPUTE_BIT) && !(qf.queueFlags & VK_QUEUE_TRANSFER_BIT) && !(qf.queueFlags & VK_QUEUE_GRAPHICS_BIT); });
+		if (itDedicatedCompute != queueFamilies.end())
+		{
+			g_vkUserData.computeQueueFamilyIndex  = static_cast<int32>(std::distance(queueFamilies.begin(), itDedicatedCompute));
+			g_vkUserData.computeQueueAvailability = QueueAvailabilityType::Dedicated;
+			SFG_INFO("Vulkan: Found dedicated compute queue.");
+		}
+		else
+		{
+			auto itSeparateCompute = std::ranges::find_if(queueFamilies, [](const VkQueueFamilyProperties& qf) { return (qf.queueFlags & VK_QUEUE_COMPUTE_BIT) && !(qf.queueFlags & VK_QUEUE_GRAPHICS_BIT); });
+			if (itSeparateCompute != queueFamilies.end())
+			{
+				g_vkUserData.computeQueueFamilyIndex  = static_cast<int32>(std::distance(queueFamilies.begin(), itSeparateCompute));
+				g_vkUserData.computeQueueAvailability = QueueAvailabilityType::Separate;
+				SFG_INFO("Vulkan: Found separate compute queue.");
+			}
+			else
+			{
+				auto itAnyCompute = std::ranges::find_if(queueFamilies, [](const VkQueueFamilyProperties& qf) { return (qf.queueFlags & VK_QUEUE_COMPUTE_BIT); });
+				SFG_ASSERT(itAnyCompute != queueFamilies.end());
+				g_vkUserData.computeQueueFamilyIndex = static_cast<int32>(std::distance(queueFamilies.begin(), itAnyCompute));
+				SFG_INFO("Vulkan: Compute queue is graphics queue.");
+			}
+		}
+
+		vkGetDeviceQueue(vkbDevice.device, g_vkUserData.computeQueueFamilyIndex, 0, &g_vkUserData.computeQueue);
 
 		/* Feature function pointers */
 		g_vkUserData.vkCmdBeginRenderingKHR		  = reinterpret_cast<PFN_vkCmdBeginRenderingKHR>(vkGetDeviceProcAddr(g_vkUserData.device, "vkCmdBeginRenderingKHR"));
@@ -250,6 +356,8 @@ namespace SFG
 			return;
 		}
 #endif
+
+		SFG_INFO("************* Successfuly initialized Vulkan backend. *************");
 	}
 
 	void VkBackend::Destroy()
