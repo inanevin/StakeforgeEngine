@@ -26,23 +26,28 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
 
-#include "SFG/Gfx/Renderer.hpp"
+#include "SFG/Gfx/Backend/Metal/MTLSubmitQueue.hpp"
+#include "SFG/Gfx/Common/QueueDesc.hpp"
+#include <Metal/Metal.h>
 
 namespace SFG
 {
-
-	void Renderer::Initialize(String& errString)
-	{
-		m_backend.Create(errString);
-      
-	}
-
-	void Renderer::Shutdown()
-	{
-		m_backend.Destroy();
-	}
-
-	void Renderer::Render(const RenderFrame& frame)
-	{
-	}
+    void MTLSubmitQueue::Create(const QueueDesc &desc)
+    {
+        id<MTLDevice> device = static_cast<id<MTLDevice>>(m_device);
+        id<MTLCommandQueue> q = [device newCommandQueue];
+        [q retain];
+        
+        NSString* debugString = [NSString stringWithUTF8String:desc.debugName];
+        [q setLabel:debugString];
+        
+        m_queue = static_cast<void*>(q);
+    }
+    
+    void MTLSubmitQueue::Destroy()
+    {
+        id<MTLCommandQueue> q = static_cast<id<MTLCommandQueue>>(m_queue);
+        [q release];
+        m_queue = nullptr;
+    }
 } // namespace SFG

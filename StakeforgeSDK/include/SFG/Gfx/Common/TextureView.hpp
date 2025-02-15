@@ -26,23 +26,17 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
 
-#include "SFG/Gfx/Renderer.hpp"
+#pragma once
+
 
 namespace SFG
 {
-
-	void Renderer::Initialize(String& errString)
-	{
-		m_backend.Create(errString);
-      
-	}
-
-	void Renderer::Shutdown()
-	{
-		m_backend.Destroy();
-	}
-
-	void Renderer::Render(const RenderFrame& frame)
-	{
-	}
-} // namespace SFG
+    struct TextureView
+    {
+        uint32 baseArrayLevel = 0;
+        uint32 arrayLevels     = 0; // 0 covers all
+        uint32 baseMipLevel   = 0;
+        uint32 mipLevels       = 0; // 0 covers all
+        bool   isCubemap      = false;
+    };
+}; // namespace SFG

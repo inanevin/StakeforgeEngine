@@ -26,23 +26,52 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
 
-#include "SFG/Gfx/Renderer.hpp"
+#pragma once
+
+#include "SFG/Type/SizeDefinitions.hpp"
 
 namespace SFG
 {
+    enum class SamplerBorderColor
+    {
+        BlackTransparent,
+        BlackOpaque,
+        WhiteOpaque
+    };
+    
+    enum class SamplerFilter
+    {
+        Anisotropic,
+        Nearest,
+        Linear,
+    };
 
-	void Renderer::Initialize(String& errString)
-	{
-		m_backend.Create(errString);
-      
-	}
-
-	void Renderer::Shutdown()
-	{
-		m_backend.Destroy();
-	}
-
-	void Renderer::Render(const RenderFrame& frame)
-	{
-	}
-} // namespace SFG
+    enum class SamplerMipmapMode
+    {
+        Nearest,
+        Linear
+    };
+    
+    enum class SamplerAddressMode
+    {
+        Repeat,
+        MirroredRepeat,
+        ClampToEdge,
+        ClampToBorder,
+        MirrorClampToEdge
+    };
+    
+    struct SamplerDesc
+    {
+        const char*        debugName   = "LinaGXSampler";
+        SamplerFilter      minFilter   = SamplerFilter::Linear;
+        SamplerFilter      magFilter   = SamplerFilter::Linear;
+        SamplerAddressMode mode        = SamplerAddressMode::ClampToEdge;
+        SamplerMipmapMode  mipmapMode  = SamplerMipmapMode::Linear;
+        SamplerBorderColor borderColor = SamplerBorderColor::BlackOpaque;
+        uint32             anisotropy  = 0;
+        float              minLod      = 0.0f;
+        float              maxLod      = 1.0f;
+        float              mipLodBias  = 0.0f;
+    };
+}; // namespace SFG

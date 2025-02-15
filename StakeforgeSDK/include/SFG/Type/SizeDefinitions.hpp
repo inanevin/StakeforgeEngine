@@ -28,6 +28,10 @@ SOFTWARE.
 
 #pragma once
 
+#ifdef SFG_PLATFORM_OSX
+#include <stddef.h>
+#endif
+
 typedef signed char		   int8;
 typedef short			   int16;
 typedef int				   int32;

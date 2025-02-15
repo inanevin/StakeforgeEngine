@@ -30,6 +30,7 @@ SOFTWARE.
 
 #include "SFG/Type/SizeDefinitions.hpp"
 #include <utility>
+#include <new>
 
 namespace SFG
 {

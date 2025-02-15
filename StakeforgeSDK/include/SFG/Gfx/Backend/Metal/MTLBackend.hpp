@@ -26,23 +26,28 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
 
-#include "SFG/Gfx/Renderer.hpp"
+#pragma once
+
+#include "SFG/Type/SizeDefinitions.hpp"
+#include "SFG/Data/String.hpp"
 
 namespace SFG
 {
-
-	void Renderer::Initialize(String& errString)
+	class MTLBackend
 	{
-		m_backend.Create(errString);
-      
-	}
+	public:
+		/// <summary>
+		///
+		/// </summary>
+		void Create(String& errString);
 
-	void Renderer::Shutdown()
-	{
-		m_backend.Destroy();
-	}
+		/// <summary>
+		///
+		/// </summary>
+		void Destroy();
 
-	void Renderer::Render(const RenderFrame& frame)
-	{
-	}
-} // namespace SFG
+	private:
+        
+        void* m_device = nullptr;
+	};
+}; // namespace SFG

@@ -26,23 +26,45 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
 
-#include "SFG/Gfx/Renderer.hpp"
+#pragma once
+
+#include "SFG/Type/SizeDefinitions.hpp"
 
 namespace SFG
 {
+    struct ResourceDesc;
 
-	void Renderer::Initialize(String& errString)
+	class MTLResource
 	{
-		m_backend.Create(errString);
-      
-	}
-
-	void Renderer::Shutdown()
-	{
-		m_backend.Destroy();
-	}
-
-	void Renderer::Render(const RenderFrame& frame)
-	{
-	}
-} // namespace SFG
+	public:
+        
+        MTLResource() = delete;
+        MTLResource(void* device) : m_device(device) {};
+        
+        /// <summary>
+        ///
+        /// </summary>
+        void Create(const ResourceDesc& desc);
+        
+        /// <summary>
+        ///
+        /// </summary>
+        void Destroy();
+        
+        /// <summary>
+        ///
+        /// </summary>
+        void Map(uint8*& ptr);
+        
+        /// <summary>
+        ///
+        /// </summary>
+        void Unmap() {};
+        
+        
+    private:
+        
+        void* m_resource = nullptr;
+        void* m_device = nullptr;
+	};
+}; // namespace SFG

@@ -26,23 +26,35 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
 
-#include "SFG/Gfx/Renderer.hpp"
+#pragma once
+
+#include "SFG/Type/SizeDefinitions.hpp"
+
 
 namespace SFG
 {
+    enum class TextureFormat;
+    struct TextureView;
 
-	void Renderer::Initialize(String& errString)
-	{
-		m_backend.Create(errString);
-      
-	}
+    enum class TextureType
+    {
+        Texture1D,
+        Texture2D,
+        Texture3D,
+    };
 
-	void Renderer::Shutdown()
-	{
-		m_backend.Destroy();
-	}
-
-	void Renderer::Render(const RenderFrame& frame)
-	{
-	}
-} // namespace SFG
+    struct TextureDesc
+    {
+        const char* name = "";
+        TextureType type = TextureType::Texture2D;
+        TextureFormat format = {};
+        TextureView* views = nullptr;
+        uint32 width = 0;
+        uint32 height = 0;
+        uint32 flags = 0;
+        uint32 mipLevels = 1;
+        uint32 arrayLevels = 1;
+        uint32 viewCount = 1;
+        uint32 sampleCount = 1;
+    };
+}; // namespace SFG

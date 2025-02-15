@@ -32,7 +32,7 @@ project(StakeforgeSDK)
 
 # -------------- FILES -------------
 
-file (GLOB_RECURSE SOURCES
+file (GLOB SOURCES
 src/Core/*.cpp
 src/Data/*.cpp
 src/IO/*.cpp
@@ -61,6 +61,7 @@ include/SFG/System/*.hpp
 include/SFG/Type/*.hpp
 include/SFG/Resources/*.hpp
 include/SFG/Gfx/*.hpp
+include/SFG/Gfx/Common/*.hpp
 
 include/SFG/Vendor/LZ4/lz4.h
 include/SFG/Vendor/readerwriterqueue/*.h
@@ -91,6 +92,8 @@ if(APPLE)
 
 file (GLOB PLATFORM_HEADERS
 include/SFG/Platform/OSX/*.hpp
+include/SFG/Gfx/Backend/Metal/*.hpp
+
 )
 
 file (GLOB PLATFORM_SOURCES
@@ -124,6 +127,16 @@ if(WIN32)
 	find_package(Vulkan REQUIRED)
 	target_link_libraries(${PROJECT_NAME} 
 		PRIVATE Vulkan::Vulkan
+	)
+endif()
+
+if(APPLE)
+	target_link_libraries(${PROJECT_NAME}
+		PUBLIC "-framework Metal"
+		# PUBLIC "-framework AppKit"
+		PUBLIC "-framework Foundation"
+		PUBLIC "-framework QuartzCore"
+		# PUBLIC "-framework Carbon"
 	)
 endif()
 

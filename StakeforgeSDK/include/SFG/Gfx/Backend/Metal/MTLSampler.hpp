@@ -26,23 +26,32 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
 
-#include "SFG/Gfx/Renderer.hpp"
+#pragma once
 
 namespace SFG
 {
+    struct SamplerDesc;
 
-	void Renderer::Initialize(String& errString)
+	class MTLSampler
 	{
-		m_backend.Create(errString);
-      
-	}
-
-	void Renderer::Shutdown()
-	{
-		m_backend.Destroy();
-	}
-
-	void Renderer::Render(const RenderFrame& frame)
-	{
-	}
-} // namespace SFG
+	public:
+        
+        MTLSampler() = delete;
+        MTLSampler(void* device) : m_device(device) {};
+        
+        /// <summary>
+        ///
+        /// </summary>
+        void Create(const SamplerDesc& desc);
+        
+        /// <summary>
+        ///
+        /// </summary>
+        void Destroy();
+        
+    private:
+        
+        void* m_sampler = nullptr;
+        void* m_device = nullptr;
+	};
+}; // namespace SFG

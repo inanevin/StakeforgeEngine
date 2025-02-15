@@ -27,13 +27,38 @@ SOFTWARE.
 */
 
 #pragma once
-
 #include "SFG/Type/SizeDefinitions.hpp"
+#include <Metal/Metal.h>
 
 namespace SFG
 {
-	class VkSubmitQueue
+    enum class TextureFormat;
+    enum class SamplerMipmapMode;
+    enum class SamplerFilter;
+    enum class SamplerAddressMode;
+
+	class MTLUtility
 	{
 	public:
+        
+        /// <summary>
+        ///
+        /// </summary>
+        static MTLPixelFormat GetFormat(TextureFormat format);
+        
+        /// <summary>
+        ///
+        /// </summary>
+        static MTLSamplerMipFilter GetSamplerMipmapMode(SamplerMipmapMode samplerMipMapMode);
+        
+        /// <summary>
+        ///
+        /// </summary>
+        static MTLSamplerMinMagFilter GetSamplerFilter(SamplerFilter samplerFilter);
+        
+        /// <summary>
+        ///
+        /// </summary>
+        static MTLSamplerAddressMode GetSamplerAddressMode(SamplerAddressMode samplerAddressMode);
 	};
 }; // namespace SFG

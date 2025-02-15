@@ -26,23 +26,39 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
 
-#include "SFG/Gfx/Renderer.hpp"
+#pragma once
+
+#include "SFG/Type/SizeDefinitions.hpp"
 
 namespace SFG
 {
+    struct SwapchainDesc;
 
-	void Renderer::Initialize(String& errString)
+	class MTLSwapchain
 	{
-		m_backend.Create(errString);
-      
-	}
-
-	void Renderer::Shutdown()
-	{
-		m_backend.Destroy();
-	}
-
-	void Renderer::Render(const RenderFrame& frame)
-	{
-	}
-} // namespace SFG
+	public:
+        
+        MTLSwapchain() = delete;
+        MTLSwapchain(void* device) : m_device(device) {};
+        
+        /// <summary>
+        ///
+        /// </summary>
+        void Create(const SwapchainDesc& desc);
+        
+        /// <summary>
+        ///
+        /// </summary>
+        void Recreate(const SwapchainDesc& desc);
+        
+        /// <summary>
+        ///
+        /// </summary>
+        void Destroy();
+                
+    private:
+        
+        void* m_layer = nullptr;
+        void* m_device = nullptr;
+	};
+}; // namespace SFG

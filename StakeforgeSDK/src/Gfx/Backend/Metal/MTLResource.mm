@@ -26,23 +26,40 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
 
-#include "SFG/Gfx/Renderer.hpp"
+#include "SFG/Gfx/Backend/Metal/MTLResource.hpp"
+#include "SFG/Gfx/Common/ResourceDesc.hpp"
+#include <Metal/Metal.h>
 
 namespace SFG
 {
+    void MTLResource::Create(const ResourceDesc& desc)
+    {
+        id<MTLDevice> device = static_cast<id<MTLDevice>>(m_device);
+        
+        MTLResourceOptions options = 0;
+     
+       if(desc.storageType == ResourceStorageType::Device)
+            options |= MTLResourceStorageModePrivate;
+       else
+           options |= MTLResourceStorageModeShared;
+        
+        id<MTLBuffer> buffer = [device newBufferWithLength:desc.size options:options];
+        [buffer retain];
+        NSString* debugString = [NSString stringWithUTF8String:desc.name];
+        [buffer setLabel:debugString];
+        m_resource = static_cast<void*>(buffer);
+    }
 
-	void Renderer::Initialize(String& errString)
-	{
-		m_backend.Create(errString);
-      
-	}
+    void MTLResource::Destroy()
+    {
+        id<MTLBuffer> buffer = static_cast<id<MTLBuffer>>(m_resource);
+        [buffer release];
+        m_resource = nullptr;
+    }
 
-	void Renderer::Shutdown()
-	{
-		m_backend.Destroy();
-	}
-
-	void Renderer::Render(const RenderFrame& frame)
-	{
-	}
+    void MTLResource::Map(uint8*& ptr)
+    {
+        id<MTLBuffer> buffer = static_cast<id<MTLBuffer>>(m_resource);
+        ptr = static_cast<uint8*>([buffer contents]);
+    }
 } // namespace SFG

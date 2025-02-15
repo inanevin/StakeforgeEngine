@@ -26,23 +26,26 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
 
-#include "SFG/Gfx/Renderer.hpp"
+#pragma once
+
+#include "SFG/Type/SizeDefinitions.hpp"
 
 namespace SFG
 {
+    enum class TextureFormat;
 
-	void Renderer::Initialize(String& errString)
-	{
-		m_backend.Create(errString);
-      
-	}
-
-	void Renderer::Shutdown()
-	{
-		m_backend.Destroy();
-	}
-
-	void Renderer::Render(const RenderFrame& frame)
-	{
-	}
-} // namespace SFG
+    struct SwapchainDesc
+    {
+        const char* name = "";
+        void* window = nullptr;
+        void* osHandle = nullptr;
+        uint32     x             = 0;
+        uint32     y             = 0;
+        uint32     width         = 0;
+        uint32     height        = 0;
+        uint32 backbufferCount = 0;
+        float scalingFactor = 1.0f;
+        TextureFormat format = {};
+        bool vsyncOn = false;
+    };
+}; // namespace SFG

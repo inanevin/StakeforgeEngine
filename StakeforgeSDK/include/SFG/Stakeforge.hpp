@@ -60,6 +60,10 @@ SOFTWARE.
 #define WIN32_LEAN_AND_MEAN
 #include <Windows.h>
 #endif
+ 
+#ifdef SFG_PLATFORM_OSX
+#include <Metal/Metal.h>
+#endif
 
 #include <Jolt/Jolt.h>
 

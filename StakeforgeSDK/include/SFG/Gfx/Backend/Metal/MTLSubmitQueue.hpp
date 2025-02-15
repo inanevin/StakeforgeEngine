@@ -26,23 +26,33 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
 
-#include "SFG/Gfx/Renderer.hpp"
+#pragma once
+
+#include "SFG/Type/SizeDefinitions.hpp"
 
 namespace SFG
 {
+    struct QueueDesc;
 
-	void Renderer::Initialize(String& errString)
+	class MTLSubmitQueue
 	{
-		m_backend.Create(errString);
-      
-	}
-
-	void Renderer::Shutdown()
-	{
-		m_backend.Destroy();
-	}
-
-	void Renderer::Render(const RenderFrame& frame)
-	{
-	}
-} // namespace SFG
+	public:
+        
+        MTLSubmitQueue() = delete;
+        MTLSubmitQueue(void* device) : m_device(device) {};
+        
+        /// <summary>
+        ///
+        /// </summary>
+        void Create(const QueueDesc& desc);
+        
+        /// <summary>
+        ///
+        /// </summary>
+        void Destroy();
+        
+    private:
+        void* m_device = nullptr;
+        void* m_queue = nullptr;
+	};
+}; // namespace SFG

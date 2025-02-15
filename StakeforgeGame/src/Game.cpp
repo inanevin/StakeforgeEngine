@@ -51,7 +51,7 @@ namespace SFG
 		settings.delegate			 = this;
 
 		/* Main window */
-		Window* window = app->CreateAppWindow(0, SFG_APPNAME, {}, Vector2ui(1000, 1000), WindowStyle::ApplicationWindow);
+		Window* window = app->CreateAppWindow(0, SFG_APPNAME, {}, Vector2ui(256, 256), WindowStyle::ApplicationWindow);
 		window->CenterToMonitor();
 		// window->SetHighFrequencyInputMode(true);
 	}

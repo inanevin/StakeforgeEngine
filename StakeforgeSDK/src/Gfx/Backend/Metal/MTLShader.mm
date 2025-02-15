@@ -26,23 +26,22 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
 
-#include "SFG/Gfx/Renderer.hpp"
+#include "SFG/Gfx/Backend/Metal/MTLShader.hpp"
+#include "SFG/Gfx/Common/ShaderDesc.hpp"
+#include <Metal/Metal.h>
 
 namespace SFG
 {
+    void MTLShader::Create(const ShaderDesc& desc)
+    {
+        id<MTLDevice> device = static_cast<id<MTLDevice>>(m_device);
+       
+    }
 
-	void Renderer::Initialize(String& errString)
-	{
-		m_backend.Create(errString);
+    void MTLShader::Destroy()
+    {
       
-	}
+    }
 
-	void Renderer::Shutdown()
-	{
-		m_backend.Destroy();
-	}
-
-	void Renderer::Render(const RenderFrame& frame)
-	{
-	}
+    
 } // namespace SFG

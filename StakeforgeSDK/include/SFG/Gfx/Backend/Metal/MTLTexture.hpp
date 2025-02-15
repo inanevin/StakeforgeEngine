@@ -26,23 +26,35 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
 
-#include "SFG/Gfx/Renderer.hpp"
+#pragma once
+
+#include "SFG/Data/Vector.hpp"
 
 namespace SFG
 {
+    struct TextureDesc;
 
-	void Renderer::Initialize(String& errString)
+	class MTLTexture
 	{
-		m_backend.Create(errString);
-      
-	}
-
-	void Renderer::Shutdown()
-	{
-		m_backend.Destroy();
-	}
-
-	void Renderer::Render(const RenderFrame& frame)
-	{
-	}
-} // namespace SFG
+	public:
+        
+        MTLTexture() = delete;
+        MTLTexture(void* device) : m_device(device) {};
+        
+        /// <summary>
+        ///
+        /// </summary>
+        void Create(const TextureDesc& def);
+        
+        /// <summary>
+        ///
+        /// </summary>
+        void Destroy();
+        
+    private:
+        
+        Vector<void*> m_views = {};
+        void* m_texture = nullptr;
+        void* m_device = nullptr;
+	};
+}; // namespace SFG

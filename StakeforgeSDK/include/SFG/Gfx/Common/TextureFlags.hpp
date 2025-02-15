@@ -26,23 +26,17 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
 
-#include "SFG/Gfx/Renderer.hpp"
+#pragma once
+
 
 namespace SFG
 {
-
-	void Renderer::Initialize(String& errString)
-	{
-		m_backend.Create(errString);
-      
-	}
-
-	void Renderer::Shutdown()
-	{
-		m_backend.Destroy();
-	}
-
-	void Renderer::Render(const RenderFrame& frame)
-	{
-	}
-} // namespace SFG
+    enum TextureFlags
+    {
+        TEXTURE_FLAGS_NONE = 1 << 0,
+        TEXTURE_FLAGS_SAMPLED = 1 << 1,
+        TEXTURE_FLAGS_COLOR_ATT = 1 << 2,
+        TEXTURE_FLAGS_DEPTH_ATT = 1 << 3,
+        TEXTURE_FLAGS_STENCIL_ATT = 1 << 4,
+    };
+}; // namespace SFG

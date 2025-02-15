@@ -73,7 +73,7 @@ namespace SFG
 				Grow();
 			}
 
-			Handle handle = Handle(m_stackIndices[m_stackIndicesPos], m_gens[handle.m_index]);
+            Handle handle = Handle(m_stackIndices[m_stackIndicesPos], m_gens[handle.GetIndex()]);
 			m_stackIndicesPos++;
 
 			const void* ptr = (void*)(m_raw + handle.GetIndex());

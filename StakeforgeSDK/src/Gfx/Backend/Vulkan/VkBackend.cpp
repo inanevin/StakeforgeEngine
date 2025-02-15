@@ -32,7 +32,7 @@ SOFTWARE.
 #include "SFG/IO/Log.hpp"
 #include "SFG/Memory/PoolAllocator.hpp"
 
-#include "SFG/Vendor/Vulkan/VkBootstrap.h"
+#include "SFG/Vendor/vulkan/VkBootstrap.h"
 #include "SFG/Gfx/Backend/Vulkan/VkSubmitQueue.hpp"
 
 #include <algorithm>
