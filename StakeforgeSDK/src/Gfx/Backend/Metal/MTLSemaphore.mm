@@ -26,25 +26,32 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
 
-#include "SFG/Gfx/Backend/Metal/MTLShader.hpp"
-#include "SFG/Gfx/Backend/Metal/MTLUtility.hpp"
-#include "SFG/Gfx/Common/ShaderDesc.hpp"
+#include "SFG/Gfx/Backend/Metal/MTLSemaphore.hpp"
+#include "SFG/Platform/Time.hpp"
+
 #include <Metal/Metal.h>
 
 namespace SFG
 {
-    void MTLShader::Create(const ShaderDesc& desc)
+    void MTLSemaphore::Create()
     {
         id<MTLDevice> device = static_cast<id<MTLDevice>>(m_device);
-        
-        MTLRenderPipelineDescriptor *pipelineDescriptor = [[MTLRenderPipelineDescriptor alloc] init];
-       
+        id<MTLSharedEvent> ev = [device newSharedEvent];
+        [ev retain];
+        m_semaphore = static_cast<void*>(ev);
     }
 
-    void MTLShader::Destroy()
+    void MTLSemaphore::Destroy()
     {
-      
+        id<MTLSharedEvent> sem = static_cast<id<MTLSharedEvent>>(m_semaphore);
+        [sem release];
+        m_semaphore = nullptr;
     }
 
-    
+    void MTLSemaphore::Wait(uint64 value, uint32 sleepMS)
+    {
+        id<MTLSharedEvent> sem = static_cast<id<MTLSharedEvent>>(m_semaphore);
+        while(sem.signaledValue < value)
+            Time::Sleep(sleepMS);
+    }
 } // namespace SFG

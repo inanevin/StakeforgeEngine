@@ -105,6 +105,12 @@ namespace SFG
 
 	void Time::Sleep(uint32 milliseconds)
 	{
+        if(milliseconds == 0)
+        {
+            YieldThread();
+            return;
+        }
+        
 		usleep(milliseconds * 1000);
 	}
 

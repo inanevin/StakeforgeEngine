@@ -104,6 +104,18 @@ enum class TextureFormat;
         OneMinusDstAlpha,
     };
 
+    enum class CompareOp
+    {
+        Never,
+        Less,
+        Equal,
+        LEqual,
+        Greater,
+        NotEqual,
+        GEqual,
+        Always
+    };
+
     enum ColorComponentFlags
     {
         CCF_R = 1 << 0,
@@ -111,6 +123,7 @@ enum class TextureFormat;
         CCF_B = 1 << 2,
         CCF_A = 1 << 3,
     };
+
 
     struct ColorBlendAttachment
     {
@@ -130,8 +143,18 @@ enum class TextureFormat;
         ColorBlendAttachment blendAttachment = {};
     };
 
+    
+    struct ShaderDepthStencilDesc
+    {
+        CompareOp       depthCompare                 = CompareOp::LEqual;
+        TextureFormat   format = {};
+        bool            depthWrite                   = false;
+        bool            depthTest                    = false;
+    };
+
     struct ShaderDesc
     {
+        ShaderDepthStencilDesc depthStencil = {};
         const char* debugName = "";
         ShaderColorAttachment* colorAttachments = nullptr;
         PolygonMode polygonMode = PolygonMode::Fill;

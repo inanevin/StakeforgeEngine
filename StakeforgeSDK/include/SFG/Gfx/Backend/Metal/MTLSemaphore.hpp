@@ -26,25 +26,39 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
 
-#include "SFG/Gfx/Backend/Metal/MTLShader.hpp"
-#include "SFG/Gfx/Backend/Metal/MTLUtility.hpp"
-#include "SFG/Gfx/Common/ShaderDesc.hpp"
-#include <Metal/Metal.h>
+#pragma once
+
+#include "SFG/Type/SizeDefinitions.hpp"
 
 namespace SFG
 {
-    void MTLShader::Create(const ShaderDesc& desc)
-    {
-        id<MTLDevice> device = static_cast<id<MTLDevice>>(m_device);
+    struct SemaphoreDesc;
+
+	class MTLSemaphore
+	{
+	public:
         
-        MTLRenderPipelineDescriptor *pipelineDescriptor = [[MTLRenderPipelineDescriptor alloc] init];
-       
-    }
-
-    void MTLShader::Destroy()
-    {
-      
-    }
-
-    
-} // namespace SFG
+        MTLSemaphore() = delete;
+        MTLSemaphore(void* device) : m_device(device) {};
+        
+        /// <summary>
+        ///
+        /// </summary>
+        void Create();
+        
+        /// <summary>
+        ///
+        /// </summary>
+        void Destroy();
+        
+        /// <summary>
+        ///
+        /// </summary>
+        void Wait(uint64 value, uint32 sleepMS = 0);
+        
+    private:
+        
+        void* m_semaphore = nullptr;
+        void* m_device = nullptr;
+	};
+}; // namespace SFG
