@@ -70,11 +70,6 @@ namespace SFG
 		void Destroy();
 
 	private:
-		static void* s_vkCmdBeginRenderingKHR;
-		static void* s_vkCmdEndRenderingKHR;
-		static void* s_vkCmdBeginDebugUtilsLabelEXT;
-		static void* s_vkCmdEndDebugUtilsLabelEXT;
-
 		VmaAllocator_T*				m_vmaAllocator				= nullptr;
 		VkInstance_T*				m_instance					= nullptr;
 		VkDevice_T*					m_device					= nullptr;

@@ -29,14 +29,25 @@ SOFTWARE.
 #pragma once
 
 struct VkDevice_T;
+struct VkCommandBuffer_T;
+struct VkRenderingInfo;
 struct VkDebugUtilsObjectNameInfoEXT;
+struct VkDebugUtilsLabelEXT;
 enum VkResult;
 
 namespace SFG
 {
 	typedef VkResult (*SetDebugUtilsObjectName)(VkDevice_T* device, const VkDebugUtilsObjectNameInfoEXT* info);
+	typedef void	 (*BeginRendering)(VkCommandBuffer_T* cmd, const VkRenderingInfo* info);
+	typedef void	 (*EndRendering)(VkCommandBuffer_T* cmd);
+	typedef void	 (*BeginDebugUtilsLabel)(VkCommandBuffer_T* cmd, const VkDebugUtilsLabelEXT* info);
+	typedef void	 (*EndDebugUtilsLabel)(VkCommandBuffer_T* cmd);
 
 	extern SetDebugUtilsObjectName pfn_setDebugUtilsObjectNameEXT;
+	extern BeginRendering		   pfn_cmdBeginRendering;
+	extern EndRendering			   pfn_cmdEndRendering;
+	extern BeginDebugUtilsLabel	   pfn_cmdBeginDebugUtilsLabel;
+	extern EndDebugUtilsLabel	   pfn_cmdEndDebugUtilsLabel;
 
 #ifdef SFG_DEBUG
 #define VK_NAME_OBJECT(namedObject, objType, name, structName)                                                                                                                                                                                                     \

@@ -31,4 +31,8 @@ SOFTWARE.
 namespace SFG
 {
 	SetDebugUtilsObjectName pfn_setDebugUtilsObjectNameEXT = nullptr;
+	BeginRendering			pfn_cmdBeginRendering		   = nullptr;
+	EndRendering			pfn_cmdEndRendering			   = nullptr;
+	BeginDebugUtilsLabel	pfn_cmdBeginDebugUtilsLabel	   = nullptr;
+	EndDebugUtilsLabel		pfn_cmdEndDebugUtilsLabel	   = nullptr;
 } // namespace SFG

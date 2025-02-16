@@ -44,10 +44,6 @@ SOFTWARE.
 
 namespace SFG
 {
-	void* VulkanBackend::s_vkCmdBeginRenderingKHR		= nullptr;
-	void* VulkanBackend::s_vkCmdEndRenderingKHR			= nullptr;
-	void* VulkanBackend::s_vkCmdBeginDebugUtilsLabelEXT = nullptr;
-	void* VulkanBackend::s_vkCmdEndDebugUtilsLabelEXT	= nullptr;
 
 #ifdef SFG_DEBUG
 
@@ -307,23 +303,23 @@ namespace SFG
 		}
 
 		vkGetDeviceQueue(vkbDevice.device, m_computeQueueFamilyIndex, 0, &m_computeQueue);
+		vkGetDeviceQueue(vkbDevice.device, m_transferQueueFamilyIndex, 0, &m_transferQueue);
 
 		/* Feature function pointers */
-		s_vkCmdBeginRenderingKHR	   = reinterpret_cast<PFN_vkCmdBeginRenderingKHR>(vkGetDeviceProcAddr(m_device, "vkCmdBeginRenderingKHR"));
-		s_vkCmdEndRenderingKHR		   = reinterpret_cast<PFN_vkCmdEndRenderingKHR>(vkGetDeviceProcAddr(m_device, "vkCmdEndRenderingKHR"));
-		s_vkCmdBeginDebugUtilsLabelEXT = reinterpret_cast<PFN_vkCmdBeginDebugUtilsLabelEXT>(vkGetDeviceProcAddr(m_device, "vkCmdBeginDebugUtilsLabelEXT"));
-		s_vkCmdEndDebugUtilsLabelEXT   = reinterpret_cast<PFN_vkCmdEndDebugUtilsLabelEXT>(vkGetDeviceProcAddr(m_device, "vkCmdEndDebugUtilsLabelEXT"));
-
+		pfn_cmdBeginRendering		   = reinterpret_cast<PFN_vkCmdBeginRenderingKHR>(vkGetDeviceProcAddr(m_device, "vkCmdBeginRenderingKHR"));
+		pfn_cmdEndRendering			   = reinterpret_cast<PFN_vkCmdEndRenderingKHR>(vkGetDeviceProcAddr(m_device, "vkCmdEndRenderingKHR"));
+		pfn_cmdBeginDebugUtilsLabel	   = reinterpret_cast<PFN_vkCmdBeginDebugUtilsLabelEXT>(vkGetDeviceProcAddr(m_device, "vkCmdBeginDebugUtilsLabelEXT"));
+		pfn_cmdEndDebugUtilsLabel	   = reinterpret_cast<PFN_vkCmdEndDebugUtilsLabelEXT>(vkGetDeviceProcAddr(m_device, "vkCmdEndDebugUtilsLabelEXT"));
 		pfn_setDebugUtilsObjectNameEXT = reinterpret_cast<PFN_vkSetDebugUtilsObjectNameEXT>(vkGetDeviceProcAddr(m_device, "vkSetDebugUtilsObjectNameEXT"));
 
-		if (!s_vkCmdBeginRenderingKHR || !s_vkCmdEndRenderingKHR)
+		if (!pfn_cmdBeginRendering || !pfn_cmdEndRendering)
 		{
 			errString = "Failed to load vkCmdBeginRenderingKHR or vkCmdEndRenderingKHR!";
 			return;
 		}
 
 #ifdef SFG_DEBUG
-		if (!pfn_setDebugUtilsObjectNameEXT || !s_vkCmdBeginDebugUtilsLabelEXT || !s_vkCmdEndDebugUtilsLabelEXT)
+		if (!pfn_setDebugUtilsObjectNameEXT || !pfn_cmdBeginDebugUtilsLabel || !pfn_cmdEndDebugUtilsLabel)
 		{
 			errString = "Failed to load vkSetDebugUtilsObjectNameEXT or vkCmdBeginDebugUtilsLabelEXT or vkCmdEndDebugUtilsLabelEXT!";
 			return;

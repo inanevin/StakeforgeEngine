@@ -30,8 +30,16 @@ SOFTWARE.
 
 namespace SFG
 {
-    struct QueueDesc
-    {
-        const char* debugName = "";
-    };
+	enum class QueueType
+	{
+		Graphics,
+		Transfer,
+		Compute
+	};
+
+	struct QueueDesc
+	{
+		const char* debugName = "";
+		QueueType	type	  = QueueType::Graphics;
+	};
 }; // namespace SFG

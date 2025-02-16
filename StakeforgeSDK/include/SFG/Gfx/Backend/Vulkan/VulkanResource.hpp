@@ -30,6 +30,11 @@ SOFTWARE.
 
 #include "SFG/Type/SizeDefinitions.hpp"
 
+struct VkDevice_T;
+struct VkBuffer_T;
+struct VmaAllocation_T;
+struct VmaAllocator_T;
+
 namespace SFG
 {
 	struct ResourceDesc;
@@ -38,7 +43,7 @@ namespace SFG
 	{
 	public:
 		VulkanResource() = delete;
-		VulkanResource(void* device) : m_device(device){};
+		VulkanResource(VkDevice_T* device, VmaAllocator_T* vma) : m_device(device), m_vma(vma){};
 
 		/// <summary>
 		///
@@ -58,10 +63,12 @@ namespace SFG
 		/// <summary>
 		///
 		/// </summary>
-		void Unmap(){};
+		void Unmap();
 
 	private:
-		void* m_resource = nullptr;
-		void* m_device	 = nullptr;
+		VkDevice_T*		 m_device	  = nullptr;
+		VmaAllocator_T*	 m_vma		  = nullptr;
+		VmaAllocation_T* m_allocation = nullptr;
+		VkBuffer_T*		 m_buffer	  = nullptr;
 	};
 }; // namespace SFG

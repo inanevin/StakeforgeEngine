@@ -27,8 +27,12 @@ SOFTWARE.
 */
 
 #include "SFG/Gfx/Backend/Vulkan/VulkanQueue.hpp"
+#include "SFG/Gfx/Common/QueueDesc.hpp"
 
 namespace SFG
 {
-
+	VulkanQueue::VulkanQueue(QueueType type, VkQueue_T* queue)
+	{
+		m_queue = queue;
+	}
 } // namespace SFG

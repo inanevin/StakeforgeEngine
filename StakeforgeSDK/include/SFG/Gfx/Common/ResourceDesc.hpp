@@ -32,26 +32,27 @@ SOFTWARE.
 
 namespace SFG
 {
-    enum class ResourceStorageType
-    {
-        Host,
-        Device,
-        HostVisibleDevice,
-    };
+	enum class ResourceStorageType
+	{
+		Host,
+		Device,
+		HostVisibleDevice,
+	};
 
-    enum class ResourceType
-    {
-        UBO,
-        SSBO,
-        IndexBuffer,
-        VertexBuffer,
-    };
+	enum class ResourceType
+	{
+		UBO,
+		SSBO,
+		IndexBuffer,
+		VertexBuffer,
+		IndirectBuffer,
+	};
 
-    struct ResourceDesc
-    {
-        const char* name = "";
-        ResourceStorageType storageType = ResourceStorageType::Host;
-        ResourceType type = ResourceType::UBO;
-        uint32 size = 0;
-    };
+	struct ResourceDesc
+	{
+		const char*			name		= "";
+		ResourceStorageType storageType = ResourceStorageType::Host;
+		ResourceType		type		= ResourceType::UBO;
+		uint32				size		= 0;
+	};
 }; // namespace SFG

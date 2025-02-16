@@ -30,10 +30,19 @@ SOFTWARE.
 
 #include "SFG/Type/SizeDefinitions.hpp"
 
+struct VkQueue_T;
+
 namespace SFG
 {
+	enum class QueueType;
+
 	class VulkanQueue
 	{
 	public:
+		VulkanQueue() = delete;
+		VulkanQueue(QueueType type, VkQueue_T* queue);
+
+	private:
+		VkQueue_T* m_queue = nullptr;
 	};
 }; // namespace SFG
