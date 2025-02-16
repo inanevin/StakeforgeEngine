@@ -26,7 +26,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
 
-#include "SFG/Gfx/Backend/Vulkan/VkCommandBuffer.hpp"
+#include "SFG/Gfx/Backend/Vulkan/VulkanQueue.hpp"
 
 namespace SFG
 {

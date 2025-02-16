@@ -28,16 +28,38 @@ SOFTWARE.
 
 #pragma once
 
+#include "SFG/Type/SizeDefinitions.hpp"
+
+struct VkSemaphore_T;
+struct VkDevice_T;
+
 namespace SFG
 {
-	enum TextureFlags
+	struct SemaphoreDesc;
+
+	class VulkanSemaphore
 	{
-		TEXTURE_FLAGS_NONE		   = 1 << 0,
-		TEXTURE_FLAGS_SAMPLED	   = 1 << 1,
-		TEXTURE_FLAGS_COLOR_ATT	   = 1 << 2,
-		TEXTURE_FLAGS_DEPTH_ATT	   = 1 << 3,
-		TEXTURE_FLAGS_STENCIL_ATT  = 1 << 4,
-		TEXTURE_FLAGS_TRANSFER_SRC = 1 << 5,
-		TEXTURE_FLAGS_TRANSFER_DST = 1 << 6,
+	public:
+		VulkanSemaphore() = delete;
+		VulkanSemaphore(VkDevice_T* device) : m_device(device){};
+
+		/// <summary>
+		///
+		/// </summary>
+		void Create();
+
+		/// <summary>ko
+		///
+		/// </summary>
+		void Destroy();
+
+		/// <summary>
+		///
+		/// </summary>
+		void Wait(uint64 value, uint32 sleepMS = 0);
+
+	private:
+		VkSemaphore_T* m_semaphore = nullptr;
+		VkDevice_T*	   m_device	   = nullptr;
 	};
 }; // namespace SFG

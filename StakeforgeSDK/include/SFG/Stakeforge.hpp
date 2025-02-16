@@ -48,11 +48,12 @@ SOFTWARE.
 
 #include "SFG/IO/Log.hpp"
 #include "SFG/Data/Vector.hpp"
-#include "SFG/Data//Atomic.hpp"
+#include "SFG/Data/Atomic.hpp"
 #include "SFG/Data/Queue.hpp"
 #include "SFG/Data/String.hpp"
 #include "SFG/Data/Mutex.hpp"
 #include "SFG/Data/HashSet.hpp"
+#include "SFG/Data/DynamicArray.hpp"
 #include "SFG/Data/HashMap.hpp"
 #include "SFG/Data/Functional.hpp"
 
@@ -60,7 +61,7 @@ SOFTWARE.
 #define WIN32_LEAN_AND_MEAN
 #include <Windows.h>
 #endif
- 
+
 #ifdef SFG_PLATFORM_OSX
 #include <Metal/Metal.h>
 #endif

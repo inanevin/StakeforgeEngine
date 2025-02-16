@@ -26,18 +26,16 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
 
-#pragma once
+#include "SFG/Gfx/Backend/Vulkan/VulkanShader.hpp"
 
 namespace SFG
 {
-	enum TextureFlags
+	void VulkanShader::Create(const ShaderDesc& desc)
 	{
-		TEXTURE_FLAGS_NONE		   = 1 << 0,
-		TEXTURE_FLAGS_SAMPLED	   = 1 << 1,
-		TEXTURE_FLAGS_COLOR_ATT	   = 1 << 2,
-		TEXTURE_FLAGS_DEPTH_ATT	   = 1 << 3,
-		TEXTURE_FLAGS_STENCIL_ATT  = 1 << 4,
-		TEXTURE_FLAGS_TRANSFER_SRC = 1 << 5,
-		TEXTURE_FLAGS_TRANSFER_DST = 1 << 6,
-	};
-}; // namespace SFG
+	}
+
+	void VulkanShader::Destroy()
+	{
+	}
+
+} // namespace SFG

@@ -28,16 +28,52 @@ SOFTWARE.
 
 #pragma once
 
+#include "SFG/Type/SizeDefinitions.hpp"
+#include "SFG/Gfx/Common/GfxConstants.hpp"
+
+struct VkDevice_T;
+struct VkInstance_T;
+struct VkPhysicalDevice_T;
+struct VkSwapchainKHR_T;
+struct VkSurfaceKHR_T;
+struct VkImageView_T;
+struct VkImage_T;
+struct VkSemaphore_T;
+
 namespace SFG
 {
-	enum TextureFlags
+	struct SwapchainDesc;
+
+	class VulkanSwapchain
 	{
-		TEXTURE_FLAGS_NONE		   = 1 << 0,
-		TEXTURE_FLAGS_SAMPLED	   = 1 << 1,
-		TEXTURE_FLAGS_COLOR_ATT	   = 1 << 2,
-		TEXTURE_FLAGS_DEPTH_ATT	   = 1 << 3,
-		TEXTURE_FLAGS_STENCIL_ATT  = 1 << 4,
-		TEXTURE_FLAGS_TRANSFER_SRC = 1 << 5,
-		TEXTURE_FLAGS_TRANSFER_DST = 1 << 6,
+	public:
+		VulkanSwapchain() = delete;
+		VulkanSwapchain(VkInstance_T* inst, VkDevice_T* device, VkPhysicalDevice_T* gpu) : m_instance(inst), m_device(device), m_gpu(gpu){};
+
+		/// <summary>
+		///
+		/// </summary>
+		void Create(const SwapchainDesc& desc);
+
+		/// <summary>
+		///
+		/// </summary>
+		void Recreate(const SwapchainDesc& desc);
+
+		/// <summary>
+		///
+		/// </summary>
+		void Destroy();
+
+	private:
+		VkInstance_T*		m_instance = nullptr;
+		VkDevice_T*			m_device   = nullptr;
+		VkPhysicalDevice_T* m_gpu	   = nullptr;
+
+		VkSurfaceKHR_T*	  m_surface	  = nullptr;
+		VkSwapchainKHR_T* m_swapchain = nullptr;
+		VkImageView_T*	  m_imageViews[BACK_BUFFER_COUNT];
+		VkImage_T*		  m_images[BACK_BUFFER_COUNT];
+		VkSemaphore_T*	  m_imageAcquiredSemaphores[FRAMES_IN_FLIGHT];
 	};
 }; // namespace SFG

@@ -28,6 +28,7 @@ SOFTWARE.
 
 #include "SFG/Core/App.hpp"
 #include "SFG/Core/AppDelegate.hpp"
+#include "SFG/Data/VectorUtil.hpp"
 #include "SFG/IO/FileSystem.hpp"
 #include "SFG/Platform/Time.hpp"
 #include "SFG/Platform/Process.hpp"

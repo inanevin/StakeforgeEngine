@@ -28,43 +28,64 @@ SOFTWARE.
 
 #pragma once
 
-#include "SFG/Type/SizeDefinitions.hpp"
-#include "SFG/Data/String.hpp"
-
-#ifdef SFG_PLATFORM_WINDOWS
-#include "SFG/Gfx/Backend/Vulkan/VulkanBackend.hpp"
-#elif SFG_PLATFORM_OSX
-#include "SFG/Gfx/Backend/Metal/MTLBackend.hpp"
-#endif
+enum VkFilter;
+enum VkSamplerAddressMode;
+enum VkSamplerMipmapMode;
+enum VkBorderColor;
+enum VkFormat;
+enum VkSampleCountFlagBits;
 
 namespace SFG
 {
-	class RenderFrame;
+	enum class SamplerFilter;
+	enum class SamplerAddressMode;
+	enum class SamplerMipmapMode;
+	enum class SamplerBorderColor;
+	enum class TextureFormat;
 
-	class Renderer
+	class VulkanUtility
 	{
 	public:
 		/// <summary>
 		///
 		/// </summary>
-		void Initialize(String& errString);
+		/// <param name="format"></param>
+		/// <returns></returns>
+		static VkFormat GetVkFormat(TextureFormat format);
 
 		/// <summary>
 		///
 		/// </summary>
-		void Shutdown();
+		/// <param name="filter"></param>
+		/// <returns></returns>
+		static VkFilter GetVkFilter(SamplerFilter filter);
 
 		/// <summary>
 		///
 		/// </summary>
-		/// <param name="frame"></param>
-		void Render(const RenderFrame& frame);
+		/// <param name="mode"></param>
+		/// <returns></returns>
+		static VkSamplerAddressMode GetVkSamplerAddressMode(SamplerAddressMode mode);
 
-	private:
-#ifdef SFG_PLATFORM_WINDOWS
-		VulkanBackend m_backend;
-#elif SFG_PLATFORM_OSX
-		MTLBackend m_backend;
-#endif
+		/// <summary>
+		///
+		/// </summary>
+		/// <param name="mode"></param>
+		/// <returns></returns>
+		static VkSamplerMipmapMode GetVkSamplerMipmapMode(SamplerMipmapMode mode);
+
+		/// <summary>
+		///
+		/// </summary>
+		/// <param name="color"></param>
+		/// <returns></returns>
+		static VkBorderColor GetVkBorderColor(SamplerBorderColor color);
+
+		/// <summary>
+		///
+		/// </summary>
+		/// <param name="samples"></param>
+		/// <returns></returns>
+		static VkSampleCountFlagBits GetVkSamples(unsigned int samples);
 	};
 }; // namespace SFG

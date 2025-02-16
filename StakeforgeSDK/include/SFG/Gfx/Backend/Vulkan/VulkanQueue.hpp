@@ -26,9 +26,14 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
 
-#include "SFG/Gfx/Backend/Vulkan/VkSubmitQueue.hpp"
+#pragma once
+
+#include "SFG/Type/SizeDefinitions.hpp"
 
 namespace SFG
 {
-
-} // namespace SFG
+	class VulkanQueue
+	{
+	public:
+	};
+}; // namespace SFG

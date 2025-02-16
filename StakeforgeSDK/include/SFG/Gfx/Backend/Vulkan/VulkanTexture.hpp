@@ -28,16 +28,42 @@ SOFTWARE.
 
 #pragma once
 
+#include "SFG/Data/Vector.hpp"
+#include "SFG/Type/SizeDefinitions.hpp"
+#include "SFG/Data/DynamicArray.hpp"
+
+struct VkDevice_T;
+struct VmaAllocator_T;
+struct VkImage_T;
+struct VkImageView_T;
+struct VmaAllocation_T;
+
 namespace SFG
 {
-	enum TextureFlags
+	struct TextureDesc;
+
+	class VulkanTexture
 	{
-		TEXTURE_FLAGS_NONE		   = 1 << 0,
-		TEXTURE_FLAGS_SAMPLED	   = 1 << 1,
-		TEXTURE_FLAGS_COLOR_ATT	   = 1 << 2,
-		TEXTURE_FLAGS_DEPTH_ATT	   = 1 << 3,
-		TEXTURE_FLAGS_STENCIL_ATT  = 1 << 4,
-		TEXTURE_FLAGS_TRANSFER_SRC = 1 << 5,
-		TEXTURE_FLAGS_TRANSFER_DST = 1 << 6,
+	public:
+		VulkanTexture() = delete;
+		VulkanTexture(VkDevice_T* device, VmaAllocator_T* vma) : m_device(device), m_vma(vma){};
+
+		/// <summary>
+		///
+		/// </summary>
+		void Create(const TextureDesc& def);
+
+		/// <summary>
+		///
+		/// </summary>
+		void Destroy();
+
+	private:
+		DynamicArray<VkImageView_T*> m_imageViews;
+		VmaAllocator_T*				 m_vma		   = nullptr;
+		VkDevice_T*					 m_device	   = nullptr;
+		VkImage_T*					 m_image	   = nullptr;
+		VmaAllocation_T*			 m_alloc	   = nullptr;
+		uint32						 m_aspectFlags = 0;
 	};
 }; // namespace SFG

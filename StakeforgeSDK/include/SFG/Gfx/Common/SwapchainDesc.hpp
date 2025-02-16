@@ -32,20 +32,19 @@ SOFTWARE.
 
 namespace SFG
 {
-    enum class TextureFormat;
+	enum class TextureFormat;
 
-    struct SwapchainDesc
-    {
-        const char* name = "";
-        void* window = nullptr;
-        void* osHandle = nullptr;
-        uint32     x             = 0;
-        uint32     y             = 0;
-        uint32     width         = 0;
-        uint32     height        = 0;
-        uint32 backbufferCount = 0;
-        float scalingFactor = 1.0f;
-        TextureFormat format = {};
-        bool vsyncOn = false;
-    };
+	struct SwapchainDesc
+	{
+		const char*	  name			= "";
+		void*		  window		= nullptr;
+		void*		  osHandle		= nullptr;
+		TextureFormat format		= {};
+		uint32		  x				= 0;
+		uint32		  y				= 0;
+		uint32		  width			= 0;
+		uint32		  height		= 0;
+		float		  scalingFactor = 1.0f;
+		bool		  vsyncOn		= false;
+	};
 }; // namespace SFG

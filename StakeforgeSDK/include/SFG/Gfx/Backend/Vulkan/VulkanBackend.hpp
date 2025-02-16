@@ -31,40 +31,62 @@ SOFTWARE.
 #include "SFG/Type/SizeDefinitions.hpp"
 #include "SFG/Data/String.hpp"
 
-#ifdef SFG_PLATFORM_WINDOWS
-#include "SFG/Gfx/Backend/Vulkan/VulkanBackend.hpp"
-#elif SFG_PLATFORM_OSX
-#include "SFG/Gfx/Backend/Metal/MTLBackend.hpp"
-#endif
+struct VkQueue_T;
+struct VkDevice_T;
+struct VkInstance_T;
+struct VkDebugUtilsMessengerEXT_T;
+struct VkAllocationCallbacks;
+struct VmaAllocator_T;
+enum VkObjectType;
 
 namespace SFG
 {
-	class RenderFrame;
-
-	class Renderer
+	class VulkanBackend
 	{
+	private:
+		enum class CPUVisibleGPUMemoryType
+		{
+			None,
+			NonCoherent,
+			Coherent,
+		};
+
+		enum class QueueAvailabilityType
+		{
+			Default,
+			Dedicated,
+			Separate,
+		};
+
 	public:
 		/// <summary>
 		///
 		/// </summary>
-		void Initialize(String& errString);
+		void Create(String& errString);
 
 		/// <summary>
 		///
 		/// </summary>
-		void Shutdown();
-
-		/// <summary>
-		///
-		/// </summary>
-		/// <param name="frame"></param>
-		void Render(const RenderFrame& frame);
+		void Destroy();
 
 	private:
-#ifdef SFG_PLATFORM_WINDOWS
-		VulkanBackend m_backend;
-#elif SFG_PLATFORM_OSX
-		MTLBackend m_backend;
-#endif
+		static void* s_vkCmdBeginRenderingKHR;
+		static void* s_vkCmdEndRenderingKHR;
+		static void* s_vkCmdBeginDebugUtilsLabelEXT;
+		static void* s_vkCmdEndDebugUtilsLabelEXT;
+
+		VmaAllocator_T*				m_vmaAllocator				= nullptr;
+		VkInstance_T*				m_instance					= nullptr;
+		VkDevice_T*					m_device					= nullptr;
+		VkDebugUtilsMessengerEXT_T* m_debugMessenger			= nullptr;
+		VkAllocationCallbacks*		m_allocationCallbacks		= nullptr;
+		VkQueue_T*					m_gfxQueue					= nullptr;
+		VkQueue_T*					m_transferQueue				= nullptr;
+		VkQueue_T*					m_computeQueue				= nullptr;
+		QueueAvailabilityType		m_transferQueueAvailability = QueueAvailabilityType::Default;
+		QueueAvailabilityType		m_computeQueueAvailability	= QueueAvailabilityType::Default;
+		CPUVisibleGPUMemoryType		m_cpuVisibleGPUMemoryType	= CPUVisibleGPUMemoryType::None;
+		int32						m_transferQueueFamilyIndex	= -1;
+		int32						m_computeQueueFamilyIndex	= -1;
 	};
 }; // namespace SFG

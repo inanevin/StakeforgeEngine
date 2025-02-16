@@ -26,20 +26,29 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
 
-#include "SFG/Gfx/Backend/Vulkan/VkBackend.hpp"
+#include "SFG/Gfx/Backend/Vulkan/VulkanBackend.hpp"
+#include "SFG/Gfx/Backend/Vulkan/VulkanFunctions.hpp"
 #include "SFG/Data/Vector.hpp"
 #include "SFG/IO/Assert.hpp"
 #include "SFG/IO/Log.hpp"
 #include "SFG/Memory/PoolAllocator.hpp"
 
+#define VMA_IMPLEMENTATION
+#include "SFG/Vendor/vulkan/vk_mem_alloc.h"
+
 #include "SFG/Vendor/vulkan/VkBootstrap.h"
-#include "SFG/Gfx/Backend/Vulkan/VkSubmitQueue.hpp"
+#include "SFG/Gfx/Backend/Vulkan/VulkanQueue.hpp"
 
 #include <algorithm>
 #include <vulkan/vulkan.h>
 
 namespace SFG
 {
+	void* VulkanBackend::s_vkCmdBeginRenderingKHR		= nullptr;
+	void* VulkanBackend::s_vkCmdEndRenderingKHR			= nullptr;
+	void* VulkanBackend::s_vkCmdBeginDebugUtilsLabelEXT = nullptr;
+	void* VulkanBackend::s_vkCmdEndDebugUtilsLabelEXT	= nullptr;
+
 #ifdef SFG_DEBUG
 
 	static VKAPI_ATTR VkBool32 VKAPI_CALL VkDebugCallback(VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity, VkDebugUtilsMessageTypeFlagsEXT messageType, const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData, void* pUserData)
@@ -67,47 +76,7 @@ namespace SFG
 			throw std::runtime_error(err);                                                                                                                                                                                                                         \
 	}
 
-	enum class CPUVisibleGPUMemoryType
-	{
-		None,
-		NonCoherent,
-		Coherent,
-	};
-
-	enum class QueueAvailabilityType
-	{
-		Default,
-		Dedicated,
-		Separate,
-	};
-
-	struct VulkanBackendUserData
-	{
-		PFN_vkCmdBeginRenderingKHR		 vkCmdBeginRenderingKHR		  = nullptr;
-		PFN_vkCmdEndRenderingKHR		 vkCmdEndRenderingKHR		  = nullptr;
-		PFN_vkSetDebugUtilsObjectNameEXT vkSetDebugUtilsObjectNameEXT = nullptr;
-		PFN_vkCmdBeginDebugUtilsLabelEXT vkCmdBeginDebugUtilsLabelEXT = nullptr;
-		PFN_vkCmdEndDebugUtilsLabelEXT	 vkCmdEndDebugUtilsLabelEXT	  = nullptr;
-
-		VkInstance				 instance				   = nullptr;
-		VkDevice				 device					   = nullptr;
-		VkDebugUtilsMessengerEXT debugMessenger			   = nullptr;
-		VkAllocationCallbacks*	 allocationCallbacks	   = nullptr;
-		VkQueue					 transferQueue			   = nullptr;
-		VkQueue					 computeQueue			   = nullptr;
-		VkQueue					 graphicsQueue			   = nullptr;
-		int32					 transferQueueFamilyIndex  = -1;
-		int32					 computeQueueFamilyIndex   = -1;
-		QueueAvailabilityType	 transferQueueAvailability = QueueAvailabilityType::Default;
-		QueueAvailabilityType	 computeQueueAvailability  = QueueAvailabilityType::Default;
-		CPUVisibleGPUMemoryType	 cpuVisibleGPUMemoryType   = CPUVisibleGPUMemoryType::None;
-
-		Pool<VkSubmitQueue, 3> queues;
-	};
-
-	static VulkanBackendUserData g_vkUserData = {};
-
-	void VkBackend::Create(String& errString)
+	void VulkanBackend::Create(String& errString)
 	{
 		SFG_INFO("************* Initializing Vulkan backend... *************");
 		constexpr uint32 VK_MAJOR = 1;
@@ -150,12 +119,12 @@ namespace SFG
 		/*
 			Check physical devices and report.
 		*/
-		vkb::Instance vkbInst		= buildResult.value();
-		g_vkUserData.instance		= vkbInst.instance;
-		g_vkUserData.debugMessenger = vkbInst.debug_messenger;
+		vkb::Instance vkbInst = buildResult.value();
+		m_instance			  = vkbInst.instance;
+		m_debugMessenger	  = vkbInst.debug_messenger;
 
 		uint32 deviceCount = 0;
-		vkEnumeratePhysicalDevices(g_vkUserData.instance, &deviceCount, nullptr);
+		vkEnumeratePhysicalDevices(vkbInst.instance, &deviceCount, nullptr);
 
 		if (deviceCount == 0)
 		{
@@ -165,7 +134,7 @@ namespace SFG
 
 		{
 			Vector<VkPhysicalDevice> devices(deviceCount);
-			VkResult				 result = vkEnumeratePhysicalDevices(g_vkUserData.instance, &deviceCount, devices.data());
+			VkResult				 result = vkEnumeratePhysicalDevices(vkbInst.instance, &deviceCount, devices.data());
 
 			for (VkPhysicalDevice device : devices)
 			{
@@ -211,6 +180,9 @@ namespace SFG
 		VkPhysicalDeviceMemoryProperties memoryProperties;
 		vkGetPhysicalDeviceMemoryProperties(physicalDevice.physical_device, &memoryProperties);
 
+		VkPhysicalDeviceFeatures features = {};
+		vkGetPhysicalDeviceFeatures(physicalDevice.physical_device, &features);
+
 		SFG_INFO("Vulkan: Selected device: {0}", gpuProperties.deviceName);
 		SFG_INFO("Vulkan: API Version: {0}.{1}.{2}", VK_VERSION_MAJOR(gpuProperties.apiVersion), VK_VERSION_MINOR(gpuProperties.apiVersion), VK_VERSION_PATCH(gpuProperties.apiVersion));
 		SFG_INFO("Vulkan: Memory Heaps: {0}", memoryProperties.memoryHeapCount);
@@ -245,7 +217,7 @@ namespace SFG
 			{
 				const bool isCoherent = (flags & VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
 				SFG_INFO("CPU visible GPU memory is available! Is Coherent: {0}", isCoherent);
-				g_vkUserData.cpuVisibleGPUMemoryType = isCoherent ? CPUVisibleGPUMemoryType::Coherent : CPUVisibleGPUMemoryType::NonCoherent;
+				m_cpuVisibleGPUMemoryType = isCoherent ? CPUVisibleGPUMemoryType::Coherent : CPUVisibleGPUMemoryType::NonCoherent;
 			}
 		}
 
@@ -270,9 +242,9 @@ namespace SFG
 			return;
 		}
 
-		vkb::Device vkbDevice	   = deviceBuilderResult.value();
-		g_vkUserData.device		   = vkbDevice.device;
-		g_vkUserData.graphicsQueue = vkbDevice.get_queue(vkb::QueueType::graphics).value();
+		vkb::Device vkbDevice = deviceBuilderResult.value();
+		m_device			  = vkbDevice.device;
+		m_gfxQueue			  = vkbDevice.get_queue(vkb::QueueType::graphics).value();
 
 		/*
 			Queue checkup.
@@ -285,8 +257,8 @@ namespace SFG
 		auto itDedicatedTransfer = std::ranges::find_if(queueFamilies, [](const VkQueueFamilyProperties& qf) { return (qf.queueFlags & VK_QUEUE_TRANSFER_BIT) && !(qf.queueFlags & VK_QUEUE_COMPUTE_BIT) && !(qf.queueFlags & VK_QUEUE_GRAPHICS_BIT); });
 		if (itDedicatedTransfer != queueFamilies.end())
 		{
-			g_vkUserData.transferQueueFamilyIndex  = static_cast<int32>(std::distance(queueFamilies.begin(), itDedicatedTransfer));
-			g_vkUserData.transferQueueAvailability = QueueAvailabilityType::Dedicated;
+			m_transferQueueFamilyIndex	= static_cast<int32>(std::distance(queueFamilies.begin(), itDedicatedTransfer));
+			m_transferQueueAvailability = QueueAvailabilityType::Dedicated;
 			SFG_INFO("Vulkan: Found dedicated transfer queue.");
 		}
 		else
@@ -294,26 +266,26 @@ namespace SFG
 			auto itSeparateTransfer = std::ranges::find_if(queueFamilies, [](const VkQueueFamilyProperties& qf) { return (qf.queueFlags & VK_QUEUE_TRANSFER_BIT) && !(qf.queueFlags & VK_QUEUE_GRAPHICS_BIT); });
 			if (itSeparateTransfer != queueFamilies.end())
 			{
-				g_vkUserData.transferQueueFamilyIndex  = static_cast<int32>(std::distance(queueFamilies.begin(), itSeparateTransfer));
-				g_vkUserData.transferQueueAvailability = QueueAvailabilityType::Separate;
+				m_transferQueueFamilyIndex	= static_cast<int32>(std::distance(queueFamilies.begin(), itSeparateTransfer));
+				m_transferQueueAvailability = QueueAvailabilityType::Separate;
 				SFG_INFO("Vulkan: Found separate transfer queue.");
 			}
 			else
 			{
 				auto itAnyTransfer = std::ranges::find_if(queueFamilies, [](const VkQueueFamilyProperties& qf) { return (qf.queueFlags & VK_QUEUE_TRANSFER_BIT); });
 				SFG_ASSERT(itAnyTransfer != queueFamilies.end());
-				g_vkUserData.transferQueueFamilyIndex = static_cast<int32>(std::distance(queueFamilies.begin(), itAnyTransfer));
+				m_transferQueueFamilyIndex = static_cast<int32>(std::distance(queueFamilies.begin(), itAnyTransfer));
 				SFG_INFO("Vulkan: Transfer queue is graphics queue.");
 			}
 		}
 
-		vkGetDeviceQueue(vkbDevice.device, g_vkUserData.transferQueueFamilyIndex, 0, &g_vkUserData.transferQueue);
+		vkGetDeviceQueue(vkbDevice.device, m_transferQueueFamilyIndex, 0, &m_transferQueue);
 
 		auto itDedicatedCompute = std::ranges::find_if(queueFamilies, [](const VkQueueFamilyProperties& qf) { return (qf.queueFlags & VK_QUEUE_COMPUTE_BIT) && !(qf.queueFlags & VK_QUEUE_TRANSFER_BIT) && !(qf.queueFlags & VK_QUEUE_GRAPHICS_BIT); });
 		if (itDedicatedCompute != queueFamilies.end())
 		{
-			g_vkUserData.computeQueueFamilyIndex  = static_cast<int32>(std::distance(queueFamilies.begin(), itDedicatedCompute));
-			g_vkUserData.computeQueueAvailability = QueueAvailabilityType::Dedicated;
+			m_computeQueueFamilyIndex  = static_cast<int32>(std::distance(queueFamilies.begin(), itDedicatedCompute));
+			m_computeQueueAvailability = QueueAvailabilityType::Dedicated;
 			SFG_INFO("Vulkan: Found dedicated compute queue.");
 		}
 		else
@@ -321,54 +293,66 @@ namespace SFG
 			auto itSeparateCompute = std::ranges::find_if(queueFamilies, [](const VkQueueFamilyProperties& qf) { return (qf.queueFlags & VK_QUEUE_COMPUTE_BIT) && !(qf.queueFlags & VK_QUEUE_GRAPHICS_BIT); });
 			if (itSeparateCompute != queueFamilies.end())
 			{
-				g_vkUserData.computeQueueFamilyIndex  = static_cast<int32>(std::distance(queueFamilies.begin(), itSeparateCompute));
-				g_vkUserData.computeQueueAvailability = QueueAvailabilityType::Separate;
+				m_computeQueueFamilyIndex  = static_cast<int32>(std::distance(queueFamilies.begin(), itSeparateCompute));
+				m_computeQueueAvailability = QueueAvailabilityType::Separate;
 				SFG_INFO("Vulkan: Found separate compute queue.");
 			}
 			else
 			{
 				auto itAnyCompute = std::ranges::find_if(queueFamilies, [](const VkQueueFamilyProperties& qf) { return (qf.queueFlags & VK_QUEUE_COMPUTE_BIT); });
 				SFG_ASSERT(itAnyCompute != queueFamilies.end());
-				g_vkUserData.computeQueueFamilyIndex = static_cast<int32>(std::distance(queueFamilies.begin(), itAnyCompute));
+				m_computeQueueFamilyIndex = static_cast<int32>(std::distance(queueFamilies.begin(), itAnyCompute));
 				SFG_INFO("Vulkan: Compute queue is graphics queue.");
 			}
 		}
 
-		vkGetDeviceQueue(vkbDevice.device, g_vkUserData.computeQueueFamilyIndex, 0, &g_vkUserData.computeQueue);
+		vkGetDeviceQueue(vkbDevice.device, m_computeQueueFamilyIndex, 0, &m_computeQueue);
 
 		/* Feature function pointers */
-		g_vkUserData.vkCmdBeginRenderingKHR		  = reinterpret_cast<PFN_vkCmdBeginRenderingKHR>(vkGetDeviceProcAddr(g_vkUserData.device, "vkCmdBeginRenderingKHR"));
-		g_vkUserData.vkCmdEndRenderingKHR		  = reinterpret_cast<PFN_vkCmdEndRenderingKHR>(vkGetDeviceProcAddr(g_vkUserData.device, "vkCmdEndRenderingKHR"));
-		g_vkUserData.vkSetDebugUtilsObjectNameEXT = reinterpret_cast<PFN_vkSetDebugUtilsObjectNameEXT>(vkGetDeviceProcAddr(g_vkUserData.device, "vkSetDebugUtilsObjectNameEXT"));
-		g_vkUserData.vkCmdBeginDebugUtilsLabelEXT = reinterpret_cast<PFN_vkCmdBeginDebugUtilsLabelEXT>(vkGetDeviceProcAddr(g_vkUserData.device, "vkCmdBeginDebugUtilsLabelEXT"));
-		g_vkUserData.vkCmdEndDebugUtilsLabelEXT	  = reinterpret_cast<PFN_vkCmdEndDebugUtilsLabelEXT>(vkGetDeviceProcAddr(g_vkUserData.device, "vkCmdEndDebugUtilsLabelEXT"));
+		s_vkCmdBeginRenderingKHR	   = reinterpret_cast<PFN_vkCmdBeginRenderingKHR>(vkGetDeviceProcAddr(m_device, "vkCmdBeginRenderingKHR"));
+		s_vkCmdEndRenderingKHR		   = reinterpret_cast<PFN_vkCmdEndRenderingKHR>(vkGetDeviceProcAddr(m_device, "vkCmdEndRenderingKHR"));
+		s_vkCmdBeginDebugUtilsLabelEXT = reinterpret_cast<PFN_vkCmdBeginDebugUtilsLabelEXT>(vkGetDeviceProcAddr(m_device, "vkCmdBeginDebugUtilsLabelEXT"));
+		s_vkCmdEndDebugUtilsLabelEXT   = reinterpret_cast<PFN_vkCmdEndDebugUtilsLabelEXT>(vkGetDeviceProcAddr(m_device, "vkCmdEndDebugUtilsLabelEXT"));
 
-		if (!g_vkUserData.vkCmdBeginRenderingKHR || !g_vkUserData.vkCmdEndRenderingKHR)
+		pfn_setDebugUtilsObjectNameEXT = reinterpret_cast<PFN_vkSetDebugUtilsObjectNameEXT>(vkGetDeviceProcAddr(m_device, "vkSetDebugUtilsObjectNameEXT"));
+
+		if (!s_vkCmdBeginRenderingKHR || !s_vkCmdEndRenderingKHR)
 		{
 			errString = "Failed to load vkCmdBeginRenderingKHR or vkCmdEndRenderingKHR!";
 			return;
 		}
 
 #ifdef SFG_DEBUG
-		if (!g_vkUserData.vkSetDebugUtilsObjectNameEXT || !g_vkUserData.vkCmdBeginDebugUtilsLabelEXT || !g_vkUserData.vkCmdEndDebugUtilsLabelEXT)
+		if (!pfn_setDebugUtilsObjectNameEXT || !s_vkCmdBeginDebugUtilsLabelEXT || !s_vkCmdEndDebugUtilsLabelEXT)
 		{
 			errString = "Failed to load vkSetDebugUtilsObjectNameEXT or vkCmdBeginDebugUtilsLabelEXT or vkCmdEndDebugUtilsLabelEXT!";
 			return;
 		}
 #endif
 
+		/* VMA */
+		VmaAllocatorCreateInfo allocatorInfo = {};
+		allocatorInfo.physicalDevice		 = physicalDevice.physical_device;
+		allocatorInfo.device				 = m_device;
+		allocatorInfo.instance				 = m_instance;
+		vmaCreateAllocator(&allocatorInfo, &m_vmaAllocator);
+
 		SFG_INFO("************* Successfuly initialized Vulkan backend. *************");
 	}
 
-	void VkBackend::Destroy()
+	void VulkanBackend::Destroy()
 	{
-		if (g_vkUserData.device)
-			vkDestroyDevice(g_vkUserData.device, g_vkUserData.allocationCallbacks);
+		if (m_device)
+			vkDestroyDevice(m_device, m_allocationCallbacks);
 
-		if (g_vkUserData.debugMessenger)
-			vkb::destroy_debug_utils_messenger(g_vkUserData.instance, g_vkUserData.debugMessenger);
+		if (m_debugMessenger)
+			vkb::destroy_debug_utils_messenger(m_instance, m_debugMessenger);
 
-		if (g_vkUserData.instance)
-			vkDestroyInstance(g_vkUserData.instance, g_vkUserData.allocationCallbacks);
+		if (m_instance)
+			vkDestroyInstance(m_instance, m_allocationCallbacks);
+
+		if (m_vmaAllocator)
+			vmaDestroyAllocator(m_vmaAllocator);
 	}
+
 } // namespace SFG

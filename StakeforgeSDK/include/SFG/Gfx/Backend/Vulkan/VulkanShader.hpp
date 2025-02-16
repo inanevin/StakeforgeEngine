@@ -28,16 +28,30 @@ SOFTWARE.
 
 #pragma once
 
+#include "SFG/Type/SizeDefinitions.hpp"
+
 namespace SFG
 {
-	enum TextureFlags
+	struct ShaderDesc;
+
+	class VulkanShader
 	{
-		TEXTURE_FLAGS_NONE		   = 1 << 0,
-		TEXTURE_FLAGS_SAMPLED	   = 1 << 1,
-		TEXTURE_FLAGS_COLOR_ATT	   = 1 << 2,
-		TEXTURE_FLAGS_DEPTH_ATT	   = 1 << 3,
-		TEXTURE_FLAGS_STENCIL_ATT  = 1 << 4,
-		TEXTURE_FLAGS_TRANSFER_SRC = 1 << 5,
-		TEXTURE_FLAGS_TRANSFER_DST = 1 << 6,
+	public:
+		VulkanShader() = delete;
+		VulkanShader(void* device) : m_device(device){};
+
+		/// <summary>
+		///
+		/// </summary>
+		void Create(const ShaderDesc& desc);
+
+		/// <summary>
+		///
+		/// </summary>
+		void Destroy();
+
+	private:
+		void* m_resource = nullptr;
+		void* m_device	 = nullptr;
 	};
 }; // namespace SFG

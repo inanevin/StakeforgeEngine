@@ -28,12 +28,8 @@ SOFTWARE.
 
 #pragma once
 
-#include "SFG/Type/SizeDefinitions.hpp"
-
 namespace SFG
 {
-	class VkSubmitQueue
-	{
-	public:
-	};
+	static constexpr unsigned char FRAMES_IN_FLIGHT	 = 2;
+	static constexpr unsigned char BACK_BUFFER_COUNT = 3;
 }; // namespace SFG

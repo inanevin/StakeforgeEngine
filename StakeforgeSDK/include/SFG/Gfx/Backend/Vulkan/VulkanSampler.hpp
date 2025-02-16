@@ -28,16 +28,32 @@ SOFTWARE.
 
 #pragma once
 
+struct VkDevice_T;
+struct VkSampler_T;
+
 namespace SFG
 {
-	enum TextureFlags
+	struct SamplerDesc;
+
+	class VulkanSampler
 	{
-		TEXTURE_FLAGS_NONE		   = 1 << 0,
-		TEXTURE_FLAGS_SAMPLED	   = 1 << 1,
-		TEXTURE_FLAGS_COLOR_ATT	   = 1 << 2,
-		TEXTURE_FLAGS_DEPTH_ATT	   = 1 << 3,
-		TEXTURE_FLAGS_STENCIL_ATT  = 1 << 4,
-		TEXTURE_FLAGS_TRANSFER_SRC = 1 << 5,
-		TEXTURE_FLAGS_TRANSFER_DST = 1 << 6,
+	public:
+		VulkanSampler() = delete;
+		VulkanSampler(VkDevice_T* device, bool supportsAnisotropy) : m_device(device), m_supportsAnisotropy(supportsAnisotropy){};
+
+		/// <summary>
+		///
+		/// </summary>
+		void Create(const SamplerDesc& desc);
+
+		/// <summary>
+		///
+		/// </summary>
+		void Destroy();
+
+	private:
+		VkSampler_T* m_sampler			  = nullptr;
+		VkDevice_T*	 m_device			  = nullptr;
+		bool		 m_supportsAnisotropy = false;
 	};
 }; // namespace SFG

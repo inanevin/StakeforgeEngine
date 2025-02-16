@@ -29,23 +29,39 @@ SOFTWARE.
 #pragma once
 
 #include "SFG/Type/SizeDefinitions.hpp"
-#include "SFG/Data/String.hpp"
 
 namespace SFG
 {
-	class VkBackend
+	struct ResourceDesc;
+
+	class VulkanResource
 	{
 	public:
+		VulkanResource() = delete;
+		VulkanResource(void* device) : m_device(device){};
+
 		/// <summary>
 		///
 		/// </summary>
-		void Create(String& errString);
+		void Create(const ResourceDesc& desc);
 
 		/// <summary>
 		///
 		/// </summary>
 		void Destroy();
 
+		/// <summary>
+		///
+		/// </summary>
+		void Map(uint8*& ptr);
+
+		/// <summary>
+		///
+		/// </summary>
+		void Unmap(){};
+
 	private:
+		void* m_resource = nullptr;
+		void* m_device	 = nullptr;
 	};
 }; // namespace SFG
