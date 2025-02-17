@@ -43,22 +43,29 @@ SOFTWARE.
 
 namespace SFG
 {
-	Game::Game(App* app) : AppDelegate(), m_app(app)
+	Game::Game(App& app) : AppDelegate(), m_app(app)
 	{
 		/* App Init */
-		SFG::App::Settings& settings = app->GetAppSettings();
+		SFG::App::Settings& settings = app.GetAppSettings();
 		settings.throttleCPU		 = true;
 		settings.delegate			 = this;
-
-		/* Main window */
-		Window* window = app->CreateAppWindow(0, SFG_APPNAME, {}, Vector2ui(256, 256), WindowStyle::ApplicationWindow);
-		window->CenterToMonitor();
-		// window->SetHighFrequencyInputMode(true);
 	}
 
-	Game::~Game()
-	{
-	}
+    void Game::OnInitialize()
+    {
+        /* Main window */
+        Window* window = m_app.CreateAppWindow(0, SFG_APPNAME, {}, Vector2ui(256, 256), WindowStyle::ApplicationWindow);
+        window->CenterToMonitor();
+        // window->SetHighFrequencyInputMode(true);
+    }
+    
+    void Game::OnShutdown()
+    {
+        Window* window = m_app.GetWindow(0);
+        
+        if(window)
+            m_app.DestroyAppWindow(0);
+    }
 
 	void Game::OnWindowEvent(const WindowEvent& ev)
 	{

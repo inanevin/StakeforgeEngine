@@ -56,15 +56,24 @@ namespace SFG
 			AppDelegate* delegate			   = nullptr;
 			uint32		 fixedUpdateRate	   = 60;
 			uint32		 maxAccumulatedUpdates = 4;
+            uint32       maxCommandStreamsPerFrame = 32;
 			bool		 throttleCPU		   = false;
 		};
 
-		App()							 = delete;
+        App()							 = default;
 		App(const App& other)			 = delete;
 		App& operator=(const App& other) = delete;
-
-		App(String& errString);
-		~App();
+        ~App() = default;
+        
+        /// <summary>
+        ///
+        /// </summary>
+        void Initialize(String& errString);
+        
+        /// <summary>
+        ///
+        /// </summary>
+        void Shutdown();
 
 		/// <summary>
 		///
@@ -128,5 +137,6 @@ namespace SFG
 		uint32			m_updateRenderFrameIndex  = 0;
 		Atomic<uint32>	m_currentRenderFrameIndex = 0;
 		Atomic<bool>	m_shouldClose			  = false;
+        bool m_firstTick = false;
 	};
 } // namespace SFG

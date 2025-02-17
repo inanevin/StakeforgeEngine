@@ -30,6 +30,7 @@ SOFTWARE.
 #include "SFG/Core/AppDelegate.hpp"
 #include "SFG/Data/VectorUtil.hpp"
 #include "SFG/IO/FileSystem.hpp"
+#include "SFG/IO/Assert.hpp"
 #include "SFG/Platform/Time.hpp"
 #include "SFG/Platform/Process.hpp"
 #include "SFG/Platform/Window.hpp"
@@ -38,44 +39,48 @@ SOFTWARE.
 
 namespace SFG
 {
-	App::App(String& errString)
-	{
-		Time::Initialize();
-		m_renderer.Initialize(errString);
 
-		m_renderFrames[0].Initialize({
-			.bumpAllocatorSize = 1024 * 1024,
-			.maxCommandStreams = 32,
-		});
+    void App::Initialize(String &errString)
+    {
+        Time::Initialize();
+        m_renderer.Initialize(errString);
+        
+        m_renderFrames[0].Initialize({
+            .bumpAllocatorSize = 1024 * 1024,
+            .maxCommandStreams = m_settings.maxCommandStreamsPerFrame,
+        });
+        
+        m_renderFrames[1].Initialize({
+            .bumpAllocatorSize = 1024 * 1024,
+            .maxCommandStreams = m_settings.maxCommandStreamsPerFrame,
+        });
+        
+        if (!errString.empty())
+            m_shouldClose.store(true);
+        
+        m_currentRenderFrameIndex.store(0);
+        m_updateRenderFrameIndex = 1;
+        m_renderThread             = std::thread(&App::RenderLoop, this);
+        
+        if(m_settings.delegate)
+            m_settings.delegate->OnInitialize();
+    }
 
-		m_renderFrames[1].Initialize({
-			.bumpAllocatorSize = 1024 * 1024,
-			.maxCommandStreams = 32,
-		});
-
-		if (!errString.empty())
-			m_shouldClose.store(true);
-
-		m_currentRenderFrameIndex.store(0);
-		m_updateRenderFrameIndex = 1;
-		m_renderThread			 = std::thread(&App::RenderLoop, this);
-	}
-
-	App::~App()
-	{
-		if (m_renderThread.joinable())
-			m_renderThread.join();
-
-		m_renderFrames[0].Shutdown();
-		m_renderFrames[1].Shutdown();
-		m_renderer.Shutdown();
-
-		for (Window* window : m_windows)
-			Window::Destroy(window);
-		m_windows.clear();
-
-		Time::Shutdown();
-	}
+    void App::Shutdown()
+    {
+        if(m_settings.delegate)
+            m_settings.delegate->OnShutdown();
+        
+        if (m_renderThread.joinable())
+            m_renderThread.join();
+        
+        m_renderFrames[0].Shutdown();
+        m_renderFrames[1].Shutdown();
+        m_renderer.Shutdown();
+        
+        SFG_ASSERT(m_windows.empty());
+        Time::Shutdown();
+    }
 
 	void App::Tick()
 	{
@@ -166,11 +171,20 @@ namespace SFG
 					m_settings.delegate->OnWindowEvent(ev);
 			}
 
+            uint32 accCount = 0;
 			while (accumulator >= FIXED_INTERVAL_US)
 			{
 				const double delta = FIXED_INTERVAL_US * 1e-6;
 				accumulator -= FIXED_INTERVAL_US;
 				m_settings.delegate->OnSimulate(delta);
+                
+                accCount++;
+                
+                if(accCount >= m_settings.maxAccumulatedUpdates)
+                {
+                    accumulator = 0.0f;
+                    break;
+                }
 			}
 
 			/* Generate a new render frame & signal render thread. */

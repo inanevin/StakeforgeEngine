@@ -29,6 +29,7 @@ SOFTWARE.
 #include "SFG/Gfx/Backend/Metal/MTLSwapchain.hpp"
 #include "SFG/Gfx/Backend/Metal/MTLUtility.hpp"
 #include "SFG/Gfx/Common/SwapchainDesc.hpp"
+#include "SFG/Gfx/Common/GfxConstants.hpp"
 #include <Metal/Metal.h>
 #import <QuartzCore/CAMetalLayer.h>
 #import <Cocoa/Cocoa.h>
@@ -42,7 +43,7 @@ namespace SFG
         [layer retain];
         layer.device = device;
         layer.pixelFormat = MTLUtility::GetFormat(desc.format);
-        layer.maximumDrawableCount = desc.backbufferCount;
+        layer.maximumDrawableCount = BACK_BUFFER_COUNT;
         
         m_layer = static_cast<void*>(layer);
         

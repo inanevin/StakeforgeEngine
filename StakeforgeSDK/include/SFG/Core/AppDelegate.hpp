@@ -47,6 +47,16 @@ namespace SFG
 		/// <param name="ev"></param>
 		virtual void OnWindowEvent(const WindowEvent& ev) = 0;
 
+        /// <summary>
+        ///
+        /// </summary>
+        virtual void OnInitialize() = 0;
+        
+        /// <summary>
+        ///
+        /// </summary>
+        virtual void OnShutdown() = 0;
+        
 		/// <summary>
 		///
 		/// </summary>

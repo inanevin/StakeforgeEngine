@@ -103,10 +103,12 @@ SFG_API int main(int argc, char* argv[])
         [osxAppDelegate checkAndRequestFolderAccess:@"Users"];
 
         SFG::String errString = "";
-        SFG::App* sfgApp = new SFG::App(errString);
-        SFG::Game* game = new SFG::Game(sfgApp);
+        SFG::App sfgApp = SFG::App();
+        SFG::Game game = SFG::Game(sfgApp);
+        
+        [osxAppDelegate setMyApp:&sfgApp];
 
-        [osxAppDelegate setMyApp:sfgApp];
+        sfgApp.Initialize(errString);
 
         if (!errString.empty())
         {
@@ -119,7 +121,7 @@ SFG_API int main(int argc, char* argv[])
             [alert addButtonWithTitle:@"OK"];
             [alert runModal];
 
-            delete sfgApp;
+            sfgApp.Shutdown();
             [app terminate:nil];
             return 0;
         }
@@ -127,11 +129,10 @@ SFG_API int main(int argc, char* argv[])
         // [[NSRunningApplication currentApplication] activateWithOptions:(NSApplicationActivateAllWindows | NSApplicationActivateIgnoringOtherApps)];
 
         @autoreleasepool {
-            sfgApp->Tick();
+            sfgApp.Tick();
         }
 
-        delete game;
-        delete sfgApp;
+        sfgApp.Shutdown();
 
         [app terminate:nil];
     }

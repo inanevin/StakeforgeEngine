@@ -37,14 +37,24 @@ namespace SFG
 	class Game : public AppDelegate
 	{
 	public:
-		Game(App* app);
-		virtual ~Game();
-
+		Game(App& app);
+        virtual ~Game() = default;
+        
 		/// <summary>
 		///
 		/// </summary>
 		virtual void OnWindowEvent(const WindowEvent& ev) override;
 
+        /// <summary>
+        ///
+        /// </summary>
+        virtual void OnInitialize() override;
+        
+        /// <summary>
+        ///
+        /// </summary>
+        virtual void OnShutdown() override;
+        
 		/// <summary>
 		///
 		/// </summary>
@@ -64,6 +74,6 @@ namespace SFG
 		virtual void OnGenerateFrame(RenderFrame& frame, double interpolation) override;
 
 	private:
-		App* m_app = nullptr;
+        App& m_app;
 	};
 } // namespace SFG
