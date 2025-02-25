@@ -41,6 +41,11 @@ SOFTWARE.
 #include <chrono>
 #include <thread>
 
+#include <SFG/Gfx/Common/TextureDesc.hpp>
+#include <SFG/Gfx/Common/TextureFormat.hpp>
+#include <SFG/Gfx/Common/TextureView.hpp>
+#include <SFG/Gfx/Renderer.hpp>
+
 namespace SFG
 {
 	Game::Game(App& app) : AppDelegate(), m_app(app)
@@ -51,30 +56,28 @@ namespace SFG
 		settings.delegate			 = this;
 	}
 
-    void Game::OnInitialize()
-    {
-        /* Main window */
-        Window* window = m_app.CreateAppWindow(0, SFG_APPNAME, {}, Vector2ui(256, 256), WindowStyle::ApplicationWindow);
-        window->CenterToMonitor();
-        // window->SetHighFrequencyInputMode(true);
-    }
-    
-    void Game::OnShutdown()
-    {
-        Window* window = m_app.GetWindow(0);
-        
-        if(window)
-            m_app.DestroyAppWindow(0);
-    }
+	void Game::OnInitialize()
+	{
+		/* Main window */
+		Window* window = m_app.CreateAppWindow(0, SFG_APPNAME, {}, Vector2ui(256, 256), WindowStyle::ApplicationWindow);
+		window->CenterToMonitor();
+		// window->SetHighFrequencyInputMode(true);
+
+		//  m_app.GetRenderer().CreateSwapchain();
+	}
+
+	void Game::OnShutdown()
+	{
+		Window* window = m_app.GetWindow(0);
+
+		if (window)
+			m_app.DestroyAppWindow(0);
+	}
 
 	void Game::OnWindowEvent(const WindowEvent& ev)
 	{
 		if (ev.type != WindowEventType::MouseDelta)
 			return;
-
-		// SFG_TRACE("HUH");
-		// SFG_TRACE("POS {0} - {1}", ev.window->GetMousePositionAbs().x, ev.window->GetMousePositionAbs().y);
-		// SFG_TRACE("VALUE {0} - {1}", ev.value.x, ev.value.y);
 	}
 
 	void Game::OnTick()
@@ -93,5 +96,6 @@ namespace SFG
 
 	void Game::OnGenerateFrame(RenderFrame& frame, double interpolation)
 	{
+		CommandStream& stream = frame.GetCommandStream();
 	}
 } // namespace SFG

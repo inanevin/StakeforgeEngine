@@ -28,38 +28,17 @@ SOFTWARE.
 
 #pragma once
 
-#include "SFG/Type/SizeDefinitions.hpp"
+#include "SFG/Data/Handle.hpp"
 
 namespace SFG
 {
-	struct SwapchainDesc;
 
-	class MTLSwapchain
+	struct CMDBeginRenderPass
 	{
-	public:
-		MTLSwapchain() = delete;
-		MTLSwapchain(void* device) : m_device(device){};
-
-		/// <summary>
-		///
-		/// </summary>
-		void Create(const SwapchainDesc& desc);
-
-		/// <summary>
-		///
-		/// </summary>
-		void Recreate(const SwapchainDesc& desc);
-
-		/// <summary>
-		///
-		/// </summary>
-		void Destroy();
-
-	private:
-		void* m_layer  = nullptr;
-		void* m_device = nullptr;
+		Handle<uint16> renderTarget;
 	};
 
-	typedef MTLSwapchain GfxSwapchain;
-
+	struct CMDEndRenderPass
+	{
+	};
 }; // namespace SFG

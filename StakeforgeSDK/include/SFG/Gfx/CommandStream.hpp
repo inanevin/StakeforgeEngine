@@ -29,6 +29,7 @@ SOFTWARE.
 #pragma once
 
 #include "SFG/Type/SizeDefinitions.hpp"
+#include "SFG/Data/Handle.hpp"
 
 namespace SFG
 {
@@ -36,13 +37,32 @@ namespace SFG
 
 	class CommandStream
 	{
+
 	public:
 		CommandStream()								   = delete;
 		CommandStream(const CommandStream&)			   = delete;
 		CommandStream& operator=(const CommandStream&) = delete;
-		CommandStream(BumpAllocator* alloc) : m_allocator(alloc){};
+		CommandStream(BumpAllocator* alloc, size_t cmdBufferSize);
+
+		/// <summary>
+		///
+		/// </summary>
+		void Reset();
+
+		/// <summary>
+		///
+		/// </summary>
+		void BeginRenderPass(Handle<uint16> target);
+
+		/// <summary>
+		///
+		/// </summary>
+		void EndRenderPass();
 
 	private:
-		BumpAllocator* m_allocator = nullptr;
+		BumpAllocator* m_allocator		 = nullptr;
+		uint8*		   m_commandsRaw	 = nullptr;
+		uint32		   m_commandsCount	 = 0;
+		uint32		   m_commandsRawHead = 0;
 	};
 }; // namespace SFG

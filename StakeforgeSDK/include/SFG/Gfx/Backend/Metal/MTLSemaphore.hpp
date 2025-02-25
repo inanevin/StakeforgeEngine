@@ -32,33 +32,34 @@ SOFTWARE.
 
 namespace SFG
 {
-    struct SemaphoreDesc;
+	struct SemaphoreDesc;
 
 	class MTLSemaphore
 	{
 	public:
-        
-        MTLSemaphore() = delete;
-        MTLSemaphore(void* device) : m_device(device) {};
-        
-        /// <summary>
-        ///
-        /// </summary>
-        void Create();
-        
-        /// <summary>
-        ///
-        /// </summary>
-        void Destroy();
-        
-        /// <summary>
-        ///
-        /// </summary>
-        void Wait(uint64 value, uint32 sleepMS = 0);
-        
-    private:
-        
-        void* m_semaphore = nullptr;
-        void* m_device = nullptr;
+		MTLSemaphore() = delete;
+		MTLSemaphore(void* device) : m_device(device){};
+
+		/// <summary>
+		///
+		/// </summary>
+		void Create();
+
+		/// <summary>
+		///
+		/// </summary>
+		void Destroy();
+
+		/// <summary>
+		///
+		/// </summary>
+		void Wait(uint64 value, uint32 sleepMS = 0);
+
+	private:
+		void* m_semaphore = nullptr;
+		void* m_device	  = nullptr;
 	};
+
+	typedef MTLSemaphore GfxSemaphore;
+
 }; // namespace SFG

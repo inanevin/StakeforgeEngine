@@ -62,6 +62,7 @@ include/SFG/Type/*.hpp
 include/SFG/Resources/*.hpp
 include/SFG/Gfx/*.hpp
 include/SFG/Gfx/Common/*.hpp
+include/SFG/Gfx/Commands/*.hpp
 
 include/SFG/Vendor/LZ4/lz4.h
 include/SFG/Vendor/readerwriterqueue/*.h

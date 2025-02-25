@@ -32,18 +32,18 @@ SOFTWARE.
 
 namespace SFG
 {
-	class Handle
+	template <typename T> class Handle
 	{
 	public:
 		Handle(){};
-		Handle(uint16 idx, uint16 gen) : m_index(idx), m_generation(gen){};
+		Handle(T idx, T gen) : m_index(idx), m_generation(gen){};
 
-		uint16 GetIndex() const
+		T GetIndex() const
 		{
 			return m_index;
 		}
 
-		uint16 GetGeneration() const
+		T GetGeneration() const
 		{
 			return m_generation;
 		}
@@ -59,7 +59,7 @@ namespace SFG
 		}
 
 	private:
-		uint16 m_index		= 0;
-		uint16 m_generation = 0;
+		T m_index	   = 0;
+		T m_generation = 0;
 	};
 } // namespace SFG

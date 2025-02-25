@@ -32,29 +32,30 @@ SOFTWARE.
 
 namespace SFG
 {
-    struct TextureDesc;
+	struct TextureDesc;
 
 	class MTLTexture
 	{
 	public:
-        
-        MTLTexture() = delete;
-        MTLTexture(void* device) : m_device(device) {};
-        
-        /// <summary>
-        ///
-        /// </summary>
-        void Create(const TextureDesc& def);
-        
-        /// <summary>
-        ///
-        /// </summary>
-        void Destroy();
-        
-    private:
-        
-        Vector<void*> m_views = {};
-        void* m_texture = nullptr;
-        void* m_device = nullptr;
+		MTLTexture() = delete;
+		MTLTexture(void* device) : m_device(device){};
+
+		/// <summary>
+		///
+		/// </summary>
+		void Create(const TextureDesc& def);
+
+		/// <summary>
+		///
+		/// </summary>
+		void Destroy();
+
+	private:
+		Vector<void*> m_views	= {};
+		void*		  m_texture = nullptr;
+		void*		  m_device	= nullptr;
 	};
+
+	typedef MTLTexture GfxTexture;
+
 }; // namespace SFG

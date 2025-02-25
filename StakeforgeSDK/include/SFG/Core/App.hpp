@@ -53,27 +53,29 @@ namespace SFG
 	public:
 		struct Settings
 		{
-			AppDelegate* delegate			   = nullptr;
-			uint32		 fixedUpdateRate	   = 60;
-			uint32		 maxAccumulatedUpdates = 4;
-            uint32       maxCommandStreamsPerFrame = 32;
-			bool		 throttleCPU		   = false;
+			AppDelegate* delegate				   = nullptr;
+			uint32		 fixedUpdateRate		   = 60;
+			uint32		 maxAccumulatedUpdates	   = 4;
+			uint32		 maxCommandStreamsPerFrame = 8;
+			uint32		 bumpAllocatorSizePerFrame = 1024 * 1024;
+			uint32		 commandStreamSize		   = 1024;
+			bool		 throttleCPU			   = false;
 		};
 
-        App()							 = default;
+		App()							 = default;
 		App(const App& other)			 = delete;
 		App& operator=(const App& other) = delete;
-        ~App() = default;
-        
-        /// <summary>
-        ///
-        /// </summary>
-        void Initialize(String& errString);
-        
-        /// <summary>
-        ///
-        /// </summary>
-        void Shutdown();
+		~App()							 = default;
+
+		/// <summary>
+		///
+		/// </summary>
+		void Initialize(String& errString);
+
+		/// <summary>
+		///
+		/// </summary>
+		void Shutdown();
 
 		/// <summary>
 		///
@@ -124,6 +126,14 @@ namespace SFG
 			return m_settings;
 		}
 
+		/// <summary>
+		///
+		/// </summary>
+		inline Renderer& GetRenderer()
+		{
+			return m_renderer;
+		}
+
 	private:
 		void RenderLoop();
 
@@ -137,6 +147,6 @@ namespace SFG
 		uint32			m_updateRenderFrameIndex  = 0;
 		Atomic<uint32>	m_currentRenderFrameIndex = 0;
 		Atomic<bool>	m_shouldClose			  = false;
-        bool m_firstTick = false;
+		bool			m_firstTick				  = false;
 	};
 } // namespace SFG

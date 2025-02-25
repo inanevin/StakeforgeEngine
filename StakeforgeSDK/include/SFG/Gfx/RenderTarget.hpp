@@ -28,27 +28,25 @@ SOFTWARE.
 
 #pragma once
 
-#include "SFG/Type/SizeDefinitions.hpp"
+#include "SFG/Data/Handle.hpp"
+#include "SFG/Gfx/Common/GfxConstants.hpp"
 
 namespace SFG
 {
-	struct SwapchainDesc;
+	struct RenderTargetDesc;
+	class Renderer;
 
-	class MTLSwapchain
+	class RenderTarget
 	{
 	public:
-		MTLSwapchain() = delete;
-		MTLSwapchain(void* device) : m_device(device){};
+		RenderTarget() = delete;
+		RenderTarget(Renderer* renderer) : m_renderer(renderer){};
+		~RenderTarget() = default;
 
 		/// <summary>
 		///
 		/// </summary>
-		void Create(const SwapchainDesc& desc);
-
-		/// <summary>
-		///
-		/// </summary>
-		void Recreate(const SwapchainDesc& desc);
+		void Create(const RenderTargetDesc& desc);
 
 		/// <summary>
 		///
@@ -56,10 +54,8 @@ namespace SFG
 		void Destroy();
 
 	private:
-		void* m_layer  = nullptr;
-		void* m_device = nullptr;
+		Renderer*	   m_renderer = nullptr;
+		Handle<uint16> m_textures[FRAMES_IN_FLIGHT];
+		bool		   m_isSwapchain = false;
 	};
-
-	typedef MTLSwapchain GfxSwapchain;
-
 }; // namespace SFG

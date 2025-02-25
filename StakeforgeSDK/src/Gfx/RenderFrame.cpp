@@ -27,7 +27,7 @@ SOFTWARE.
 */
 
 #include "SFG/Gfx/RenderFrame.hpp"
-#include "SFG/Data/Handle.hpp"
+#include "SFG/Gfx/CommandStream.hpp"
 #include "SFG/IO/Assert.hpp"
 #include "SFG/Memory/BumpAllocator.hpp"
 
@@ -37,7 +37,7 @@ namespace SFG
 	{
 		SFG_ASSERT(m_allocator == nullptr);
 		m_allocator		 = new BumpAllocator(definition.bumpAllocatorSize);
-		m_commandStreams = m_allocator->Allocate<Handle>(definition.maxCommandStreams);
+		m_commandStreams = m_allocator->Allocate<CommandStream>(definition.maxCommandStreams, m_allocator, definition.commandBufferSize);
 		m_definition	 = definition;
 	}
 
@@ -50,12 +50,16 @@ namespace SFG
 	{
 		m_allocator->Reset();
 		m_commandStreamsCount = 0;
+
+		for (uint32 i = 0; i < m_definition.maxCommandStreams; i++)
+			m_commandStreams[i].Reset();
 	}
 
-	void RenderFrame::AddCommandStream(const Handle& handle)
+	CommandStream& RenderFrame::GetCommandStream()
 	{
 		SFG_ASSERT(m_commandStreamsCount < m_definition.maxCommandStreams);
-		m_commandStreams[m_commandStreamsCount] = handle;
+		const uint32 index = m_commandStreamsCount;
 		m_commandStreamsCount++;
+		return m_commandStreams[index];
 	}
 } // namespace SFG

@@ -34,7 +34,6 @@ namespace SFG
 	void Renderer::Initialize(String& errString)
 	{
 		m_backend.Create(errString);
-      
 	}
 
 	void Renderer::Shutdown()
@@ -45,4 +44,95 @@ namespace SFG
 	void Renderer::Render(const RenderFrame& frame)
 	{
 	}
+
+	Handle<uint16> Renderer::CreateRenderTarget(const RenderTargetDesc& desc)
+	{
+		Handle<uint16> hnd = m_renderTargets.Allocate(this);
+		m_renderTargets.Get(hnd).Create(desc);
+		return hnd;
+	}
+
+	void Renderer::DestroyRenderTarget(Handle<uint16> handle)
+	{
+		m_renderTargets.Get(handle).Destroy();
+		m_renderTargets.Free(handle);
+	}
+
+	Handle<uint16> Renderer::CreateSwapchain(const SwapchainDesc& desc)
+	{
+		Handle<uint16> swp = m_swapchains.Allocate(m_backend.GetDevice());
+		m_swapchains.Get(swp).Create(desc);
+		return swp;
+	}
+
+	void Renderer::DestroySwapchain(Handle<uint16> handle)
+	{
+		m_swapchains.Get(handle).Destroy();
+		m_swapchains.Free(handle);
+	}
+
+	Handle<uint16> Renderer::CreateTexture(const TextureDesc& desc)
+	{
+		Handle<uint16> txt = m_textures.Allocate(m_backend.GetDevice());
+		m_textures.Get(txt).Create(desc);
+		return txt;
+	}
+
+	void Renderer::DestroyTexture(Handle<uint16> handle)
+	{
+		m_textures.Get(handle).Destroy();
+		m_textures.Free(handle);
+	}
+
+	Handle<uint16> Renderer::CreateSemaphore()
+	{
+		Handle<uint16> hnd = m_semaphores.Allocate(m_backend.GetDevice());
+		return hnd;
+	}
+
+	void Renderer::DestroySemaphore(Handle<uint16> handle)
+	{
+		m_semaphores.Get(handle).Destroy();
+		m_semaphores.Free(handle);
+	}
+
+	Handle<uint16> Renderer::CreateSampler(const SamplerDesc& desc)
+	{
+		Handle<uint16> hnd = m_samplers.Allocate(m_backend.GetDevice());
+		m_samplers.Get(hnd).Create(desc);
+		return hnd;
+	}
+
+	void Renderer::DestroySampler(Handle<uint16> handle)
+	{
+		m_samplers.Get(handle).Destroy();
+		m_samplers.Free(handle);
+	}
+
+	Handle<uint16> Renderer::CreateResource(const ResourceDesc& desc)
+	{
+		Handle<uint16> hnd = m_resources.Allocate(m_backend.GetDevice());
+		m_resources.Get(hnd).Create(desc);
+		return hnd;
+	}
+
+	void Renderer::DestroyResource(Handle<uint16> handle)
+	{
+		m_resources.Get(handle).Destroy();
+		m_resources.Free(handle);
+	}
+
+	Handle<uint16> Renderer::CreateShader(const ShaderDesc& desc)
+	{
+		Handle<uint16> hnd = m_shaders.Allocate(m_backend.GetDevice());
+		m_shaders.Get(hnd).Create(desc);
+		return hnd;
+	}
+
+	void Renderer::DestroyShader(Handle<uint16> handle)
+	{
+		m_shaders.Get(handle).Destroy();
+		m_shaders.Free(handle);
+	}
+
 } // namespace SFG

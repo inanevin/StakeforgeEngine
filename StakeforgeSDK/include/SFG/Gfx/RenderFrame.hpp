@@ -29,20 +29,21 @@ SOFTWARE.
 #pragma once
 
 #include "SFG/Type/SizeDefinitions.hpp"
+#include "SFG/StakeforgeAPI.hpp"
 
 namespace SFG
 {
 	class CommandStream;
 	class BumpAllocator;
-	class Handle;
 
-	class RenderFrame
+	class SFG_API RenderFrame
 	{
 	public:
 		struct Definition
 		{
 			size_t bumpAllocatorSize = 0;
 			size_t maxCommandStreams = 32;
+			size_t commandBufferSize = 512;
 		};
 
 		RenderFrame()							   = default;
@@ -69,12 +70,12 @@ namespace SFG
 		///
 		/// </summary>
 		/// <param name="handle"></param>
-		void AddCommandStream(const Handle& handle);
+		CommandStream& GetCommandStream();
 
 	private:
 		Definition	   m_definition			 = {};
 		BumpAllocator* m_allocator			 = nullptr;
-		Handle*		   m_commandStreams		 = nullptr;
+		CommandStream* m_commandStreams		 = nullptr;
 		uint32		   m_commandStreamsCount = 0;
 	};
 }; // namespace SFG

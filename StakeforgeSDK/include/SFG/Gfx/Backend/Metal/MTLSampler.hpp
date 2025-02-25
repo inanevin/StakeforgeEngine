@@ -30,28 +30,29 @@ SOFTWARE.
 
 namespace SFG
 {
-    struct SamplerDesc;
+	struct SamplerDesc;
 
 	class MTLSampler
 	{
 	public:
-        
-        MTLSampler() = delete;
-        MTLSampler(void* device) : m_device(device) {};
-        
-        /// <summary>
-        ///
-        /// </summary>
-        void Create(const SamplerDesc& desc);
-        
-        /// <summary>
-        ///
-        /// </summary>
-        void Destroy();
-        
-    private:
-        
-        void* m_sampler = nullptr;
-        void* m_device = nullptr;
+		MTLSampler() = delete;
+		MTLSampler(void* device) : m_device(device){};
+
+		/// <summary>
+		///
+		/// </summary>
+		void Create(const SamplerDesc& desc);
+
+		/// <summary>
+		///
+		/// </summary>
+		void Destroy();
+
+	private:
+		void* m_sampler = nullptr;
+		void* m_device	= nullptr;
 	};
+
+	typedef MTLSampler GfxSampler;
+
 }; // namespace SFG

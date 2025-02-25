@@ -32,28 +32,29 @@ SOFTWARE.
 
 namespace SFG
 {
-    struct ShaderDesc;
+	struct ShaderDesc;
 
 	class MTLShader
 	{
 	public:
-        
-        MTLShader() = delete;
-        MTLShader(void* device) : m_device(device) {};
-        
-        /// <summary>
-        ///
-        /// </summary>
-        void Create(const ShaderDesc& desc);
-        
-        /// <summary>
-        ///
-        /// </summary>
-        void Destroy();
-        
-    private:
-        
-        void* m_resource = nullptr;
-        void* m_device = nullptr;
+		MTLShader() = delete;
+		MTLShader(void* device) : m_device(device){};
+
+		/// <summary>
+		///
+		/// </summary>
+		void Create(const ShaderDesc& desc);
+
+		/// <summary>
+		///
+		/// </summary>
+		void Destroy();
+
+	private:
+		void* m_resource = nullptr;
+		void* m_device	 = nullptr;
 	};
+
+	typedef MTLShader GfxShader;
+
 }; // namespace SFG

@@ -26,40 +26,53 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
 
-#pragma once
-
-#include "SFG/Type/SizeDefinitions.hpp"
+#include "SFG/Gfx/RenderTarget.hpp"
+#include "SFG/Gfx/Common/RenderTargetDesc.hpp"
+#include "SFG/Gfx/Common/TextureDesc.hpp"
+#include "SFG/Gfx/Common/TextureFlags.hpp"
+#include "SFG/Gfx/Common/TextureView.hpp"
+#include "SFG/Gfx/Renderer.hpp"
 
 namespace SFG
 {
-	struct SwapchainDesc;
 
-	class MTLSwapchain
+	void RenderTarget::Create(const RenderTargetDesc& desc)
 	{
-	public:
-		MTLSwapchain() = delete;
-		MTLSwapchain(void* device) : m_device(device){};
+		if (!desc.isSwapchain)
+		{
+			m_isSwapchain = false;
 
-		/// <summary>
-		///
-		/// </summary>
-		void Create(const SwapchainDesc& desc);
+			TextureView view = {
 
-		/// <summary>
-		///
-		/// </summary>
-		void Recreate(const SwapchainDesc& desc);
+			};
 
-		/// <summary>
-		///
-		/// </summary>
-		void Destroy();
+			for (uint32 i = 0; i < FRAMES_IN_FLIGHT; i++)
+			{
+				m_textures[i] = m_renderer->CreateTexture({
+					.name	= desc.name,
+					.format = desc.format,
+					.views	= &view,
+					.width	= desc.width,
+					.height = desc.height,
+					.flags	= desc.isDepth ? TextureFlags::TEXTURE_FLAGS_DEPTH_ATT : TextureFlags::TEXTURE_FLAGS_COLOR_ATT,
+				});
+			}
 
-	private:
-		void* m_layer  = nullptr;
-		void* m_device = nullptr;
-	};
+			return;
+		}
 
-	typedef MTLSwapchain GfxSwapchain;
+		m_isSwapchain = true;
+	}
 
-}; // namespace SFG
+	void RenderTarget::Destroy()
+	{
+		if (!m_isSwapchain)
+		{
+			for (uint32 i = 0; i < FRAMES_IN_FLIGHT; i++)
+			{
+				m_renderer->DestroyTexture(m_textures[i]);
+			}
+		}
+	}
+
+} // namespace SFG

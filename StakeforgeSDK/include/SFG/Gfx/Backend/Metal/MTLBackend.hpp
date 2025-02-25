@@ -46,8 +46,18 @@ namespace SFG
 		/// </summary>
 		void Destroy();
 
-	private:
+        /// <summary>
+        ///
+        /// </summary>
+        void* GetDevice() const
+        {
+            return m_device;
+        }
         
+	private:
         void* m_device = nullptr;
 	};
+
+    typedef MTLBackend GfxBackend;
+
 }; // namespace SFG

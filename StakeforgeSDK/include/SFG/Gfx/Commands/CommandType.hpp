@@ -28,38 +28,12 @@ SOFTWARE.
 
 #pragma once
 
-#include "SFG/Type/SizeDefinitions.hpp"
-
 namespace SFG
 {
-	struct SwapchainDesc;
 
-	class MTLSwapchain
+	enum class CommandType
 	{
-	public:
-		MTLSwapchain() = delete;
-		MTLSwapchain(void* device) : m_device(device){};
-
-		/// <summary>
-		///
-		/// </summary>
-		void Create(const SwapchainDesc& desc);
-
-		/// <summary>
-		///
-		/// </summary>
-		void Recreate(const SwapchainDesc& desc);
-
-		/// <summary>
-		///
-		/// </summary>
-		void Destroy();
-
-	private:
-		void* m_layer  = nullptr;
-		void* m_device = nullptr;
+		BeginRenderPass,
+		EndRenderPass,
 	};
-
-	typedef MTLSwapchain GfxSwapchain;
-
 }; // namespace SFG

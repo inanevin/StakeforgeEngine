@@ -32,39 +32,39 @@ SOFTWARE.
 
 namespace SFG
 {
-    struct ResourceDesc;
+	struct ResourceDesc;
 
 	class MTLResource
 	{
 	public:
-        
-        MTLResource() = delete;
-        MTLResource(void* device) : m_device(device) {};
-        
-        /// <summary>
-        ///
-        /// </summary>
-        void Create(const ResourceDesc& desc);
-        
-        /// <summary>
-        ///
-        /// </summary>
-        void Destroy();
-        
-        /// <summary>
-        ///
-        /// </summary>
-        void Map(uint8*& ptr);
-        
-        /// <summary>
-        ///
-        /// </summary>
-        void Unmap() {};
-        
-        
-    private:
-        
-        void* m_resource = nullptr;
-        void* m_device = nullptr;
+		MTLResource() = delete;
+		MTLResource(void* device) : m_device(device){};
+
+		/// <summary>
+		///
+		/// </summary>
+		void Create(const ResourceDesc& desc);
+
+		/// <summary>
+		///
+		/// </summary>
+		void Destroy();
+
+		/// <summary>
+		///
+		/// </summary>
+		void Map(uint8*& ptr);
+
+		/// <summary>
+		///
+		/// </summary>
+		void Unmap(){};
+
+	private:
+		void* m_resource = nullptr;
+		void* m_device	 = nullptr;
 	};
+
+	typedef MTLResource GfxResource;
+
 }; // namespace SFG

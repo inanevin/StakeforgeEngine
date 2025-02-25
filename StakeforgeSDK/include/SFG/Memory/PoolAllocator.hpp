@@ -35,29 +35,21 @@ SOFTWARE.
 
 namespace SFG
 {
-	template <typename T, int N, bool ALIGN_CACHE = false> class Pool
+	template <typename T, typename IndexType, int N, size_t ALIGN> class PoolAllocator
 	{
 	public:
-		Pool()
+		PoolAllocator()
 		{
+			static_assert((ALIGN & (ALIGN - 1)) == 0, "ALIGN must be a power of 2");
 			static_assert(N != 0);
 
 			m_size = N;
 			Reserve();
-
-			for (uint32 i = 0; i < N; i++)
-			{
-				m_gens[i]		  = 1;
-				m_stackIndices[i] = i;
-			}
 		}
 
-		~Pool()
+		~PoolAllocator()
 		{
-			if (ALIGN_CACHE)
-				SFG_ALIGNED_FREE(m_raw);
-			else
-				SFG_FREE(m_raw);
+			SFG_ALIGNED_FREE(m_raw);
 		}
 
 		/// <summary>
@@ -66,17 +58,19 @@ namespace SFG
 		/// <typeparam name="...Args"></typeparam>
 		/// <param name="...args"></param>
 		/// <returns></returns>
-		template <typename... Args> Handle Create(Args&&... args)
+		template <typename... Args> Handle<IndexType> Allocate(Args&&... args)
 		{
-			if (m_stackIndicesPos >= N)
+			if (m_stackIndicesPos >= m_size)
 			{
 				Grow();
 			}
 
-            Handle handle = Handle(m_stackIndices[m_stackIndicesPos], m_gens[handle.GetIndex()]);
+			const uint32			index  = m_stackIndices[m_stackIndicesPos];
+			const uint32			gen	   = m_gens[index];
+			const Handle<IndexType> handle = Handle<IndexType>(index, gen);
 			m_stackIndicesPos++;
 
-			const void* ptr = (void*)(m_raw + handle.GetIndex());
+			void* ptr = (void*)(m_raw + handle.GetIndex());
 			new (ptr) T(std::forward<Args>(args)...);
 
 			return handle;
@@ -85,18 +79,28 @@ namespace SFG
 		/// <summary>
 		///
 		/// </summary>
-		/// <param name="handle"></param>
-		inline void Free(const Handle& handle)
+		inline T& Get(Handle<IndexType> handle)
 		{
-			SFG_ASSERT(handle.Alive(), "");
+			SFG_ASSERT(handle.Alive());
+			SFG_ASSERT(m_gens[handle.GetIndex()] == handle.GetGeneration());
+			return m_raw[handle.GetIndex()];
+		}
+		/// <summary>
+		///
+		/// </summary>
+		/// <param name="handle"></param>
+		inline void Free(Handle<IndexType> handle)
+		{
+			SFG_ASSERT(handle.Alive());
 			const uint32 index = handle.GetIndex();
+
 			m_raw[index].~T();
 			m_gens[index]++;
 			m_stackIndicesPos--;
 			m_stackIndices[m_stackIndicesPos] = index;
 		}
 
-		inline bool IsValid(const Handle& handle)
+		inline bool IsValid(Handle<IndexType> handle)
 		{
 			return m_gens[handle.GetIndex()] == handle.GetGeneration();
 		}
@@ -120,39 +124,69 @@ namespace SFG
 	private:
 		void Reserve()
 		{
-			const size_t perElement = sizeof(T) + sizeof(uint16) + sizeof(uint32);
-			const size_t cache		= 64;
-			const size_t totalSize	= ALIGN_CACHE ? (((perElement * N + (cache - 1)) / cache) * cache) : (perElement * m_size);
-			m_raw					= reinterpret_cast<T*>(ALIGN_CACHE ? SFG_ALIGNED_MALLOC(totalSize, cache) : SFG_MALLOC(totalSize));
-			m_gens					= reinterpret_cast<uint16*>(reinterpret_cast<uint8*>(m_raw) + (m_size * sizeof(T)));
-			m_stackIndices			= reinterpret_cast<uint32*>(reinterpret_cast<uint8*>(m_raw) + m_size * (sizeof(T) + sizeof(uint16)));
+			constexpr size_t alignIdx			 = alignof(IndexType);
+			constexpr size_t blockAlign			 = std::max(ALIGN, alignIdx);
+			const size_t	 elementBlockSize	 = sizeof(T) * m_size;
+			const size_t	 generationBlockSize = sizeof(IndexType) * m_size;
+			const size_t	 indexBlockSize		 = sizeof(IndexType) * m_size;
+
+			// Calculate overall size with worst-case padding for each segment.
+			const size_t totalSize = elementBlockSize + (blockAlign - 1) + generationBlockSize + (blockAlign - 1) + indexBlockSize;
+			m_totalSize			   = ((totalSize + blockAlign - 1) / blockAlign) * blockAlign;
+			char* ptr			   = static_cast<char*>(SFG_ALIGNED_MALLOC(blockAlign, m_totalSize));
+
+			// T
+			m_raw = reinterpret_cast<T*>(ptr);
+			ptr += elementBlockSize;
+
+			// Gens
+			std::size_t padding = (alignIdx - (reinterpret_cast<std::uintptr_t>(ptr) % alignIdx)) % alignIdx;
+			ptr += padding;
+			m_gens = reinterpret_cast<IndexType*>(ptr);
+			ptr += generationBlockSize;
+
+			// Indices
+			padding = (alignIdx - (reinterpret_cast<std::uintptr_t>(ptr) % alignIdx)) % alignIdx;
+			ptr += padding;
+			m_stackIndices = reinterpret_cast<IndexType*>(ptr);
+
+			// Default
+			for (IndexType i = 0; i < m_size; i++)
+			{
+				m_gens[i]		  = (IndexType)1;
+				m_stackIndices[i] = (IndexType)i;
+			}
 		}
 
 		void Grow()
 		{
-			T*		prev	  = m_raw;
-			uint16* prevGens  = m_gens;
-			uint32* prevStack = m_stackIndices;
-			uint32	prevSize  = m_size;
+			T*		   prev		 = m_raw;
+			uint16*	   prevGens	 = m_gens;
+			IndexType* prevStack = m_stackIndices;
+			uint32	   prevSize	 = m_size;
 
+			const size_t prevTotalSize = m_totalSize;
 			m_size *= 2;
 			Reserve();
 
 			SFG_MEMCPY(m_raw, prev, prevSize * sizeof(T));
-			SFG_MEMCPY(m_gens, prevGens, prevSize * sizeof(uint16));
+			SFG_MEMCPY(m_gens, prevGens, prevSize * sizeof(IndexType));
+			SFG_MEMCPY(m_stackIndices, prevStack, prevSize * sizeof(IndexType));
 
-			for (uint32 i = prevSize; i < m_size; i++)
-			{
-				m_gens[i]		  = 1;
-				m_stackIndices[i] = i;
-			}
+			SFG_ALIGNED_FREE(prev);
 		}
 
 	private:
-		T*		m_raw			  = nullptr;
-		uint16* m_gens			  = nullptr;
-		uint32* m_stackIndices	  = nullptr;
-		uint32	m_stackIndicesPos = 0;
-		uint32	m_size			  = 0;
+		T*		   m_raw			 = nullptr;
+		IndexType* m_gens			 = nullptr;
+		IndexType* m_stackIndices	 = nullptr;
+		uint32	   m_stackIndicesPos = 0;
+		uint32	   m_size			 = 0;
+		size_t	   m_totalSize		 = 0;
 	};
+
+	template <typename T, int N> using PoolAllocator16 = PoolAllocator<T, uint16, N, std::alignment_of<T>::value>;
+
+	template <typename T, int N> using PoolAllocator32 = PoolAllocator<T, uint32, N, std::alignment_of<T>::value>;
+
 } // namespace SFG

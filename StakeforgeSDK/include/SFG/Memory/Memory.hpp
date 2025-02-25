@@ -41,7 +41,7 @@ SOFTWARE.
 #else
 #include <cstdlib>
 #define SFG_ALIGNED_MALLOC(...) std::aligned_alloc(__VA_ARGS__)
-#define SFG_ALIGNED_FREEC(...)	std::free(__VA_ARGS__)
+#define SFG_ALIGNED_FREE(...)	std::free(__VA_ARGS__)
 #endif
 
 namespace SFG
