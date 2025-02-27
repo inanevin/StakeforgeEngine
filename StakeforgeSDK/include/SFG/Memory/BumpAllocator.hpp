@@ -29,12 +29,13 @@ SOFTWARE.
 #pragma once
 
 #include "SFG/Type/SizeDefinitions.hpp"
-#include <utility>
+#include "SFG/IO/Assert.hpp"
+#include "SFG/StakeforgeAPI.hpp"
 #include <new>
 
 namespace SFG
 {
-	class BumpAllocator
+	class SFG_API BumpAllocator
 	{
 	public:
 		BumpAllocator(size_t sz);
@@ -75,9 +76,31 @@ namespace SFG
 			return arrayPtr;
 		}
 
+		/// <summary>
+		///
+		/// </summary>
+		template <typename T, typename... Args> T* EmplaceAux(T firstValue, Args&&... remainingValues)
+		{
+			uint8* initialHead = (uint8*)m_raw + m_head;
+
+			// Place the first value in memory
+			uint8* currentHead = initialHead;
+			SFG_MEMCPY(currentHead, &firstValue, sizeof(T));
+			m_head += sizeof(T);
+			SFG_ASSERT(m_head < m_size);
+
+			// Recursively place the remaining values in memory
+			if constexpr (sizeof...(remainingValues) > 0)
+			{
+				EmplaceAux<T>(remainingValues...);
+			}
+
+			return reinterpret_cast<T*>(initialHead);
+		}
+
 	private:
 		size_t m_size = 0;
-		uint32 m_head = 0;
+		size_t m_head = 0;
 		void*  m_raw  = nullptr;
 	};
 } // namespace SFG

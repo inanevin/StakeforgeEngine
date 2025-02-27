@@ -29,6 +29,7 @@ SOFTWARE.
 #pragma once
 
 #include "SFG/Type/SizeDefinitions.hpp"
+#include "SFG/StakeforgeAPI.hpp"
 
 namespace SFG
 {
@@ -48,16 +49,35 @@ namespace SFG
 		/// <summary>
 		///
 		/// </summary>
-		void Recreate(const SwapchainDesc& desc);
+		SFG_API void Recreate(const SwapchainDesc& desc);
 
 		/// <summary>
 		///
 		/// </summary>
 		void Destroy();
 
+		/// <summary>
+		///
+		/// </summary>
+		void RequestNextDrawable();
+
+		/// <summary>
+		///
+		/// </summary>
+		void Present(void* buffer);
+
+		/// <summary>
+		///
+		/// </summary>
+		inline void* GetCurrentDrawable() const
+		{
+			return m_currentDrawable;
+		}
+
 	private:
-		void* m_layer  = nullptr;
-		void* m_device = nullptr;
+		void* m_layer			= nullptr;
+		void* m_device			= nullptr;
+		void* m_currentDrawable = nullptr;
 	};
 
 	typedef MTLSwapchain GfxSwapchain;

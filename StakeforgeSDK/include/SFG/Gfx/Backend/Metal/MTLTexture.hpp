@@ -50,6 +50,22 @@ namespace SFG
 		/// </summary>
 		void Destroy();
 
+		/// <summary>
+		///
+		/// </summary>
+		inline void* GetGPU() const
+		{
+			return m_texture;
+		}
+
+		/// <summary>
+		///
+		/// </summary>
+		inline void* GetGPUView(size_t viewIndex) const
+		{
+			return m_views.at(viewIndex);
+		}
+
 	private:
 		Vector<void*> m_views	= {};
 		void*		  m_texture = nullptr;

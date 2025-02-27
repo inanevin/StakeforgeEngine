@@ -30,6 +30,9 @@ SOFTWARE.
 
 #include "SFG/Type/SizeDefinitions.hpp"
 #include "SFG/Data/Handle.hpp"
+#include "SFG/StakeforgeAPI.hpp"
+#include "SFG/Gfx/Commands/CommandType.hpp"
+#include "SFG/Memory/Memory.hpp"
 
 namespace SFG
 {
@@ -47,22 +50,41 @@ namespace SFG
 		/// <summary>
 		///
 		/// </summary>
-		void Reset();
+		void Allocate(size_t cmdBufferSize);
 
 		/// <summary>
 		///
 		/// </summary>
-		void BeginRenderPass(Handle<uint16> target);
+		inline uint32 GetCommandsCount() const
+		{
+			return m_commandsCount;
+		}
 
 		/// <summary>
 		///
 		/// </summary>
-		void EndRenderPass();
+		inline uint8* GetCommandsRaw() const
+		{
+			return m_commandsRaw;
+		}
+
+		template <typename T> SFG_API void AddCommand(T&& cmd)
+		{
+			const CommandType cmdType = T::CMD_TYPE;
+			SFG_MEMCPY(m_commandsRaw + m_commandsHeadOffset, &cmdType, sizeof(CommandType));
+			m_commandsHeadOffset += sizeof(CommandType);
+			const uint32 sz = static_cast<uint32>(sizeof(T));
+			SFG_MEMCPY(m_commandsRaw + m_commandsHeadOffset, &sz, sizeof(uint32));
+			m_commandsHeadOffset += sizeof(uint32);
+			SFG_MEMCPY(m_commandsRaw + m_commandsHeadOffset, &cmd, sizeof(T));
+			m_commandsHeadOffset += sizeof(T);
+			m_commandsCount++;
+		}
 
 	private:
-		BumpAllocator* m_allocator		 = nullptr;
-		uint8*		   m_commandsRaw	 = nullptr;
-		uint32		   m_commandsCount	 = 0;
-		uint32		   m_commandsRawHead = 0;
+		BumpAllocator* m_allocator			= nullptr;
+		uint8*		   m_commandsRaw		= nullptr;
+		uint32		   m_commandsCount		= 0;
+		size_t		   m_commandsHeadOffset = 0;
 	};
 }; // namespace SFG

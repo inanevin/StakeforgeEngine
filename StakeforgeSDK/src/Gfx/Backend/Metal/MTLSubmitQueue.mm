@@ -42,6 +42,7 @@ namespace SFG
         [q setLabel:debugString];
         
         m_queue = static_cast<void*>(q);
+        m_queueType = desc.type;
     }
     
     void MTLSubmitQueue::Destroy()

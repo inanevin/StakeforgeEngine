@@ -36,9 +36,8 @@ namespace SFG
 	void RenderFrame::Initialize(const Definition& definition)
 	{
 		SFG_ASSERT(m_allocator == nullptr);
-		m_allocator		 = new BumpAllocator(definition.bumpAllocatorSize);
-		m_commandStreams = m_allocator->Allocate<CommandStream>(definition.maxCommandStreams, m_allocator, definition.commandBufferSize);
-		m_definition	 = definition;
+		m_allocator	 = new BumpAllocator(definition.bumpAllocatorSize);
+		m_definition = definition;
 	}
 
 	void RenderFrame::Shutdown()
@@ -49,17 +48,26 @@ namespace SFG
 	void RenderFrame::Reset()
 	{
 		m_allocator->Reset();
+		m_commandStreams	  = m_allocator->Allocate<CommandStream>(m_definition.maxCommandStreams, m_allocator, m_definition.commandBufferSize);
+		m_submissions		  = m_allocator->Allocate<SubmitDesc>(m_definition.maxSubmissions);
 		m_commandStreamsCount = 0;
-
-		for (uint32 i = 0; i < m_definition.maxCommandStreams; i++)
-			m_commandStreams[i].Reset();
+		m_submissionsCount	  = 0;
 	}
 
 	CommandStream& RenderFrame::GetCommandStream()
 	{
-		SFG_ASSERT(m_commandStreamsCount < m_definition.maxCommandStreams);
+		SFG_ASSERT(m_commandStreamsCount < static_cast<uint32>(m_definition.maxCommandStreams));
 		const uint32 index = m_commandStreamsCount;
 		m_commandStreamsCount++;
-		return m_commandStreams[index];
+
+		CommandStream& stream = m_commandStreams[index];
+		return stream;
+	}
+
+	void RenderFrame::Submit(const SubmitDesc& desc)
+	{
+		SFG_ASSERT(m_submissionsCount < static_cast<uint32>(m_definition.maxSubmissions));
+		m_submissions[m_submissionsCount] = desc;
+		m_submissionsCount++;
 	}
 } // namespace SFG

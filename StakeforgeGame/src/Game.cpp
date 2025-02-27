@@ -37,6 +37,8 @@ SOFTWARE.
 #include <SFG/Editor/Editor.hpp>
 #endif
 
+/* DEBUG DEBUG DEBUG */
+
 #include <random>
 #include <chrono>
 #include <thread>
@@ -44,7 +46,12 @@ SOFTWARE.
 #include <SFG/Gfx/Common/TextureDesc.hpp>
 #include <SFG/Gfx/Common/TextureFormat.hpp>
 #include <SFG/Gfx/Common/TextureView.hpp>
-#include <SFG/Gfx/Renderer.hpp>
+#include <SFG/Gfx/Common/SwapchainDesc.hpp>
+#include <SFG/Gfx/Common/RenderTargetDesc.hpp>
+#include <SFG/Gfx/CommandStream.hpp>
+#include <SFG/Gfx/GfxResources.hpp>
+#include <SFG/Gfx/Commands/CMDRenderPass.hpp>
+#include <SFG/Memory/BumpAllocator.hpp>
 
 namespace SFG
 {
@@ -63,21 +70,68 @@ namespace SFG
 		window->CenterToMonitor();
 		// window->SetHighFrequencyInputMode(true);
 
-		//  m_app.GetRenderer().CreateSwapchain();
+		GfxResources& resources = m_app.GetGfxResources();
+
+		m_swapchain = resources.CreateSwapchain({
+			.name		   = "MainSwapchain",
+			.window		   = (void*)window,
+			.osHandle	   = window->GetOSHandle(),
+			.format		   = TextureFormat::B8G8R8A8_UNORM,
+			.x			   = 0,
+			.y			   = 0,
+			.width		   = 256,
+			.height		   = 256,
+			.scalingFactor = 1.0f,
+		});
+
+		m_renderTarget = resources.CreateRenderTarget({
+			.swapchainHandle = m_swapchain,
+			.isSwapchain	 = true,
+		});
 	}
 
 	void Game::OnShutdown()
 	{
 		Window* window = m_app.GetWindow(0);
-
 		if (window)
 			m_app.DestroyAppWindow(0);
 	}
 
 	void Game::OnWindowEvent(const WindowEvent& ev)
 	{
-		if (ev.type != WindowEventType::MouseDelta)
+		if (ev.type == WindowEventType::Resized)
+		{
+			m_app.GetGfxResources().DestroyRenderTarget(m_renderTarget);
+
+			m_app.GetGfxResources()
+				.GetSwapchain(m_swapchain)
+				.Recreate({
+					.name		   = "MainSwapchain",
+					.window		   = (void*)ev.window,
+					.osHandle	   = ev.window->GetOSHandle(),
+					.format		   = TextureFormat::B8G8R8A8_UNORM,
+					.x			   = 0,
+					.y			   = 0,
+					.width		   = ev.window->GetSize().x,
+					.height		   = ev.window->GetSize().y,
+					.scalingFactor = 1.0f,
+				});
+
+			m_renderTarget = m_app.GetGfxResources().CreateRenderTarget({
+				.swapchainHandle = m_swapchain,
+				.isSwapchain	 = true,
+			});
+
 			return;
+		}
+
+		if (ev.type == WindowEventType::PreDestroy)
+		{
+			GfxResources& resources = m_app.GetGfxResources();
+			resources.DestroySwapchain(m_swapchain);
+			resources.DestroyRenderTarget(m_renderTarget);
+			return;
+		}
 	}
 
 	void Game::OnTick()
@@ -97,5 +151,40 @@ namespace SFG
 	void Game::OnGenerateFrame(RenderFrame& frame, double interpolation)
 	{
 		CommandStream& stream = frame.GetCommandStream();
+
+		const ColorAttachment attachment0 = {
+			.renderTarget = m_renderTarget,
+			.format		  = TextureFormat::B8G8R8A8_UNORM,
+			.storeOp	  = StoreOp::Store,
+			.loadOp		  = LoadOp::Clear,
+			.clearColor	  = {1.0f, 1.0f, 0.1f, 1.0f},
+		};
+
+		stream.AddCommand<CMDBeginRenderPass>({
+			.viewport =
+				{
+					.x		= 0,
+					.y		= 0,
+					.width	= 256,
+					.height = 256,
+				},
+			.scissors =
+				{
+					.x		= 0,
+					.y		= 0,
+					.width	= 256,
+					.height = 256,
+				},
+			.colorAttachments	  = frame.GetAllocator()->EmplaceAux<ColorAttachment>(attachment0),
+			.colorAttachmentCount = 1,
+		});
+
+		stream.AddCommand<CMDEndRenderPass>({});
+
+		frame.Submit({
+			.queue		  = m_app.GetGfxResources().GetPrimaryQueueGfx(),
+			.streams	  = frame.GetAllocator()->EmplaceAux<CommandStream*>(&stream),
+			.streamsCount = 1,
+		});
 	}
 } // namespace SFG

@@ -30,12 +30,10 @@ SOFTWARE.
 #include "SFG/Gfx/Common/RenderTargetDesc.hpp"
 #include "SFG/Gfx/Common/TextureDesc.hpp"
 #include "SFG/Gfx/Common/TextureFlags.hpp"
-#include "SFG/Gfx/Common/TextureView.hpp"
-#include "SFG/Gfx/Renderer.hpp"
+#include "SFG/Gfx/GfxResources.hpp"
 
 namespace SFG
 {
-
 	void RenderTarget::Create(const RenderTargetDesc& desc)
 	{
 		if (!desc.isSwapchain)
@@ -43,12 +41,16 @@ namespace SFG
 			m_isSwapchain = false;
 
 			TextureView view = {
-
+				.baseArrayLevel = 0,
+				.arrayLevels	= 0,
+				.baseMipLevel	= 0,
+				.mipLevels		= 0,
+				.isCubemap		= false,
 			};
 
-			for (uint32 i = 0; i < FRAMES_IN_FLIGHT; i++)
+			for (uint8 i = 0; i < FRAMES_IN_FLIGHT; i++)
 			{
-				m_textures[i] = m_renderer->CreateTexture({
+				m_textures[i] = m_gfxResources.CreateTexture({
 					.name	= desc.name,
 					.format = desc.format,
 					.views	= &view,
@@ -61,6 +63,7 @@ namespace SFG
 			return;
 		}
 
+		m_textures[0] = desc.swapchainHandle;
 		m_isSwapchain = true;
 	}
 
@@ -68,9 +71,9 @@ namespace SFG
 	{
 		if (!m_isSwapchain)
 		{
-			for (uint32 i = 0; i < FRAMES_IN_FLIGHT; i++)
+			for (uint8 i = 0; i < FRAMES_IN_FLIGHT; i++)
 			{
-				m_renderer->DestroyTexture(m_textures[i]);
+				m_gfxResources.DestroyTexture(m_textures[i]);
 			}
 		}
 	}

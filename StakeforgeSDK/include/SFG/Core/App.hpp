@@ -34,8 +34,15 @@ SOFTWARE.
 #include "SFG/Data/Vector.hpp"
 #include "SFG/Data/Atomic.hpp"
 #include "SFG/Data/Semaphore.hpp"
-#include "SFG/Gfx/Renderer.hpp"
 #include "SFG/Gfx/RenderFrame.hpp"
+#include "SFG/Gfx/GfxResources.hpp"
+
+#ifdef SFG_PLATFORM_WINDOWS
+#include "SFG/Gfx/Backend/Vulkan/VulkanBackend.hpp"
+#elif SFG_PLATFORM_OSX
+#include "SFG/Gfx/Backend/Metal/MTLBackend.hpp"
+#endif
+
 #include <thread>
 
 namespace SFG
@@ -44,7 +51,6 @@ namespace SFG
 	class Plugin;
 	class Vector2ui;
 	class Vector2i;
-	class RenderFrame;
 	class AppDelegate;
 	enum class WindowStyle;
 
@@ -59,6 +65,7 @@ namespace SFG
 			uint32		 maxCommandStreamsPerFrame = 8;
 			uint32		 bumpAllocatorSizePerFrame = 1024 * 1024;
 			uint32		 commandStreamSize		   = 1024;
+			uint32		 maxSubmissionsPerFrame	   = 24;
 			bool		 throttleCPU			   = false;
 		};
 
@@ -81,6 +88,16 @@ namespace SFG
 		///
 		/// </summary>
 		void Tick();
+
+		/// <summary>
+		///
+		/// </summary>
+		void JoinRender();
+
+		/// <summary>
+		///
+		/// </summary>
+		void StartRender();
 
 		/// <summary>
 		///
@@ -129,16 +146,17 @@ namespace SFG
 		/// <summary>
 		///
 		/// </summary>
-		inline Renderer& GetRenderer()
+		inline GfxResources& GetGfxResources()
 		{
-			return m_renderer;
+			return m_gfxResources;
 		}
 
 	private:
 		void RenderLoop();
 
 	private:
-		Renderer		m_renderer;
+		GfxBackend		m_gfxBackend;
+		GfxResources	m_gfxResources;
 		RenderFrame		m_renderFrames[2];
 		Vector<Window*> m_windows;
 		Settings		m_settings = {};
@@ -147,6 +165,6 @@ namespace SFG
 		uint32			m_updateRenderFrameIndex  = 0;
 		Atomic<uint32>	m_currentRenderFrameIndex = 0;
 		Atomic<bool>	m_shouldClose			  = false;
-		bool			m_firstTick				  = false;
+		Atomic<bool>	m_renderJoined			  = false;
 	};
 } // namespace SFG

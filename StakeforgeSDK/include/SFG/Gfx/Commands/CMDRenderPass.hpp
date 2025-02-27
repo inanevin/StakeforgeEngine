@@ -29,16 +29,54 @@ SOFTWARE.
 #pragma once
 
 #include "SFG/Data/Handle.hpp"
+#include "SFG/Gfx/Common/Viewport.hpp"
+#include "SFG/Gfx/Common/Scissors.hpp"
+#include "SFG/Gfx/Common/LoadStoreOp.hpp"
+#include "SFG/Gfx/Common/ResolveMode.hpp"
+#include "SFG/Gfx/Common/TextureFormat.hpp"
+#include "SFG/Gfx/Commands/CommandType.hpp"
 
 namespace SFG
 {
+	struct ColorAttachment
+	{
+		Handle<uint16> renderTarget;
+		Handle<uint16> resolveTarget;
+		TextureFormat  format		 = TextureFormat::UNDEFINED;
+		LoadOp		   loadOp		 = LoadOp::Load;
+		StoreOp		   storeOp		 = StoreOp::Store;
+		ResolveMode	   resolveMode	 = ResolveMode::None;
+		uint32		   viewIndex	 = 0;
+		uint32		   resolveIndex	 = 0;
+		float		   clearColor[4] = {0.0f};
+	};
+
+	struct DepthAttachment
+	{
+		Handle<uint16> renderTarget;
+		Handle<uint16> resolveTarget;
+		TextureFormat  format		= TextureFormat::UNDEFINED;
+		LoadOp		   loadOp		= LoadOp::Load;
+		StoreOp		   storeOp		= StoreOp::Store;
+		ResolveMode	   resolveMode	= ResolveMode::None;
+		uint32		   viewIndex	= 0;
+		uint32		   resolveIndex = 0;
+		float		   clearValue	= 1.0f;
+	};
 
 	struct CMDBeginRenderPass
 	{
-		Handle<uint16> renderTarget;
+		static constexpr CommandType CMD_TYPE = CommandType::BeginRenderPass;
+
+		Viewport		 viewport			  = {};
+		ScissorsRect	 scissors			  = {};
+		ColorAttachment* colorAttachments	  = nullptr;
+		uint32			 colorAttachmentCount = 0;
+		DepthAttachment* depthAttachment	  = nullptr;
 	};
 
 	struct CMDEndRenderPass
 	{
+		static constexpr CommandType CMD_TYPE = CommandType::EndRenderPass;
 	};
 }; // namespace SFG

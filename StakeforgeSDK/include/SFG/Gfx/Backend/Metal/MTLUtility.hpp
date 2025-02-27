@@ -32,33 +32,44 @@ SOFTWARE.
 
 namespace SFG
 {
-    enum class TextureFormat;
-    enum class SamplerMipmapMode;
-    enum class SamplerFilter;
-    enum class SamplerAddressMode;
+	enum class TextureFormat;
+	enum class SamplerMipmapMode;
+	enum class SamplerFilter;
+	enum class SamplerAddressMode;
+	enum class LoadOp;
+	enum class StoreOp;
 
 	class MTLUtility
 	{
 	public:
-        
-        /// <summary>
-        ///
-        /// </summary>
-        static MTLPixelFormat GetFormat(TextureFormat format);
-        
-        /// <summary>
-        ///
-        /// </summary>
-        static MTLSamplerMipFilter GetSamplerMipmapMode(SamplerMipmapMode samplerMipMapMode);
-        
-        /// <summary>
-        ///
-        /// </summary>
-        static MTLSamplerMinMagFilter GetSamplerFilter(SamplerFilter samplerFilter);
-        
-        /// <summary>
-        ///
-        /// </summary>
-        static MTLSamplerAddressMode GetSamplerAddressMode(SamplerAddressMode samplerAddressMode);
+		/// <summary>
+		///
+		/// </summary>
+		static MTLPixelFormat GetFormat(TextureFormat format);
+
+		/// <summary>
+		///
+		/// </summary>
+		static MTLSamplerMipFilter GetSamplerMipmapMode(SamplerMipmapMode samplerMipMapMode);
+
+		/// <summary>
+		///
+		/// </summary>
+		static MTLSamplerMinMagFilter GetSamplerFilter(SamplerFilter samplerFilter);
+
+		/// <summary>
+		///
+		/// </summary>
+		static MTLSamplerAddressMode GetSamplerAddressMode(SamplerAddressMode samplerAddressMode);
+
+		/// <summary>
+		///
+		/// </summary>
+		static MTLLoadAction GetLoadAction(LoadOp op);
+
+		/// <summary>
+		///
+		/// </summary>
+		static MTLStoreAction GetStoreAction(StoreOp op);
 	};
 }; // namespace SFG

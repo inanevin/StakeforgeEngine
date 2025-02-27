@@ -30,7 +30,6 @@ SOFTWARE.
 #include "SFG/Gfx/Backend/Metal/MTLUtility.hpp"
 #include "SFG/Gfx/Common/SwapchainDesc.hpp"
 #include "SFG/Gfx/Common/GfxConstants.hpp"
-#include <Metal/Metal.h>
 #import <QuartzCore/CAMetalLayer.h>
 #import <Cocoa/Cocoa.h>
 
@@ -60,6 +59,13 @@ namespace SFG
 
     void MTLSwapchain::Destroy()
     {
+        if(m_currentDrawable)
+        {
+            id<CAMetalDrawable> dr = static_cast<id<CAMetalDrawable>>(m_currentDrawable);
+            [dr release];
+            m_currentDrawable = nullptr;
+        }
+        
         CAMetalLayer* layer = static_cast<CAMetalLayer*>(m_layer);
         [layer release];
         m_layer = nullptr;
@@ -73,5 +79,27 @@ namespace SFG
         [layer setDrawableSize:sz];
         [layer setContentsScale:desc.scalingFactor];
     }
- 
+    
+    void MTLSwapchain::RequestNextDrawable()
+    {
+        if(m_currentDrawable)
+        {
+            id<CAMetalDrawable> dr = static_cast<id<CAMetalDrawable>>(m_currentDrawable);
+            [dr release];
+            m_currentDrawable = nullptr;
+        }
+        
+        CAMetalLayer* layer = static_cast<CAMetalLayer*>(m_layer);
+        id<CAMetalDrawable> drawable = [layer nextDrawable];
+        [drawable retain];
+        m_currentDrawable = drawable;
+    }
+
+    void MTLSwapchain::Present(void *buffer)
+    {
+        id<MTLCommandBuffer> mtlBuffer = static_cast<id<MTLCommandBuffer>>(buffer);
+        id<CAMetalDrawable> drawable = static_cast<id<CAMetalDrawable>>(m_currentDrawable);
+        [mtlBuffer presentDrawable:drawable];
+
+    }
 } // namespace SFG

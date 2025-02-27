@@ -29,32 +29,31 @@ SOFTWARE.
 #pragma once
 
 #include "SFG/Type/SizeDefinitions.hpp"
-
+#include "SFG/Gfx/Common/TextureFormat.hpp"
+#include "SFG/Gfx/Common/TextureView.hpp"
 
 namespace SFG
 {
-    enum class TextureFormat;
-    struct TextureView;
 
-    enum class TextureType
-    {
-        Texture1D,
-        Texture2D,
-        Texture3D,
-    };
+	enum class TextureType
+	{
+		Texture1D,
+		Texture2D,
+		Texture3D,
+	};
 
-    struct TextureDesc
-    {
-        const char* name = "";
-        TextureType type = TextureType::Texture2D;
-        TextureFormat format = {};
-        TextureView* views = nullptr;
-        uint32 width = 0;
-        uint32 height = 0;
-        uint32 flags = 0;
-        uint32 mipLevels = 1;
-        uint32 arrayLevels = 1;
-        uint32 viewCount = 1;
-        uint32 sampleCount = 1;
-    };
+	struct TextureDesc
+	{
+		const char*	  name		  = "";
+		TextureType	  type		  = TextureType::Texture2D;
+		TextureFormat format	  = {};
+		TextureView*  views		  = nullptr;
+		uint32		  width		  = 0;
+		uint32		  height	  = 0;
+		uint32		  flags		  = 0;
+		uint32		  mipLevels	  = 1;
+		uint32		  arrayLevels = 1;
+		uint32		  viewCount	  = 1;
+		uint32		  sampleCount = 1;
+	};
 }; // namespace SFG

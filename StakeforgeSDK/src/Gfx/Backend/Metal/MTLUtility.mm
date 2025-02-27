@@ -29,6 +29,7 @@ SOFTWARE.
 #include "SFG/Gfx/Backend/Metal/MTLUtility.hpp"
 #include "SFG/Gfx/Common/TextureFormat.hpp"
 #include "SFG/Gfx/Common/SamplerDesc.hpp"
+#include "SFG/Gfx/Common/LoadStoreOp.hpp"
 
 namespace SFG
 {
@@ -203,4 +204,29 @@ namespace SFG
                 
         }
     }
+
+    MTLLoadAction MTLUtility::GetLoadAction(LoadOp op)
+    {
+        switch(op)
+        {
+            case LoadOp::Clear:
+                return MTLLoadActionClear;
+            case LoadOp::Load:
+                return MTLLoadActionLoad;
+            default:
+                return MTLLoadActionDontCare;
+        }
+    }
+
+    MTLStoreAction MTLUtility::GetStoreAction(StoreOp op)
+    {
+        switch(op)
+        {
+            case StoreOp::Store:
+                return MTLStoreActionStore;
+            default:
+                return MTLStoreActionDontCare;
+        }
+    }
+
 } // namespace SFG

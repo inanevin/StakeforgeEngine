@@ -139,6 +139,8 @@ if(APPLE)
 		PUBLIC "-framework QuartzCore"
 		# PUBLIC "-framework Carbon"
 	)
+
+	
 endif()
 
 # Jolt

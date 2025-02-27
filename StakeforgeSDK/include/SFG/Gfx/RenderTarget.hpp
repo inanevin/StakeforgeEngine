@@ -34,13 +34,13 @@ SOFTWARE.
 namespace SFG
 {
 	struct RenderTargetDesc;
-	class Renderer;
+	class GfxResources;
 
 	class RenderTarget
 	{
 	public:
 		RenderTarget() = delete;
-		RenderTarget(Renderer* renderer) : m_renderer(renderer){};
+		RenderTarget(GfxResources& resources) : m_gfxResources(resources){};
 		~RenderTarget() = default;
 
 		/// <summary>
@@ -53,8 +53,24 @@ namespace SFG
 		/// </summary>
 		void Destroy();
 
+		/// <summary>
+		///
+		/// </summary>
+		inline bool GetIsSwapchain() const
+		{
+			return m_isSwapchain;
+		}
+
+		/// <summary>
+		///
+		/// </summary>
+		inline Handle<uint16> GetGPU(const uint32 idx)
+		{
+			return m_textures[idx];
+		}
+
 	private:
-		Renderer*	   m_renderer = nullptr;
+		GfxResources&  m_gfxResources;
 		Handle<uint16> m_textures[FRAMES_IN_FLIGHT];
 		bool		   m_isSwapchain = false;
 	};

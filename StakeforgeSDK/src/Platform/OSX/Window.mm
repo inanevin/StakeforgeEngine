@@ -457,6 +457,8 @@ namespace SFG
         
         SFGView* view = [[SFGView alloc] init];
         [view retain];
+        window->m_osHandle = view;
+        
         [wnd setContentView:view];
         
         /*

@@ -54,4 +54,18 @@ namespace SFG
         while(sem.signaledValue < value)
             Time::Sleep(sleepMS);
     }
+
+    void MTLSemaphore::EncodeWait(void *buffer, uint64 value)
+    {
+        id<MTLCommandBuffer> mtlBuffer = static_cast<id<MTLCommandBuffer>>(buffer);
+        id<MTLSharedEvent> sem = static_cast<id<MTLSharedEvent>>(m_semaphore);
+        [mtlBuffer encodeWaitForEvent:sem value:value];
+    }
+
+    void MTLSemaphore::EncodeSignal(void *buffer, uint64 value)
+    {
+        id<MTLCommandBuffer> mtlBuffer = static_cast<id<MTLCommandBuffer>>(buffer);
+        id<MTLSharedEvent> sem = static_cast<id<MTLSharedEvent>>(m_semaphore);
+        [mtlBuffer encodeSignalEvent:sem value:value];
+    }
 } // namespace SFG

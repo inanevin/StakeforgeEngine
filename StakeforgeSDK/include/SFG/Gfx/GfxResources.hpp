@@ -29,9 +29,9 @@ SOFTWARE.
 #pragma once
 
 #include "SFG/Type/SizeDefinitions.hpp"
-#include "SFG/Data/String.hpp"
 #include "SFG/Memory/PoolAllocator.hpp"
 #include "SFG/Gfx/RenderTarget.hpp"
+#include "SFG/Gfx/RenderSemaphore.hpp"
 #include "SFG/StakeforgeAPI.hpp"
 
 #ifdef SFG_PLATFORM_WINDOWS
@@ -44,30 +44,23 @@ SOFTWARE.
 #include "SFG/Gfx/Backend/Metal/MTLSampler.hpp"
 #include "SFG/Gfx/Backend/Metal/MTLResource.hpp"
 #include "SFG/Gfx/Backend/Metal/MTLShader.hpp"
+#include "SFG/Gfx/Backend/Metal/MTLSubmitQueue.hpp"
 #endif
 
 namespace SFG
 {
-	class RenderFrame;
-
-	class Renderer
+	class GfxResources
 	{
 	public:
 		/// <summary>
 		///
 		/// </summary>
-		void Initialize(String& errString);
+		void Initialize(GfxBackend* backend);
 
 		/// <summary>
 		///
 		/// </summary>
 		void Shutdown();
-
-		/// <summary>
-		///
-		/// </summary>
-		/// <param name="frame"></param>
-		SFG_API void Render(const RenderFrame& frame);
 
 		/// <summary>
 		///
@@ -112,6 +105,16 @@ namespace SFG
 		/// <summary>
 		///
 		/// </summary>
+		SFG_API Handle<uint16> CreateRenderSemaphore();
+
+		/// <summary>
+		///
+		/// </summary>
+		SFG_API void DestroyRenderSemaphore(Handle<uint16> handle);
+
+		/// <summary>
+		///
+		/// </summary>
 		SFG_API Handle<uint16> CreateSampler(const SamplerDesc& desc);
 
 		/// <summary>
@@ -139,15 +142,125 @@ namespace SFG
 		/// </summary>
 		SFG_API void DestroyShader(Handle<uint16> handle);
 
-	private:
-		GfxBackend m_backend = {};
+		/// <summary>
+		///
+		/// </summary>
+		SFG_API Handle<uint16> CreateQueue(const QueueDesc& desc);
 
-		PoolAllocator16<RenderTarget, 32> m_renderTargets;
-		PoolAllocator16<GfxSwapchain, 4>  m_swapchains;
-		PoolAllocator16<GfxTexture, 3>	  m_textures;
-		PoolAllocator16<GfxSemaphore, 20> m_semaphores;
-		PoolAllocator16<GfxSampler, 20>	  m_samplers;
-		PoolAllocator16<GfxResource, 50>  m_resources;
-		PoolAllocator16<GfxShader, 5>	  m_shaders;
+		/// <summary>
+		///
+		/// </summary>
+		SFG_API void DestroyQueue(Handle<uint16> handle);
+
+		/// <summary>
+		///
+		/// </summary>
+		inline RenderTarget& GetRenderTarget(Handle<uint16> handle)
+		{
+			return m_renderTargets.Get(handle);
+		}
+
+		/// <summary>
+		///
+		/// </summary>
+		inline GfxSwapchain& GetSwapchain(Handle<uint16> handle)
+		{
+			return m_swapchains.Get(handle);
+		}
+
+		/// <summary>
+		///
+		/// </summary>
+		inline GfxTexture& GetTexture(Handle<uint16> handle)
+		{
+			return m_textures.Get(handle);
+		}
+
+		/// <summary>
+		///
+		/// </summary>
+		inline GfxSemaphore& GetSemaphore(Handle<uint16> handle)
+		{
+			return m_semaphores.Get(handle);
+		}
+
+		/// <summary>
+		///
+		/// </summary>
+		inline RenderSemaphore& GetRenderSemaphore(Handle<uint16> handle)
+		{
+			return m_renderSemaphores.Get(handle);
+		}
+
+		/// <summary>
+		///
+		/// </summary>
+		inline GfxSampler& GetSampler(Handle<uint16> handle)
+		{
+			return m_samplers.Get(handle);
+		}
+
+		/// <summary>
+		///
+		/// </summary>
+		inline GfxResource& GetResource(Handle<uint16> handle)
+		{
+			return m_resources.Get(handle);
+		}
+
+		/// <summary>
+		///
+		/// </summary>
+		inline GfxShader& GetShader(Handle<uint16> handle)
+		{
+			return m_shaders.Get(handle);
+		}
+
+		/// <summary>
+		///
+		/// </summary>
+		inline GfxQueue& GetQueue(Handle<uint16> handle)
+		{
+			return m_queues.Get(handle);
+		}
+
+		/// <summary>
+		///
+		/// </summary>
+		inline Handle<uint16> GetPrimaryQueueGfx() const
+		{
+			return m_primaryQueueGfx;
+		}
+
+		/// <summary>
+		///
+		/// </summary>
+		inline Handle<uint16> GetPrimaryQueueTransfer() const
+		{
+			return m_primaryQueueTransfer;
+		}
+
+		/// <summary>
+		///
+		/// </summary>
+		inline Handle<uint16> GetPrimaryQueueCompute() const
+		{
+			return m_primaryQueueCompute;
+		}
+
+	private:
+		GfxBackend*							 m_backend = nullptr;
+		PoolAllocator16<RenderTarget, 32>	 m_renderTargets;
+		PoolAllocator16<GfxSwapchain, 4>	 m_swapchains;
+		PoolAllocator16<GfxTexture, 3>		 m_textures;
+		PoolAllocator16<GfxSemaphore, 20>	 m_semaphores;
+		PoolAllocator16<RenderSemaphore, 20> m_renderSemaphores;
+		PoolAllocator16<GfxSampler, 20>		 m_samplers;
+		PoolAllocator16<GfxResource, 50>	 m_resources;
+		PoolAllocator16<GfxShader, 5>		 m_shaders;
+		PoolAllocator16<GfxQueue, 3>		 m_queues;
+		Handle<uint16>						 m_primaryQueueGfx		= {};
+		Handle<uint16>						 m_primaryQueueTransfer = {};
+		Handle<uint16>						 m_primaryQueueCompute	= {};
 	};
 }; // namespace SFG

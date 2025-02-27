@@ -27,7 +27,6 @@ SOFTWARE.
 */
 
 #include "SFG/Memory/BumpAllocator.hpp"
-#include "SFG/IO/Assert.hpp"
 #include "SFG/Memory/Memory.hpp"
 #include <memory>
 

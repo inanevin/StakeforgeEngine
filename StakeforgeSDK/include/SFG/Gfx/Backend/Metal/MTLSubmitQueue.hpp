@@ -32,27 +32,46 @@ SOFTWARE.
 
 namespace SFG
 {
-    struct QueueDesc;
+	struct QueueDesc;
+	enum class QueueType;
 
 	class MTLSubmitQueue
 	{
 	public:
-        
-        MTLSubmitQueue() = delete;
-        MTLSubmitQueue(void* device) : m_device(device) {};
-        
-        /// <summary>
-        ///
-        /// </summary>
-        void Create(const QueueDesc& desc);
-        
-        /// <summary>
-        ///
-        /// </summary>
-        void Destroy();
-        
-    private:
-        void* m_device = nullptr;
-        void* m_queue = nullptr;
+		MTLSubmitQueue() = delete;
+		MTLSubmitQueue(void* device) : m_device(device){};
+
+		/// <summary>
+		///
+		/// </summary>
+		void Create(const QueueDesc& desc);
+
+		/// <summary>
+		///
+		/// </summary>
+		void Destroy();
+
+		/// <summary>
+		///
+		/// </summary>
+		inline void* GetGPU() const
+		{
+			return m_queue;
+		}
+
+		/// <summary>
+		///
+		/// </summary>
+		inline QueueType GetType() const
+		{
+			return m_queueType;
+		}
+
+	private:
+		void*	  m_device = nullptr;
+		void*	  m_queue  = nullptr;
+		QueueType m_queueType;
 	};
+
+	typedef MTLSubmitQueue GfxQueue;
 }; // namespace SFG

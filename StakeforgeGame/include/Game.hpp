@@ -76,5 +76,8 @@ namespace SFG
 
 	private:
 		App& m_app;
+
+		Handle<uint16> m_swapchain	  = {};
+		Handle<uint16> m_renderTarget = {};
 	};
 } // namespace SFG

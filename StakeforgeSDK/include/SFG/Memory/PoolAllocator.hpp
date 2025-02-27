@@ -108,9 +108,9 @@ namespace SFG
 		/// <summary>
 		///
 		/// </summary>
-		inline void IsEmpty() const
+		inline bool IsEmpty() const
 		{
-			m_stackIndicesPos = 0;
+			return m_stackIndicesPos == 0;
 		}
 
 		/// <summary>
@@ -125,7 +125,7 @@ namespace SFG
 		void Reserve()
 		{
 			constexpr size_t alignIdx			 = alignof(IndexType);
-			constexpr size_t blockAlign			 = std::max(ALIGN, alignIdx);
+			constexpr size_t blockAlign			 = ALIGN > alignIdx ? ALIGN : alignIdx;
 			const size_t	 elementBlockSize	 = sizeof(T) * m_size;
 			const size_t	 generationBlockSize = sizeof(IndexType) * m_size;
 			const size_t	 indexBlockSize		 = sizeof(IndexType) * m_size;

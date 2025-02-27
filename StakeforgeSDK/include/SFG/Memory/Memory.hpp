@@ -28,12 +28,6 @@ SOFTWARE.
 
 #pragma once
 
-#define SFG_MEMCPY(...)	 memcpy(__VA_ARGS__)
-#define SFG_MEMMOVE(...) memmove(__VA_ARGS__)
-#define SFG_MEMSET(...)	 memset(__VA_ARGS__)
-#define SFG_MALLOC(...)	 malloc(__VA_ARGS__)
-#define SFG_FREE(...)	 free(__VA_ARGS__)
-
 #ifdef SFG_COMPILER_MSVC
 #include <malloc.h>
 #define SFG_ALIGNED_MALLOC(...) _aligned_malloc(__VA_ARGS__)
@@ -43,6 +37,13 @@ SOFTWARE.
 #define SFG_ALIGNED_MALLOC(...) std::aligned_alloc(__VA_ARGS__)
 #define SFG_ALIGNED_FREE(...)	std::free(__VA_ARGS__)
 #endif
+
+#include <memory>
+#define SFG_MEMCPY(...)	 memcpy(__VA_ARGS__)
+#define SFG_MEMMOVE(...) memmove(__VA_ARGS__)
+#define SFG_MEMSET(...)	 memset(__VA_ARGS__)
+#define SFG_MALLOC(...)	 malloc(__VA_ARGS__)
+#define SFG_FREE(...)	 free(__VA_ARGS__)
 
 namespace SFG
 {

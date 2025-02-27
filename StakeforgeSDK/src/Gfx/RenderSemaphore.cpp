@@ -26,54 +26,21 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
 
-#pragma once
-
-#include "SFG/StakeforgeAPI.hpp"
+#include "SFG/Gfx/RenderSemaphore.hpp"
+#include "SFG/Gfx/GfxResources.hpp"
 
 namespace SFG
 {
-	struct WindowEvent;
-	class RenderFrame;
-	class Window;
-
-	class SFG_API AppDelegate
+	void RenderSemaphore::Create()
 	{
-	public:
-		AppDelegate()		   = default;
-		virtual ~AppDelegate() = default;
+		for (uint8 i = 0; i < FRAMES_IN_FLIGHT; i++)
+			m_semaphores[i] = m_gfxResources.CreateSemaphore();
+	}
 
-		/// <summary>
-		///
-		/// </summary>
-		/// <param name="ev"></param>
-		virtual void OnWindowEvent(const WindowEvent& ev) = 0;
+	void RenderSemaphore::Destroy()
+	{
+		for (uint8 i = 0; i < FRAMES_IN_FLIGHT; i++)
+			m_gfxResources.DestroySemaphore(m_semaphores[i]);
+	}
 
-		/// <summary>
-		///
-		/// </summary>
-		virtual void OnInitialize() = 0;
-
-		/// <summary>
-		///
-		/// </summary>
-		virtual void OnShutdown() = 0;
-
-		/// <summary>
-		///
-		/// </summary>
-		/// <param name="delta"></param>
-		virtual void OnTick() = 0;
-
-		/// <summary>
-		///
-		/// </summary>
-		/// <param name="delta"></param>
-		virtual void OnSimulate(double delta) = 0;
-
-		/// <summary>
-		///
-		/// </summary>
-		/// <param name="frame"></param>
-		virtual void OnGenerateFrame(RenderFrame& frame, double interpolation) = 0;
-	};
 } // namespace SFG

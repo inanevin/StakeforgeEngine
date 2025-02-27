@@ -40,6 +40,8 @@ namespace SFG
 		MouseButton,
 		MouseDelta,
 		MouseWheel,
+		Resized,
+		PreDestroy,
 	};
 
 	struct WindowEvent

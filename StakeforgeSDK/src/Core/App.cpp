@@ -40,47 +40,68 @@ SOFTWARE.
 namespace SFG
 {
 
-    void App::Initialize(String &errString)
-    {
-        Time::Initialize();
-        m_renderer.Initialize(errString);
-        
-        m_renderFrames[0].Initialize({
-            .bumpAllocatorSize = 1024 * 1024,
-            .maxCommandStreams = m_settings.maxCommandStreamsPerFrame,
-        });
-        
-        m_renderFrames[1].Initialize({
-            .bumpAllocatorSize = 1024 * 1024,
-            .maxCommandStreams = m_settings.maxCommandStreamsPerFrame,
-        });
-        
-        if (!errString.empty())
-            m_shouldClose.store(true);
-        
-        m_currentRenderFrameIndex.store(0);
-        m_updateRenderFrameIndex = 1;
-        m_renderThread             = std::thread(&App::RenderLoop, this);
-        
-        if(m_settings.delegate)
-            m_settings.delegate->OnInitialize();
-    }
+	void App::Initialize(String& errString)
+	{
+		Time::Initialize();
+		m_gfxBackend.Initialize(errString, &m_gfxResources, m_settings.maxCommandStreamsPerFrame);
+		m_gfxResources.Initialize(&m_gfxBackend);
 
-    void App::Shutdown()
-    {
-        if(m_settings.delegate)
-            m_settings.delegate->OnShutdown();
-        
-        if (m_renderThread.joinable())
-            m_renderThread.join();
-        
-        m_renderFrames[0].Shutdown();
-        m_renderFrames[1].Shutdown();
-        m_renderer.Shutdown();
-        
-        SFG_ASSERT(m_windows.empty());
-        Time::Shutdown();
-    }
+		m_renderFrames[0].Initialize({
+			.bumpAllocatorSize = m_settings.bumpAllocatorSizePerFrame,
+			.maxCommandStreams = m_settings.maxCommandStreamsPerFrame,
+			.commandBufferSize = m_settings.commandStreamSize,
+			.maxSubmissions	   = m_settings.maxSubmissionsPerFrame,
+		});
+
+		m_renderFrames[1].Initialize({
+			.bumpAllocatorSize = m_settings.bumpAllocatorSizePerFrame,
+			.maxCommandStreams = m_settings.maxCommandStreamsPerFrame,
+			.commandBufferSize = m_settings.commandStreamSize,
+			.maxSubmissions	   = m_settings.maxSubmissionsPerFrame,
+		});
+
+		if (!errString.empty())
+			m_shouldClose.store(true);
+
+		StartRender();
+
+		if (m_settings.delegate)
+			m_settings.delegate->OnInitialize();
+	}
+
+	void App::Shutdown()
+	{
+		if (m_settings.delegate)
+			m_settings.delegate->OnShutdown();
+
+		if (m_renderThread.joinable())
+			m_renderThread.join();
+
+		m_renderFrames[0].Shutdown();
+		m_renderFrames[1].Shutdown();
+		m_gfxBackend.Shutdown();
+		m_gfxResources.Shutdown();
+
+		SFG_ASSERT(m_windows.empty());
+		Time::Shutdown();
+	}
+
+	void App::JoinRender()
+	{
+		m_renderJoined.store(true, std::memory_order_release);
+		if (m_renderThread.joinable())
+			m_renderThread.join();
+		m_gfxBackend.Join();
+	}
+
+	void App::StartRender()
+	{
+		m_frameAvailableSemaphore.try_acquire();
+		m_currentRenderFrameIndex.store(0);
+		m_updateRenderFrameIndex = 1;
+		m_renderThread			 = std::thread(&App::RenderLoop, this);
+		m_renderJoined.store(false, std::memory_order_release);
+	}
 
 	void App::Tick()
 	{
@@ -105,32 +126,52 @@ namespace SFG
 			/*
 				Go through windows, destroy the ones marked dead.
 			*/
+
+			const bool wasJoined = m_renderJoined;
+
 			for (Vector<Window*>::iterator it = m_windows.begin(); it != m_windows.end();)
 			{
 				Window* window = *it;
 
-				if (window->GetCloseRequested())
+				if (window->GetCloseRequested() && m_settings.delegate)
 				{
-					const uint32 id = window->GetID();
+					if (!m_renderJoined)
+						JoinRender();
+
+					const WindowEvent ev = {
+						.type	= WindowEventType::PreDestroy,
+						.window = window,
+					};
+					m_settings.delegate->OnWindowEvent(ev);
+
+					if (window->GetID() == 0)
+						RequestClose();
 
 					it = UtilVector::Remove(m_windows, window);
 					Window::Destroy(window);
-
-					// main window
-					if (id == 0)
-						RequestClose();
-
 					continue;
 				}
 
-				if (window->GetIsSizeDirty())
+				if (window->GetIsSizeDirty() && m_settings.delegate)
 				{
+					if (!m_renderJoined)
+						JoinRender();
+
+					const WindowEvent ev = {
+						.type	= WindowEventType::Resized,
+						.window = window,
+					};
+
+					m_settings.delegate->OnWindowEvent(ev);
 				}
 
 				window->Consume();
-
 				++it;
 			}
+
+			// Called delegate, kick off again.
+			if (m_renderJoined && !wasJoined)
+				StartRender();
 
 			if (!m_settings.delegate)
 			{
@@ -171,20 +212,20 @@ namespace SFG
 					m_settings.delegate->OnWindowEvent(ev);
 			}
 
-            uint32 accCount = 0;
+			uint32 accCount = 0;
 			while (accumulator >= FIXED_INTERVAL_US)
 			{
 				const double delta = FIXED_INTERVAL_US * 1e-6;
 				accumulator -= FIXED_INTERVAL_US;
 				m_settings.delegate->OnSimulate(delta);
-                
-                accCount++;
-                
-                if(accCount >= m_settings.maxAccumulatedUpdates)
-                {
-                    accumulator = 0.0f;
-                    break;
-                }
+
+				accCount++;
+
+				if (accCount >= m_settings.maxAccumulatedUpdates)
+				{
+					accumulator = 0.0f;
+					break;
+				}
 			}
 
 			/* Generate a new render frame & signal render thread. */
@@ -203,14 +244,12 @@ namespace SFG
 
 	void App::RenderLoop()
 	{
-		while (!m_shouldClose.load(std::memory_order_acquire))
+		while (!m_shouldClose.load(std::memory_order_acquire) && !m_renderJoined.load(std::memory_order_acquire))
 		{
 			m_frameAvailableSemaphore.acquire();
 			const uint32	   index	   = m_currentRenderFrameIndex.load(std::memory_order_acquire);
 			const RenderFrame& frameToRead = m_renderFrames[index];
-			m_renderer.Render(frameToRead);
-
-			std::this_thread::sleep_for(std::chrono::milliseconds(16));
+			m_gfxBackend.Render(frameToRead);
 		}
 	}
 
@@ -238,7 +277,8 @@ namespace SFG
 
 	void App::DestroyAppWindow(Window* window)
 	{
-		window->Close();
+		UtilVector::Remove(m_windows, window);
+		Window::Destroy(window);
 	}
 
 } // namespace SFG

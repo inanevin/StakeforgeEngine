@@ -28,52 +28,41 @@ SOFTWARE.
 
 #pragma once
 
-#include "SFG/StakeforgeAPI.hpp"
+#include "SFG/Data/Handle.hpp"
+#include "SFG/Gfx/Common/GfxConstants.hpp"
 
 namespace SFG
 {
-	struct WindowEvent;
-	class RenderFrame;
-	class Window;
+	class Renderer;
+	class GfxResources;
 
-	class SFG_API AppDelegate
+	class RenderSemaphore
 	{
 	public:
-		AppDelegate()		   = default;
-		virtual ~AppDelegate() = default;
+		RenderSemaphore() = delete;
+		RenderSemaphore(GfxResources& resources) : m_gfxResources(resources){};
+		~RenderSemaphore() = default;
 
 		/// <summary>
 		///
 		/// </summary>
-		/// <param name="ev"></param>
-		virtual void OnWindowEvent(const WindowEvent& ev) = 0;
+		void Create();
 
 		/// <summary>
 		///
 		/// </summary>
-		virtual void OnInitialize() = 0;
+		void Destroy();
 
 		/// <summary>
 		///
 		/// </summary>
-		virtual void OnShutdown() = 0;
+		inline Handle<uint16> GetGPU(uint32 index) const
+		{
+			return m_semaphores[index];
+		}
 
-		/// <summary>
-		///
-		/// </summary>
-		/// <param name="delta"></param>
-		virtual void OnTick() = 0;
-
-		/// <summary>
-		///
-		/// </summary>
-		/// <param name="delta"></param>
-		virtual void OnSimulate(double delta) = 0;
-
-		/// <summary>
-		///
-		/// </summary>
-		/// <param name="frame"></param>
-		virtual void OnGenerateFrame(RenderFrame& frame, double interpolation) = 0;
+	private:
+		GfxResources&  m_gfxResources;
+		Handle<uint16> m_semaphores[FRAMES_IN_FLIGHT];
 	};
-} // namespace SFG
+}; // namespace SFG

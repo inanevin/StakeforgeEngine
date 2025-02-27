@@ -29,6 +29,7 @@ SOFTWARE.
 #pragma once
 
 #include "SFG/Type/SizeDefinitions.hpp"
+#include "SFG/Data/Handle.hpp"
 #include "SFG/StakeforgeAPI.hpp"
 
 namespace SFG
@@ -36,7 +37,7 @@ namespace SFG
 	class CommandStream;
 	class BumpAllocator;
 
-	class SFG_API RenderFrame
+	class RenderFrame
 	{
 	public:
 		struct Definition
@@ -44,6 +45,23 @@ namespace SFG
 			size_t bumpAllocatorSize = 0;
 			size_t maxCommandStreams = 32;
 			size_t commandBufferSize = 512;
+			size_t maxSubmissions	 = 24;
+		};
+
+		struct SubmitDesc
+		{
+			Handle<uint16> queue;
+
+			CommandStream** streams		 = nullptr;
+			uint8			streamsCount = 0;
+
+			Handle<uint16>* waitSemaphores		= nullptr;
+			uint64*			waitValues			= nullptr;
+			uint8			waitSemaphoresCount = 0;
+
+			Handle<uint16>* signalSemaphores	  = nullptr;
+			uint64*			signalValues		  = nullptr;
+			uint8			signalSemaphoresCount = 0;
 		};
 
 		RenderFrame()							   = default;
@@ -70,12 +88,43 @@ namespace SFG
 		///
 		/// </summary>
 		/// <param name="handle"></param>
-		CommandStream& GetCommandStream();
+		SFG_API CommandStream& GetCommandStream();
+
+		/// <summary>
+		///
+		/// </summary>
+		SFG_API void Submit(const SubmitDesc& desc);
+
+		/// <summary>
+		///
+		/// </summary>
+		SFG_API BumpAllocator* GetAllocator()
+		{
+			return m_allocator;
+		}
+
+		/// <summary>
+		///
+		/// </summary>
+		inline uint32 GetSubmissionCount() const
+		{
+			return m_submissionsCount;
+		}
+
+		/// <summary>
+		///
+		/// </summary>
+		inline SubmitDesc* GetSubmissions() const
+		{
+			return m_submissions;
+		}
 
 	private:
 		Definition	   m_definition			 = {};
 		BumpAllocator* m_allocator			 = nullptr;
 		CommandStream* m_commandStreams		 = nullptr;
+		SubmitDesc*	   m_submissions		 = nullptr;
 		uint32		   m_commandStreamsCount = 0;
+		uint32		   m_submissionsCount	 = 0;
 	};
 }; // namespace SFG

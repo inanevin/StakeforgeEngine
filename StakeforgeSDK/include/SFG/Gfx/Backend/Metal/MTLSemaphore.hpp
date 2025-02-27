@@ -55,6 +55,24 @@ namespace SFG
 		/// </summary>
 		void Wait(uint64 value, uint32 sleepMS = 0);
 
+		/// <summary>
+		///
+		/// </summary>
+		void EncodeWait(void* buffer, uint64 value);
+
+		/// <summary>
+		///
+		/// </summary>
+		void EncodeSignal(void* buffer, uint64 value);
+
+		/// <summary>
+		///
+		/// </summary>
+		inline void* GetGPU() const
+		{
+			return m_semaphore;
+		}
+
 	private:
 		void* m_semaphore = nullptr;
 		void* m_device	  = nullptr;

@@ -27,28 +27,15 @@ SOFTWARE.
 */
 
 #include "SFG/Gfx/CommandStream.hpp"
-#include "SFG/Gfx/Commands/CMDRenderPass.hpp"
 #include "SFG/Memory/BumpAllocator.hpp"
 
 namespace SFG
 {
 	CommandStream::CommandStream(BumpAllocator* alloc, size_t cmdBufferSize) : m_allocator(alloc)
 	{
-		m_commandsRaw = static_cast<uint8*>(alloc->Allocate(cmdBufferSize));
-	};
-
-	void CommandStream::Reset()
-	{
-		m_commandsCount	  = 0;
-		m_commandsRawHead = 0;
-	}
-
-	void CommandStream::BeginRenderPass(Handle<uint16> target)
-	{
-	}
-
-	void CommandStream::EndRenderPass()
-	{
+		m_commandsRaw		 = static_cast<uint8*>(m_allocator->Allocate(cmdBufferSize));
+		m_commandsHeadOffset = 0;
+		m_commandsCount		 = 0;
 	}
 
 } // namespace SFG
