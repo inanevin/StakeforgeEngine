@@ -36,30 +36,29 @@ SOFTWARE.
 
 namespace SFG
 {
-    class RenderFrame;
-    class GfxResources;
-    struct CMDBeginRenderPass;
+	class RenderFrame;
+	class GfxResources;
+	struct CMDBeginRenderPass;
 
-    enum class CommandType;
+	enum class CommandType;
 
 	class MTLBackend
 	{
-    private:
-        
-        struct CommandData
-        {
-            void* buffer = nullptr;
-            void* currentRenderEncoder = nullptr;
-            Vector<void*> renderEncoders = {};
-            Vector<void*> swapchains = {};
-        };
-        
-        struct PerFrameData
-        {
-            uint64 totalSubmits = 0;
-            Atomic<uint64> reachedSubmits = 0;
-        };
-        
+	private:
+		struct CommandData
+		{
+			void*		  buffer			   = nullptr;
+			void*		  currentRenderEncoder = nullptr;
+			Vector<void*> renderEncoders	   = {};
+			Vector<void*> swapchains		   = {};
+		};
+
+		struct PerFrameData
+		{
+			uint64		   totalSubmits	  = 0;
+			Atomic<uint64> reachedSubmits = 0;
+		};
+
 	public:
 		/// <summary>
 		///
@@ -70,18 +69,18 @@ namespace SFG
 		///
 		/// </summary>
 		void Shutdown();
-        
-        /// <summary>
-        ///
-        /// </summary>
-        void Join();
-        
-        /// <summary>
-        ///
-        /// </summary>
-        /// <param name="frame"></param>
-        void Render(const RenderFrame& frame);
-      
+
+		/// <summary>
+		///
+		/// </summary>
+		void Join();
+
+		/// <summary>
+		///
+		/// </summary>
+		/// <param name="frame"></param>
+		void Render(const RenderFrame& frame);
+
 		/// <summary>
 		///
 		/// </summary>
@@ -90,20 +89,19 @@ namespace SFG
 			return m_device;
 		}
 
-    private:
-        
-        void ResetCommandData(CommandData& data);
-        void StartFrame();
-        void Present();
-        void CMD_BeginRenderPass(CommandData& data, CMDBeginRenderPass* cmd);
-        void CMD_EndRenderPass(CommandData& data);
-        
 	private:
-        PerFrameData m_pfd[FRAMES_IN_FLIGHT];
-		void* m_device = nullptr;
-        GfxResources* m_resources = nullptr;
-        Vector<CommandData> m_commandData;
-        uint8 m_frameIndex = 0;
+		void ResetCommandData(CommandData& data);
+		void StartFrame();
+		void Present();
+		void CMD_BeginRenderPass(CommandData& data, CMDBeginRenderPass* cmd);
+		void CMD_EndRenderPass(CommandData& data);
+
+	private:
+		PerFrameData		m_pfd[FRAMES_IN_FLIGHT];
+		void*				m_device	= nullptr;
+		GfxResources*		m_resources = nullptr;
+		Vector<CommandData> m_commandData;
+		uint8				m_frameIndex = 0;
 	};
 
 	typedef MTLBackend GfxBackend;
