@@ -28,13 +28,59 @@ SOFTWARE.
 
 #pragma once
 
+#include "SFG/Memory/PoolAllocator.hpp"
+
 namespace SFG
 {
-#define RESOURCE_BUFFER_SIZE 1024
+
+	struct ResourceCache
+	{
+		void* Allocate()	  = 0;
+		void  Free(void* obj) = 0;
+	};
+
+	template <class T> struct ResourceCacheImpl : ResourceCache
+	{
+		void* Allocate() override
+		{
+		}
+
+		void Free(void* obj) override
+		{
+			T* t = static_cast<T*>(obj);
+		}
+
+		PoolAllocator16<T, 50> pool;
+	};
 
 	class ResourceManager
 	{
 	public:
+		/// <summary>
+		///
+		/// </summary>
+		void Initialize();
+
+		/// <summary>
+		///
+		/// </summary>
+		void Shutdown();
+
+		/// <summary>
+		///
+		/// </summary>
+		Handle<uint16> CreateShader();
+
+		/// <summary>
+		///
+		/// </summary>
+		void DestroyShader(Handle<uint16> handle);
+
+		/// <summary>
+		///
+		/// </summary>
+		Shader& GetShader(Handle<uint16> handle);
+
 	private:
 	};
 } // namespace SFG

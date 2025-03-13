@@ -43,6 +43,7 @@ SOFTWARE.
 #include <chrono>
 #include <thread>
 
+#include <SFG/Gfx/Common/ShaderDesc.hpp>
 #include <SFG/Gfx/Common/TextureDesc.hpp>
 #include <SFG/Gfx/Common/TextureFormat.hpp>
 #include <SFG/Gfx/Common/TextureView.hpp>
@@ -51,6 +52,10 @@ SOFTWARE.
 #include <SFG/Gfx/CommandStream.hpp>
 #include <SFG/Gfx/GfxResources.hpp>
 #include <SFG/Gfx/Commands/CMDRenderPass.hpp>
+#include <SFG/Gfx/Commands/CMDBindPipeline.hpp>
+#include <SFG/Gfx/Commands/CMDDraw.hpp>
+#include <SFG/Platform/InputAction.hpp>
+#include <SFG/Platform/InputMappings.hpp>
 #include <SFG/Memory/BumpAllocator.hpp>
 
 namespace SFG
@@ -66,21 +71,21 @@ namespace SFG
 	void Game::OnInitialize()
 	{
 		/* Main window */
-		Window* window = m_app.CreateAppWindow(0, SFG_APPNAME, {}, Vector2ui(256, 256), WindowStyle::ApplicationWindow);
-		window->CenterToMonitor();
+		m_window = m_app.CreateAppWindow(0, SFG_APPNAME, {}, Vector2ui(256, 256), WindowStyle::ApplicationWindow);
+		m_window->CenterToMonitor();
 		// window->SetHighFrequencyInputMode(true);
 
 		GfxResources& resources = m_app.GetGfxResources();
 
 		m_swapchain = resources.CreateSwapchain({
 			.name		   = "MainSwapchain",
-			.window		   = (void*)window,
-			.osHandle	   = window->GetOSHandle(),
+			.window		   = (void*)m_window,
+			.osHandle	   = m_window->GetOSHandle(),
 			.format		   = TextureFormat::B8G8R8A8_UNORM,
 			.x			   = 0,
 			.y			   = 0,
-			.width		   = 256,
-			.height		   = 256,
+			.width		   = m_window->GetSize().x,
+			.height		   = m_window->GetSize().y,
 			.scalingFactor = 1.0f,
 		});
 
@@ -88,13 +93,46 @@ namespace SFG
 			.swapchainHandle = m_swapchain,
 			.isSwapchain	 = true,
 		});
+
+		ShaderColorAttachment attachment0 = {
+			.format = TextureFormat::R8G8B8A8_SRGB,
+			.blendAttachment =
+				{
+					.blendEnabled = false,
+				},
+		};
+
+		m_shaderGPU = resources.CreateShader({
+			.debugName = "TestShader",
+			.depthStencil =
+				{
+					.depthCompare = CompareOp::LEqual,
+					.format		  = TextureFormat::D32_SFLOAT,
+					.depthWrite	  = true,
+					.depthTest	  = true,
+				},
+			.colorAttachments	  = &attachment0,
+			.colorAttachmentCount = 1,
+			.polygonMode		  = PolygonMode::Fill,
+			.cullMode			  = CullMode::Back,
+			.frontFace			  = FrontFace::CCW,
+			.topology			  = Topology::TriangleList,
+			.samples			  = 1,
+		});
 	}
 
 	void Game::OnShutdown()
 	{
+		GfxResources& resources = m_app.GetGfxResources();
+		resources.DestroySwapchain(m_swapchain);
+		resources.DestroyRenderTarget(m_renderTarget);
+		resources.DestroyShader(m_shaderGPU);
+
 		Window* window = m_app.GetWindow(0);
 		if (window)
-			m_app.DestroyAppWindow(0);
+		{
+			m_app.DestroyAppWindow(window);
+		}
 	}
 
 	void Game::OnWindowEvent(const WindowEvent& ev)
@@ -125,12 +163,11 @@ namespace SFG
 			return;
 		}
 
-		if (ev.type == WindowEventType::PreDestroy)
+		if (ev.type == WindowEventType::Key)
 		{
-			GfxResources& resources = m_app.GetGfxResources();
-			resources.DestroySwapchain(m_swapchain);
-			resources.DestroyRenderTarget(m_renderTarget);
-			return;
+			if (ev.action == InputAction::Pressed && ev.button == InputCode::KeySpace)
+			{
+			}
 		}
 	}
 
@@ -165,18 +202,29 @@ namespace SFG
 				{
 					.x		= 0,
 					.y		= 0,
-					.width	= 256,
-					.height = 256,
+					.width	= m_window->GetSize().x,
+					.height = m_window->GetSize().y,
 				},
 			.scissors =
 				{
 					.x		= 0,
 					.y		= 0,
-					.width	= 256,
-					.height = 256,
+					.width	= m_window->GetSize().x,
+					.height = m_window->GetSize().y,
 				},
 			.colorAttachments	  = frame.GetAllocator()->EmplaceAux<ColorAttachment>(attachment0),
 			.colorAttachmentCount = 1,
+		});
+
+		stream.AddCommand<CMDBindPipeline>({
+			.shader = m_shaderGPU,
+		});
+
+		stream.AddCommand<CMDDrawInstanced>({
+			.vertexCount   = 6,
+			.instanceCount = 1,
+			.firstVertex   = 0,
+			.firstInstance = 0,
 		});
 
 		stream.AddCommand<CMDEndRenderPass>({});

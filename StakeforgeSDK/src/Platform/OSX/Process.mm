@@ -33,7 +33,6 @@ SOFTWARE.
 #include <Cocoa/Cocoa.h>
 #include <dlfcn.h>
 
-
 namespace SFG
 {
     void Process::PumpOSMessages()
@@ -47,6 +46,13 @@ namespace SFG
                 // handle events here
                 [NSApp sendEvent:ev];
                 [NSApp updateWindows];
+                
+                // Detect Quit event
+                        if (ev.type == NSEventTypeApplicationDefined)
+                        {
+                            NSLog(@"Received application-defined event.");
+                        }
+                
             }
         } while (ev);
     }

@@ -26,7 +26,18 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
 
+#include "SFG/Resources/ResourceManager.hpp"
+#include "SFG/IO/Assert.hpp"
+
 namespace SFG
 {
+
+	void ResourceManager::Initialize()
+	{
+	}
+
+	void ResourceManager::Shutdown()
+	{
+	}
 
 } // namespace SFG

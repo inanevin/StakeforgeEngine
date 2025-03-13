@@ -32,22 +32,44 @@ SOFTWARE.
 
 
 @interface                                         OSXAppDelegate : NSObject <NSApplicationDelegate>
-@property(assign) void*                             myApp;
+@property(assign) void*                             app;
 @end
+
+CVDisplayLinkRef displayLink;
+
+CVReturn MyDisplayLinkCallback(CVDisplayLinkRef displayLink,
+                               const CVTimeStamp *inNow,
+                               const CVTimeStamp *inOutputTime,
+                               CVOptionFlags flagsIn,
+                               CVOptionFlags *flagsOut,
+                               void *displayLinkContext)
+{
+    //((SFG::App*)displayLinkContext)->Render();
+    return kCVReturnSuccess;
+}
 
 @implementation OSXAppDelegate
 
-- (void)applicationWillTerminate:(NSNotification*)notification
-{
+- (instancetype)init {
+    self = [super init];
+    if (self) {
+        //_shouldQuit = NO;
+        // Register an Apple event handler for the Quit command.
+        [[NSAppleEventManager sharedAppleEventManager] setEventHandler:self
+                                                           andSelector:@selector(handleQuitEvent:withReplyEvent:)
+                                                         forEventClass:kCoreEventClass
+                                                            andEventID:kAEQuitApplication];
+    }
+    return self;
 }
 
-- (void)applicationDidFinishLaunching:(NSNotification*)aNotification
-{
-    /*
-    CVDisplayLinkCreateWithActiveCGDisplays(&displayLink);
-    CVDisplayLinkSetOutputCallback(displayLink, &DisplayLinkCallback, self.myApp);
-    CVDisplayLinkStart(displayLink);
-    */
+- (void)handleQuitEvent:(NSAppleEventDescriptor *)event withReplyEvent:(NSAppleEventDescriptor *)reply {
+    ((SFG::App*)self.app)->RequestClose();
+}
+
+// Optionally override terminate: if needed.
+- (void)terminate:(id)sender {
+   // self.shouldQuit = YES;
 }
 
 - (BOOL)canAccessFolder:(NSString*)folderPath
@@ -106,9 +128,11 @@ SFG_API int main(int argc, char* argv[])
         SFG::App sfgApp = SFG::App();
         SFG::Game game = SFG::Game(sfgApp);
         
-        [osxAppDelegate setMyApp:&sfgApp];
-
+        [osxAppDelegate setApp:&sfgApp];
+       
         sfgApp.Initialize(errString);
+        
+        
 
         if (!errString.empty())
         {
@@ -126,7 +150,6 @@ SFG_API int main(int argc, char* argv[])
             return 0;
         }
 
-        // [[NSRunningApplication currentApplication] activateWithOptions:(NSApplicationActivateAllWindows | NSApplicationActivateIgnoringOtherApps)];
 
         @autoreleasepool {
             sfgApp.Tick();

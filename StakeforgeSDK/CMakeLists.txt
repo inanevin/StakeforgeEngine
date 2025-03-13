@@ -121,6 +121,9 @@ set_target_properties(${PROJECT_NAME} PROPERTIES FOLDER "Stakeforge")
 target_include_directories(${PROJECT_NAME} PUBLIC ${PROJECT_SOURCE_DIR}/include)
 target_include_directories(${PROJECT_NAME} PRIVATE ${PROJECT_SOURCE_DIR}/src)
 
+if(APPLE)
+target_include_directories(${PROJECT_NAME} PUBLIC ${PROJECT_SOURCE_DIR}/Dependencies/slang/OSX/include/)
+endif()
 
 # -------------- DEPENDENCIES -------------
 
@@ -139,8 +142,6 @@ if(APPLE)
 		PUBLIC "-framework QuartzCore"
 		# PUBLIC "-framework Carbon"
 	)
-
-	
 endif()
 
 # Jolt
@@ -156,6 +157,13 @@ add_subdirectory(Dependencies/Jolt/ConfigBuild)
 
 set_property(TARGET Jolt PROPERTY FOLDER Stakeforge/Dependencies)
 
+# Slang
+# set(SLANG_ENABLE_DXIL OFF CACHE BOOL "" FORCE)
+# set(SLANG_ENABLE_TESTS OFF CACHE BOOL "" FORCE)
+# set(SLANG_ENABLE_EXAMPLES OFF CACHE BOOL "" FORCE)
+# set(SLANG_ENABLE_SLANG_RHI OFF CACHE BOOL "" FORCE)
+# add_subdirectory(Dependencies/slang)
+
 target_precompile_headers(${PROJECT_NAME}
 PUBLIC
 	include/SFG/Stakeforge.hpp
@@ -166,12 +174,17 @@ target_link_libraries(${PROJECT_NAME}
 )
 
 if(APPLE)
-	 target_link_libraries(${PROJECT_NAME}
-	 	PUBLIC "-framework AppKit")
-	# 	PUBLIC "-framework Foundation"
-	# 	PUBLIC "-framework QuartzCore"
-	# 	PUBLIC "-framework UniformTypeIdentifiers"
-	# )
+
+set(SLANG_LIB_DIR ${PROJECT_SOURCE_DIR}/Dependencies/slang/OSX/lib/)
+find_library(SLANG_LIB slang PATHS ${SLANG_LIB_DIR})
+target_link_libraries(${PROJECT_NAME} PRIVATE ${SLANG_LIB})
+target_link_libraries(${PROJECT_NAME} PUBLIC "-framework AppKit")
+
+add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E copy_if_different
+        ${SLANG_LIB_DIR}/libslang.dylib
+		${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/$<CONFIGURATION>/
+)
 endif()
 
 if(WIN32)

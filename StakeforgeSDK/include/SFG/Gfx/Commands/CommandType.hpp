@@ -30,10 +30,15 @@ SOFTWARE.
 
 namespace SFG
 {
-
 	enum class CommandType
 	{
 		BeginRenderPass,
 		EndRenderPass,
+		BindPipeline,
+		DrawInstanced,
+		DrawIndexedInstanced,
+		CopyBufferToBuffer,
+		CopyBufferToTexture,
+		CopyTextureToBuffer,
 	};
 }; // namespace SFG

@@ -60,6 +60,14 @@ namespace SFG
 		/// </summary>
 		void Unmap(){};
 
+		/// <summary>
+		///
+		/// </summary>
+		inline void* GetGPU() const
+		{
+			return m_resource;
+		}
+
 	private:
 		void* m_resource = nullptr;
 		void* m_device	 = nullptr;

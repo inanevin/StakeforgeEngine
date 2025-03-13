@@ -34,6 +34,9 @@ SOFTWARE.
 #include "SFG/Gfx/CommandStream.hpp"
 #include "SFG/Gfx/Commands/CommandType.hpp"
 #include "SFG/Gfx/Commands/CMDRenderPass.hpp"
+#include "SFG/Gfx/Commands/CMDBindPipeline.hpp"
+#include "SFG/Gfx/Commands/CMDCopy.hpp"
+#include "SFG/Gfx/Commands/CMDDraw.hpp"
 #include "SFG/IO/Log.hpp"
 #include "SFG/Data/VectorUtil.hpp"
 
@@ -56,6 +59,8 @@ namespace SFG
         for(CommandData& data : m_commandData)
         {
             data.renderEncoders.reserve(10);
+            data.computeEncoders.reserve(4);
+            data.blitEncoders.reserve(10);
             data.swapchains.reserve(4);
         }
         
@@ -168,9 +173,34 @@ namespace SFG
                         uint8* head = stream->GetCommandsRaw();
                         uint32 consumedCommands = 0;
                         
+                        auto endCurrentComputeEncoder = [&](){
+                            id<MTLComputeCommandEncoder> computeEncoder = static_cast<id<MTLComputeCommandEncoder>>(cmdData.currentComputeEncoder);
+                            [computeEncoder endEncoding];
+                            cmdData.computeEncoders.push_back(cmdData.currentComputeEncoder);
+                            cmdData.currentComputeEncoder = nullptr;
+                        };
+                        
+                        auto endCurrentBlitEncoder = [&] () {
+                            id<MTLBlitCommandEncoder> blitEncoder = static_cast<id<MTLBlitCommandEncoder>>(cmdData.currentBlitEncoder);
+                            [blitEncoder endEncoding];
+                            cmdData.blitEncoders.push_back(cmdData.currentBlitEncoder);
+                            cmdData.currentBlitEncoder = nullptr;
+                        };
+                        
+                        auto createComputeEncoder = [&](){
+                            id<MTLComputeCommandEncoder> computeEncoder = [buffer computeCommandEncoder];
+                            [computeEncoder retain];
+                            cmdData.currentComputeEncoder = computeEncoder;
+                        };
+                        
+                        auto createBlitEncoder = [&](){
+                            id<MTLBlitCommandEncoder> blitEncoder = [buffer blitCommandEncoder];
+                            [blitEncoder retain];
+                            cmdData.currentBlitEncoder = blitEncoder;
+                        };
+                        
                         while(consumedCommands != commandsCount)
                         {
-                            
                             CommandType type = {};
                             SFG_MEMCPY(&type, head, sizeof(CommandType));
                             head += sizeof(CommandType);
@@ -181,11 +211,35 @@ namespace SFG
                             
                             if(type == CommandType::BeginRenderPass)
                             {
-                                CMD_BeginRenderPass(cmdData, reinterpret_cast<CMDBeginRenderPass*>(head));
+                                CMD_BeginRenderPass(cmdData, head);
                             }
                             else if(type == CommandType::EndRenderPass)
                             {
                                 CMD_EndRenderPass(cmdData);
+                            }
+                            else if(type == CommandType::BindPipeline)
+                            {
+                                CMD_BindPipeline(cmdData,  head);
+                            }
+                            else if(type == CommandType::DrawInstanced)
+                            {
+                                CMD_DrawInstanced(cmdData, head);
+                            }
+                            else if(type == CommandType::DrawIndexedInstanced)
+                            {
+                                CMD_DrawIndexedInstanced(cmdData, head);
+                            }
+                            else if(type == CommandType::CopyBufferToBuffer)
+                            {
+                                CMD_CopyBufferToBuffer(cmdData, head);
+                            }
+                            else if(type == CommandType::CopyBufferToTexture)
+                            {
+                                CMD_CopyBufferToTexture(cmdData, head);
+                            }
+                            else if(type == CommandType::CopyTextureToBuffer)
+                            {
+                                CMD_CopyTextureToBuffer(cmdData, head);
                             }
                             
                             head += commandSize;
@@ -250,6 +304,18 @@ namespace SFG
                         [mtlEncoder release];
                     }
                     
+                    for(void* encoder : cmdData.computeEncoders)
+                    {
+                        id<MTLComputeCommandEncoder> mtlEncoder = static_cast<id<MTLComputeCommandEncoder>>(encoder);
+                        [mtlEncoder release];
+                    }
+                    
+                    for(void* encoder : cmdData.blitEncoders)
+                    {
+                        id<MTLBlitCommandEncoder> mtlEncoder = static_cast<id<MTLBlitCommandEncoder>>(encoder);
+                        [mtlEncoder release];
+                    }
+                    
                     ResetCommandData(cmdData);
                     
                 }
@@ -261,14 +327,22 @@ namespace SFG
     void MTLBackend::ResetCommandData(CommandData & cmdData)
     {
         cmdData.currentRenderEncoder = nullptr;
+        cmdData.currentBlitEncoder = nullptr;
+        cmdData.currentComputeEncoder = nullptr;
+        cmdData.currentShader = nullptr;
         cmdData.buffer = nullptr;
+        cmdData.currentIndexBuffer16Bit = false;
         cmdData.renderEncoders.resize(0);
+        cmdData.computeEncoders.resize(0);
+        cmdData.blitEncoders.resize(0);
         cmdData.swapchains.resize(0);
     }
 
 
-    void MTLBackend::CMD_BeginRenderPass(CommandData& data, CMDBeginRenderPass* cmd)
+    void MTLBackend::CMD_BeginRenderPass(CommandData& data, uint8* head)
     {
+        CMDBeginRenderPass* cmd = reinterpret_cast<CMDBeginRenderPass*>(head);
+        
         id<MTLCommandBuffer> buffer = static_cast<id<MTLCommandBuffer>>(data.buffer);
         MTLRenderPassDescriptor* passDescriptor = [MTLRenderPassDescriptor renderPassDescriptor];
 
@@ -373,6 +447,69 @@ namespace SFG
         [encoder endEncoding];
         data.renderEncoders.push_back(encoder);
         data.currentRenderEncoder = nullptr;
+    }
+
+    void MTLBackend::CMD_BindPipeline(CommandData& data, uint8* head)
+    {
+        CMDBindPipeline* cmd = reinterpret_cast<CMDBindPipeline*>(head);
+        GfxShader& shader = m_resources->GetShader(cmd->shader);
+        
+        if(shader.IsCompute())
+        {
+            id<MTLComputeCommandEncoder> encoder = static_cast<id<MTLComputeCommandEncoder>>(data.currentComputeEncoder);
+            id<MTLComputePipelineState> pso = static_cast<id<MTLComputePipelineState>>(shader.GetPSO());
+            [encoder setComputePipelineState:pso];
+            return;
+        }
+        
+        data.currentShader = &shader;
+        
+        id<MTLRenderCommandEncoder> encoder = static_cast<id<MTLRenderCommandEncoder>>(data.currentRenderEncoder);
+        id<MTLRenderPipelineState> pso = static_cast<id<MTLRenderPipelineState>>(shader.GetPSO());
+        id<MTLDepthStencilState> dsso = static_cast<id<MTLDepthStencilState>>(shader.GetDSSO());
+        [encoder setRenderPipelineState:pso];
+        [encoder setDepthStencilState:dsso];
+        [encoder setDepthBias:shader.GetDepthBias() slopeScale:shader.GetDepthSlope() clamp:shader.GetDepthClamp()];
+        
+        const MTLCullMode cull = static_cast<MTLCullMode>(shader.GetCullMode());
+        const MTLWinding winding = static_cast<MTLWinding>(shader.GetWinding());
+        [encoder setCullMode:cull];
+        [encoder setFrontFacingWinding:winding];
+    }
+
+    void MTLBackend::CMD_DrawInstanced(CommandData &data, uint8 *head)
+    {
+        CMDDrawInstanced* cmd = reinterpret_cast<CMDDrawInstanced*>(head);
+        id<MTLRenderCommandEncoder> encoder = static_cast<id<MTLRenderCommandEncoder>>(data.currentRenderEncoder);
+        GfxShader* shader = static_cast<GfxShader*>(data.currentShader);
+        [encoder drawPrimitives:static_cast<MTLPrimitiveType>(shader->GetTopology()) vertexStart:cmd->firstVertex vertexCount:cmd->vertexCount instanceCount:cmd->instanceCount baseInstance:cmd->firstInstance];
+    }
+
+    void MTLBackend::CMD_DrawIndexedInstanced(CommandData &data, uint8 *head)
+    {
+        CMDDrawIndexedInstanced* cmd = reinterpret_cast<CMDDrawIndexedInstanced*>(head);
+        id<MTLRenderCommandEncoder> encoder = static_cast<id<MTLRenderCommandEncoder>>(data.currentRenderEncoder);
+        id<MTLBuffer> buffer = static_cast<id<MTLBuffer>>(data.currentIndexBuffer);
+        GfxShader* shader = static_cast<GfxShader*>(data.currentShader);
+        
+        const MTLIndexType ibType = data.currentIndexBuffer16Bit ? MTLIndexTypeUInt16 : MTLIndexTypeUInt32;
+        const uint32 ibOffset = data.currentIndexBuffer16Bit ? (cmd->firstIndex * sizeof(uint16)) : (cmd->firstIndex * sizeof(uint32));
+        [encoder drawIndexedPrimitives:static_cast<MTLPrimitiveType>(shader->GetTopology()) indexCount:cmd->indexCount indexType:ibType indexBuffer:buffer indexBufferOffset:ibOffset  instanceCount:cmd->instanceCount baseVertex:cmd->vertexOffset baseInstance:cmd->firstInstance];
+    }
+
+    void MTLBackend::CMD_CopyBufferToBuffer(CommandData& data, uint8* head)
+    {
+        CMDCopyBufferToBuffer* cmd = reinterpret_cast<CMDCopyBufferToBuffer*>(head);
+    }
+    
+    void MTLBackend::CMD_CopyBufferToTexture(CommandData& data, uint8* head)
+    {
+        CMDCopyBufferToTexture* cmd = reinterpret_cast<CMDCopyBufferToTexture*>(head);
+    }
+    
+    void MTLBackend::CMD_CopyTextureToBuffer(CommandData& data, uint8* head)
+    {
+        CMDCopyTextureToBuffer* cmd = reinterpret_cast<CMDCopyTextureToBuffer*>(head);
     }
 
 

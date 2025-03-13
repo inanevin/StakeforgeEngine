@@ -81,8 +81,9 @@ namespace SFG
 		/// </summary>
 		inline T& Get(Handle<IndexType> handle)
 		{
+			const IndexType gen = m_gens[handle.GetIndex()];
 			SFG_ASSERT(handle.Alive());
-			SFG_ASSERT(m_gens[handle.GetIndex()] == handle.GetGeneration());
+			SFG_ASSERT(gen == handle.GetGeneration());
 			return m_raw[handle.GetIndex()];
 		}
 		/// <summary>
@@ -125,7 +126,7 @@ namespace SFG
 		void Reserve()
 		{
 			constexpr size_t alignIdx			 = alignof(IndexType);
-			constexpr size_t blockAlign			 = ALIGN > alignIdx ? ALIGN : alignIdx;
+			constexpr size_t blockAlign			 = ALIGN > alignIdx ? (ALIGN >= 8 ? ALIGN : 8) : (alignIdx >= 8 ? alignIdx : 8);
 			const size_t	 elementBlockSize	 = sizeof(T) * m_size;
 			const size_t	 generationBlockSize = sizeof(IndexType) * m_size;
 			const size_t	 indexBlockSize		 = sizeof(IndexType) * m_size;
@@ -133,7 +134,10 @@ namespace SFG
 			// Calculate overall size with worst-case padding for each segment.
 			const size_t totalSize = elementBlockSize + (blockAlign - 1) + generationBlockSize + (blockAlign - 1) + indexBlockSize;
 			m_totalSize			   = ((totalSize + blockAlign - 1) / blockAlign) * blockAlign;
-			char* ptr			   = static_cast<char*>(SFG_ALIGNED_MALLOC(blockAlign, m_totalSize));
+			void* alloc			   = SFG_ALIGNED_MALLOC(blockAlign, m_totalSize);
+			SFG_ASSERT(alloc != nullptr);
+
+			char* ptr = static_cast<char*>(alloc);
 
 			// T
 			m_raw = reinterpret_cast<T*>(ptr);

@@ -38,7 +38,6 @@ namespace SFG
 {
 	class RenderFrame;
 	class GfxResources;
-	struct CMDBeginRenderPass;
 
 	enum class CommandType;
 
@@ -47,10 +46,18 @@ namespace SFG
 	private:
 		struct CommandData
 		{
-			void*		  buffer			   = nullptr;
-			void*		  currentRenderEncoder = nullptr;
-			Vector<void*> renderEncoders	   = {};
-			Vector<void*> swapchains		   = {};
+			void*		  buffer				  = nullptr;
+			void*		  currentRenderEncoder	  = nullptr;
+			void*		  currentComputeEncoder	  = nullptr;
+			void*		  currentBlitEncoder	  = nullptr;
+			void*		  currentShader			  = nullptr;
+			void*		  currentIndexBuffer	  = nullptr;
+			Vector<void*> renderEncoders		  = {};
+			Vector<void*> computeEncoders		  = {};
+			Vector<void*> blitEncoders			  = {};
+			Vector<void*> swapchains			  = {};
+			uint32		  lastTopology			  = 0;
+			uint32		  currentIndexBuffer16Bit = false;
 		};
 
 		struct PerFrameData
@@ -93,8 +100,14 @@ namespace SFG
 		void ResetCommandData(CommandData& data);
 		void StartFrame();
 		void Present();
-		void CMD_BeginRenderPass(CommandData& data, CMDBeginRenderPass* cmd);
+		void CMD_BeginRenderPass(CommandData& data, uint8* head);
 		void CMD_EndRenderPass(CommandData& data);
+		void CMD_BindPipeline(CommandData& data, uint8* head);
+		void CMD_DrawInstanced(CommandData& data, uint8* head);
+		void CMD_DrawIndexedInstanced(CommandData& data, uint8* head);
+		void CMD_CopyBufferToBuffer(CommandData& data, uint8* head);
+		void CMD_CopyBufferToTexture(CommandData& data, uint8* head);
+		void CMD_CopyTextureToBuffer(CommandData& data, uint8* head);
 
 	private:
 		PerFrameData		m_pfd[FRAMES_IN_FLIGHT];

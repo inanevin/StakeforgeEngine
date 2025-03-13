@@ -34,6 +34,7 @@ SOFTWARE.
 namespace SFG
 {
 	class App;
+	class Window;
 
 	class Game : public AppDelegate
 	{
@@ -77,7 +78,9 @@ namespace SFG
 	private:
 		App& m_app;
 
+		Window*		   m_window		  = nullptr;
 		Handle<uint16> m_swapchain	  = {};
 		Handle<uint16> m_renderTarget = {};
+		Handle<uint16> m_shaderGPU	  = {};
 	};
 } // namespace SFG

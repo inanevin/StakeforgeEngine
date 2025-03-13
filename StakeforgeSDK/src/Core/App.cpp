@@ -35,6 +35,7 @@ SOFTWARE.
 #include "SFG/Platform/Process.hpp"
 #include "SFG/Platform/Window.hpp"
 #include "SFG/Gfx/RenderFrame.hpp"
+#include "SFG/Resources/Shader.hpp"
 #include "SFG/IO/Log.hpp"
 
 namespace SFG
@@ -43,8 +44,10 @@ namespace SFG
 	void App::Initialize(String& errString)
 	{
 		Time::Initialize();
+
 		m_gfxBackend.Initialize(errString, &m_gfxResources, m_settings.maxCommandStreamsPerFrame);
 		m_gfxResources.Initialize(&m_gfxBackend);
+		m_resourceManager.Initialize();
 
 		m_renderFrames[0].Initialize({
 			.bumpAllocatorSize = m_settings.bumpAllocatorSizePerFrame,
@@ -60,9 +63,15 @@ namespace SFG
 			.maxSubmissions	   = m_settings.maxSubmissionsPerFrame,
 		});
 
+		if (!Shader::InitializeSlang())
+		{
+			errString = "Failed initializing slang!";
+		}
+
 		if (!errString.empty())
 			m_shouldClose.store(true);
 
+		m_renderJoined.store(true);
 		StartRender();
 
 		if (m_settings.delegate)
@@ -77,6 +86,7 @@ namespace SFG
 		if (m_renderThread.joinable())
 			m_renderThread.join();
 
+		m_resourceManager.Shutdown();
 		m_renderFrames[0].Shutdown();
 		m_renderFrames[1].Shutdown();
 		m_gfxBackend.Shutdown();
@@ -84,23 +94,34 @@ namespace SFG
 
 		SFG_ASSERT(m_windows.empty());
 		Time::Shutdown();
+		Shader::ShutdownSlang();
 	}
 
 	void App::JoinRender()
 	{
+		if (m_renderJoined.load())
+			return;
+
 		m_renderJoined.store(true, std::memory_order_release);
+		m_frameAvailableSemaphore.release();
+
 		if (m_renderThread.joinable())
 			m_renderThread.join();
+
 		m_gfxBackend.Join();
 	}
 
 	void App::StartRender()
 	{
-		m_frameAvailableSemaphore.try_acquire();
+		if (!m_renderJoined.load())
+			return;
+
+		m_renderJoined.store(false, std::memory_order_release);
+		m_renderFrames[0].Reset();
+		m_renderFrames[1].Reset();
 		m_currentRenderFrameIndex.store(0);
 		m_updateRenderFrameIndex = 1;
 		m_renderThread			 = std::thread(&App::RenderLoop, this);
-		m_renderJoined.store(false, std::memory_order_release);
 	}
 
 	void App::Tick()

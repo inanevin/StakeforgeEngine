@@ -39,6 +39,7 @@ namespace SFG
         
         MTLRenderPipelineDescriptor *pipelineDescriptor = [[MTLRenderPipelineDescriptor alloc] init];
        
+       
     }
 
     void MTLShader::Destroy()

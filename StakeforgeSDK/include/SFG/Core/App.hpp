@@ -36,6 +36,7 @@ SOFTWARE.
 #include "SFG/Data/Semaphore.hpp"
 #include "SFG/Gfx/RenderFrame.hpp"
 #include "SFG/Gfx/GfxResources.hpp"
+#include "SFG/Resources/ResourceManager.hpp"
 
 #ifdef SFG_PLATFORM_WINDOWS
 #include "SFG/Gfx/Backend/Vulkan/VulkanBackend.hpp"
@@ -151,12 +152,21 @@ namespace SFG
 			return m_gfxResources;
 		}
 
+		/// <summary>
+		///
+		/// </summary>
+		inline ResourceManager& GetResourceManager()
+		{
+			return m_resourceManager;
+		}
+
 	private:
 		void RenderLoop();
 
 	private:
 		GfxBackend		m_gfxBackend;
 		GfxResources	m_gfxResources;
+		ResourceManager m_resourceManager;
 		RenderFrame		m_renderFrames[2];
 		Vector<Window*> m_windows;
 		Settings		m_settings = {};
