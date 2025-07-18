@@ -1,0 +1,427 @@
+
+---
+events:
+  -
+    kind: "message-v1"
+    backtrace:
+      - "C:/Program Files/CMake/share/cmake-3.28/Modules/CMakeDetermineSystem.cmake:233 (message)"
+      - "CMakeLists.txt:55 (project)"
+    message: |
+      The system is: Windows - 10.0.22631 - AMD64
+  -
+    kind: "message-v1"
+    backtrace:
+      - "C:/Program Files/CMake/share/cmake-3.28/Modules/CMakeDetermineCompilerId.cmake:17 (message)"
+      - "C:/Program Files/CMake/share/cmake-3.28/Modules/CMakeDetermineCompilerId.cmake:64 (__determine_compiler_id_test)"
+      - "C:/Program Files/CMake/share/cmake-3.28/Modules/CMakeDetermineCXXCompiler.cmake:126 (CMAKE_DETERMINE_COMPILER_ID)"
+      - "CMakeLists.txt:55 (project)"
+    message: |
+      Compiling the CXX compiler identification source file "CMakeCXXCompilerId.cpp" succeeded.
+      Compiler:  
+      Build flags: 
+      Id flags:  
+      
+      The output was:
+      0
+      MSBuild version 17.12.12+1cce77968 for .NET Framework
+      Build started 28/01/2025 20:54:01.
+      
+      Project "C:\\Projects\\Lina\\LinaEngine\\Dependencies\\fmt-7.0.3\\test\\CMakeFiles\\3.28.1\\CompilerIdCXX\\CompilerIdCXX.vcxproj" on node 1 (default targets).
+      PrepareForBuild:
+        Creating directory "Debug\\".
+        Structured output is enabled. The formatting of compiler diagnostics will reflect the error hierarchy. See https://aka.ms/cpp/structured-output for more details.
+        Creating directory "Debug\\CompilerIdCXX.tlog\\".
+      InitializeBuildStatus:
+        Creating "Debug\\CompilerIdCXX.tlog\\unsuccessfulbuild" because "AlwaysCreate" was specified.
+        Touching "Debug\\CompilerIdCXX.tlog\\unsuccessfulbuild".
+      ClCompile:
+        C:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\VC\\Tools\\MSVC\\14.42.34433\\bin\\HostX64\\x64\\CL.exe /c /nologo /W0 /WX- /diagnostics:column /Od /D _MBCS /Gm- /EHsc /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Zc:inline /Fo"Debug\\\\" /Fd"Debug\\vc143.pdb" /external:W0 /Gd /TP /FC /errorReport:queue CMakeCXXCompilerId.cpp
+        CMakeCXXCompilerId.cpp
+      Link:
+        C:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\VC\\Tools\\MSVC\\14.42.34433\\bin\\HostX64\\x64\\link.exe /ERRORREPORT:QUEUE /OUT:".\\CompilerIdCXX.exe" /INCREMENTAL:NO /NOLOGO kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /MANIFEST /MANIFESTUAC:"level='asInvoker' uiAccess='false'" /manifest:embed /PDB:".\\CompilerIdCXX.pdb" /SUBSYSTEM:CONSOLE /TLBID:1 /DYNAMICBASE /NXCOMPAT /IMPLIB:".\\CompilerIdCXX.lib" /MACHINE:X64 Debug\\CMakeCXXCompilerId.obj
+        CompilerIdCXX.vcxproj -> C:\\Projects\\Lina\\LinaEngine\\Dependencies\\fmt-7.0.3\\test\\CMakeFiles\\3.28.1\\CompilerIdCXX\\CompilerIdCXX.exe
+      PostBuildEvent:
+        for %%i in (cl.exe) do @echo CMAKE_CXX_COMPILER=%%~$PATH:i
+        :VCEnd
+        CMAKE_CXX_COMPILER=C:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\VC\\Tools\\MSVC\\14.42.34433\\bin\\Hostx64\\x64\\cl.exe
+      FinalizeBuildStatus:
+        Deleting file "Debug\\CompilerIdCXX.tlog\\unsuccessfulbuild".
+        Touching "Debug\\CompilerIdCXX.tlog\\CompilerIdCXX.lastbuildstate".
+      Done Building Project "C:\\Projects\\Lina\\LinaEngine\\Dependencies\\fmt-7.0.3\\test\\CMakeFiles\\3.28.1\\CompilerIdCXX\\CompilerIdCXX.vcxproj" (default targets).
+      
+      Build succeeded.
+          0 Warning(s)
+          0 Error(s)
+      
+      Time Elapsed 00:00:00.65
+      
+      
+      Compilation of the CXX compiler identification source "CMakeCXXCompilerId.cpp" produced "CompilerIdCXX.exe"
+      
+      Compilation of the CXX compiler identification source "CMakeCXXCompilerId.cpp" produced "CompilerIdCXX.vcxproj"
+      
+      The CXX compiler identification is MSVC, found in:
+        C:/Projects/Lina/LinaEngine/Dependencies/fmt-7.0.3/test/CMakeFiles/3.28.1/CompilerIdCXX/CompilerIdCXX.exe
+      
+  -
+    kind: "try_compile-v1"
+    backtrace:
+      - "C:/Program Files/CMake/share/cmake-3.28/Modules/CMakeDetermineCompilerABI.cmake:57 (try_compile)"
+      - "C:/Program Files/CMake/share/cmake-3.28/Modules/CMakeTestCXXCompiler.cmake:26 (CMAKE_DETERMINE_COMPILER_ABI)"
+      - "CMakeLists.txt:55 (project)"
+    checks:
+      - "Detecting CXX compiler ABI info"
+    directories:
+      source: "C:/Projects/Lina/LinaEngine/Dependencies/fmt-7.0.3/test/CMakeFiles/CMakeScratch/TryCompile-9lyls5"
+      binary: "C:/Projects/Lina/LinaEngine/Dependencies/fmt-7.0.3/test/CMakeFiles/CMakeScratch/TryCompile-9lyls5"
+    cmakeVariables:
+      CMAKE_CXX_FLAGS: "/DWIN32 /D_WINDOWS /W3 /GR /EHsc"
+      CMAKE_CXX_FLAGS_DEBUG: "/MDd /Zi /Ob0 /Od /RTC1"
+      CMAKE_EXE_LINKER_FLAGS: "/machine:x64"
+    buildResult:
+      variable: "CMAKE_CXX_ABI_COMPILED"
+      cached: true
+      stdout: |
+        Change Dir: 'C:/Projects/Lina/LinaEngine/Dependencies/fmt-7.0.3/test/CMakeFiles/CMakeScratch/TryCompile-9lyls5'
+        
+        Run Build Command(s): "C:/Program Files/Microsoft Visual Studio/2022/Community/MSBuild/Current/Bin/amd64/MSBuild.exe" cmTC_4db1f.vcxproj /p:Configuration=Debug /p:Platform=x64 /p:VisualStudioVersion=17.0 /v:n
+        MSBuild version 17.12.12+1cce77968 for .NET Framework
+        Build started 28/01/2025 20:54:02.
+        
+        Project "C:\\Projects\\Lina\\LinaEngine\\Dependencies\\fmt-7.0.3\\test\\CMakeFiles\\CMakeScratch\\TryCompile-9lyls5\\cmTC_4db1f.vcxproj" on node 1 (default targets).
+        PrepareForBuild:
+          Creating directory "cmTC_4db1f.dir\\Debug\\".
+          Structured output is enabled. The formatting of compiler diagnostics will reflect the error hierarchy. See https://aka.ms/cpp/structured-output for more details.
+          Creating directory "C:\\Projects\\Lina\\LinaEngine\\Dependencies\\fmt-7.0.3\\test\\CMakeFiles\\CMakeScratch\\TryCompile-9lyls5\\Debug\\".
+          Creating directory "cmTC_4db1f.dir\\Debug\\cmTC_4db1f.tlog\\".
+        InitializeBuildStatus:
+          Creating "cmTC_4db1f.dir\\Debug\\cmTC_4db1f.tlog\\unsuccessfulbuild" because "AlwaysCreate" was specified.
+          Touching "cmTC_4db1f.dir\\Debug\\cmTC_4db1f.tlog\\unsuccessfulbuild".
+        ClCompile:
+          C:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\VC\\Tools\\MSVC\\14.42.34433\\bin\\HostX64\\x64\\CL.exe /c /Zi /W3 /WX- /diagnostics:column /Od /Ob0 /D _MBCS /D WIN32 /D _WINDOWS /D "CMAKE_INTDIR=\\"Debug\\"" /Gm- /EHsc /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Zc:inline /GR /Fo"cmTC_4db1f.dir\\Debug\\\\" /Fd"cmTC_4db1f.dir\\Debug\\vc143.pdb" /external:W3 /Gd /TP /errorReport:queue "C:\\Program Files\\CMake\\share\\cmake-3.28\\Modules\\CMakeCXXCompilerABI.cpp"
+          Microsoft (R) C/C++ Optimizing Compiler Version 19.42.34436 for x64
+          Copyright (C) Microsoft Corporation.  All rights reserved.
+          cl /c /Zi /W3 /WX- /diagnostics:column /Od /Ob0 /D _MBCS /D WIN32 /D _WINDOWS /D "CMAKE_INTDIR=\\"Debug\\"" /Gm- /EHsc /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Zc:inline /GR /Fo"cmTC_4db1f.dir\\Debug\\\\" /Fd"cmTC_4db1f.dir\\Debug\\vc143.pdb" /external:W3 /Gd /TP /errorReport:queue "C:\\Program Files\\CMake\\share\\cmake-3.28\\Modules\\CMakeCXXCompilerABI.cpp"
+          CMakeCXXCompilerABI.cpp
+        Link:
+          C:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\VC\\Tools\\MSVC\\14.42.34433\\bin\\HostX64\\x64\\link.exe /ERRORREPORT:QUEUE /OUT:"C:\\Projects\\Lina\\LinaEngine\\Dependencies\\fmt-7.0.3\\test\\CMakeFiles\\CMakeScratch\\TryCompile-9lyls5\\Debug\\cmTC_4db1f.exe" /INCREMENTAL /ILK:"cmTC_4db1f.dir\\Debug\\cmTC_4db1f.ilk" /NOLOGO kernel32.lib user32.lib gdi32.lib winspool.lib shell32.lib ole32.lib oleaut32.lib uuid.lib comdlg32.lib advapi32.lib /MANIFEST /MANIFESTUAC:"level='asInvoker' uiAccess='false'" /manifest:embed /DEBUG /PDB:"C:/Projects/Lina/LinaEngine/Dependencies/fmt-7.0.3/test/CMakeFiles/CMakeScratch/TryCompile-9lyls5/Debug/cmTC_4db1f.pdb" /SUBSYSTEM:CONSOLE /TLBID:1 /DYNAMICBASE /NXCOMPAT /IMPLIB:"C:/Projects/Lina/LinaEngine/Dependencies/fmt-7.0.3/test/CMakeFiles/CMakeScratch/TryCompile-9lyls5/Debug/cmTC_4db1f.lib" /MACHINE:X64  /machine:x64 cmTC_4db1f.dir\\Debug\\CMakeCXXCompilerABI.obj
+          cmTC_4db1f.vcxproj -> C:\\Projects\\Lina\\LinaEngine\\Dependencies\\fmt-7.0.3\\test\\CMakeFiles\\CMakeScratch\\TryCompile-9lyls5\\Debug\\cmTC_4db1f.exe
+        FinalizeBuildStatus:
+          Deleting file "cmTC_4db1f.dir\\Debug\\cmTC_4db1f.tlog\\unsuccessfulbuild".
+          Touching "cmTC_4db1f.dir\\Debug\\cmTC_4db1f.tlog\\cmTC_4db1f.lastbuildstate".
+        Done Building Project "C:\\Projects\\Lina\\LinaEngine\\Dependencies\\fmt-7.0.3\\test\\CMakeFiles\\CMakeScratch\\TryCompile-9lyls5\\cmTC_4db1f.vcxproj" (default targets).
+        
+        Build succeeded.
+            0 Warning(s)
+            0 Error(s)
+        
+        Time Elapsed 00:00:00.44
+        
+      exitCode: 0
+  -
+    kind: "try_compile-v1"
+    backtrace:
+      - "C:/Program Files/CMake/share/cmake-3.28/Modules/Internal/CheckSourceCompiles.cmake:101 (try_compile)"
+      - "C:/Program Files/CMake/share/cmake-3.28/Modules/Internal/CheckCompilerFlag.cmake:18 (cmake_check_source_compiles)"
+      - "C:/Program Files/CMake/share/cmake-3.28/Modules/CheckCXXCompilerFlag.cmake:34 (cmake_check_compiler_flag)"
+      - "support/cmake/cxx14.cmake:39 (check_cxx_compiler_flag)"
+      - "CMakeLists.txt:95 (include)"
+    checks:
+      - "Performing Test has_std_11_flag"
+    directories:
+      source: "C:/Projects/Lina/LinaEngine/Dependencies/fmt-7.0.3/test/CMakeFiles/CMakeScratch/TryCompile-wnrjsw"
+      binary: "C:/Projects/Lina/LinaEngine/Dependencies/fmt-7.0.3/test/CMakeFiles/CMakeScratch/TryCompile-wnrjsw"
+    cmakeVariables:
+      CMAKE_CXX_FLAGS: "/DWIN32 /D_WINDOWS /W3 /GR /EHsc"
+      CMAKE_CXX_FLAGS_DEBUG: "/MDd /Zi /Ob0 /Od /RTC1"
+      CMAKE_EXE_LINKER_FLAGS: "/machine:x64"
+      CMAKE_MODULE_PATH: "C:/Projects/Lina/LinaEngine/Dependencies/fmt-7.0.3/support/cmake"
+    buildResult:
+      variable: "has_std_11_flag"
+      cached: true
+      stdout: |
+        Change Dir: 'C:/Projects/Lina/LinaEngine/Dependencies/fmt-7.0.3/test/CMakeFiles/CMakeScratch/TryCompile-wnrjsw'
+        
+        Run Build Command(s): "C:/Program Files/Microsoft Visual Studio/2022/Community/MSBuild/Current/Bin/amd64/MSBuild.exe" cmTC_4edb7.vcxproj /p:Configuration=Debug /p:Platform=x64 /p:VisualStudioVersion=17.0 /v:n
+        MSBuild version 17.12.12+1cce77968 for .NET Framework
+        Build started 28/01/2025 20:54:03.
+        
+        Project "C:\\Projects\\Lina\\LinaEngine\\Dependencies\\fmt-7.0.3\\test\\CMakeFiles\\CMakeScratch\\TryCompile-wnrjsw\\cmTC_4edb7.vcxproj" on node 1 (default targets).
+        PrepareForBuild:
+          Creating directory "cmTC_4edb7.dir\\Debug\\".
+          Structured output is enabled. The formatting of compiler diagnostics will reflect the error hierarchy. See https://aka.ms/cpp/structured-output for more details.
+          Creating directory "C:\\Projects\\Lina\\LinaEngine\\Dependencies\\fmt-7.0.3\\test\\CMakeFiles\\CMakeScratch\\TryCompile-wnrjsw\\Debug\\".
+          Creating directory "cmTC_4edb7.dir\\Debug\\cmTC_4edb7.tlog\\".
+        InitializeBuildStatus:
+          Creating "cmTC_4edb7.dir\\Debug\\cmTC_4edb7.tlog\\unsuccessfulbuild" because "AlwaysCreate" was specified.
+          Touching "cmTC_4edb7.dir\\Debug\\cmTC_4edb7.tlog\\unsuccessfulbuild".
+        ClCompile:
+          C:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\VC\\Tools\\MSVC\\14.42.34433\\bin\\HostX64\\x64\\CL.exe /c /Zi /W3 /WX- /diagnostics:column /Od /Ob0 /D _MBCS /D WIN32 /D _WINDOWS /D has_std_11_flag /D "CMAKE_INTDIR=\\"Debug\\"" /Gm- /EHsc /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Zc:inline /GR /Fo"cmTC_4edb7.dir\\Debug\\\\" /Fd"cmTC_4edb7.dir\\Debug\\vc143.pdb" /external:W3 /Gd /TP /errorReport:queue  -std=c++11 "C:\\Projects\\Lina\\LinaEngine\\Dependencies\\fmt-7.0.3\\test\\CMakeFiles\\CMakeScratch\\TryCompile-wnrjsw\\src.cxx"
+          Microsoft (R) C/C++ Optimizing Compiler Version 19.42.34436 for x64
+          Copyright (C) Microsoft Corporation.  All rights reserved.
+          cl /c /Zi /W3 /WX- /diagnostics:column /Od /Ob0 /D _MBCS /D WIN32 /D _WINDOWS /D has_std_11_flag /D "CMAKE_INTDIR=\\"Debug\\"" /Gm- /EHsc /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Zc:inline /GR /Fo"cmTC_4edb7.dir\\Debug\\\\" /Fd"cmTC_4edb7.dir\\Debug\\vc143.pdb" /external:W3 /Gd /TP /errorReport:queue  -std=c++11 "C:\\Projects\\Lina\\LinaEngine\\Dependencies\\fmt-7.0.3\\test\\CMakeFiles\\CMakeScratch\\TryCompile-wnrjsw\\src.cxx"
+        cl : command line  warning D9002: ignoring unknown option '-std=c++11' [C:\\Projects\\Lina\\LinaEngine\\Dependencies\\fmt-7.0.3\\test\\CMakeFiles\\CMakeScratch\\TryCompile-wnrjsw\\cmTC_4edb7.vcxproj]
+          src.cxx
+        Link:
+          C:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\VC\\Tools\\MSVC\\14.42.34433\\bin\\HostX64\\x64\\link.exe /ERRORREPORT:QUEUE /OUT:"C:\\Projects\\Lina\\LinaEngine\\Dependencies\\fmt-7.0.3\\test\\CMakeFiles\\CMakeScratch\\TryCompile-wnrjsw\\Debug\\cmTC_4edb7.exe" /INCREMENTAL /ILK:"cmTC_4edb7.dir\\Debug\\cmTC_4edb7.ilk" /NOLOGO kernel32.lib user32.lib gdi32.lib winspool.lib shell32.lib ole32.lib oleaut32.lib uuid.lib comdlg32.lib advapi32.lib /MANIFEST /MANIFESTUAC:"level='asInvoker' uiAccess='false'" /manifest:embed /DEBUG /PDB:"C:/Projects/Lina/LinaEngine/Dependencies/fmt-7.0.3/test/CMakeFiles/CMakeScratch/TryCompile-wnrjsw/Debug/cmTC_4edb7.pdb" /SUBSYSTEM:CONSOLE /TLBID:1 /DYNAMICBASE /NXCOMPAT /IMPLIB:"C:/Projects/Lina/LinaEngine/Dependencies/fmt-7.0.3/test/CMakeFiles/CMakeScratch/TryCompile-wnrjsw/Debug/cmTC_4edb7.lib" /MACHINE:X64  /machine:x64 cmTC_4edb7.dir\\Debug\\src.obj
+          cmTC_4edb7.vcxproj -> C:\\Projects\\Lina\\LinaEngine\\Dependencies\\fmt-7.0.3\\test\\CMakeFiles\\CMakeScratch\\TryCompile-wnrjsw\\Debug\\cmTC_4edb7.exe
+        FinalizeBuildStatus:
+          Deleting file "cmTC_4edb7.dir\\Debug\\cmTC_4edb7.tlog\\unsuccessfulbuild".
+          Touching "cmTC_4edb7.dir\\Debug\\cmTC_4edb7.tlog\\cmTC_4edb7.lastbuildstate".
+        Done Building Project "C:\\Projects\\Lina\\LinaEngine\\Dependencies\\fmt-7.0.3\\test\\CMakeFiles\\CMakeScratch\\TryCompile-wnrjsw\\cmTC_4edb7.vcxproj" (default targets).
+        
+        Build succeeded.
+        
+        "C:\\Projects\\Lina\\LinaEngine\\Dependencies\\fmt-7.0.3\\test\\CMakeFiles\\CMakeScratch\\TryCompile-wnrjsw\\cmTC_4edb7.vcxproj" (default target) (1) ->
+        (ClCompile target) -> 
+          cl : command line  warning D9002: ignoring unknown option '-std=c++11' [C:\\Projects\\Lina\\LinaEngine\\Dependencies\\fmt-7.0.3\\test\\CMakeFiles\\CMakeScratch\\TryCompile-wnrjsw\\cmTC_4edb7.vcxproj]
+        
+            1 Warning(s)
+            0 Error(s)
+        
+        Time Elapsed 00:00:00.42
+        
+      exitCode: 0
+  -
+    kind: "try_compile-v1"
+    backtrace:
+      - "C:/Program Files/CMake/share/cmake-3.28/Modules/Internal/CheckSourceCompiles.cmake:101 (try_compile)"
+      - "C:/Program Files/CMake/share/cmake-3.28/Modules/Internal/CheckCompilerFlag.cmake:18 (cmake_check_source_compiles)"
+      - "C:/Program Files/CMake/share/cmake-3.28/Modules/CheckCXXCompilerFlag.cmake:34 (cmake_check_compiler_flag)"
+      - "support/cmake/cxx14.cmake:40 (check_cxx_compiler_flag)"
+      - "CMakeLists.txt:95 (include)"
+    checks:
+      - "Performing Test has_std_0x_flag"
+    directories:
+      source: "C:/Projects/Lina/LinaEngine/Dependencies/fmt-7.0.3/test/CMakeFiles/CMakeScratch/TryCompile-tv4j8j"
+      binary: "C:/Projects/Lina/LinaEngine/Dependencies/fmt-7.0.3/test/CMakeFiles/CMakeScratch/TryCompile-tv4j8j"
+    cmakeVariables:
+      CMAKE_CXX_FLAGS: "/DWIN32 /D_WINDOWS /W3 /GR /EHsc"
+      CMAKE_CXX_FLAGS_DEBUG: "/MDd /Zi /Ob0 /Od /RTC1"
+      CMAKE_EXE_LINKER_FLAGS: "/machine:x64"
+      CMAKE_MODULE_PATH: "C:/Projects/Lina/LinaEngine/Dependencies/fmt-7.0.3/support/cmake"
+    buildResult:
+      variable: "has_std_0x_flag"
+      cached: true
+      stdout: |
+        Change Dir: 'C:/Projects/Lina/LinaEngine/Dependencies/fmt-7.0.3/test/CMakeFiles/CMakeScratch/TryCompile-tv4j8j'
+        
+        Run Build Command(s): "C:/Program Files/Microsoft Visual Studio/2022/Community/MSBuild/Current/Bin/amd64/MSBuild.exe" cmTC_a2a3b.vcxproj /p:Configuration=Debug /p:Platform=x64 /p:VisualStudioVersion=17.0 /v:n
+        MSBuild version 17.12.12+1cce77968 for .NET Framework
+        Build started 28/01/2025 20:54:04.
+        
+        Project "C:\\Projects\\Lina\\LinaEngine\\Dependencies\\fmt-7.0.3\\test\\CMakeFiles\\CMakeScratch\\TryCompile-tv4j8j\\cmTC_a2a3b.vcxproj" on node 1 (default targets).
+        PrepareForBuild:
+          Creating directory "cmTC_a2a3b.dir\\Debug\\".
+          Structured output is enabled. The formatting of compiler diagnostics will reflect the error hierarchy. See https://aka.ms/cpp/structured-output for more details.
+          Creating directory "C:\\Projects\\Lina\\LinaEngine\\Dependencies\\fmt-7.0.3\\test\\CMakeFiles\\CMakeScratch\\TryCompile-tv4j8j\\Debug\\".
+          Creating directory "cmTC_a2a3b.dir\\Debug\\cmTC_a2a3b.tlog\\".
+        InitializeBuildStatus:
+          Creating "cmTC_a2a3b.dir\\Debug\\cmTC_a2a3b.tlog\\unsuccessfulbuild" because "AlwaysCreate" was specified.
+          Touching "cmTC_a2a3b.dir\\Debug\\cmTC_a2a3b.tlog\\unsuccessfulbuild".
+        ClCompile:
+          C:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\VC\\Tools\\MSVC\\14.42.34433\\bin\\HostX64\\x64\\CL.exe /c /Zi /W3 /WX- /diagnostics:column /Od /Ob0 /D _MBCS /D WIN32 /D _WINDOWS /D has_std_0x_flag /D "CMAKE_INTDIR=\\"Debug\\"" /Gm- /EHsc /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Zc:inline /GR /Fo"cmTC_a2a3b.dir\\Debug\\\\" /Fd"cmTC_a2a3b.dir\\Debug\\vc143.pdb" /external:W3 /Gd /TP /errorReport:queue  -std=c++0x "C:\\Projects\\Lina\\LinaEngine\\Dependencies\\fmt-7.0.3\\test\\CMakeFiles\\CMakeScratch\\TryCompile-tv4j8j\\src.cxx"
+          Microsoft (R) C/C++ Optimizing Compiler Version 19.42.34436 for x64
+          Copyright (C) Microsoft Corporation.  All rights reserved.
+          cl /c /Zi /W3 /WX- /diagnostics:column /Od /Ob0 /D _MBCS /D WIN32 /D _WINDOWS /D has_std_0x_flag /D "CMAKE_INTDIR=\\"Debug\\"" /Gm- /EHsc /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Zc:inline /GR /Fo"cmTC_a2a3b.dir\\Debug\\\\" /Fd"cmTC_a2a3b.dir\\Debug\\vc143.pdb" /external:W3 /Gd /TP /errorReport:queue  -std=c++0x "C:\\Projects\\Lina\\LinaEngine\\Dependencies\\fmt-7.0.3\\test\\CMakeFiles\\CMakeScratch\\TryCompile-tv4j8j\\src.cxx"
+        cl : command line  warning D9002: ignoring unknown option '-std=c++0x' [C:\\Projects\\Lina\\LinaEngine\\Dependencies\\fmt-7.0.3\\test\\CMakeFiles\\CMakeScratch\\TryCompile-tv4j8j\\cmTC_a2a3b.vcxproj]
+          src.cxx
+        Link:
+          C:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\VC\\Tools\\MSVC\\14.42.34433\\bin\\HostX64\\x64\\link.exe /ERRORREPORT:QUEUE /OUT:"C:\\Projects\\Lina\\LinaEngine\\Dependencies\\fmt-7.0.3\\test\\CMakeFiles\\CMakeScratch\\TryCompile-tv4j8j\\Debug\\cmTC_a2a3b.exe" /INCREMENTAL /ILK:"cmTC_a2a3b.dir\\Debug\\cmTC_a2a3b.ilk" /NOLOGO kernel32.lib user32.lib gdi32.lib winspool.lib shell32.lib ole32.lib oleaut32.lib uuid.lib comdlg32.lib advapi32.lib /MANIFEST /MANIFESTUAC:"level='asInvoker' uiAccess='false'" /manifest:embed /DEBUG /PDB:"C:/Projects/Lina/LinaEngine/Dependencies/fmt-7.0.3/test/CMakeFiles/CMakeScratch/TryCompile-tv4j8j/Debug/cmTC_a2a3b.pdb" /SUBSYSTEM:CONSOLE /TLBID:1 /DYNAMICBASE /NXCOMPAT /IMPLIB:"C:/Projects/Lina/LinaEngine/Dependencies/fmt-7.0.3/test/CMakeFiles/CMakeScratch/TryCompile-tv4j8j/Debug/cmTC_a2a3b.lib" /MACHINE:X64  /machine:x64 cmTC_a2a3b.dir\\Debug\\src.obj
+          cmTC_a2a3b.vcxproj -> C:\\Projects\\Lina\\LinaEngine\\Dependencies\\fmt-7.0.3\\test\\CMakeFiles\\CMakeScratch\\TryCompile-tv4j8j\\Debug\\cmTC_a2a3b.exe
+        FinalizeBuildStatus:
+          Deleting file "cmTC_a2a3b.dir\\Debug\\cmTC_a2a3b.tlog\\unsuccessfulbuild".
+          Touching "cmTC_a2a3b.dir\\Debug\\cmTC_a2a3b.tlog\\cmTC_a2a3b.lastbuildstate".
+        Done Building Project "C:\\Projects\\Lina\\LinaEngine\\Dependencies\\fmt-7.0.3\\test\\CMakeFiles\\CMakeScratch\\TryCompile-tv4j8j\\cmTC_a2a3b.vcxproj" (default targets).
+        
+        Build succeeded.
+        
+        "C:\\Projects\\Lina\\LinaEngine\\Dependencies\\fmt-7.0.3\\test\\CMakeFiles\\CMakeScratch\\TryCompile-tv4j8j\\cmTC_a2a3b.vcxproj" (default target) (1) ->
+        (ClCompile target) -> 
+          cl : command line  warning D9002: ignoring unknown option '-std=c++0x' [C:\\Projects\\Lina\\LinaEngine\\Dependencies\\fmt-7.0.3\\test\\CMakeFiles\\CMakeScratch\\TryCompile-tv4j8j\\cmTC_a2a3b.vcxproj]
+        
+            1 Warning(s)
+            0 Error(s)
+        
+        Time Elapsed 00:00:00.45
+        
+      exitCode: 0
+  -
+    kind: "try_compile-v1"
+    backtrace:
+      - "C:/Program Files/CMake/share/cmake-3.28/Modules/Internal/CheckSourceCompiles.cmake:101 (try_compile)"
+      - "C:/Program Files/CMake/share/cmake-3.28/Modules/CheckCXXSourceCompiles.cmake:52 (cmake_check_source_compiles)"
+      - "support/cmake/cxx14.cmake:52 (check_cxx_source_compiles)"
+      - "CMakeLists.txt:95 (include)"
+    checks:
+      - "Performing Test SUPPORTS_USER_DEFINED_LITERALS"
+    directories:
+      source: "C:/Projects/Lina/LinaEngine/Dependencies/fmt-7.0.3/test/CMakeFiles/CMakeScratch/TryCompile-1aahyf"
+      binary: "C:/Projects/Lina/LinaEngine/Dependencies/fmt-7.0.3/test/CMakeFiles/CMakeScratch/TryCompile-1aahyf"
+    cmakeVariables:
+      CMAKE_CXX_FLAGS: "/DWIN32 /D_WINDOWS /W3 /GR /EHsc"
+      CMAKE_CXX_FLAGS_DEBUG: "/MDd /Zi /Ob0 /Od /RTC1"
+      CMAKE_EXE_LINKER_FLAGS: "/machine:x64"
+      CMAKE_MODULE_PATH: "C:/Projects/Lina/LinaEngine/Dependencies/fmt-7.0.3/support/cmake"
+    buildResult:
+      variable: "SUPPORTS_USER_DEFINED_LITERALS"
+      cached: true
+      stdout: |
+        Change Dir: 'C:/Projects/Lina/LinaEngine/Dependencies/fmt-7.0.3/test/CMakeFiles/CMakeScratch/TryCompile-1aahyf'
+        
+        Run Build Command(s): "C:/Program Files/Microsoft Visual Studio/2022/Community/MSBuild/Current/Bin/amd64/MSBuild.exe" cmTC_121ef.vcxproj /p:Configuration=Debug /p:Platform=x64 /p:VisualStudioVersion=17.0 /v:n
+        MSBuild version 17.12.12+1cce77968 for .NET Framework
+        Build started 28/01/2025 20:54:04.
+        
+        Project "C:\\Projects\\Lina\\LinaEngine\\Dependencies\\fmt-7.0.3\\test\\CMakeFiles\\CMakeScratch\\TryCompile-1aahyf\\cmTC_121ef.vcxproj" on node 1 (default targets).
+        PrepareForBuild:
+          Creating directory "cmTC_121ef.dir\\Debug\\".
+          Structured output is enabled. The formatting of compiler diagnostics will reflect the error hierarchy. See https://aka.ms/cpp/structured-output for more details.
+          Creating directory "C:\\Projects\\Lina\\LinaEngine\\Dependencies\\fmt-7.0.3\\test\\CMakeFiles\\CMakeScratch\\TryCompile-1aahyf\\Debug\\".
+          Creating directory "cmTC_121ef.dir\\Debug\\cmTC_121ef.tlog\\".
+        InitializeBuildStatus:
+          Creating "cmTC_121ef.dir\\Debug\\cmTC_121ef.tlog\\unsuccessfulbuild" because "AlwaysCreate" was specified.
+          Touching "cmTC_121ef.dir\\Debug\\cmTC_121ef.tlog\\unsuccessfulbuild".
+        ClCompile:
+          C:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\VC\\Tools\\MSVC\\14.42.34433\\bin\\HostX64\\x64\\CL.exe /c /Zi /W3 /WX- /diagnostics:column /Od /Ob0 /D _MBCS /D WIN32 /D _WINDOWS /D SUPPORTS_USER_DEFINED_LITERALS /D "CMAKE_INTDIR=\\"Debug\\"" /Gm- /EHsc /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Zc:inline /GR /Fo"cmTC_121ef.dir\\Debug\\\\" /Fd"cmTC_121ef.dir\\Debug\\vc143.pdb" /external:W3 /Gd /TP /errorReport:queue "C:\\Projects\\Lina\\LinaEngine\\Dependencies\\fmt-7.0.3\\test\\CMakeFiles\\CMakeScratch\\TryCompile-1aahyf\\src.cxx"
+          Microsoft (R) C/C++ Optimizing Compiler Version 19.42.34436 for x64
+          Copyright (C) Microsoft Corporation.  All rights reserved.
+          cl /c /Zi /W3 /WX- /diagnostics:column /Od /Ob0 /D _MBCS /D WIN32 /D _WINDOWS /D SUPPORTS_USER_DEFINED_LITERALS /D "CMAKE_INTDIR=\\"Debug\\"" /Gm- /EHsc /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Zc:inline /GR /Fo"cmTC_121ef.dir\\Debug\\\\" /Fd"cmTC_121ef.dir\\Debug\\vc143.pdb" /external:W3 /Gd /TP /errorReport:queue "C:\\Projects\\Lina\\LinaEngine\\Dependencies\\fmt-7.0.3\\test\\CMakeFiles\\CMakeScratch\\TryCompile-1aahyf\\src.cxx"
+          src.cxx
+        Link:
+          C:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\VC\\Tools\\MSVC\\14.42.34433\\bin\\HostX64\\x64\\link.exe /ERRORREPORT:QUEUE /OUT:"C:\\Projects\\Lina\\LinaEngine\\Dependencies\\fmt-7.0.3\\test\\CMakeFiles\\CMakeScratch\\TryCompile-1aahyf\\Debug\\cmTC_121ef.exe" /INCREMENTAL /ILK:"cmTC_121ef.dir\\Debug\\cmTC_121ef.ilk" /NOLOGO kernel32.lib user32.lib gdi32.lib winspool.lib shell32.lib ole32.lib oleaut32.lib uuid.lib comdlg32.lib advapi32.lib /MANIFEST /MANIFESTUAC:"level='asInvoker' uiAccess='false'" /manifest:embed /DEBUG /PDB:"C:/Projects/Lina/LinaEngine/Dependencies/fmt-7.0.3/test/CMakeFiles/CMakeScratch/TryCompile-1aahyf/Debug/cmTC_121ef.pdb" /SUBSYSTEM:CONSOLE /TLBID:1 /DYNAMICBASE /NXCOMPAT /IMPLIB:"C:/Projects/Lina/LinaEngine/Dependencies/fmt-7.0.3/test/CMakeFiles/CMakeScratch/TryCompile-1aahyf/Debug/cmTC_121ef.lib" /MACHINE:X64  /machine:x64 cmTC_121ef.dir\\Debug\\src.obj
+          cmTC_121ef.vcxproj -> C:\\Projects\\Lina\\LinaEngine\\Dependencies\\fmt-7.0.3\\test\\CMakeFiles\\CMakeScratch\\TryCompile-1aahyf\\Debug\\cmTC_121ef.exe
+        FinalizeBuildStatus:
+          Deleting file "cmTC_121ef.dir\\Debug\\cmTC_121ef.tlog\\unsuccessfulbuild".
+          Touching "cmTC_121ef.dir\\Debug\\cmTC_121ef.tlog\\cmTC_121ef.lastbuildstate".
+        Done Building Project "C:\\Projects\\Lina\\LinaEngine\\Dependencies\\fmt-7.0.3\\test\\CMakeFiles\\CMakeScratch\\TryCompile-1aahyf\\cmTC_121ef.vcxproj" (default targets).
+        
+        Build succeeded.
+            0 Warning(s)
+            0 Error(s)
+        
+        Time Elapsed 00:00:00.44
+        
+      exitCode: 0
+  -
+    kind: "try_compile-v1"
+    backtrace:
+      - "C:/Program Files/CMake/share/cmake-3.28/Modules/Internal/CheckSourceCompiles.cmake:101 (try_compile)"
+      - "C:/Program Files/CMake/share/cmake-3.28/Modules/CheckCXXSourceCompiles.cmake:52 (cmake_check_source_compiles)"
+      - "support/cmake/cxx14.cmake:62 (check_cxx_source_compiles)"
+      - "CMakeLists.txt:95 (include)"
+    checks:
+      - "Performing Test FMT_HAS_VARIANT"
+    directories:
+      source: "C:/Projects/Lina/LinaEngine/Dependencies/fmt-7.0.3/test/CMakeFiles/CMakeScratch/TryCompile-pio4l4"
+      binary: "C:/Projects/Lina/LinaEngine/Dependencies/fmt-7.0.3/test/CMakeFiles/CMakeScratch/TryCompile-pio4l4"
+    cmakeVariables:
+      CMAKE_CXX_FLAGS: "/DWIN32 /D_WINDOWS /W3 /GR /EHsc"
+      CMAKE_CXX_FLAGS_DEBUG: "/MDd /Zi /Ob0 /Od /RTC1"
+      CMAKE_EXE_LINKER_FLAGS: "/machine:x64"
+      CMAKE_MODULE_PATH: "C:/Projects/Lina/LinaEngine/Dependencies/fmt-7.0.3/support/cmake"
+    buildResult:
+      variable: "FMT_HAS_VARIANT"
+      cached: true
+      stdout: |
+        Change Dir: 'C:/Projects/Lina/LinaEngine/Dependencies/fmt-7.0.3/test/CMakeFiles/CMakeScratch/TryCompile-pio4l4'
+        
+        Run Build Command(s): "C:/Program Files/Microsoft Visual Studio/2022/Community/MSBuild/Current/Bin/amd64/MSBuild.exe" cmTC_84810.vcxproj /p:Configuration=Debug /p:Platform=x64 /p:VisualStudioVersion=17.0 /v:n
+        MSBuild version 17.12.12+1cce77968 for .NET Framework
+        Build started 28/01/2025 20:54:05.
+        
+        Project "C:\\Projects\\Lina\\LinaEngine\\Dependencies\\fmt-7.0.3\\test\\CMakeFiles\\CMakeScratch\\TryCompile-pio4l4\\cmTC_84810.vcxproj" on node 1 (default targets).
+        PrepareForBuild:
+          Creating directory "cmTC_84810.dir\\Debug\\".
+          Structured output is enabled. The formatting of compiler diagnostics will reflect the error hierarchy. See https://aka.ms/cpp/structured-output for more details.
+          Creating directory "C:\\Projects\\Lina\\LinaEngine\\Dependencies\\fmt-7.0.3\\test\\CMakeFiles\\CMakeScratch\\TryCompile-pio4l4\\Debug\\".
+          Creating directory "cmTC_84810.dir\\Debug\\cmTC_84810.tlog\\".
+        InitializeBuildStatus:
+          Creating "cmTC_84810.dir\\Debug\\cmTC_84810.tlog\\unsuccessfulbuild" because "AlwaysCreate" was specified.
+          Touching "cmTC_84810.dir\\Debug\\cmTC_84810.tlog\\unsuccessfulbuild".
+        ClCompile:
+          C:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\VC\\Tools\\MSVC\\14.42.34433\\bin\\HostX64\\x64\\CL.exe /c /Zi /W3 /WX- /diagnostics:column /Od /Ob0 /D _MBCS /D WIN32 /D _WINDOWS /D FMT_HAS_VARIANT /D "CMAKE_INTDIR=\\"Debug\\"" /Gm- /EHsc /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Zc:inline /GR /Fo"cmTC_84810.dir\\Debug\\\\" /Fd"cmTC_84810.dir\\Debug\\vc143.pdb" /external:W3 /Gd /TP /errorReport:queue  -std=c++1z "C:\\Projects\\Lina\\LinaEngine\\Dependencies\\fmt-7.0.3\\test\\CMakeFiles\\CMakeScratch\\TryCompile-pio4l4\\src.cxx"
+          Microsoft (R) C/C++ Optimizing Compiler Version 19.42.34436 for x64
+          Copyright (C) Microsoft Corporation.  All rights reserved.
+          cl /c /Zi /W3 /WX- /diagnostics:column /Od /Ob0 /D _MBCS /D WIN32 /D _WINDOWS /D FMT_HAS_VARIANT /D "CMAKE_INTDIR=\\"Debug\\"" /Gm- /EHsc /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Zc:inline /GR /Fo"cmTC_84810.dir\\Debug\\\\" /Fd"cmTC_84810.dir\\Debug\\vc143.pdb" /external:W3 /Gd /TP /errorReport:queue  -std=c++1z "C:\\Projects\\Lina\\LinaEngine\\Dependencies\\fmt-7.0.3\\test\\CMakeFiles\\CMakeScratch\\TryCompile-pio4l4\\src.cxx"
+        cl : command line  warning D9002: ignoring unknown option '-std=c++1z' [C:\\Projects\\Lina\\LinaEngine\\Dependencies\\fmt-7.0.3\\test\\CMakeFiles\\CMakeScratch\\TryCompile-pio4l4\\cmTC_84810.vcxproj]
+          src.cxx
+        C:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\VC\\Tools\\MSVC\\14.42.34433\\include\\variant(12): warning STL4038: The contents of <variant> are available only with C++17 or later. [C:\\Projects\\Lina\\LinaEngine\\Dependencies\\fmt-7.0.3\\test\\CMakeFiles\\CMakeScratch\\TryCompile-pio4l4\\cmTC_84810.vcxproj]
+        Link:
+          C:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\VC\\Tools\\MSVC\\14.42.34433\\bin\\HostX64\\x64\\link.exe /ERRORREPORT:QUEUE /OUT:"C:\\Projects\\Lina\\LinaEngine\\Dependencies\\fmt-7.0.3\\test\\CMakeFiles\\CMakeScratch\\TryCompile-pio4l4\\Debug\\cmTC_84810.exe" /INCREMENTAL /ILK:"cmTC_84810.dir\\Debug\\cmTC_84810.ilk" /NOLOGO kernel32.lib user32.lib gdi32.lib winspool.lib shell32.lib ole32.lib oleaut32.lib uuid.lib comdlg32.lib advapi32.lib /MANIFEST /MANIFESTUAC:"level='asInvoker' uiAccess='false'" /manifest:embed /DEBUG /PDB:"C:/Projects/Lina/LinaEngine/Dependencies/fmt-7.0.3/test/CMakeFiles/CMakeScratch/TryCompile-pio4l4/Debug/cmTC_84810.pdb" /SUBSYSTEM:CONSOLE /TLBID:1 /DYNAMICBASE /NXCOMPAT /IMPLIB:"C:/Projects/Lina/LinaEngine/Dependencies/fmt-7.0.3/test/CMakeFiles/CMakeScratch/TryCompile-pio4l4/Debug/cmTC_84810.lib" /MACHINE:X64  /machine:x64 cmTC_84810.dir\\Debug\\src.obj
+          cmTC_84810.vcxproj -> C:\\Projects\\Lina\\LinaEngine\\Dependencies\\fmt-7.0.3\\test\\CMakeFiles\\CMakeScratch\\TryCompile-pio4l4\\Debug\\cmTC_84810.exe
+        FinalizeBuildStatus:
+          Deleting file "cmTC_84810.dir\\Debug\\cmTC_84810.tlog\\unsuccessfulbuild".
+          Touching "cmTC_84810.dir\\Debug\\cmTC_84810.tlog\\cmTC_84810.lastbuildstate".
+        Done Building Project "C:\\Projects\\Lina\\LinaEngine\\Dependencies\\fmt-7.0.3\\test\\CMakeFiles\\CMakeScratch\\TryCompile-pio4l4\\cmTC_84810.vcxproj" (default targets).
+        
+        Build succeeded.
+        
+        "C:\\Projects\\Lina\\LinaEngine\\Dependencies\\fmt-7.0.3\\test\\CMakeFiles\\CMakeScratch\\TryCompile-pio4l4\\cmTC_84810.vcxproj" (default target) (1) ->
+        (ClCompile target) -> 
+          cl : command line  warning D9002: ignoring unknown option '-std=c++1z' [C:\\Projects\\Lina\\LinaEngine\\Dependencies\\fmt-7.0.3\\test\\CMakeFiles\\CMakeScratch\\TryCompile-pio4l4\\cmTC_84810.vcxproj]
+          C:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\VC\\Tools\\MSVC\\14.42.34433\\include\\variant(12): warning STL4038: The contents of <variant> are available only with C++17 or later. [C:\\Projects\\Lina\\LinaEngine\\Dependencies\\fmt-7.0.3\\test\\CMakeFiles\\CMakeScratch\\TryCompile-pio4l4\\cmTC_84810.vcxproj]
+        
+            2 Warning(s)
+            0 Error(s)
+        
+        Time Elapsed 00:00:00.44
+        
+      exitCode: 0
+  -
+    kind: "try_compile-v1"
+    backtrace:
+      - "C:/Program Files/CMake/share/cmake-3.28/Modules/CheckSymbolExists.cmake:140 (try_compile)"
+      - "C:/Program Files/CMake/share/cmake-3.28/Modules/CheckSymbolExists.cmake:70 (__CHECK_SYMBOL_EXISTS_IMPL)"
+      - "CMakeLists.txt:174 (check_symbol_exists)"
+    checks:
+      - "Looking for _strtod_l"
+    directories:
+      source: "C:/Projects/Lina/LinaEngine/Dependencies/fmt-7.0.3/test/CMakeFiles/CMakeScratch/TryCompile-8rwlss"
+      binary: "C:/Projects/Lina/LinaEngine/Dependencies/fmt-7.0.3/test/CMakeFiles/CMakeScratch/TryCompile-8rwlss"
+    cmakeVariables:
+      CMAKE_CXX_FLAGS: "/DWIN32 /D_WINDOWS /W3 /GR /EHsc"
+      CMAKE_CXX_FLAGS_DEBUG: "/MDd /Zi /Ob0 /Od /RTC1"
+      CMAKE_EXE_LINKER_FLAGS: "/machine:x64"
+      CMAKE_MODULE_PATH: "C:/Projects/Lina/LinaEngine/Dependencies/fmt-7.0.3/support/cmake"
+    buildResult:
+      variable: "HAVE_STRTOD_L"
+      cached: true
+      stdout: |
+        Change Dir: 'C:/Projects/Lina/LinaEngine/Dependencies/fmt-7.0.3/test/CMakeFiles/CMakeScratch/TryCompile-8rwlss'
+        
+        Run Build Command(s): "C:/Program Files/Microsoft Visual Studio/2022/Community/MSBuild/Current/Bin/amd64/MSBuild.exe" cmTC_acb17.vcxproj /p:Configuration=Debug /p:Platform=x64 /p:VisualStudioVersion=17.0 /v:n
+        MSBuild version 17.12.12+1cce77968 for .NET Framework
+        Build started 28/01/2025 20:54:05.
+        
+        Project "C:\\Projects\\Lina\\LinaEngine\\Dependencies\\fmt-7.0.3\\test\\CMakeFiles\\CMakeScratch\\TryCompile-8rwlss\\cmTC_acb17.vcxproj" on node 1 (default targets).
+        PrepareForBuild:
+          Creating directory "cmTC_acb17.dir\\Debug\\".
+          Structured output is enabled. The formatting of compiler diagnostics will reflect the error hierarchy. See https://aka.ms/cpp/structured-output for more details.
+          Creating directory "C:\\Projects\\Lina\\LinaEngine\\Dependencies\\fmt-7.0.3\\test\\CMakeFiles\\CMakeScratch\\TryCompile-8rwlss\\Debug\\".
+          Creating directory "cmTC_acb17.dir\\Debug\\cmTC_acb17.tlog\\".
+        InitializeBuildStatus:
+          Creating "cmTC_acb17.dir\\Debug\\cmTC_acb17.tlog\\unsuccessfulbuild" because "AlwaysCreate" was specified.
+          Touching "cmTC_acb17.dir\\Debug\\cmTC_acb17.tlog\\unsuccessfulbuild".
+        ClCompile:
+          C:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\VC\\Tools\\MSVC\\14.42.34433\\bin\\HostX64\\x64\\CL.exe /c /Zi /W3 /WX- /diagnostics:column /Od /Ob0 /D _MBCS /D WIN32 /D _WINDOWS /D "CMAKE_INTDIR=\\"Debug\\"" /Gm- /EHsc /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Zc:inline /GR /Fo"cmTC_acb17.dir\\Debug\\\\" /Fd"cmTC_acb17.dir\\Debug\\vc143.pdb" /external:W3 /Gd /TP /errorReport:queue "C:\\Projects\\Lina\\LinaEngine\\Dependencies\\fmt-7.0.3\\test\\CMakeFiles\\CMakeScratch\\TryCompile-8rwlss\\CheckSymbolExists.cxx"
+          Microsoft (R) C/C++ Optimizing Compiler Version 19.42.34436 for x64
+          Copyright (C) Microsoft Corporation.  All rights reserved.
+          cl /c /Zi /W3 /WX- /diagnostics:column /Od /Ob0 /D _MBCS /D WIN32 /D _WINDOWS /D "CMAKE_INTDIR=\\"Debug\\"" /Gm- /EHsc /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Zc:inline /GR /Fo"cmTC_acb17.dir\\Debug\\\\" /Fd"cmTC_acb17.dir\\Debug\\vc143.pdb" /external:W3 /Gd /TP /errorReport:queue "C:\\Projects\\Lina\\LinaEngine\\Dependencies\\fmt-7.0.3\\test\\CMakeFiles\\CMakeScratch\\TryCompile-8rwlss\\CheckSymbolExists.cxx"
+          CheckSymbolExists.cxx
+        Link:
+          C:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\VC\\Tools\\MSVC\\14.42.34433\\bin\\HostX64\\x64\\link.exe /ERRORREPORT:QUEUE /OUT:"C:\\Projects\\Lina\\LinaEngine\\Dependencies\\fmt-7.0.3\\test\\CMakeFiles\\CMakeScratch\\TryCompile-8rwlss\\Debug\\cmTC_acb17.exe" /INCREMENTAL /ILK:"cmTC_acb17.dir\\Debug\\cmTC_acb17.ilk" /NOLOGO kernel32.lib user32.lib gdi32.lib winspool.lib shell32.lib ole32.lib oleaut32.lib uuid.lib comdlg32.lib advapi32.lib /MANIFEST /MANIFESTUAC:"level='asInvoker' uiAccess='false'" /manifest:embed /DEBUG /PDB:"C:/Projects/Lina/LinaEngine/Dependencies/fmt-7.0.3/test/CMakeFiles/CMakeScratch/TryCompile-8rwlss/Debug/cmTC_acb17.pdb" /SUBSYSTEM:CONSOLE /TLBID:1 /DYNAMICBASE /NXCOMPAT /IMPLIB:"C:/Projects/Lina/LinaEngine/Dependencies/fmt-7.0.3/test/CMakeFiles/CMakeScratch/TryCompile-8rwlss/Debug/cmTC_acb17.lib" /MACHINE:X64  /machine:x64 cmTC_acb17.dir\\Debug\\CheckSymbolExists.obj
+          cmTC_acb17.vcxproj -> C:\\Projects\\Lina\\LinaEngine\\Dependencies\\fmt-7.0.3\\test\\CMakeFiles\\CMakeScratch\\TryCompile-8rwlss\\Debug\\cmTC_acb17.exe
+        FinalizeBuildStatus:
+          Deleting file "cmTC_acb17.dir\\Debug\\cmTC_acb17.tlog\\unsuccessfulbuild".
+          Touching "cmTC_acb17.dir\\Debug\\cmTC_acb17.tlog\\cmTC_acb17.lastbuildstate".
+        Done Building Project "C:\\Projects\\Lina\\LinaEngine\\Dependencies\\fmt-7.0.3\\test\\CMakeFiles\\CMakeScratch\\TryCompile-8rwlss\\cmTC_acb17.vcxproj" (default targets).
+        
+        Build succeeded.
+            0 Warning(s)
+            0 Error(s)
+        
+        Time Elapsed 00:00:00.43
+        
+      exitCode: 0
+...

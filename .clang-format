@@ -14,7 +14,10 @@ NamespaceIndentation: All
 PointerAlignment: Left
 ReflowComments: true
 SortIncludes: false
+FixNamespaceComments: false
 Standard: Cpp11
 UseTab: Always
 AllowShortFunctionsOnASingleLine: false
+AllowShortBlocksOnASingleLine: true 
+AllowShortIfStatementsOnASingleLine: true 
 ...

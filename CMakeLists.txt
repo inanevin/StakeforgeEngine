@@ -27,109 +27,146 @@
 # SOFTWARE.
 #-------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
-cmake_minimum_required (VERSION 3.10...3.31)
+cmake_minimum_required (VERSION 4.0)
 
-project (Stakeforge)
+project (Game)
 
-set(CMAKE_CONFIGURATION_TYPES "Debug;DebugEditor;Release;ReleaseEditor;" CACHE STRING "" FORCE)
+set(CMAKE_CONFIGURATION_TYPES "Debug;Release;Profile;" CACHE STRING "" FORCE)
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
 
-if(APPLE)
-	# dylib's are treated as library on macOS.
-	set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
-
-	# dylib export settings.
-	set(CMAKE_CXX_VISIBILITY_PRESET hidden)
-	set(CMAKE_VISIBILITY_INLINES_HIDDEN 1)
-
-endif()
-
-set(CMAKE_SKIP_INSTALL_RULES ON)
-set(SFG_GAME_NAME "MyGameProject" CACHE STRING "Name of the game project")
-
 # ------------- COMPILE DEFINITIONS -------------
+
 add_compile_definitions($<$<CONFIG:Debug>:_ITERATOR_DEBUG_LEVEL=1>)
-add_compile_definitions($<$<CONFIG:Debug>:SFG_DEBUG>)
+add_compile_definitions($<$<CONFIG:Debug>:GAME_DEBUG>)
 
-add_compile_definitions($<$<CONFIG:DebugEditor>:_ITERATOR_DEBUG_LEVEL=1>)
-add_compile_definitions($<$<CONFIG:DebugEditor>:SFG_DEBUG>)
-add_compile_definitions($<$<CONFIG:DebugEditor>:SFG_EDITOR>)
-add_compile_definitions($<$<CONFIG:DebugEditor>:_DEBUG>)
-
-if(MSVC)
-    add_compile_options($<$<CONFIG:DebugEditor>:/MDd>)
-endif()
+add_compile_definitions($<$<CONFIG:Profile>:_ITERATOR_DEBUG_LEVEL=0>)
+add_compile_definitions($<$<CONFIG:Profile>:GAME_DEBUG>)
 
 add_compile_definitions($<$<CONFIG:Release>:_ITERATOR_DEBUG_LEVEL=0>)
 
-add_compile_definitions($<$<CONFIG:ReleaseEditor>:_ITERATOR_DEBUG_LEVEL=0>)
-add_compile_definitions($<$<CONFIG:ReleaseEditor>:SFG_EDITOR>)
-
-if(MSVC)
-    add_compile_options($<$<CONFIG:ReleaseEditor>:/MD>)
-endif()
-
-add_definitions(-DSFG_CONFIGURATION="$<CONFIGURATION>")
-add_definitions(-DSFG_APPNAME="${SFG_GAME_NAME}")
+add_definitions(-DGAME_CONFIGURATION="$<CONFIGURATION>")
 
 if (WIN32)
-    add_compile_definitions(SFG_PLATFORM_WINDOWS=1)
+    add_compile_definitions(GAME_PLATFORM_WINDOWS=1)
 endif()
 if(APPLE)
-    add_compile_definitions(SFG_PLATFORM_OSX=1)
+    add_compile_definitions(GAME_PLATFORM_OSX=1)
 endif()
 
 if (CMAKE_CXX_COMPILER_ID MATCHES "Clang")
-    add_compile_definitions(SFG_COMPILER_CLANG=1)
+    add_compile_definitions(GAME_COMPILER_CLANG=1)
 elseif (CMAKE_CXX_COMPILER_ID MATCHES "GNU")
-    add_compile_definitions(SFG_COMPILER_GNU=1)
+    add_compile_definitions(GAME_COMPILER_GNU=1)
 elseif (CMAKE_CXX_COMPILER_ID MATCHES "MSVC")
-    add_compile_definitions(SFG_COMPILER_MSVC=1)
+    add_compile_definitions(GAME_COMPILER_MSVC=1)
 else()
-    add_compile_definitions(SFG_COMPILER_UNKOWN=1)
+    add_compile_definitions(GAME_COMPILER_UNKOWN=1)
 endif()
 
-set(CMAKE_CXX_STANDARD 20)
+
+# ------------- LANGUAGE -------------
+
+set(CMAKE_CXX_STANDARD 23)
 set(CMAKE_CXX_STANDARD_REQUIRED YES)
 set(CMAKE_CXX_EXTENSIONS NO)
-set(CMAKE_XCODE_ATTRIBUTE_CLANG_CXX_LANGUAGE_STANDARD "c++20")
+set(CMAKE_XCODE_ATTRIBUTE_CLANG_CXX_LANGUAGE_STANDARD "c++23")
 set(CMAKE_SUPPRESS_REGENERATION true)
 
 if(MSVC)
-    # Dynamic runtime library
     add_definitions("/MP")
-
-	# Disable RTTI
-	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /GR-")
-
+    add_compile_options(/GR-)
 	add_compile_definitions(_SILENCE_ALL_MS_EXT_DEPRECATION_WARNINGS)
+endif()
+
+# ------------- SRC -------------
+
+file(GLOB SOURCES 
+src/common/*.cpp
+src/platform/*.cpp
+src/math/*.cpp
+src/io/*.cpp
+src/data/*.cpp
+src/memory/*.cpp
+src/serialization/*.cpp
+src/input/*.cpp
+src/gfx/*.cpp
+src/resources/*.cpp
+src/game/*.cpp
+src/game/gfx/*.cpp
+)
+
+file(GLOB HEADERS 
+src/common/*.hpp
+src/platform/*.hpp
+src/math/*.hpp
+src/io/*.hpp
+src/data/*.hpp
+src/memory/*.hpp
+src/input/*.hpp
+src/gfx/*.hpp
+src/gui/*.hpp
+src/resources/*.hpp
+src/game/*.hpp
+src/game/gfx/*.hpp
+src/vendor/stb/*.h
+)
+
+if(WIN32)
+file(GLOB PLATFORM_SOURCES 
+src/platform/win32/*.cpp
+)
+set(ICON ${PROJECT_SOURCE_DIR})
+
 endif()
 
 if(APPLE)
 
+set(ICON ${PROJECT_SOURCE_DIR})
+
 endif()
 
+# ------------- TARGET -------------
 
-set(CMAKE_CXX_FLAGS_DEBUGEDITOR "${CMAKE_CXX_FLAGS}")
-set(CMAKE_C_FLAGS_DEBUGEDITOR "${CMAKE_C_FLAGS}")
-set(CMAKE_EXE_LINKER_FLAGS_DEBUGEDITOR "${CMAKE_EXE_LINKER_FLAGS_DEBUG}")
-set(CMAKE_SHARED_LINKER_FLAGS_DEBUGEDITOR "${CMAKE_SHARED_LINKER_FLAGS_DEBUG}")
+if(WIN32)
+	add_executable(${PROJECT_NAME} WIN32 ${SOURCES} ${HEADERS} ${PLATFORM_HEADERS} ${PLATFORM_SOURCES} ${ICON})
+else()
+	add_executable(${PROJECT_NAME} MACOSX_BUNDLE ${SOURCES} ${HEADERS} ${PLATFORM_HEADERS} ${PLATFORM_SOURCES} ${ICON})
+endif()
+include(${CMAKE_SOURCE_DIR}/utils/cmake/executable_settings.cmake)
 
-set(CMAKE_CXX_FLAGS_RELEASEEDITOR "${CMAKE_CXX_FLAGS}")
-set(CMAKE_C_FLAGS_RELEASEEDITOR "${CMAKE_C_FLAGS}")
-set(CMAKE_EXE_LINKER_FLAGS_RELEASEEDITOR "${CMAKE_EXE_LINKER_FLAGS_RELEASE}")
-set(CMAKE_SHARED_LINKER_FLAGS_RELEASEEDITOR "${CMAKE_SHARED_LINKER_FLAGS_RELEASE}")
+target_include_directories(${PROJECT_NAME} PUBLIC ${PROJECT_SOURCE_DIR}/src)
+target_include_directories(${PROJECT_NAME} PRIVATE ${PROJECT_SOURCE_DIR}/deps/phmap/include)
 
+# ------------- DEPS -------------
+add_subdirectory(deps/glm-0.9.9.8/glm)
+add_subdirectory(deps/lz4-1.9.4)
+add_subdirectory(deps/fmt-7.0.3)
 
-#--------------------------------------------------------------------
-# Sub directories
-#--------------------------------------------------------------------
+set(LINAGX_RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin/$<CONFIGURATION>/")
+add_subdirectory(deps/LinaGX-1.1.0)
 
-add_subdirectory(StakeforgeSDK)
-add_subdirectory(StakeforgeEditor)
-add_subdirectory(StakeforgeGame)
+target_link_libraries(${PROJECT_NAME} 
+PUBLIC lz4
+PUBLIC fmt
+PUBLIC glm_static
+PUBLIC Lina::GX
+)
+
+set_target_properties(lz4 PROPERTIES FOLDER "Dependencies")
+set_target_properties(fmt PROPERTIES FOLDER "Dependencies")
+set_target_properties(glm_static PROPERTIES FOLDER "Dependencies")
+set_target_properties(LinaGX PROPERTIES FOLDER "Dependencies")
+
+add_custom_command(
+TARGET ${PROJECT_NAME}
+POST_BUILD
+COMMAND ${CMAKE_COMMAND} -E copy_directory "${CMAKE_CURRENT_SOURCE_DIR}/assets" "${CMAKE_BINARY_DIR}/bin/$<CONFIGURATION>/assets")
+
+include(${CMAKE_SOURCE_DIR}/utils/cmake/common_functions.cmake)
+group_sources(HEADERS SOURCES PLATFORM_HEADERS PLATFORM_SOURCES)
+group_generated()
 
 set_property(GLOBAL PROPERTY USE_FOLDERS ON)
 set_property(GLOBAL PROPERTY PREDEFINED_TARGETS_FOLDER "CustomTargets")
-set_property(DIRECTORY ${CMAKE_SOURCE_DIR} PROPERTY VS_STARTUP_PROJECT ${SFG_GAME_NAME})
+set_property(DIRECTORY ${CMAKE_SOURCE_DIR} PROPERTY VS_STARTUP_PROJECT ${PROJECT_NAME})
 
