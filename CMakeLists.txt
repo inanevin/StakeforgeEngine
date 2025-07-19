@@ -90,6 +90,8 @@ src/memory/*.cpp
 src/serialization/*.cpp
 src/input/*.cpp
 src/gfx/*.cpp
+src/gfx/backend/*.cpp
+src/gfx/common/*.cpp
 src/resources/*.cpp
 src/game/*.cpp
 src/game/gfx/*.cpp
@@ -104,6 +106,8 @@ src/data/*.hpp
 src/memory/*.hpp
 src/input/*.hpp
 src/gfx/*.hpp
+src/gfx/backend/*.hpp
+src/gfx/common/*.hpp
 src/gui/*.hpp
 src/resources/*.hpp
 src/game/*.hpp
@@ -114,6 +118,19 @@ src/vendor/stb/*.h
 if(WIN32)
 file(GLOB PLATFORM_SOURCES 
 src/platform/win32/*.cpp
+src/gfx/backend/dx12/*.cpp
+src/gfx/backend/dx12/sdk/*.cpp
+src/gfx/backend/dx12/sdk/*.c
+src/gfx/backend/dx12/sdk/Residency/*.cpp
+src/gfx/backend/dx12/sdk/Residency/*.c
+)
+
+file(GLOB PLATFORM_HEADERS
+src/gfx/backend/dx12/*.hpp
+src/gfx/backend/dx12/sdk/*.hpp
+src/gfx/backend/dx12/sdk/*.h
+src/gfx/backend/dx12/sdk/Residency/*.hpp
+src/gfx/backend/dx12/sdk/Residency/*.h
 )
 set(ICON ${PROJECT_SOURCE_DIR})
 

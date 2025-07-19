@@ -73,7 +73,7 @@ namespace Game
 	{
 		LinaGX::set_instance(new LinaGX::Instance());
 		LinaGX::Config.api			   = LinaGX::BackendAPI::Vulkan;
-		LinaGX::Config.backbufferCount = 3;
+		LinaGX::Config.backbufferCount = BACK_BUFFER_COUNT;
 		LinaGX::Config.framesInFlight  = FRAMES_IN_FLIGHT;
 		LinaGX::Config.errorCallback   = LinaGX_ErrorCallback;
 		LinaGX::Config.infoCallback	   = LinaGX_LogCallback;

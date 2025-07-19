@@ -600,7 +600,8 @@ namespace LinaGX
 
 	D3D12_FILTER GetDXFilter(Filter minFilter, Filter magFilter)
 	{
-		if (minFilter == Filter::Anisotropic || magFilter == Filter::Anisotropic) return D3D12_FILTER_ANISOTROPIC;
+		if (minFilter == Filter::Anisotropic || magFilter == Filter::Anisotropic)
+			return D3D12_FILTER_ANISOTROPIC;
 
 		if (minFilter == Filter::Linear && magFilter == Filter::Linear)
 			return D3D12_FILTER_MIN_MAG_MIP_LINEAR;
@@ -641,7 +642,8 @@ namespace LinaGX
 			return D3D12_RESOURCE_STATE_DEPTH_WRITE;
 		case LinaGX::TextureState::ShaderRead: {
 			D3D12_RESOURCE_STATES state = D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE;
-			if (txtFlags & TextureFlags::TF_SampleOutsideFragment) state |= D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE;
+			if (txtFlags & TextureFlags::TF_SampleOutsideFragment)
+				state |= D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE;
 			return state;
 		}
 		case LinaGX::TextureState::DepthRead:
@@ -693,12 +695,18 @@ namespace LinaGX
 	{
 		if (pDesc != NULL)
 		{
-			if (severity == D3D12_MESSAGE_SEVERITY_MESSAGE) { LOGT("Backend -> %s", pDesc); }
+			if (severity == D3D12_MESSAGE_SEVERITY_MESSAGE)
+			{
+				LOGT("Backend -> %s", pDesc);
+			}
 			else if (severity == D3D12_MESSAGE_SEVERITY_INFO)
 			{
 				// LOGV("Backend -> %s", pDesc);
 			}
-			else { LOGE("Backend -> %s", pDesc); }
+			else
+			{
+				LOGE("Backend -> %s", pDesc);
+			}
 		}
 	}
 
@@ -721,11 +729,14 @@ namespace LinaGX
 					DXGI_ADAPTER_DESC1 desc;
 					adapter->GetDesc1(&desc);
 
-					if (desc.Flags & DXGI_ADAPTER_FLAG_SOFTWARE) continue;
+					if (desc.Flags & DXGI_ADAPTER_FLAG_SOFTWARE)
+						continue;
 
-					if (agressive && desc.VendorId != NVIDIA_VENDOR_ID && desc.VendorId != AMD_VENDOR_ID && gpuType == PreferredGPUType::Discrete) continue;
+					if (agressive && desc.VendorId != NVIDIA_VENDOR_ID && desc.VendorId != AMD_VENDOR_ID && gpuType == PreferredGPUType::Discrete)
+						continue;
 
-					if (agressive && (desc.VendorId == NVIDIA_VENDOR_ID || desc.VendorId == AMD_VENDOR_ID) && gpuType == PreferredGPUType::Integrated) continue;
+					if (agressive && (desc.VendorId == NVIDIA_VENDOR_ID || desc.VendorId == AMD_VENDOR_ID) && gpuType == PreferredGPUType::Integrated)
+						continue;
 
 					// Check to see whether the adapter supports Direct3D 12, but don't create the
 					// actual device yet.
@@ -744,7 +755,8 @@ namespace LinaGX
 
 		findDevice(true);
 
-		if (adapter.Get() == nullptr) findDevice(false);
+		if (adapter.Get() == nullptr)
+			findDevice(false);
 
 		if (adapter.Get() == nullptr)
 		{
@@ -814,7 +826,8 @@ namespace LinaGX
 
 		ComPtr<IDXGISwapChain1> swapchain;
 
-		if (m_allowTearing) swapchainDesc.Flags |= DXGI_SWAP_CHAIN_FLAG_ALLOW_TEARING;
+		if (m_allowTearing)
+			swapchainDesc.Flags |= DXGI_SWAP_CHAIN_FLAG_ALLOW_TEARING;
 
 		try
 		{
@@ -907,7 +920,8 @@ namespace LinaGX
 
 	void DX12Backend::RecreateSwapchain(const SwapchainRecreateDesc& desc)
 	{
-		if (desc.width == 0 || desc.height == 0) return;
+		if (desc.width == 0 || desc.height == 0)
+			return;
 
 		Join();
 
@@ -1056,7 +1070,10 @@ namespace LinaGX
 			ComPtr<IDxcBlobWide> outputName;
 			result->GetOutput(DXC_OUT_ERRORS, IID_PPV_ARGS(errors.GetAddressOf()), nullptr);
 
-			if (errors && errors->GetStringLength() > 0) { LOGE("Backend -> %s", (char*)errors->GetStringPointer()); }
+			if (errors && errors->GetStringLength() > 0)
+			{
+				LOGE("Backend -> %s", (char*)errors->GetStringPointer());
+			}
 
 			result->GetStatus(&hr);
 
@@ -1121,7 +1138,8 @@ namespace LinaGX
 			CD3DX12_ROOT_PARAMETER1 param	   = CD3DX12_ROOT_PARAMETER1{};
 			CD3DX12_ROOT_PARAMETER1 param2	   = CD3DX12_ROOT_PARAMETER1{};
 			D3D12_SHADER_VISIBILITY visibility = D3D12_SHADER_VISIBILITY_ALL;
-			if (binding.stages.size() == 1) visibility = GetDXVisibility(binding.stages[0]);
+			if (binding.stages.size() == 1)
+				visibility = GetDXVisibility(binding.stages[0]);
 
 			DX12RootParamInfo paramInfo = {};
 			paramInfo.rootParameter		= static_cast<uint32>(rootParameters.size());
@@ -1223,7 +1241,10 @@ namespace LinaGX
 					shader.isCompute = true;
 					break;
 				}
-				else { LOGA(false, "Shader contains a compute stage but that is not the only stage, which is forbidden!"); }
+				else
+				{
+					LOGA(false, "Shader contains a compute stage but that is not the only stage, which is forbidden!");
+				}
 			}
 		}
 
@@ -1271,7 +1292,8 @@ namespace LinaGX
 			auto containsStage = [](LINAGX_VEC<ShaderStage>& vec, ShaderStage target) {
 				for (auto stg : vec)
 				{
-					if (stg == target) return true;
+					if (stg == target)
+						return true;
 				}
 
 				return false;
@@ -1290,12 +1312,14 @@ namespace LinaGX
 				{
 					for (auto stg : ct.stages)
 					{
-						if (!containsStage) stages.push_back(stg);
+						if (!containsStage)
+							stages.push_back(stg);
 					}
 				}
 
 				D3D12_SHADER_VISIBILITY visibility = D3D12_SHADER_VISIBILITY_ALL;
-				if (stages.size() == 1) visibility = GetDXVisibility(stages[0]);
+				if (stages.size() == 1)
+					visibility = GetDXVisibility(stages[0]);
 
 				DX12RootParamInfo paramInfo = {};
 				paramInfo.rootParameter		= static_cast<uint32>(rootParameters.size());
@@ -1455,7 +1479,8 @@ namespace LinaGX
 		// Describe and create the graphics pipeline state object (PSO).
 		D3D12_GRAPHICS_PIPELINE_STATE_DESC psoDesc = {};
 
-		if (!inputLayout.empty()) psoDesc.InputLayout = {&inputLayout[0], static_cast<UINT>(inputLayout.size())};
+		if (!inputLayout.empty())
+			psoDesc.InputLayout = {&inputLayout[0], static_cast<UINT>(inputLayout.size())};
 
 		D3D12_BLEND_DESC blendDesc		 = CD3DX12_BLEND_DESC(D3D12_DEFAULT);
 		blendDesc.AlphaToCoverageEnable	 = shaderDesc.alphaToCoverage;
@@ -1546,7 +1571,10 @@ namespace LinaGX
 				psoDesc.DS.pShaderBytecode = byteCode;
 				psoDesc.DS.BytecodeLength  = length;
 			}
-			else if (stg == ShaderStage::Compute) { LOGA(false, "!!"); }
+			else if (stg == ShaderStage::Compute)
+			{
+				LOGA(false, "!!");
+			}
 		}
 
 		try
@@ -1586,9 +1614,15 @@ namespace LinaGX
 
 	uint32 DX12Backend::CreateTexture(const TextureDesc& txtDesc)
 	{
-		if (txtDesc.type == TextureType::Texture3D && txtDesc.arrayLength != 1) { LOGA(false, "Backend -> Array length needs to be 1 for 3D textures!"); }
+		if (txtDesc.type == TextureType::Texture3D && txtDesc.arrayLength != 1)
+		{
+			LOGA(false, "Backend -> Array length needs to be 1 for 3D textures!");
+		}
 
-		if ((txtDesc.flags & TextureFlags::TF_Cubemap) && txtDesc.arrayLength != 6) { LOGA(false, "Backend -> Array length needs to be 6 for Cubemap textures!"); }
+		if ((txtDesc.flags & TextureFlags::TF_Cubemap) && txtDesc.arrayLength != 6)
+		{
+			LOGA(false, "Backend -> Array length needs to be 6 for Cubemap textures!");
+		}
 
 		if ((txtDesc.flags & TextureFlags::TF_ColorAttachment) && ((txtDesc.flags & TextureFlags::TF_DepthTexture) || (txtDesc.flags & TextureFlags::TF_StencilTexture)))
 		{
@@ -1631,11 +1665,14 @@ namespace LinaGX
 		auto				  colorClear = CD3DX12_CLEAR_VALUE(GetDXFormat(txtDesc.format), cc);
 		item.state						 = state;
 
-		if ((txtDesc.flags & TextureFlags::TF_DepthTexture) || (txtDesc.flags & TextureFlags::TF_StencilTexture)) resourceDesc.Flags |= D3D12_RESOURCE_FLAG_ALLOW_DEPTH_STENCIL;
+		if ((txtDesc.flags & TextureFlags::TF_DepthTexture) || (txtDesc.flags & TextureFlags::TF_StencilTexture))
+			resourceDesc.Flags |= D3D12_RESOURCE_FLAG_ALLOW_DEPTH_STENCIL;
 
-		if ((txtDesc.flags & TextureFlags::TF_ColorAttachment)) resourceDesc.Flags |= D3D12_RESOURCE_FLAG_ALLOW_RENDER_TARGET;
+		if ((txtDesc.flags & TextureFlags::TF_ColorAttachment))
+			resourceDesc.Flags |= D3D12_RESOURCE_FLAG_ALLOW_RENDER_TARGET;
 
-		if (txtDesc.samples == 1 && !(txtDesc.flags & TextureFlags::TF_Sampled) && !(txtDesc.flags & TextureFlags::TF_SampleOutsideFragment)) resourceDesc.Flags |= D3D12_RESOURCE_FLAG_DENY_SHADER_RESOURCE;
+		if (txtDesc.samples == 1 && !(txtDesc.flags & TextureFlags::TF_Sampled) && !(txtDesc.flags & TextureFlags::TF_SampleOutsideFragment))
+			resourceDesc.Flags |= D3D12_RESOURCE_FLAG_DENY_SHADER_RESOURCE;
 
 		// if (txtDesc.usage == TextureUsage::DepthStencilTexture)
 		// {
@@ -1795,7 +1832,10 @@ namespace LinaGX
 				depthStencilDesc.Texture2DArray.FirstArraySlice = baseArrayLayer;
 				depthStencilDesc.Texture2DArray.MipSlice		= baseMipLevel;
 			}
-			else if (txtDesc.type == TextureType::Texture3D) { LOGA(false, "Can't create a depth Texture 3D!"); }
+			else if (txtDesc.type == TextureType::Texture3D)
+			{
+				LOGA(false, "Can't create a depth Texture 3D!");
+			}
 
 			m_device->CreateDepthStencilView(item.allocation->GetResource(), &depthStencilDesc, {targetDescriptor.GetCPUHandle()});
 		};
@@ -1806,7 +1846,8 @@ namespace LinaGX
 
 			DXGI_FORMAT srvFormat = GetDXFormat(txtDesc.format);
 
-			if ((txtDesc.flags & TextureFlags::TF_DepthTexture) || (txtDesc.flags & TextureFlags::TF_StencilTexture)) srvFormat = GetDXFormat(txtDesc.depthStencilSampleFormat);
+			if ((txtDesc.flags & TextureFlags::TF_DepthTexture) || (txtDesc.flags & TextureFlags::TF_StencilTexture))
+				srvFormat = GetDXFormat(txtDesc.depthStencilSampleFormat);
 
 			for (size_t i = 0; i < txtDesc.views.size(); i++)
 			{
@@ -1828,7 +1869,8 @@ namespace LinaGX
 			for (size_t i = 0; i < txtDesc.views.size(); i++)
 			{
 				const auto& view = txtDesc.views[i];
-				if (view.isCubemap) continue;
+				if (view.isCubemap)
+					continue;
 
 				auto		 dsv			= m_dsvHeap->GetNewHeapHandle();
 				const uint32 baseLevel		= view.baseArrayLevel;
@@ -1847,7 +1889,8 @@ namespace LinaGX
 			for (size_t i = 0; i < txtDesc.views.size(); i++)
 			{
 				const auto& view = txtDesc.views[i];
-				if (view.isCubemap) continue;
+				if (view.isCubemap)
+					continue;
 
 				auto		 rtv			= m_rtvHeap->GetNewHeapHandle();
 				const uint32 baseLevel		= view.baseArrayLevel;
@@ -1880,7 +1923,10 @@ namespace LinaGX
 		for (const auto& srv : txt.srvs)
 			m_textureHeap->FreeHeapHandle(srv);
 
-		if (txt.isSwapchainTexture) { txt.rawRes.Reset(); }
+		if (txt.isSwapchainTexture)
+		{
+			txt.rawRes.Reset();
+		}
 
 		if (txt.allocation != NULL)
 		{
@@ -1934,7 +1980,8 @@ namespace LinaGX
 		const uint64 alignedSize = ALIGN_SIZE_POW(desc.size, D3D12_TEXTURE_DATA_PITCH_ALIGNMENT);
 		uint64		 finalSize	 = desc.size;
 
-		if (desc.typeHintFlags & TH_ConstantBuffer) finalSize = alignedSize;
+		if (desc.typeHintFlags & TH_ConstantBuffer)
+			finalSize = alignedSize;
 
 		DX12Resource item  = {};
 		item.heapType	   = desc.heapType;
@@ -1955,7 +2002,10 @@ namespace LinaGX
 		resourceDesc.Layout				 = D3D12_TEXTURE_LAYOUT_ROW_MAJOR;
 		resourceDesc.Flags				 = D3D12_RESOURCE_FLAG_NONE;
 
-		if (item.isGPUWritable) { resourceDesc.Flags |= D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS; }
+		if (item.isGPUWritable)
+		{
+			resourceDesc.Flags |= D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS;
+		}
 
 		ResourceHeap usedHeapType = desc.heapType;
 
@@ -1999,7 +2049,8 @@ namespace LinaGX
 
 		try
 		{
-			if (!item.cpuVisibleResource) ThrowIfFailed(m_dx12Allocator->CreateResource(&allocationDesc, &resourceDesc, state, NULL, &item.allocation, IID_NULL, NULL));
+			if (!item.cpuVisibleResource)
+				ThrowIfFailed(m_dx12Allocator->CreateResource(&allocationDesc, &resourceDesc, state, NULL, &item.allocation, IID_NULL, NULL));
 
 			item.descriptor = m_bufferHeap->GetNewHeapHandle();
 			item.state		= state;
@@ -2065,7 +2116,10 @@ namespace LinaGX
 				DX12_THROW(e, "Backend -> Failed mapping resource! {0}", e.what());
 			}
 		}
-		else if (item.heapType == ResourceHeap::GPUOnly) { LOGA(false, "Backend -> Can not map GPU Only resource!"); }
+		else if (item.heapType == ResourceHeap::GPUOnly)
+		{
+			LOGA(false, "Backend -> Can not map GPU Only resource!");
+		}
 		else if (item.heapType == ResourceHeap::StagingHeap)
 		{
 			try
@@ -2086,7 +2140,8 @@ namespace LinaGX
 	{
 		auto& item = m_resources.GetItemR(handle);
 
-		if (!item.isMapped) return;
+		if (!item.isMapped)
+			return;
 
 		item.isMapped = false;
 
@@ -2113,7 +2168,8 @@ namespace LinaGX
 
 		m_bufferHeap->FreeHeapHandle(res.descriptor);
 
-		if (res.additionalDescriptor.IsValid()) m_bufferHeap->FreeHeapHandle(res.additionalDescriptor);
+		if (res.additionalDescriptor.IsValid())
+			m_bufferHeap->FreeHeapHandle(res.additionalDescriptor);
 
 		UnmapResource(handle);
 
@@ -2122,7 +2178,10 @@ namespace LinaGX
 			res.allocation->Release();
 			res.allocation = nullptr;
 		}
-		else if (res.heapType == ResourceHeap::CPUVisibleGPUMemory) { res.cpuVisibleResource.Reset(); }
+		else if (res.heapType == ResourceHeap::CPUVisibleGPUMemory)
+		{
+			res.cpuVisibleResource.Reset();
+		}
 
 		m_resources.RemoveItem(handle);
 	}
@@ -2250,14 +2309,10 @@ namespace LinaGX
 		LOGA(bindingData.lgxBinding.type == DescriptorType::CombinedImageSampler || bindingData.lgxBinding.type == DescriptorType::SeparateSampler || bindingData.lgxBinding.type == DescriptorType::SeparateImage,
 			 "Backend -> You can only use DescriptorUpdateImage with descriptors of type combined image sampler, separate image or separate sampler! Use DescriptorUpdateBuffer()");
 
-		LINAGX_VEC<D3D12_CPU_DESCRIPTOR_HANDLE> destDescriptorsTxt;
-		LINAGX_VEC<D3D12_CPU_DESCRIPTOR_HANDLE> destDescriptorsSampler;
-		LINAGX_VEC<D3D12_CPU_DESCRIPTOR_HANDLE> srcDescriptorsTxt;
-		LINAGX_VEC<D3D12_CPU_DESCRIPTOR_HANDLE> srcDescriptorsSampler;
-		destDescriptorsTxt.resize(txtDescriptorCount);
-		destDescriptorsSampler.resize(smpDescriptorCount);
-		srcDescriptorsTxt.resize(txtDescriptorCount);
-		srcDescriptorsSampler.resize(smpDescriptorCount);
+		_reuse_descriptors_txt.resize(txtDescriptorCount);
+		_reuse_descriptors_sampler.resize(smpDescriptorCount);
+		_reuse_descriptors_src_txt.resize(txtDescriptorCount);
+		_urese_descriptors_src_sampler.resize(smpDescriptorCount);
 
 		uint32 usedCount = 0;
 		if (bindingData.lgxBinding.type == DescriptorType::CombinedImageSampler || bindingData.lgxBinding.type == DescriptorType::SeparateImage)
@@ -2285,11 +2340,11 @@ namespace LinaGX
 						else
 							srcHandleTxt.ptr = res.srvs[desc.textureViewIndices[i]].GetCPUHandle();
 
-						srcDescriptorsTxt[i] = srcHandleTxt;
+						_reuse_descriptors_src_txt[i] = srcHandleTxt;
 
 						D3D12_CPU_DESCRIPTOR_HANDLE txtHandle;
-						txtHandle.ptr		  = binding.gpuPointer.GetCPUHandle() + i * m_gpuHeapBuffer->GetDescriptorSize();
-						destDescriptorsTxt[i] = txtHandle;
+						txtHandle.ptr			  = binding.gpuPointer.GetCPUHandle() + i * m_gpuHeapBuffer->GetDescriptorSize();
+						_reuse_descriptors_txt[i] = txtHandle;
 					}
 
 					if (bindingData.lgxBinding.type == DescriptorType::CombinedImageSampler || bindingData.lgxBinding.type == DescriptorType::SeparateSampler)
@@ -2298,8 +2353,8 @@ namespace LinaGX
 						const auto& srcSamplerDescriptorHandle = sampler.descriptor;
 
 						D3D12_CPU_DESCRIPTOR_HANDLE srcHandleSampler;
-						srcHandleSampler.ptr	 = srcSamplerDescriptorHandle.GetCPUHandle();
-						srcDescriptorsSampler[i] = srcHandleSampler;
+						srcHandleSampler.ptr			  = srcSamplerDescriptorHandle.GetCPUHandle();
+						_urese_descriptors_src_sampler[i] = srcHandleSampler;
 
 						D3D12_CPU_DESCRIPTOR_HANDLE samplerHandle;
 
@@ -2308,7 +2363,7 @@ namespace LinaGX
 						else
 							samplerHandle.ptr = binding.gpuPointer.GetCPUHandle() + i * m_samplerHeap->GetDescriptorSize();
 
-						destDescriptorsSampler[i] = samplerHandle;
+						_reuse_descriptors_sampler[i] = samplerHandle;
 					}
 				}
 				break;
@@ -2317,11 +2372,17 @@ namespace LinaGX
 
 		if (bindingData.lgxBinding.type == DescriptorType::CombinedImageSampler)
 		{
-			m_device->CopyDescriptors(usedCount, destDescriptorsTxt.data(), NULL, usedCount, srcDescriptorsTxt.data(), NULL, D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
-			m_device->CopyDescriptors(usedCount, destDescriptorsSampler.data(), NULL, usedCount, srcDescriptorsSampler.data(), NULL, D3D12_DESCRIPTOR_HEAP_TYPE_SAMPLER);
+			m_device->CopyDescriptors(usedCount, _reuse_descriptors_txt.data(), NULL, usedCount, _reuse_descriptors_src_txt.data(), NULL, D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
+			m_device->CopyDescriptors(usedCount, _reuse_descriptors_sampler.data(), NULL, usedCount, _urese_descriptors_src_sampler.data(), NULL, D3D12_DESCRIPTOR_HEAP_TYPE_SAMPLER);
 		}
-		else if (bindingData.lgxBinding.type == DescriptorType::SeparateImage) { m_device->CopyDescriptors(usedCount, destDescriptorsTxt.data(), NULL, usedCount, srcDescriptorsTxt.data(), NULL, D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV); }
-		else if (bindingData.lgxBinding.type == DescriptorType::SeparateSampler) { m_device->CopyDescriptors(usedCount, destDescriptorsSampler.data(), NULL, usedCount, srcDescriptorsSampler.data(), NULL, D3D12_DESCRIPTOR_HEAP_TYPE_SAMPLER); }
+		else if (bindingData.lgxBinding.type == DescriptorType::SeparateImage)
+		{
+			m_device->CopyDescriptors(usedCount, _reuse_descriptors_txt.data(), NULL, usedCount, _reuse_descriptors_src_txt.data(), NULL, D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
+		}
+		else if (bindingData.lgxBinding.type == DescriptorType::SeparateSampler)
+		{
+			m_device->CopyDescriptors(usedCount, _reuse_descriptors_sampler.data(), NULL, usedCount, _urese_descriptors_src_sampler.data(), NULL, D3D12_DESCRIPTOR_HEAP_TYPE_SAMPLER);
+		}
 	}
 
 	uint16 DX12Backend::CreatePipelineLayout(const PipelineLayoutDesc& desc)
@@ -2358,7 +2419,8 @@ namespace LinaGX
 			{
 				for (const auto& binding : setDesc.bindings)
 				{
-					if (binding.type == DescriptorType::UBO) maxBinding++;
+					if (binding.type == DescriptorType::UBO)
+						maxBinding++;
 				}
 
 				break;
@@ -2374,7 +2436,8 @@ namespace LinaGX
 		auto containsStage = [](LINAGX_VEC<ShaderStage>& vec, ShaderStage target) {
 			for (auto stg : vec)
 			{
-				if (stg == target) return true;
+				if (stg == target)
+					return true;
 			}
 
 			return false;
@@ -2394,12 +2457,14 @@ namespace LinaGX
 			{
 				for (auto stg : ct.stages)
 				{
-					if (!containsStage) stages.push_back(stg);
+					if (!containsStage)
+						stages.push_back(stg);
 				}
 			}
 
 			D3D12_SHADER_VISIBILITY visibility = D3D12_SHADER_VISIBILITY_ALL;
-			if (stages.size() == 1) visibility = GetDXVisibility(stages[0]);
+			if (stages.size() == 1)
+				visibility = GetDXVisibility(stages[0]);
 
 			DX12RootParamInfo paramInfo = {};
 			paramInfo.rootParameter		= static_cast<uint32>(rootParameters.size());
@@ -2564,7 +2629,10 @@ namespace LinaGX
 			try
 			{
 				HANDLE eventHandle = CreateEvent(nullptr, FALSE, FALSE, nullptr);
-				if (eventHandle == nullptr) { ThrowIfFailed(HRESULT_FROM_WIN32(GetLastError())); }
+				if (eventHandle == nullptr)
+				{
+					ThrowIfFailed(HRESULT_FROM_WIN32(GetLastError()));
+				}
 				else
 				{
 					ThrowIfFailed(fence->SetEventOnCompletion(frameFenceValue, eventHandle));
@@ -2596,7 +2664,10 @@ namespace LinaGX
 						// Enable additional debug layers.
 						dxgiFactoryFlags |= DXGI_CREATE_FACTORY_DEBUG;
 					}
-					else { LOGE("Backend -> Failed enabling debug layers!"); }
+					else
+					{
+						LOGE("Backend -> Failed enabling debug layers!");
+					}
 				}
 
 				ThrowIfFailed(CreateDXGIFactory2(dxgiFactoryFlags, IID_PPV_ARGS(&m_factory)));
@@ -2604,7 +2675,10 @@ namespace LinaGX
 				ComPtr<IDXGIFactory5> factory5;
 				HRESULT				  facres	   = m_factory.As(&factory5);
 				BOOL				  allowTearing = FALSE;
-				if (SUCCEEDED(facres)) { facres = factory5->CheckFeatureSupport(DXGI_FEATURE_PRESENT_ALLOW_TEARING, &allowTearing, sizeof(allowTearing)); }
+				if (SUCCEEDED(facres))
+				{
+					facres = factory5->CheckFeatureSupport(DXGI_FEATURE_PRESENT_ALLOW_TEARING, &allowTearing, sizeof(allowTearing));
+				}
 
 				m_allowTearing = SUCCEEDED(facres) && allowTearing && Config.dx12Config.allowTearing;
 			}
@@ -2620,7 +2694,10 @@ namespace LinaGX
 				// Dbg callback
 				{
 					ID3D12InfoQueue1* infoQueue = nullptr;
-					if (SUCCEEDED(m_device->QueryInterface<ID3D12InfoQueue1>(&infoQueue))) { infoQueue->RegisterMessageCallback(&MessageCallback, D3D12_MESSAGE_CALLBACK_IGNORE_FILTERS, nullptr, &msgCallback); }
+					if (SUCCEEDED(m_device->QueryInterface<ID3D12InfoQueue1>(&infoQueue)))
+					{
+						infoQueue->RegisterMessageCallback(&MessageCallback, D3D12_MESSAGE_CALLBACK_IGNORE_FILTERS, nullptr, &msgCallback);
+					}
 				}
 			}
 
@@ -2638,7 +2715,10 @@ namespace LinaGX
 			// DXC
 			{
 				HRESULT hr = DxcCreateInstance(CLSID_DxcLibrary, IID_PPV_ARGS(&s_idxcLib));
-				if (FAILED(hr)) { LOGE("Backend -> Failed to create DXC library!"); }
+				if (FAILED(hr))
+				{
+					LOGE("Backend -> Failed to create DXC library!");
+				}
 			}
 
 			// Queue
@@ -2685,7 +2765,10 @@ namespace LinaGX
 			{
 				NvU64		 totalBytes = 0, freeBytes = 0;
 				NvAPI_Status result = NvAPI_D3D12_QueryCpuVisibleVidmem(m_device.Get(), &totalBytes, &freeBytes);
-				if (result == NvAPI_Status::NVAPI_OK) { GPUInfo.totalCPUVisibleGPUMemorySize = freeBytes; }
+				if (result == NvAPI_Status::NVAPI_OK)
+				{
+					GPUInfo.totalCPUVisibleGPUMemorySize = freeBytes;
+				}
 
 				const uint32 last = static_cast<uint32>(Format::FORMAT_MAX);
 
@@ -2779,7 +2862,10 @@ namespace LinaGX
 		if (Config.enableAPIDebugLayers)
 		{
 			ID3D12InfoQueue1* infoQueue = nullptr;
-			if (SUCCEEDED(m_device->QueryInterface<ID3D12InfoQueue1>(&infoQueue))) { infoQueue->UnregisterMessageCallback(msgCallback); }
+			if (SUCCEEDED(m_device->QueryInterface<ID3D12InfoQueue1>(&infoQueue)))
+			{
+				infoQueue->UnregisterMessageCallback(msgCallback);
+			}
 		}
 
 		for (uint32 i = 0; i < Config.framesInFlight; i++)
@@ -2803,14 +2889,18 @@ namespace LinaGX
 
 	void DX12Backend::Join()
 	{
-		if (m_graphicsFencesDirty.load()) { IncreaseGraphicsFences(); }
+		if (m_graphicsFencesDirty.load())
+		{
+			IncreaseGraphicsFences();
+		}
 
 		for (uint32 i = 0; i < Config.framesInFlight; i++)
 		{
 			const auto& frame = m_perFrameData[i];
 			for (auto& q : m_queues)
 			{
-				if (!q.isValid || q.type != CommandType::Graphics) continue;
+				if (!q.isValid || q.type != CommandType::Graphics)
+					continue;
 
 				WaitForFences(q.frameFences[i].Get(), q.storedFenceValues[i]);
 			}
@@ -2857,7 +2947,8 @@ namespace LinaGX
 
 		for (auto& q : m_queues)
 		{
-			if (!q.isValid || q.type != CommandType::Graphics) continue;
+			if (!q.isValid || q.type != CommandType::Graphics)
+				continue;
 
 			WaitForFences(q.frameFences[m_currentFrameIndex].Get(), q.storedFenceValues[m_currentFrameIndex]);
 		}
@@ -2867,7 +2958,8 @@ namespace LinaGX
 		{
 			auto& cs = m_cmdStreams.GetItemR(i);
 
-			if (!cs.isValid) continue;
+			if (!cs.isValid)
+				continue;
 
 			for (auto it = cs.intermediateResources.begin(); it != cs.intermediateResources.end();)
 			{
@@ -2926,7 +3018,8 @@ namespace LinaGX
 			auto  list		= sr.list;
 			auto  allocator = sr.allocator;
 
-			if (stream->m_commandCount == 0) continue;
+			if (stream->m_commandCount == 0)
+				continue;
 
 			try
 			{
@@ -2937,7 +3030,8 @@ namespace LinaGX
 
 				if (sr.boundConstants.data != nullptr)
 				{
-					if (!sr.boundConstants.usesStreamAlloc) LINAGX_FREE(sr.boundConstants.data);
+					if (!sr.boundConstants.usesStreamAlloc)
+						LINAGX_FREE(sr.boundConstants.data);
 				}
 
 				sr.boundConstants = {};
@@ -2963,7 +3057,6 @@ namespace LinaGX
 				uint8*		 cmd	   = data + increment;
 				auto		 it		   = LINAGX_FIND_IF(m_cmdFunctions.begin(), m_cmdFunctions.end(), [tid](const LINAGX_PAIR<LINAGX_TYPEID, CommandFunction>& pair) -> bool { return pair.first == tid; });
 				(this->*(it->second))(cmd, sr);
-				// TODO: tids -> consecutive into arr
 			}
 
 			try
@@ -3009,7 +3102,8 @@ namespace LinaGX
 			queue.queue->ExecuteCommandLists(desc.streamCount, data);
 
 			// If "Join" is called without an EndFrame(), we need to make sure the graphics fence are bumped...
-			if (queue.type == CommandType::Graphics || !desc.standaloneSubmission) m_graphicsFencesDirty.store(true);
+			if (queue.type == CommandType::Graphics || !desc.standaloneSubmission)
+				m_graphicsFencesDirty.store(true);
 
 			if (desc.useSignal)
 			{
@@ -3017,7 +3111,8 @@ namespace LinaGX
 					queue.queue->Signal(m_userSemaphores.GetItem(desc.signalSemaphores[i]).ptr.Get(), desc.signalValues[i]);
 			}
 
-			if (!desc.standaloneSubmission) m_submissionPerFrame.store(m_submissionPerFrame + 1);
+			if (!desc.standaloneSubmission)
+				m_submissionPerFrame.store(m_submissionPerFrame + 1);
 		}
 		catch (HrException e)
 		{
@@ -3086,7 +3181,8 @@ namespace LinaGX
 		{
 			auto& swp = m_swapchains.GetItemR(present.swapchains[i]);
 
-			if (swp.width == 0 || swp.height == 0) continue;
+			if (swp.width == 0 || swp.height == 0)
+				continue;
 
 			if (!swp.isActive)
 			{
@@ -3112,21 +3208,6 @@ namespace LinaGX
 
 				ThrowIfFailed(swp.ptr->Present(interval, flags));
 				swp._imageIndex = swp.ptr->GetCurrentBackBufferIndex();
-
-				// DXGI_FRAME_STATISTICS FrameStatistics;
-				// swp.ptr->GetFrameStatistics(&FrameStatistics);
-				//
-				// if (FrameStatistics.PresentCount > m_previousPresentCount)
-				// {
-				//     if (m_previousRefreshCount > 0 && (FrameStatistics.PresentRefreshCount - m_previousRefreshCount) > (FrameStatistics.PresentCount - m_previousPresentCount))
-				//     {
-				//         ++m_glitchCount;
-				//         interval = 0;
-				//     }
-				// }
-				//
-				// m_previousPresentCount = FrameStatistics.PresentCount;
-				// m_previousRefreshCount = FrameStatistics.SyncRefreshCount;
 			}
 			catch (HrException& e)
 			{
@@ -3175,7 +3256,10 @@ namespace LinaGX
 			{
 				auto& txt = m_textures.GetItemR(att.texture);
 
-				if (!(txt.desc.flags & LinaGX::TextureFlags::TF_ColorAttachment)) { LOGE("Backend -> Texture being used as a color attachment does not have TF_ColorAttachment flag!"); }
+				if (!(txt.desc.flags & LinaGX::TextureFlags::TF_ColorAttachment))
+				{
+					LOGE("Backend -> Texture being used as a color attachment does not have TF_ColorAttachment flag!");
+				}
 
 				CD3DX12_CLEAR_VALUE cv;
 				cv.Format	= GetDXFormat(txt.desc.format);
@@ -3233,7 +3317,8 @@ namespace LinaGX
 			}
 		}
 
-		if (!msaaBarriers.empty()) stream.list->ResourceBarrier(static_cast<uint32>(msaaBarriers.size()), msaaBarriers.data());
+		if (!msaaBarriers.empty())
+			stream.list->ResourceBarrier(static_cast<uint32>(msaaBarriers.size()), msaaBarriers.data());
 
 		if (begin->depthStencilAttachment.useDepth || begin->depthStencilAttachment.useStencil)
 		{
@@ -3286,7 +3371,8 @@ namespace LinaGX
 			barriers.push_back(CD3DX12_RESOURCE_BARRIER::Transition(inf.resolveTarget, D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_RESOLVE_DEST));
 		}
 
-		if (!barriers.empty()) stream.list->ResourceBarrier(static_cast<uint32>(barriers.size()), barriers.data());
+		if (!barriers.empty())
+			stream.list->ResourceBarrier(static_cast<uint32>(barriers.size()), barriers.data());
 
 		LINAGX_VEC<D3D12_RESOURCE_BARRIER> postResolveBarriers;
 
@@ -3300,7 +3386,10 @@ namespace LinaGX
 			postResolveBarriers.push_back(CD3DX12_RESOURCE_BARRIER::Transition(info.resolveTarget, D3D12_RESOURCE_STATE_RESOLVE_DEST, D3D12_RESOURCE_STATE_RENDER_TARGET));
 		}
 
-		if (!postResolveBarriers.empty()) { stream.list->ResourceBarrier(static_cast<uint32>(postResolveBarriers.size()), postResolveBarriers.data()); }
+		if (!postResolveBarriers.empty())
+		{
+			stream.list->ResourceBarrier(static_cast<uint32>(postResolveBarriers.size()), postResolveBarriers.data());
+		}
 	}
 
 	void DX12Backend::CMD_SetViewport(uint8* data, DX12CommandStream& stream)
@@ -3333,7 +3422,8 @@ namespace LinaGX
 		for (uint32 i = 0; i < sz; i++)
 		{
 			auto& p = rootParams->at(i);
-			if (p.reflectionType == type && p.binding == binding && p.set == set) return &p;
+			if (p.reflectionType == type && p.binding == binding && p.set == set)
+				return &p;
 		}
 
 		return nullptr;
@@ -3345,7 +3435,8 @@ namespace LinaGX
 		{
 			DX12BoundDescriptorSet& setData = stream.bound_sets[index];
 
-			if (!setData.isDirty) continue;
+			if (!setData.isDirty)
+				continue;
 
 			setData.isDirty = false;
 
@@ -3357,7 +3448,8 @@ namespace LinaGX
 			{
 				DX12RootParamInfo* param = FindRootParam(&shader.layout.rootParams, binding.lgxBinding.type, binding.binding, index);
 
-				if (param == nullptr) continue;
+				if (param == nullptr)
+					continue;
 
 				// Absolutely verify that this binding is valid for the currently bound shader.
 				// E.g. Render Pass 1 ends with Shader0 bound.
@@ -3367,9 +3459,11 @@ namespace LinaGX
 				// if (binding.lgxBinding.unbounded && param->elementSize != 0)
 				//     layoutMatches = false;
 
-				if (!binding.lgxBinding.unbounded && param->elementSize != binding.lgxBinding.descriptorCount) layoutMatches = false;
+				if (!binding.lgxBinding.unbounded && param->elementSize != binding.lgxBinding.descriptorCount)
+					layoutMatches = false;
 
-				if (param->isWritable != binding.lgxBinding.isWritable) layoutMatches = false;
+				if (param->isWritable != binding.lgxBinding.isWritable)
+					layoutMatches = false;
 
 				if (!layoutMatches)
 				{
@@ -3420,10 +3514,12 @@ namespace LinaGX
 
 	void DX12Backend::BindConstants(DX12CommandStream& stream, DX12Shader& shader)
 	{
-		if (stream.boundConstants.data == nullptr || stream.boundConstants.size == 0) return;
+		if (stream.boundConstants.data == nullptr || stream.boundConstants.size == 0)
+			return;
 
 		DX12RootParamInfo* param = FindRootParam(&shader.layout.rootParams, DescriptorType::ConstantBlock, shader.layout.constantsBinding, shader.layout.constantsSpace);
-		if (param == nullptr) return;
+		if (param == nullptr)
+			return;
 
 		stream.list->SetGraphicsRoot32BitConstants(param->rootParameter, stream.boundConstants.size / sizeof(uint32), stream.boundConstants.data, stream.boundConstants.offset / sizeof(uint32));
 	}
@@ -3433,7 +3529,8 @@ namespace LinaGX
 		// Increase & signal, we'll wait for this value next time we are starting this frame index.
 		for (auto& q : m_queues)
 		{
-			if (!q.isValid || q.type != CommandType::Graphics) continue;
+			if (!q.isValid || q.type != CommandType::Graphics)
+				continue;
 
 			q.frameFenceValue++;
 			q.storedFenceValues[m_currentFrameIndex] = q.frameFenceValue;
@@ -3452,12 +3549,14 @@ namespace LinaGX
 
 		if (!shader.isCompute)
 		{
-			if (rootSigChanged) stream.list->SetGraphicsRootSignature(shader.layout.rootSig.Get());
+			if (rootSigChanged)
+				stream.list->SetGraphicsRootSignature(shader.layout.rootSig.Get());
 			stream.list->IASetPrimitiveTopology(GetDXTopology(shader.topology));
 		}
 		else
 		{
-			if (rootSigChanged) stream.list->SetComputeRootSignature(shader.layout.rootSig.Get());
+			if (rootSigChanged)
+				stream.list->SetComputeRootSignature(shader.layout.rootSig.Get());
 		}
 
 		stream.list->SetPipelineState(shader.pso.Get());
@@ -3672,11 +3771,13 @@ namespace LinaGX
 
 			for (const auto& b : set.bindings[data.setAllocIndex])
 			{
-				if (b.lgxBinding.useDynamicOffset) data.boundDynamicOffsets.push_back(cmd->dynamicOffsets[dynamicOffsetCounter++]);
+				if (b.lgxBinding.useDynamicOffset)
+					data.boundDynamicOffsets.push_back(cmd->dynamicOffsets[dynamicOffsetCounter++]);
 			}
 		}
 
-		if (stream.boundRootSignature != nullptr) BindDescriptorSets(stream, m_shaders.GetItemR(stream.boundShader));
+		if (stream.boundRootSignature != nullptr)
+			BindDescriptorSets(stream, m_shaders.GetItemR(stream.boundShader));
 	}
 
 	void DX12Backend::CMD_BindConstants(uint8* data, DX12CommandStream& stream)
@@ -3690,7 +3791,8 @@ namespace LinaGX
 
 		if (stream.boundConstants.data != nullptr)
 		{
-			if (!stream.boundConstants.usesStreamAlloc) LINAGX_FREE(stream.boundConstants.data);
+			if (!stream.boundConstants.usesStreamAlloc)
+				LINAGX_FREE(stream.boundConstants.data);
 		}
 
 		// If fits to alloc.
@@ -3709,7 +3811,8 @@ namespace LinaGX
 		stream.boundConstants.offset = cmd->offset;
 		stream.boundConstants.size	 = cmd->size;
 
-		if (stream.boundRootSignature == nullptr) return;
+		if (stream.boundRootSignature == nullptr)
+			return;
 
 		auto& shader = m_shaders.GetItemR(stream.boundShader);
 		BindConstants(stream, shader);
@@ -3749,9 +3852,11 @@ namespace LinaGX
 			auto  newState = GetDXTextureBarrierState(barrier.toState, txt.desc.flags);
 
 			// Will decay to common & promoted on first usage.
-			if (stream.type == CommandType::Transfer && newState != D3D12_RESOURCE_STATE_COPY_DEST && newState != D3D12_RESOURCE_STATE_COPY_SOURCE) continue;
+			if (stream.type == CommandType::Transfer && newState != D3D12_RESOURCE_STATE_COPY_DEST && newState != D3D12_RESOURCE_STATE_COPY_SOURCE)
+				continue;
 
-			if (newState == txt.state) continue;
+			if (newState == txt.state)
+				continue;
 
 			auto dxRes = txt.rawRes.Get() != nullptr ? txt.rawRes.Get() : txt.allocation->GetResource();
 			auto dxBar = CD3DX12_RESOURCE_BARRIER::Transition(dxRes, txt.state, newState);
@@ -3767,16 +3872,19 @@ namespace LinaGX
 			auto		newState = GetDXResourceBarrierState(barrier.toState);
 
 			// Will decay to common & promoted on first usage.
-			if (stream.type == CommandType::Transfer && newState != D3D12_RESOURCE_STATE_COPY_DEST && newState != D3D12_RESOURCE_STATE_COPY_SOURCE) continue;
+			if (stream.type == CommandType::Transfer && newState != D3D12_RESOURCE_STATE_COPY_DEST && newState != D3D12_RESOURCE_STATE_COPY_SOURCE)
+				continue;
 
-			if (newState == res.state) continue;
+			if (newState == res.state)
+				continue;
 
 			auto dxBar = CD3DX12_RESOURCE_BARRIER::Transition(dxRes, res.state, newState);
 			res.state  = newState;
 			_reuse_barriers.push_back(dxBar);
 		}
 
-		if (!_reuse_barriers.empty()) stream.list->ResourceBarrier(static_cast<UINT>(_reuse_barriers.size()), _reuse_barriers.data());
+		if (!_reuse_barriers.empty())
+			stream.list->ResourceBarrier(static_cast<UINT>(_reuse_barriers.size()), _reuse_barriers.data());
 	}
 
 	void DX12Backend::CMD_Debug(uint8* data, DX12CommandStream& stream)

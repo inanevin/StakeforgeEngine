@@ -22,6 +22,11 @@ namespace Game
 			return false;
 		}
 
+		template <typename T, class Predicate> inline vector<T>::const_iterator find_if(const vector<T>& vec, Predicate pred)
+		{
+			return std::find_if(vec.cbegin(), vec.cend(), pred);
+		}
+
 		template <typename T, class Predicate> inline vector<T>::iterator find_if(vector<T>& vec, Predicate pred)
 		{
 			return std::find_if(vec.begin(), vec.end(), pred);
@@ -38,7 +43,8 @@ namespace Game
 
 			for (int32 i = 0; i < sz; ++i)
 			{
-				if (vec[i] == value) return i;
+				if (vec[i] == value)
+					return i;
 			}
 
 			return -1;
@@ -50,7 +56,8 @@ namespace Game
 
 			if (currentIndex == 0)
 			{
-				if (vec.size() == 1) return -1;
+				if (vec.size() == 1)
+					return -1;
 
 				return 0;
 			}
@@ -82,7 +89,8 @@ namespace Game
 		{
 			for (const auto& v : vec)
 			{
-				if (v == data) return true;
+				if (v == data)
+					return true;
 			}
 
 			return false;

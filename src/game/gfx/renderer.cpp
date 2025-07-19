@@ -16,7 +16,10 @@ namespace Game
 		const LinaGX::FormatSupportInfo sup_swp = LinaGX::instance()->GetFormatSupport(LinaGX::Format::B8G8R8A8_SRGB);
 		const LinaGX::FormatSupportInfo sup_col = LinaGX::instance()->GetFormatSupport(LinaGX::Format::R8G8B8A8_SRGB);
 
-		if (sup_swp.format == LinaGX::Format::UNDEFINED || !sup_col.colorAttachment || !sup_col.sampled) { throw std::exception("GPU format support failed!"); }
+		if (sup_swp.format == LinaGX::Format::UNDEFINED || !sup_col.colorAttachment || !sup_col.sampled)
+		{
+			throw std::exception("GPU format support failed!");
+		}
 
 		_swapchain = LinaGX::instance()->CreateSwapchain({
 			.format	  = LinaGX::Format::B8G8R8A8_SRGB,
@@ -329,7 +332,8 @@ namespace Game
 
 	void renderer::on_window_resize(const vector2ui& size)
 	{
-		if (size.x == 0 || size.y == 0) return;
+		if (size.x == 0 || size.y == 0)
+			return;
 
 		join();
 		LinaGX::instance()->RecreateSwapchain({
@@ -388,8 +392,9 @@ namespace Game
 
 	void renderer::atlas_updated(vekt::atlas* atlas)
 	{
-		auto it = vector_util::find_if(_atlas_refs, [atlas](const atlas_ref& ref) { return ref.atlas == atlas; });
-		if (it == _atlas_refs.end()) return;
+		const auto it = vector_util::find_if(_atlas_refs, [atlas](const atlas_ref& ref) { return ref.atlas == atlas; });
+		if (it == _atlas_refs.end())
+			return;
 
 		LinaGX::TextureBuffer buffer = {
 			.pixels		   = atlas->get_data(),
@@ -431,9 +436,10 @@ namespace Game
 
 		if (buffer.used_font != nullptr)
 		{
-			shader	= buffer.used_font->type == vekt::font_type::normal ? _shader_gui_text.get_hw() : _shader_gui_sdf.get_hw();
-			auto it = vector_util::find_if(_atlas_refs, [&](const atlas_ref& ref) -> bool { return ref.atlas == buffer.used_font->_atlas; });
-			if (it != _atlas_refs.end()) descriptor = it->mat.get_hw() | (1u << 15);
+			shader		  = buffer.used_font->type == vekt::font_type::normal ? _shader_gui_text.get_hw() : _shader_gui_sdf.get_hw();
+			const auto it = vector_util::find_if(_atlas_refs, [&](const atlas_ref& ref) -> bool { return ref.atlas == buffer.used_font->_atlas; });
+			if (it != _atlas_refs.end())
+				descriptor = it->mat.get_hw() | (1u << 15);
 		}
 
 		_pass_debug_gui.add_indexed_draw({

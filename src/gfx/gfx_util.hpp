@@ -12,7 +12,8 @@ namespace Game
 	class gfx_util
 	{
 	public:
-		constexpr static unsigned int FRAMES_IN_FLIGHT = 2;
+		constexpr static unsigned int FRAMES_IN_FLIGHT	= 2;
+		constexpr static unsigned int BACK_BUFFER_COUNT = 3;
 
 		static void init();
 		static void uninit();

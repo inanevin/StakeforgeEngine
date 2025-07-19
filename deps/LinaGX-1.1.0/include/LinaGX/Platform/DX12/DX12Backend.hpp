@@ -346,6 +346,10 @@ namespace LinaGX
 		LINAGX_VEC<CD3DX12_RESOURCE_BARRIER>			 _reuse_barriers;
 		LINAGX_VEC<ID3D12CommandList*>					 _reuse_lists;
 		LINAGX_VEC<D3D12_RENDER_PASS_RENDER_TARGET_DESC> _reuse_color_attachments;
+		LINAGX_VEC<D3D12_CPU_DESCRIPTOR_HANDLE>			 _reuse_descriptors_txt;
+		LINAGX_VEC<D3D12_CPU_DESCRIPTOR_HANDLE>			 _reuse_descriptors_sampler;
+		LINAGX_VEC<D3D12_CPU_DESCRIPTOR_HANDLE>			 _reuse_descriptors_src_txt;
+		LINAGX_VEC<D3D12_CPU_DESCRIPTOR_HANDLE>			 _urese_descriptors_src_sampler;
 
 		std::atomic<uint32> m_submissionPerFrame  = 0;
 		std::atomic<bool>	m_graphicsFencesDirty = false;

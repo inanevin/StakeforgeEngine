@@ -3,7 +3,7 @@
 
 #include "gfx/buffer.hpp"
 #include "data/vector.hpp"
-#include "gfx/gfx_common.hpp"
+#include "gfx/common/gfx_common.hpp"
 
 namespace Game
 {

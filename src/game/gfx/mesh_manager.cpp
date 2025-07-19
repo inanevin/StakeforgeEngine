@@ -1,7 +1,7 @@
 // Copyright (c) 2025 Inan Evin
 #include "mesh_manager.hpp"
 #include "common/linagx_incl.hpp"
-#include "gfx/gfx_common.hpp"
+#include "gfx/common/gfx_common.hpp"
 
 namespace Game
 {
