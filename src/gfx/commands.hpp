@@ -293,13 +293,15 @@ namespace Game
 
 	enum barrier_flags
 	{
-		baf_is_resource = 1 << 0,
-		baf_is_texture	= 1 << 1,
+		baf_is_resource	 = 1 << 0,
+		baf_is_texture	 = 1 << 1,
+		baf_is_swapchain = 1 << 2,
 	};
 
 	struct barrier
 	{
 		resource_id	   resource	  = 0;
+		bitmask<uint8> flags	  = 0;
 		resource_state from_state = resource_state::common;
 		resource_state to_state	  = resource_state::common;
 	};

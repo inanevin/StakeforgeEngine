@@ -171,7 +171,8 @@ namespace Game
 	public:
 		void init();
 		void uninit();
-		void execute_commands(span<uint8> data, resource_id cmd_buffer);
+		void reset_command_buffer(resource_id cmd_buffer);
+		void close_command_buffer(resource_id cmd_buffer);
 		void submit_commands(resource_id queue, resource_id* commands, uint8 commands_count);
 		void queue_wait(resource_id queue, resource_id* semaphores, uint8 semaphore_count, uint64* semaphore_values);
 		void queue_signal(resource_id queue, resource_id* semaphores, uint8 semaphore_count, uint64* semaphore_values);
@@ -230,31 +231,32 @@ namespace Game
 	private:
 		void wait_for_fence(ID3D12Fence* fence, uint64 value);
 
-		void cmd_begin_render_pass(ID3D12GraphicsCommandList4* cmd_list, uint8* data);
-		void cmd_begin_render_pass_depth(ID3D12GraphicsCommandList4* cmd_list, uint8* data);
-		void cmd_begin_render_pass_swapchain(ID3D12GraphicsCommandList4* cmd_list, uint8* data);
-		void cmd_begin_render_pass_swapchain_depth(ID3D12GraphicsCommandList4* cmd_list, uint8* data);
-		void cmd_end_render_pass(ID3D12GraphicsCommandList4* cmd_list, uint8* data);
-		void cmd_set_scissors(ID3D12GraphicsCommandList4* cmd_list, uint8* data);
-		void cmd_set_viewport(ID3D12GraphicsCommandList4* cmd_list, uint8* data);
-		void cmd_bind_pipeline(ID3D12GraphicsCommandList4* cmd_list, uint8* data);
-		void cmd_bind_pipeline_compute(ID3D12GraphicsCommandList4* cmd_list, uint8* data);
-		void cmd_draw_instanced(ID3D12GraphicsCommandList4* cmd_list, uint8* data);
-		void cmd_draw_indexed_instanced(ID3D12GraphicsCommandList4* cmd_list, uint8* data);
-		void cmd_draw_indexed_indirect(ID3D12GraphicsCommandList4* cmd_list, uint8* data);
-		void cmd_draw_indirect(ID3D12GraphicsCommandList4* cmd_list, uint8* data);
-		void cmd_bind_vertex_buffers(ID3D12GraphicsCommandList4* cmd_list, uint8* data);
-		void cmd_bind_index_buffers(ID3D12GraphicsCommandList4* cmd_list, uint8* data);
-		void cmd_copy_resource(ID3D12GraphicsCommandList4* cmd_list, uint8* data);
-		void cmd_copy_buffer_to_texture(ID3D12GraphicsCommandList4* cmd_list, uint8* data);
-		void cmd_copy_texture_to_buffer(ID3D12GraphicsCommandList4* cmd_list, uint8* data);
-		void cmd_copy_texture_to_texture(ID3D12GraphicsCommandList4* cmd_list, uint8* data);
-		void cmd_bind_constants(ID3D12GraphicsCommandList4* cmd_list, uint8* data);
-		void cmd_bind_layout(ID3D12GraphicsCommandList4* cmd_list, uint8* data);
-		void cmd_bind_layout_compute(ID3D12GraphicsCommandList4* cmd_list, uint8* data);
-		void cmd_bind_group(ID3D12GraphicsCommandList4* cmd_list, uint8* data);
-		void cmd_dispatch(ID3D12GraphicsCommandList4* cmd_list, uint8* data);
-		void cmd_barrier(ID3D12GraphicsCommandList4* cmd_list, uint8* data);
+		void cmd_begin_render_pass(resource_id cmd_list, const command_begin_render_pass& command);
+		void cmd_begin_render_pass_depth(resource_id cmd_list, const command_begin_render_pass_depth& command);
+		void cmd_begin_render_pass_swapchain(resource_id cmd_list, const command_begin_render_pass_swapchain& command);
+		void cmd_begin_render_pass_swapchain_depth(resource_id cmd_list, const command_begin_render_pass_swapchain_depth& command);
+		void cmd_end_render_pass(resource_id cmd_list, const command_end_render_pass& command);
+		void cmd_set_scissors(resource_id cmd_list, const command_set_scissors& command);
+		void cmd_set_viewport(resource_id cmd_list, const command_set_viewport& command);
+		void cmd_bind_pipeline(resource_id cmd_list, const command_bind_pipeline& command);
+		void cmd_bind_pipeline_compute(resource_id cmd_list, const command_bind_pipeline_compute& command);
+		void cmd_draw_instanced(resource_id cmd_list, const command_draw_instanced& command);
+		void cmd_draw_instanced(resource_id cmd_list, const command_draw_instanced& command);
+		void cmd_draw_indexed_instanced(resource_id cmd_list, const command_draw_indexed_instanced& command);
+		void cmd_draw_indexed_indirect(resource_id cmd_list, const command_draw_indexed_indirect& command);
+		void cmd_draw_indirect(resource_id cmd_list, const command_draw_indirect& command);
+		void cmd_bind_vertex_buffers(resource_id cmd_list, const command_bind_vertex_buffers& command);
+		void cmd_bind_index_buffers(resource_id cmd_list, const command_bind_index_buffers& command);
+		void cmd_copy_resource(resource_id cmd_list, const command_copy_resource& command);
+		void cmd_copy_buffer_to_texture(resource_id cmd_list, const command_copy_buffer_to_texture& command);
+		void cmd_copy_texture_to_buffer(resource_id cmd_list, const command_copy_texture_to_buffer& command);
+		void cmd_copy_texture_to_texture(resource_id cmd_list, const command_copy_texture_to_texture& command);
+		void cmd_bind_constants(resource_id cmd_list, const command_bind_constants& command);
+		void cmd_bind_layout(resource_id cmd_list, const command_bind_layout& command);
+		void cmd_bind_layout_compute(resource_id cmd_list, const command_bind_layout_compute& command);
+		void cmd_bind_group(resource_id cmd_list, const command_bind_group& command);
+		void cmd_dispatch(resource_id cmd_list, const command_dispatch& command);
+		void cmd_barrier(resource_id cmd_list, const command_barrier& command);
 
 	private:
 		pool<resource, MAX_RESOURCES>					_resources;
@@ -301,9 +303,5 @@ namespace Game
 		resource_id _queue_graphics = 0;
 		resource_id _queue_transfer = 0;
 		resource_id _queue_compute	= 0;
-
-		command_function _function_bindings[COMMANDS_MAX_TID];
-		size_t			 _function_sizes[COMMANDS_MAX_TID];
-		size_t			 _function_aligns[COMMANDS_MAX_TID];
 	};
 }
