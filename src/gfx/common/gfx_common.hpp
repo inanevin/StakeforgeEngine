@@ -29,17 +29,4 @@ namespace Game
 		mesh_data data;
 	};
 
-	struct texture_buffer
-	{
-		uint8*		pixels = nullptr;
-		vector2ui16 size   = vector2ui16::zero;
-		uint8		bpp	   = 0;
-	};
-
-	enum class shader_stage
-	{
-		vertex,
-		fragment,
-		compute
-	};
 }

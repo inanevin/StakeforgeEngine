@@ -14,6 +14,7 @@ namespace Game
 	public:
 		constexpr static unsigned int FRAMES_IN_FLIGHT	= 2;
 		constexpr static unsigned int BACK_BUFFER_COUNT = 3;
+		constexpr static unsigned int GPU_DEVICE		= 0; // 0 discrete, 1 integrated
 
 		static void init();
 		static void uninit();

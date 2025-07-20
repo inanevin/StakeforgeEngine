@@ -5,6 +5,7 @@
 #include "gfx/backend/dx12/sdk/d3d12shader.h"
 #include "data/string.hpp"
 #include "common/size_definitions.hpp"
+#include "io/log.hpp"
 #include <dxcapi/dxcapi.h>
 #include <dxgi1_6.h>
 #include <wrl/client.h>
@@ -38,6 +39,7 @@ namespace Game
 	{
 		if (FAILED(hr))
 		{
+			GAME_FATAL("DX12 Exception! {0}", hr);
 			throw HrException(hr);
 		}
 	}

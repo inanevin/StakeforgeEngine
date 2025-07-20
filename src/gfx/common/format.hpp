@@ -1,9 +1,11 @@
 // Copyright (c) 2025 Inan Evin
 #pragma once
 
+#include "common/size_definitions.hpp"
+
 namespace Game
 {
-	enum class format
+	enum class format : uint8
 	{
 		undefined = 0,
 

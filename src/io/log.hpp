@@ -8,6 +8,7 @@
 #define GAME_WARN(...)	Game::log::instance().log_msg(Game::log::level::warning, __VA_ARGS__)
 #define GAME_INFO(...)	Game::log::instance().log_msg(Game::log::level::info, __VA_ARGS__)
 #define GAME_TRACE(...) Game::log::instance().log_msg(Game::log::level::trace, __VA_ARGS__)
+#define GAME_FATAL(...) Game::log::instance().log_msg(Game::log::level::error, __VA_ARGS__)
 
 #else
 
@@ -15,6 +16,7 @@
 #define GAME_WARN(...)	Game::log::instance().log_msg(Game::log::level::warning, __VA_ARGS__)
 #define GAME_INFO(...)	Game::log::instance().log_msg(Game::log::level::info, __VA_ARGS__)
 #define GAME_TRACE(...) Game::log::instance().log_msg(Game::log::level::trace, __VA_ARGS__)
+#define GAME_FATAL(...) Game::log::instance().log_msg(Game::log::level::error, __VA_ARGS__)
 
 #endif
 

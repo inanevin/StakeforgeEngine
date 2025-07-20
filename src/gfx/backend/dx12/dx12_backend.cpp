@@ -4,6 +4,7 @@
 #include "gfx/common/descriptions.hpp"
 #include "gfx/backend/dx12/sdk/D3D12MemAlloc.h"
 #include "gfx/commands.hpp"
+#include "gfx/command_buffer.hpp"
 #include "data/string_util.hpp"
 #include "data/vector_util.hpp"
 #include "io/log.hpp"
@@ -24,7 +25,7 @@ namespace Game
 	Microsoft::WRL::ComPtr<IDxcLibrary> dx12_backend::s_idxcLib;
 
 #define DX12_THROW(exception, ...)                                                                                                                                                                                                                                 \
-	GAME_ERR(__VA_ARGS__);                                                                                                                                                                                                                                         \
+	GAME_FATAL(__VA_ARGS__);                                                                                                                                                                                                                                       \
 	throw exception;
 
 #ifdef _DEBUG
@@ -431,10 +432,195 @@ namespace Game
 			}
 		}
 
+		D3D12_RESOURCE_STATES get_resource_state(resource_state state)
+		{
+			switch (state)
+			{
+			case Game::resource_state::common:
+				return D3D12_RESOURCE_STATE_COMMON;
+			case Game::resource_state::vertex_cbv:
+				return D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER;
+			case Game::resource_state::index_buffer:
+				return D3D12_RESOURCE_STATE_INDEX_BUFFER;
+			case Game::resource_state::render_target:
+				return D3D12_RESOURCE_STATE_RENDER_TARGET;
+			case Game::resource_state::uav:
+				return D3D12_RESOURCE_STATE_UNORDERED_ACCESS;
+			case Game::resource_state::depth_write:
+				return D3D12_RESOURCE_STATE_DEPTH_WRITE;
+			case Game::resource_state::depth_read:
+				return D3D12_RESOURCE_STATE_DEPTH_READ;
+			case Game::resource_state::non_ps_resource:
+				return D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE;
+			case Game::resource_state::ps_resource:
+				return D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE;
+			case Game::resource_state::indirect_arg:
+				return D3D12_RESOURCE_STATE_INDIRECT_ARGUMENT;
+			case Game::resource_state::copy_dest:
+				return D3D12_RESOURCE_STATE_COPY_DEST;
+			case Game::resource_state::copy_source:
+				return D3D12_RESOURCE_STATE_COPY_SOURCE;
+			case Game::resource_state::resolve_dest:
+				return D3D12_RESOURCE_STATE_RESOLVE_DEST;
+			case Game::resource_state::resolve_source:
+				return D3D12_RESOURCE_STATE_RESOLVE_SOURCE;
+			case Game::resource_state::generic_read:
+				return D3D12_RESOURCE_STATE_GENERIC_READ;
+			case Game::resource_state::present:
+				return D3D12_RESOURCE_STATE_PRESENT;
+			default:
+				return D3D12_RESOURCE_STATE_COMMON;
+			}
+		}
+
+		D3D12_SHADER_VISIBILITY get_visibility(shader_stage stage)
+		{
+			if (stage == shader_stage::vertex)
+				return D3D12_SHADER_VISIBILITY_VERTEX;
+			else if (stage == shader_stage::fragment)
+				return D3D12_SHADER_VISIBILITY_PIXEL;
+			else
+				return D3D12_SHADER_VISIBILITY_ALL;
+		}
+
+		void get_hw_adapter(IDXGIFactory1* pFactory, IDXGIAdapter1** ppAdapter, uint32 gpu_type)
+		{
+			*ppAdapter = nullptr;
+
+			ComPtr<IDXGIAdapter1> adapter;
+
+			const unsigned int NVIDIA_VENDOR_ID = 0x10DE;
+			const unsigned int AMD_VENDOR_ID	= 0x1002;
+			const unsigned int INTEL_VENDOR_ID	= 0x8086;
+
+			auto find = [&](bool agressive) {
+				ComPtr<IDXGIFactory6> factory6;
+				if (SUCCEEDED(pFactory->QueryInterface(IID_PPV_ARGS(&factory6))))
+				{
+					for (UINT index = 0; SUCCEEDED(factory6->EnumAdapterByGpuPreference(index, gpu_type == 0 ? DXGI_GPU_PREFERENCE_HIGH_PERFORMANCE : DXGI_GPU_PREFERENCE_MINIMUM_POWER, IID_PPV_ARGS(&adapter))); ++index)
+					{
+						DXGI_ADAPTER_DESC1 desc;
+						adapter->GetDesc1(&desc);
+
+						if (desc.Flags & DXGI_ADAPTER_FLAG_SOFTWARE)
+							continue;
+
+						if (agressive && desc.VendorId != NVIDIA_VENDOR_ID && desc.VendorId != AMD_VENDOR_ID && gpu_type == 0)
+							continue;
+
+						if (agressive && (desc.VendorId == NVIDIA_VENDOR_ID || desc.VendorId == AMD_VENDOR_ID) && gpu_type == 1)
+							continue;
+
+						// Check to see whether the adapter supports Direct3D 12, but don't create the
+						// actual device yet.
+						if (SUCCEEDED(D3D12CreateDevice(adapter.Get(), D3D_FEATURE_LEVEL_11_0, _uuidof(ID3D12Device), nullptr)))
+						{
+							char* buf = string_util::wchar_to_char(desc.Description);
+							GAME_TRACE("DX12 -> Selected hardware adapter %s, dedicated video memory %f mb", buf, desc.DedicatedVideoMemory * 0.000001);
+							delete[] buf;
+							break;
+						}
+					}
+				}
+			};
+
+			find(true);
+			if (adapter.Get() == nullptr)
+				find(false);
+
+			if (adapter.Get() == nullptr)
+			{
+				GAME_FATAL("DX12 -> Failed finding a suitable device!");
+				return;
+			}
+
+			*ppAdapter = adapter.Detach();
+		}
+
+		void msg_callback(D3D12_MESSAGE_CATEGORY msg_type, D3D12_MESSAGE_SEVERITY severity, D3D12_MESSAGE_ID messageId, LPCSTR pDesc, void* pContext)
+		{
+			if (pDesc != NULL)
+			{
+				if (severity == D3D12_MESSAGE_SEVERITY_MESSAGE)
+				{
+					GAME_TRACE("DX12 -> %s", pDesc);
+				}
+				else if (severity == D3D12_MESSAGE_SEVERITY_INFO)
+				{
+					// LOGV("Backend -> %s", pDesc);
+				}
+				else
+				{
+					GAME_ERR("Backend -> %s", pDesc);
+				}
+			}
+		}
+
 	}
 
-	void dx12_backend::init()
+	DWORD msgcallback = 0;
+	void  dx12_backend::init()
 	{
+		UINT dxgiFactoryFlags = 0;
+
+#ifdef GAME_DEBUG
+		ComPtr<ID3D12Debug> debugController;
+		if (SUCCEEDED(D3D12GetDebugInterface(IID_PPV_ARGS(&debugController))))
+		{
+			debugController->EnableDebugLayer();
+
+			// Enable additional debug layers.
+			dxgiFactoryFlags |= DXGI_CREATE_FACTORY_DEBUG;
+		}
+		else
+		{
+			GAME_ERR("DX12 -> Failed enabling debug layers!");
+		}
+#endif
+
+		throw_if_failed(CreateDXGIFactory2(dxgiFactoryFlags, IID_PPV_ARGS(&_factory)));
+
+		ComPtr<IDXGIFactory5> factory5;
+		HRESULT				  facres	   = _factory.As(&factory5);
+		BOOL				  allowTearing = FALSE;
+		if (SUCCEEDED(facres))
+			facres = factory5->CheckFeatureSupport(DXGI_FEATURE_PRESENT_ALLOW_TEARING, &allowTearing, sizeof(allowTearing));
+
+		// Choose gpu & create device
+		{
+			get_hw_adapter(_factory.Get(), &_adapter, gfx_util::GPU_DEVICE);
+			throw_if_failed(D3D12CreateDevice(_adapter.Get(), D3D_FEATURE_LEVEL_11_0, IID_PPV_ARGS(&_device)));
+		}
+
+		// Dbg callback
+		{
+			ID3D12InfoQueue1* infoQueue = nullptr;
+			if (SUCCEEDED(_device->QueryInterface<ID3D12InfoQueue1>(&infoQueue)))
+			{
+				infoQueue->RegisterMessageCallback(&msg_callback, D3D12_MESSAGE_CALLBACK_IGNORE_FILTERS, nullptr, &msgcallback);
+			}
+		}
+
+		// Allocator
+		{
+			D3D12MA::ALLOCATOR_DESC allocatorDesc;
+			allocatorDesc.pDevice			   = _device.Get();
+			allocatorDesc.PreferredBlockSize   = 0;
+			allocatorDesc.Flags				   = D3D12MA::ALLOCATOR_FLAG_NONE;
+			allocatorDesc.pAdapter			   = _adapter.Get();
+			allocatorDesc.pAllocationCallbacks = NULL;
+			throw_if_failed(D3D12MA::CreateAllocator(&allocatorDesc, &_allocator));
+		}
+
+		// DXC
+		{
+			HRESULT hr = DxcCreateInstance(CLSID_DxcLibrary, IID_PPV_ARGS(&s_idxcLib));
+			if (FAILED(hr))
+			{
+				GAME_FATAL("DX12 -> Failed to create DXC library!");
+			}
+		}
+
 		_queue_graphics = create_queue({
 			.type		= command_type::graphics,
 			.debug_name = {"GfxQueue"},
@@ -460,6 +646,81 @@ namespace Game
 		_heap_sampler.init(_device.Get(), D3D12_DESCRIPTOR_HEAP_TYPE_SAMPLER, 1024, size_sampler, false);
 		_heap_gpu_buffer.init(_device.Get(), D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, 1024, size_cbv_srv_uav, true);
 		_heap_gpu_sampler.init(_device.Get(), D3D12_DESCRIPTOR_HEAP_TYPE_SAMPLER, 1024, size_sampler, true);
+
+		_function_bindings[command_begin_render_pass::TID]				   = std::bind(&dx12_backend::cmd_begin_render_pass, this, std::placeholders::_1, std::placeholders::_2);
+		_function_bindings[command_begin_render_pass_depth::TID]		   = std::bind(&dx12_backend::cmd_begin_render_pass_depth, this, std::placeholders::_1, std::placeholders::_2);
+		_function_bindings[command_begin_render_pass_swapchain::TID]	   = std::bind(&dx12_backend::cmd_begin_render_pass_swapchain, this, std::placeholders::_1, std::placeholders::_2);
+		_function_bindings[command_begin_render_pass_swapchain_depth::TID] = std::bind(&dx12_backend::cmd_begin_render_pass_swapchain_depth, this, std::placeholders::_1, std::placeholders::_2);
+		_function_bindings[command_end_render_pass::TID]				   = std::bind(&dx12_backend::cmd_end_render_pass, this, std::placeholders::_1, std::placeholders::_2);
+		_function_bindings[command_set_viewport::TID]					   = std::bind(&dx12_backend::cmd_set_viewport, this, std::placeholders::_1, std::placeholders::_2);
+		_function_bindings[command_set_scissors::TID]					   = std::bind(&dx12_backend::cmd_set_scissors, this, std::placeholders::_1, std::placeholders::_2);
+		_function_bindings[command_bind_pipeline::TID]					   = std::bind(&dx12_backend::cmd_bind_pipeline, this, std::placeholders::_1, std::placeholders::_2);
+		_function_bindings[command_bind_pipeline_compute::TID]			   = std::bind(&dx12_backend::cmd_bind_pipeline_compute, this, std::placeholders::_1, std::placeholders::_2);
+		_function_bindings[command_draw_instanced::TID]					   = std::bind(&dx12_backend::cmd_draw_instanced, this, std::placeholders::_1, std::placeholders::_2);
+		_function_bindings[command_draw_indexed_instanced::TID]			   = std::bind(&dx12_backend::cmd_draw_indexed_instanced, this, std::placeholders::_1, std::placeholders::_2);
+		_function_bindings[command_draw_indexed_indirect::TID]			   = std::bind(&dx12_backend::cmd_draw_indexed_indirect, this, std::placeholders::_1, std::placeholders::_2);
+		_function_bindings[command_draw_indirect::TID]					   = std::bind(&dx12_backend::cmd_draw_indirect, this, std::placeholders::_1, std::placeholders::_2);
+		_function_bindings[command_copy_resource::TID]					   = std::bind(&dx12_backend::cmd_copy_resource, this, std::placeholders::_1, std::placeholders::_2);
+		_function_bindings[command_copy_texture_to_buffer::TID]			   = std::bind(&dx12_backend::cmd_copy_texture_to_buffer, this, std::placeholders::_1, std::placeholders::_2);
+		_function_bindings[command_copy_buffer_to_texture::TID]			   = std::bind(&dx12_backend::cmd_copy_buffer_to_texture, this, std::placeholders::_1, std::placeholders::_2);
+		_function_bindings[command_copy_texture_to_texture::TID]		   = std::bind(&dx12_backend::cmd_copy_texture_to_texture, this, std::placeholders::_1, std::placeholders::_2);
+		_function_bindings[command_bind_vertex_buffers::TID]			   = std::bind(&dx12_backend::cmd_bind_vertex_buffers, this, std::placeholders::_1, std::placeholders::_2);
+		_function_bindings[command_bind_index_buffers::TID]				   = std::bind(&dx12_backend::cmd_bind_index_buffers, this, std::placeholders::_1, std::placeholders::_2);
+		_function_bindings[command_bind_group::TID]						   = std::bind(&dx12_backend::cmd_bind_group, this, std::placeholders::_1, std::placeholders::_2);
+		_function_bindings[command_bind_layout::TID]					   = std::bind(&dx12_backend::cmd_bind_layout, this, std::placeholders::_1, std::placeholders::_2);
+		_function_bindings[command_bind_constants::TID]					   = std::bind(&dx12_backend::cmd_bind_constants, this, std::placeholders::_1, std::placeholders::_2);
+		_function_bindings[command_dispatch::TID]						   = std::bind(&dx12_backend::cmd_dispatch, this, std::placeholders::_1, std::placeholders::_2);
+		_function_bindings[command_barrier::TID]						   = std::bind(&dx12_backend::cmd_barrier, this, std::placeholders::_1, std::placeholders::_2);
+
+		_function_sizes[command_begin_render_pass::TID]					= sizeof(command_begin_render_pass);
+		_function_sizes[command_begin_render_pass_depth::TID]			= sizeof(command_begin_render_pass_depth);
+		_function_sizes[command_begin_render_pass_swapchain::TID]		= sizeof(command_begin_render_pass_swapchain);
+		_function_sizes[command_begin_render_pass_swapchain_depth::TID] = sizeof(command_begin_render_pass_swapchain_depth);
+		_function_sizes[command_end_render_pass::TID]					= sizeof(command_end_render_pass);
+		_function_sizes[command_set_viewport::TID]						= sizeof(command_set_viewport);
+		_function_sizes[command_set_scissors::TID]						= sizeof(command_set_scissors);
+		_function_sizes[command_bind_pipeline::TID]						= sizeof(command_bind_pipeline);
+		_function_sizes[command_bind_pipeline_compute::TID]				= sizeof(command_bind_pipeline_compute);
+		_function_sizes[command_draw_instanced::TID]					= sizeof(command_draw_instanced);
+		_function_sizes[command_draw_indexed_instanced::TID]			= sizeof(command_draw_indexed_instanced);
+		_function_sizes[command_draw_indexed_indirect::TID]				= sizeof(command_draw_indexed_indirect);
+		_function_sizes[command_draw_indirect::TID]						= sizeof(command_draw_indirect);
+		_function_sizes[command_copy_resource::TID]						= sizeof(command_copy_resource);
+		_function_sizes[command_copy_texture_to_buffer::TID]			= sizeof(command_copy_texture_to_buffer);
+		_function_sizes[command_copy_buffer_to_texture::TID]			= sizeof(command_copy_buffer_to_texture);
+		_function_sizes[command_copy_texture_to_texture::TID]			= sizeof(command_copy_texture_to_texture);
+		_function_sizes[command_bind_vertex_buffers::TID]				= sizeof(command_bind_vertex_buffers);
+		_function_sizes[command_bind_index_buffers::TID]				= sizeof(command_bind_index_buffers);
+		_function_sizes[command_bind_group::TID]						= sizeof(command_bind_group);
+		_function_sizes[command_bind_layout::TID]						= sizeof(command_bind_layout);
+		_function_sizes[command_bind_constants::TID]					= sizeof(command_bind_constants);
+		_function_sizes[command_dispatch::TID]							= sizeof(command_dispatch);
+		_function_sizes[command_barrier::TID]							= sizeof(command_barrier);
+
+		_function_aligns[command_begin_render_pass::TID]				 = alignof(command_begin_render_pass);
+		_function_aligns[command_begin_render_pass_depth::TID]			 = alignof(command_begin_render_pass_depth);
+		_function_aligns[command_begin_render_pass_swapchain::TID]		 = alignof(command_begin_render_pass_swapchain);
+		_function_aligns[command_begin_render_pass_swapchain_depth::TID] = alignof(command_begin_render_pass_swapchain_depth);
+		_function_aligns[command_end_render_pass::TID]					 = alignof(command_end_render_pass);
+		_function_aligns[command_set_viewport::TID]						 = alignof(command_set_viewport);
+		_function_aligns[command_set_scissors::TID]						 = alignof(command_set_scissors);
+		_function_aligns[command_bind_pipeline::TID]					 = alignof(command_bind_pipeline);
+		_function_aligns[command_bind_pipeline_compute::TID]			 = alignof(command_bind_pipeline_compute);
+		_function_aligns[command_draw_instanced::TID]					 = alignof(command_draw_instanced);
+		_function_aligns[command_draw_indexed_instanced::TID]			 = alignof(command_draw_indexed_instanced);
+		_function_aligns[command_draw_indexed_indirect::TID]			 = alignof(command_draw_indexed_indirect);
+		_function_aligns[command_draw_indirect::TID]					 = alignof(command_draw_indirect);
+		_function_aligns[command_copy_resource::TID]					 = alignof(command_copy_resource);
+		_function_aligns[command_copy_texture_to_buffer::TID]			 = alignof(command_copy_texture_to_buffer);
+		_function_aligns[command_copy_buffer_to_texture::TID]			 = alignof(command_copy_buffer_to_texture);
+		_function_aligns[command_copy_texture_to_texture::TID]			 = alignof(command_copy_texture_to_texture);
+		_function_aligns[command_bind_vertex_buffers::TID]				 = alignof(command_bind_vertex_buffers);
+		_function_aligns[command_bind_index_buffers::TID]				 = alignof(command_bind_index_buffers);
+		_function_aligns[command_bind_group::TID]						 = alignof(command_bind_group);
+		_function_aligns[command_bind_layout::TID]						 = alignof(command_bind_layout);
+		_function_aligns[command_bind_constants::TID]					 = alignof(command_bind_constants);
+		_function_aligns[command_dispatch::TID]							 = alignof(command_dispatch);
+		_function_aligns[command_barrier::TID]							 = alignof(command_barrier);
 	}
 
 	void dx12_backend::uninit()
@@ -475,6 +736,41 @@ namespace Game
 		_heap_sampler.uninit();
 		_heap_gpu_buffer.uninit();
 		_heap_gpu_sampler.uninit();
+
+#ifdef GAME_DEBUG
+		ID3D12InfoQueue1* infoQueue = nullptr;
+		if (SUCCEEDED(_device->QueryInterface<ID3D12InfoQueue1>(&infoQueue)))
+		{
+			infoQueue->UnregisterMessageCallback(msgcallback);
+		}
+#endif
+
+		_allocator->Release();
+		s_idxcLib.Reset();
+		_device.Reset();
+	}
+
+	void dx12_backend::execute_commands(span<uint8> data, resource_id cmd_buffer)
+	{
+		command_buffer&				cmd_buf	 = _command_buffers.get(cmd_buffer);
+		ID3D12GraphicsCommandList4* cmd_list = cmd_buf.ptr.Get();
+
+		uint8* ptr = data.data;
+		uint8* end = data.data + data.size;
+
+		while (ptr < end)
+		{
+			command_header* header = reinterpret_cast<command_header*>(ptr);
+			const uint8		tid	   = header->tid;
+			ptr += sizeof(command_header);
+
+			const size_t align	= _function_aligns[tid];
+			const size_t size	= _function_sizes[tid];
+			ptr					= reinterpret_cast<uint8*>((reinterpret_cast<uintptr_t>(ptr) + (align - 1)) & ~(align - 1));
+			uint8* command_data = ptr;
+			_function_bindings[tid](cmd_list, command_data);
+			ptr += size;
+		}
 	}
 
 	resource_id dx12_backend::create_resource(const resource_desc& desc)
@@ -484,6 +780,7 @@ namespace Game
 
 		const uint32 aligned_size = ALIGN_SIZE_POW(desc.size, D3D12_TEXTURE_DATA_PITCH_ALIGNMENT);
 		const uint32 final_size	  = desc.flags.is_set(resource_flags::rf_constant_buffer) ? aligned_size : desc.size;
+		res.size				  = final_size;
 
 		const D3D12_RESOURCE_DESC resource_desc = {
 			.Dimension		  = D3D12_RESOURCE_DIMENSION_BUFFER,
@@ -524,7 +821,7 @@ namespace Game
 			state					 = D3D12_RESOURCE_STATE_COPY_DEST;
 		}
 
-		throw_if_failed(_dx12Allocator->CreateResource(&allocation_desc, &resource_desc, state, NULL, &res.ptr, IID_NULL, NULL));
+		throw_if_failed(_allocator->CreateResource(&allocation_desc, &resource_desc, state, NULL, &res.ptr, IID_NULL, NULL));
 
 		if (desc.flags.is_set(resource_flags::rf_constant_buffer))
 		{
@@ -532,8 +829,10 @@ namespace Game
 				.BufferLocation = res.ptr->GetResource()->GetGPUVirtualAddress(),
 				.SizeInBytes	= static_cast<UINT>(final_size),
 			};
-			res.descriptor = _heap_buffer.get_heap_handle_block(1);
-			_device->CreateConstantBufferView(&desc, {res.descriptor.cpu});
+			res.descriptor_index  = static_cast<int16>(_descriptors.add());
+			descriptor_handle& dh = _descriptors.get(res.descriptor_index);
+			dh					  = _heap_buffer.get_heap_handle_block(1);
+			_device->CreateConstantBufferView(&desc, {dh.cpu});
 		}
 		else if (desc.flags.is_set(resource_flags::rf_storage_buffer))
 		{
@@ -550,8 +849,11 @@ namespace Game
 					},
 
 			};
-			res.descriptor = _heap_buffer.get_heap_handle_block(1);
-			_device->CreateShaderResourceView(res.ptr->GetResource(), &desc, {res.descriptor.cpu});
+
+			res.descriptor_index  = static_cast<int16>(_descriptors.add());
+			descriptor_handle& dh = _descriptors.get(res.descriptor_index);
+			dh					  = _heap_buffer.get_heap_handle_block(1);
+			_device->CreateShaderResourceView(res.ptr->GetResource(), &desc, {dh.cpu});
 		}
 		else if (desc.flags.is_set(resource_flags::rf_gpu_write))
 		{
@@ -567,8 +869,10 @@ namespace Game
 						.Flags				  = D3D12_BUFFER_UAV_FLAG_RAW,
 					},
 			};
-			res.descriptor = _heap_buffer.get_heap_handle_block(1);
-			_device->CreateUnorderedAccessView(res.ptr->GetResource(), NULL, &desc, {res.descriptor.cpu});
+			res.descriptor_index  = static_cast<int16>(_descriptors.add());
+			descriptor_handle& dh = _descriptors.get(res.descriptor_index);
+			dh					  = _heap_buffer.get_heap_handle_block(1);
+			_device->CreateUnorderedAccessView(res.ptr->GetResource(), NULL, &desc, {dh.cpu});
 		}
 
 		NAME_DX12_OBJECT_CSTR(res.ptr, desc.debug_name);
@@ -594,8 +898,14 @@ namespace Game
 	{
 		unmap_resource(id);
 		resource& res = _resources.get(id);
-		if (res.descriptor.count != 0)
-			_heap_buffer.remove_handle(res.descriptor);
+		if (res.descriptor_index != -1)
+		{
+			descriptor_handle& dh = _descriptors.get(static_cast<resource_id>(res.descriptor_index));
+			_heap_buffer.remove_handle(dh);
+			_descriptors.remove(res.descriptor_index);
+		}
+
+		res.descriptor_index = -1;
 		res.ptr->Release();
 		_resources.remove(id);
 	}
@@ -607,6 +917,7 @@ namespace Game
 
 		const DXGI_FORMAT color_format = get_format(desc.texture_format);
 		const DXGI_FORMAT depth_format = get_format(desc.depth_stencil_format);
+		txt.format					   = static_cast<uint8>(color_format);
 
 		D3D12_RESOURCE_DESC resource_desc = {};
 		resource_desc.Dimension			  = D3D12_RESOURCE_DIMENSION_TEXTURE2D;
@@ -639,7 +950,7 @@ namespace Game
 
 		const D3D12_RESOURCE_ALLOCATION_INFO& allocation_info = _device->GetResourceAllocationInfo(0, 1, &resource_desc);
 
-		throw_if_failed(_dx12Allocator->CreateResource(&allocation_desc, &resource_desc, state, NULL, &txt.ptr, IID_NULL, NULL));
+		throw_if_failed(_allocator->CreateResource(&allocation_desc, &resource_desc, state, NULL, &txt.ptr, IID_NULL, NULL));
 		NAME_DX12_OBJECT_CSTR(txt.ptr, desc.debug_name);
 
 		auto create_srv = [&](DXGI_FORMAT format, bool createForCubemap, uint32 baseArrayLayer, uint32 layerCount, uint32 baseMipLevel, uint32 mipLevels, const descriptor_handle& targetDescriptor) {
@@ -775,24 +1086,29 @@ namespace Game
 			const uint32	 base_mip		 = view.base_mip_level;
 			const uint32	 remaining_mip	 = view.mip_count == 0 ? (desc.mip_levels - base_mip) : view.mip_count;
 
-			if (desc.flags.is_set(texture_flags::tf_sampled || desc.flags.is_set(texture_flags::tf_sampled_outside_fragment)))
+			if (desc.flags.is_set(texture_flags::tf_sampled) || desc.flags.is_set(texture_flags::tf_sampled_outside_fragment))
 			{
-				txt.srvs.push_back(_heap_texture.get_heap_handle_block(1));
-				const descriptor_handle& srv = txt.srvs.back();
-				create_srv(srv_format, view.is_cubemap, base_level, remaining_level, base_mip, remaining_mip, srv);
+				txt.srv_count++;
+				txt.srvs[i]			  = _descriptors.add();
+				descriptor_handle& dh = _descriptors.get(txt.srvs[i]);
+				dh					  = _heap_texture.get_heap_handle_block(1);
+				create_srv(srv_format, view.is_cubemap, base_level, remaining_level, base_mip, remaining_mip, dh);
 			}
-			if (desc.flags.is_set(texture_flags::tf_depth_texture || desc.flags.is_set(texture_flags::tf_stencil_texture)))
+			if (desc.flags.is_set(texture_flags::tf_depth_texture) || desc.flags.is_set(texture_flags::tf_stencil_texture))
 			{
-				txt.dsvs.push_back(_heap_dsv.get_heap_handle_block(1));
-				const descriptor_handle& dsv = txt.dsvs.back();
-				create_dsv(depth_format, base_level, remaining_level, base_mip, remaining_mip, dsv);
+				txt.dsv_count++;
+				txt.dsvs[i]			  = _descriptors.add();
+				descriptor_handle& dh = _descriptors.get(txt.dsvs[i]);
+				dh					  = _heap_dsv.get_heap_handle_block(1);
+				create_dsv(depth_format, base_level, remaining_level, base_mip, remaining_mip, dh);
 			}
-
 			if (desc.flags.is_set(texture_flags::tf_color_attachment))
 			{
-				txt.rtvs.push_back(_heap_rtv.get_heap_handle_block(1));
-				const descriptor_handle& rtv = txt.rtvs.back();
-				create_rtv(color_format, base_level, remaining_level, base_mip, remaining_mip, rtv);
+				txt.rtv_count;
+				txt.rtvs[i]			  = _descriptors.add();
+				descriptor_handle& dh = _descriptors.get(txt.rtvs[i]);
+				dh					  = _heap_rtv.get_heap_handle_block(1);
+				create_rtv(color_format, base_level, remaining_level, base_mip, remaining_mip, dh);
 			}
 		}
 
@@ -803,14 +1119,26 @@ namespace Game
 	{
 		texture& txt = _textures.get(id);
 
-		for (const descriptor_handle& d : txt.rtvs)
-			_heap_rtv.remove_handle(d);
+		for (uint8 i = 0; i < txt.rtv_count; i++)
+		{
+			const descriptor_handle& dh = _descriptors.get(txt.rtvs[i]);
+			_heap_rtv.remove_handle(dh);
+			_descriptors.remove(txt.rtvs[i]);
+		}
 
-		for (const descriptor_handle& d : txt.dsvs)
-			_heap_dsv.remove_handle(d);
+		for (uint8 i = 0; i < txt.rtv_count; i++)
+		{
+			const descriptor_handle& dh = _descriptors.get(txt.srvs[i]);
+			_heap_texture.remove_handle(dh);
+			_descriptors.remove(txt.srvs[i]);
+		}
 
-		for (const descriptor_handle& d : txt.srvs)
-			_heap_texture.remove_handle(d);
+		for (uint8 i = 0; i < txt.rtv_count; i++)
+		{
+			const descriptor_handle& dh = _descriptors.get(txt.dsvs[i]);
+			_heap_dsv.remove_handle(dh);
+			_descriptors.remove(txt.dsvs[i]);
+		}
 
 		txt.ptr->Release();
 		txt.ptr = NULL;
@@ -836,15 +1164,21 @@ namespace Game
 
 		const resource_id id  = _samplers.add();
 		sampler&		  smp = _samplers.get(id);
-		smp.handle			  = _heap_sampler.get_heap_handle_block(1);
-		_device->CreateSampler(&samplerDesc, {smp.handle.cpu});
+
+		smp.descriptor_index  = _descriptors.add();
+		descriptor_handle& dh = _descriptors.get(smp.descriptor_index);
+		dh					  = _heap_sampler.get_heap_handle_block(1);
+
+		_device->CreateSampler(&samplerDesc, {dh.cpu});
 		return id;
 	}
 
 	void dx12_backend::destroy_sampler(resource_id id)
 	{
-		sampler& smp = _samplers.get(id);
-		_heap_sampler.remove_handle(smp.handle);
+		sampler&		   smp = _samplers.get(id);
+		descriptor_handle& dh  = _descriptors.get(smp.descriptor_index);
+		_heap_sampler.remove_handle(dh);
+		_descriptors.remove(smp.descriptor_index);
 		_samplers.remove(id);
 	}
 
@@ -860,6 +1194,8 @@ namespace Game
 			swap_format = DXGI_FORMAT_R8G8B8A8_UNORM;
 		else if (desc.format == format::r8g8b8a8_srgb)
 			swap_format = DXGI_FORMAT_R8G8B8A8_UNORM;
+
+		swp.format = static_cast<uint8>(swap_format);
 
 		const DXGI_SWAP_CHAIN_DESC1 swapchain_desc = {
 			.Width	= static_cast<UINT>(desc.size.x),
@@ -884,14 +1220,16 @@ namespace Game
 			for (uint32 i = 0; i < gfx_util::BACK_BUFFER_COUNT; i++)
 			{
 				throw_if_failed(swp.ptr->GetBuffer(i, IID_PPV_ARGS(&swp.textures[i])));
-				swp.rtvs[i] = _heap_rtv.get_heap_handle_block(1);
+				swp.rtv_indices[i]	  = _descriptors.add();
+				descriptor_handle& dh = _descriptors.get(swp.rtv_indices[i]);
+				dh					  = _heap_rtv.get_heap_handle_block(1);
 
 				const D3D12_RENDER_TARGET_VIEW_DESC rtv_desc = {
 					.Format		   = swap_format,
 					.ViewDimension = D3D12_RTV_DIMENSION_TEXTURE2D,
 				};
 
-				_device->CreateRenderTargetView(swp.textures[i].Get(), &rtv_desc, {swp.rtvs[i].cpu});
+				_device->CreateRenderTargetView(swp.textures[i].Get(), &rtv_desc, {dh.cpu});
 				NAME_DX12_OBJECT_CSTR(swp.textures[i], "Swapchain RTV");
 			}
 		}
@@ -917,6 +1255,7 @@ namespace Game
 		for (uint32 i = 0; i < gfx_util::BACK_BUFFER_COUNT; i++)
 		{
 			swp.textures[i].Reset();
+			descriptor_handle& dh = _descriptors.get(swp.rtv_indices[i]);
 
 			throw_if_failed(swp.ptr->GetBuffer(i, IID_PPV_ARGS(&swp.textures[i])));
 
@@ -924,7 +1263,7 @@ namespace Game
 				.Format		   = swap_format,
 				.ViewDimension = D3D12_RTV_DIMENSION_TEXTURE2D,
 			};
-			_device->CreateRenderTargetView(swp.textures[i].Get(), &rtv_desc, {swp.rtvs[i].cpu});
+			_device->CreateRenderTargetView(swp.textures[i].Get(), &rtv_desc, {dh.cpu});
 			NAME_DX12_OBJECT_CSTR(swp.textures[i], "Swapchain RTV");
 		}
 
@@ -937,7 +1276,9 @@ namespace Game
 
 		for (uint32 i = 0; i < gfx_util::BACK_BUFFER_COUNT; i++)
 		{
-			_heap_rtv.remove_handle(swp.rtvs[i]);
+			descriptor_handle& dh = _descriptors.get(swp.rtv_indices[i]);
+			_heap_rtv.remove_handle(dh);
+			_descriptors.remove(swp.rtv_indices[i]);
 			swp.textures[i].Reset();
 		}
 
@@ -966,7 +1307,7 @@ namespace Game
 		_semaphores.remove(id);
 	}
 
-	bool dx12_backend::compile_shader(shader_stage stage, const string& source, span<uint8>& out_data, bool compile_root_sig, span<uint8>& out_signature_data)
+	bool dx12_backend::compile_shader(uint8 stage, const string& source, span<uint8>& out_data, bool compile_root_sig, span<uint8>& out_signature_data)
 	{
 		Microsoft::WRL::ComPtr<IDxcCompiler3> idxc_compiler;
 		throw_if_failed(DxcCreateInstance(CLSID_DxcCompiler, IID_PPV_ARGS(&idxc_compiler)));
@@ -979,10 +1320,11 @@ namespace Game
 		const char*				 shader_source = source.c_str();
 		s_idxcLib->CreateBlobWithEncodingFromPinned((const BYTE*)shader_source, static_cast<UINT>(source.size()), code_page, &source_blob);
 
-		const wchar_t* target_profile = L"vs_6_0";
-		if (stage == shader_stage::fragment)
+		const wchar_t*	   target_profile = L"vs_6_0";
+		const shader_stage stg			  = static_cast<shader_stage>(stage);
+		if (stg == shader_stage::fragment)
 			target_profile = L"ps_6_0";
-		else if (stage == shader_stage::compute)
+		else if (stg == shader_stage::compute)
 			target_profile = L"cs_6_0";
 
 		DxcBuffer source_buffer;
@@ -1042,7 +1384,7 @@ namespace Game
 				hr = result->GetErrorBuffer(&errorsBlob);
 				if (SUCCEEDED(hr) && errorsBlob)
 				{
-					GAME_ERR("DX12 -> Shader compilation failed: %s", (const char*)errorsBlob->GetBufferPointer());
+					GAME_FATAL("DX12 -> Shader compilation failed: %s", (const char*)errorsBlob->GetBufferPointer());
 					return false;
 				}
 			}
@@ -1073,7 +1415,7 @@ namespace Game
 		}
 		else
 		{
-			GAME_ERR("DX12 -> Failed compiling IDXC blob!");
+			GAME_FATAL("DX12 -> Failed compiling IDXC blob!");
 			return false;
 		}
 
@@ -1084,6 +1426,7 @@ namespace Game
 	{
 		const resource_id id = _shaders.add();
 		shader&			  sh = _shaders.get(id);
+		sh.topology			 = static_cast<uint8>(get_topology_type(desc.topo));
 
 		throw_if_failed(_device->CreateRootSignature(0, desc.signature_data.data, desc.signature_data.size, IID_PPV_ARGS(&sh.root_signature)));
 
@@ -1213,13 +1556,27 @@ namespace Game
 		bind_group&		  group = _bind_groups.get(id);
 
 		uint32 i = 0;
-		for (const binding& binding : desc.bindings)
+		for (const bind_group_binding& binding : desc.bindings)
 		{
+			const resource_id  handle = _descriptors.add();
+			descriptor_handle& dh	  = _descriptors.get(handle);
+
+			GAME_ASSERT(binding.type != descriptor_type::constant);
+
+			if (binding.type == descriptor_type::sampler)
+				dh = _heap_gpu_sampler.get_heap_handle_block(binding.count);
+			else
+				dh = _heap_gpu_buffer.get_heap_handle_block(binding.count);
+
+			if (binding.count != 1 && (binding.type != descriptor_type::pointer || binding.type != descriptor_type::sampler))
+			{
+				GAME_ASSERT(false);
+			}
+
 			group.bindings[i] = {
-				.handle			  = binding.flags.is_set(binding_flags::bf_sampler) ? _heap_gpu_sampler.get_heap_handle_block(binding.count)
-																					: (!binding.flags.is_set(binding_flags::bf_constant) ? _heap_gpu_buffer.get_heap_handle_block(binding.count) : descriptor_handle(binding.constant_value, binding.constant_offset)),
+				.descriptor_index = handle,
 				.root_param_index = binding.root_index,
-				.flags			  = binding.flags,
+				.descriptor_type  = static_cast<uint8>(binding.type),
 			};
 			i++;
 		}
@@ -1241,31 +1598,35 @@ namespace Game
 		{
 			const group_binding& binding = group.bindings[up.binding_index];
 
-			if (binding.flags.is_set(binding_flags::bf_constant))
-				continue;
+			GAME_ASSERT(binding.descriptor_type != static_cast<uint8>(descriptor_type::constant));
+
+			const descriptor_handle& binding_dh = _descriptors.get(binding.descriptor_index);
 
 			for (size_t i = 0; i < up.resources.size(); i++)
 			{
 				const resource_id	  res_id = up.resources[i];
-				const bitmask<uint8>& flags	 = up.resource_flags[i];
+				const descriptor_type type	 = up.resource_types[i];
 
-				if (flags.is_set(binding_flags::bf_ubo) || flags.is_set(binding_flags::bf_ssbo) || flags.is_set(binding_flags::bf_uav))
+				if (type == descriptor_type::ubo || type == descriptor_type::ssbo || type == descriptor_type::uav)
 				{
-					resource& res = _resources.get(res_id);
-					_reuse_src_descriptors_buffer.push_back({res.descriptor.cpu});
-					_reuse_dest_descriptors_buffer.push_back({binding.handle.cpu + i * _heap_gpu_buffer.get_descriptor_size()});
+					const resource&			 res = _resources.get(res_id);
+					const descriptor_handle& dh	 = _descriptors.get(res.descriptor_index);
+					_reuse_src_descriptors_buffer.push_back({dh.cpu});
+					_reuse_dest_descriptors_buffer.push_back({binding_dh.cpu + i * _heap_gpu_buffer.get_descriptor_size()});
 				}
-				else if (flags.is_set(binding_flags::bf_texture))
+				else if (type == descriptor_type::texture)
 				{
-					texture& txt = _textures.get(res_id);
-					_reuse_src_descriptors_buffer.push_back({txt.srvs[i].cpu});
-					_reuse_dest_descriptors_buffer.push_back({binding.handle.cpu + i * _heap_gpu_buffer.get_descriptor_size()});
+					const texture&			 txt = _textures.get(res_id);
+					const descriptor_handle& dh	 = _descriptors.get(txt.srvs[i]);
+					_reuse_src_descriptors_buffer.push_back({dh.cpu});
+					_reuse_dest_descriptors_buffer.push_back({binding_dh.cpu + i * _heap_gpu_buffer.get_descriptor_size()});
 				}
-				else if (flags.is_set(binding_flags::bf_sampler))
+				else if (type == descriptor_type::sampler)
 				{
-					sampler& smp = _samplers.get(res_id);
-					_reuse_src_descriptors_sampler.push_back({smp.handle.cpu});
-					_reuse_dest_descriptors_sampler.push_back({binding.handle.cpu + i * _heap_gpu_sampler.get_descriptor_size()});
+					const sampler&			 smp = _samplers.get(res_id);
+					const descriptor_handle& dh	 = _descriptors.get(smp.descriptor_index);
+					_reuse_src_descriptors_sampler.push_back({dh.cpu});
+					_reuse_dest_descriptors_sampler.push_back({binding_dh.cpu + i * _heap_gpu_sampler.get_descriptor_size()});
 				}
 			}
 		}
@@ -1286,10 +1647,16 @@ namespace Game
 
 		for (const group_binding& binding : group.bindings)
 		{
-			if (binding.flags.is_set(binding_flags::bf_sampler))
-				_heap_gpu_sampler.remove_handle(binding.handle);
-			else if (!binding.flags.is_set(binding_flags::bf_constant))
-				_heap_gpu_buffer.remove_handle(binding.handle);
+			descriptor_handle& dh = _descriptors.get(binding.descriptor_index);
+
+			const descriptor_type type = static_cast<descriptor_type>(binding.descriptor_type);
+
+			if (type == descriptor_type::sampler)
+				_heap_gpu_sampler.remove_handle(dh);
+			else if (type != descriptor_type::constant)
+				_heap_gpu_buffer.remove_handle(dh);
+
+			_descriptors.remove(binding.descriptor_index);
 		}
 
 		_bind_groups.remove(id);
@@ -1312,11 +1679,11 @@ namespace Game
 		_command_buffers.remove(id);
 	}
 
-	resource_id dx12_backend::create_command_allocator(command_type type)
+	resource_id dx12_backend::create_command_allocator(uint8 type)
 	{
 		const resource_id  id	 = _command_allocators.add();
 		command_allocator& alloc = _command_allocators.get(id);
-		throw_if_failed(_device->CreateCommandAllocator(get_command_type(type), IID_PPV_ARGS(alloc.ptr.GetAddressOf())));
+		throw_if_failed(_device->CreateCommandAllocator(get_command_type(static_cast<command_type>(type)), IID_PPV_ARGS(alloc.ptr.GetAddressOf())));
 		return id;
 	}
 
@@ -1338,6 +1705,115 @@ namespace Game
 		};
 		throw_if_failed(_device->CreateCommandQueue(&queue_desc, IID_PPV_ARGS(&q.ptr)));
 		return id;
+	}
+
+	resource_id dx12_backend::create_bind_layout(const bind_layout_desc& desc)
+	{
+		const resource_id id	 = _bind_layouts.add();
+		bind_layout&	  layout = _bind_layouts.get(id);
+
+		_reuse_root_params.resize(desc.bindings.size());
+		_reuse_root_ranges.resize(100);
+		uint32 root_range_counter = 0;
+
+		for (size_t i = 0; i < desc.bindings.size(); i++)
+		{
+			const binding& b = desc.bindings[i];
+
+			const D3D12_SHADER_VISIBILITY visibility = get_visibility(b.visibility_stage);
+			CD3DX12_ROOT_PARAMETER1&	  param		 = _reuse_root_params[i];
+
+			// either a constant, cbv, uav, srv or texture
+			if (b.entry_table.size() == 1)
+			{
+				const layout_entry& e = b.entry_table[0];
+
+				if (e.type == descriptor_type::constant)
+				{
+					param.InitAsConstants(e.count, e.binding, e.set, visibility);
+				}
+				else if (e.type == descriptor_type::ubo)
+				{
+					GAME_ASSERT(e.count == 1);
+					param.InitAsConstantBufferView(e.binding, e.set, D3D12_ROOT_DESCRIPTOR_FLAG_NONE, visibility);
+				}
+				else if (e.type == descriptor_type::ssbo || e.type == descriptor_type::texture)
+				{
+					GAME_ASSERT(e.count == 1);
+					param.InitAsShaderResourceView(e.binding, e.set, D3D12_ROOT_DESCRIPTOR_FLAG_NONE, visibility);
+				}
+				else if (e.type == descriptor_type::uav)
+				{
+					GAME_ASSERT(e.count == 1);
+					param.InitAsUnorderedAccessView(e.binding, e.set, D3D12_ROOT_DESCRIPTOR_FLAG_NONE, visibility);
+				}
+				else if (e.type == descriptor_type::sampler)
+				{
+					CD3DX12_DESCRIPTOR_RANGE1& range = _reuse_root_ranges[root_range_counter];
+					range.Init(D3D12_DESCRIPTOR_RANGE_TYPE_SAMPLER, e.count, e.binding, e.set, D3D12_DESCRIPTOR_RANGE_FLAG_NONE, 0);
+					param.InitAsDescriptorTable(1, &_reuse_root_ranges[root_range_counter], visibility);
+					root_range_counter++;
+				}
+			}
+			else
+			{
+				const uint32 sz = static_cast<uint32>(b.entry_table.size());
+
+				const uint32 ctr_now = root_range_counter;
+
+				for (uint32 k = 0; k < sz; k++)
+				{
+					const layout_entry&		   e	 = b.entry_table[k];
+					CD3DX12_DESCRIPTOR_RANGE1& range = _reuse_root_ranges[root_range_counter];
+
+					if (e.type == descriptor_type::ubo)
+					{
+						range.Init(D3D12_DESCRIPTOR_RANGE_TYPE_CBV, e.count, e.binding, e.set, D3D12_DESCRIPTOR_RANGE_FLAG_NONE, 0);
+					}
+					else if (e.type == descriptor_type::ssbo)
+					{
+						range.Init(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, e.count, e.binding, e.set, D3D12_DESCRIPTOR_RANGE_FLAG_DATA_VOLATILE, 0);
+					}
+					else if (e.type == descriptor_type::texture)
+					{
+						range.Init(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, e.count, e.binding, e.set, D3D12_DESCRIPTOR_RANGE_FLAG_NONE, 0);
+					}
+					else if (e.type == descriptor_type::uav)
+					{
+						range.Init(D3D12_DESCRIPTOR_RANGE_TYPE_UAV, e.count, e.binding, e.set, D3D12_DESCRIPTOR_RANGE_FLAG_NONE, 0);
+					}
+					else if (e.type == descriptor_type::sampler)
+					{
+						range.Init(D3D12_DESCRIPTOR_RANGE_TYPE_SAMPLER, e.count, e.binding, e.set, D3D12_DESCRIPTOR_RANGE_FLAG_NONE, 0);
+					}
+					else
+					{
+						GAME_ASSERT(false);
+					}
+
+					root_range_counter++;
+				}
+
+				param.InitAsDescriptorTable(root_range_counter - ctr_now, &_reuse_root_ranges[ctr_now], visibility);
+			}
+		}
+
+		const CD3DX12_VERSIONED_ROOT_SIGNATURE_DESC rootSig(static_cast<uint32>(_reuse_root_params.size()), _reuse_root_params.data(), 0, NULL, desc.is_compute ? D3D12_ROOT_SIGNATURE_FLAG_NONE : D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT);
+		ComPtr<ID3DBlob>							signature = nullptr;
+		ComPtr<ID3DBlob>							error	  = nullptr;
+		throw_if_failed(D3D12SerializeVersionedRootSignature(&rootSig, &signature, &error));
+		throw_if_failed(_device->CreateRootSignature(0, signature->GetBufferPointer(), signature->GetBufferSize(), IID_PPV_ARGS(&layout.root_signature)));
+		signature.Reset();
+		error.Reset();
+
+		return id;
+	}
+
+	void dx12_backend::destroy_bind_layout(resource_id id)
+	{
+		bind_layout& layout = _bind_layouts.get(id);
+		layout.root_signature.Reset();
+		_bind_layouts.remove(id);
 	}
 
 	void dx12_backend::destroy_queue(resource_id id)
@@ -1369,28 +1845,407 @@ namespace Game
 			}
 			catch (HrException e)
 			{
-				DX12_THROW(e, "Error while waiting for fence! {0}", e.what());
+				GAME_ERR("Error while waiting for fence! {0}", e.what());
 			}
 		}
 	}
 
-	void dx12_backend::cmd_bind_group(ID3D12GraphicsCommandList4* cmd_list, command_bind_group& cmd)
+	void dx12_backend::cmd_begin_render_pass(ID3D12GraphicsCommandList4* cmd_list, uint8* data)
 	{
-		bind_group& group = _bind_groups.get(cmd.group);
+		command_begin_render_pass_swapchain* cmd = reinterpret_cast<command_begin_render_pass_swapchain*>(data);
+		_reuse_color_attachments.resize(cmd->color_attachment_count);
+
+		for (uint32 i = 0; i < cmd->color_attachment_count; i++)
+		{
+			const render_pass_color_attachment& att = cmd->color_attachments[i];
+			const texture&						txt = _textures.get(att.texture);
+			const descriptor_handle&			dh	= _descriptors.get(txt.rtvs[att.view_index]);
+
+			CD3DX12_CLEAR_VALUE cv;
+			cv.Format	= static_cast<DXGI_FORMAT>(txt.format);
+			cv.Color[0] = att.clear_color.x;
+			cv.Color[1] = att.clear_color.y;
+			cv.Color[2] = att.clear_color.z;
+			cv.Color[3] = att.clear_color.w;
+			const D3D12_RENDER_PASS_BEGINNING_ACCESS colorBegin{get_load_op(att.load_op), {cv}};
+			const D3D12_RENDER_PASS_ENDING_ACCESS	 colorEnd{get_store_op(att.store_op), {}};
+
+			_reuse_color_attachments[i] = {dh.cpu, colorBegin, colorEnd};
+		}
+
+		cmd_list->BeginRenderPass(cmd->color_attachment_count, _reuse_color_attachments.data(), NULL, D3D12_RENDER_PASS_FLAG_NONE);
+	}
+
+	void dx12_backend::cmd_begin_render_pass_depth(ID3D12GraphicsCommandList4* cmd_list, uint8* data)
+	{
+		command_begin_render_pass_depth* cmd = reinterpret_cast<command_begin_render_pass_depth*>(data);
+		_reuse_color_attachments.resize(cmd->color_attachment_count);
+
+		for (uint32 i = 0; i < cmd->color_attachment_count; i++)
+		{
+			const render_pass_color_attachment& att = cmd->color_attachments[i];
+			const texture&						txt = _textures.get(att.texture);
+			const descriptor_handle&			dh	= _descriptors.get(txt.rtvs[att.view_index]);
+
+			CD3DX12_CLEAR_VALUE cv;
+			cv.Format	= static_cast<DXGI_FORMAT>(txt.format);
+			cv.Color[0] = att.clear_color.x;
+			cv.Color[1] = att.clear_color.y;
+			cv.Color[2] = att.clear_color.z;
+			cv.Color[3] = att.clear_color.w;
+			const D3D12_RENDER_PASS_BEGINNING_ACCESS colorBegin{get_load_op(att.load_op), {cv}};
+			const D3D12_RENDER_PASS_ENDING_ACCESS	 colorEnd{get_store_op(att.store_op), {}};
+
+			_reuse_color_attachments[i] = {dh.cpu, colorBegin, colorEnd};
+		}
+
+		const texture&							   depth_txt = _textures.get(cmd->depth_stencil_attachment.texture);
+		const descriptor_handle&				   depth_dh	 = _descriptors.get(depth_txt.dsvs[cmd->depth_stencil_attachment.view_index]);
+		const CD3DX12_CLEAR_VALUE				   clear_depth_stencil{static_cast<DXGI_FORMAT>(depth_txt.format), cmd->depth_stencil_attachment.clear_depth, cmd->depth_stencil_attachment.clear_stencil};
+		const D3D12_RENDER_PASS_BEGINNING_ACCESS   depth_begin{get_load_op(cmd->depth_stencil_attachment.depth_load_op), {clear_depth_stencil}};
+		const D3D12_RENDER_PASS_BEGINNING_ACCESS   stencil_begin{get_load_op(cmd->depth_stencil_attachment.stencil_load_op), {clear_depth_stencil}};
+		const D3D12_RENDER_PASS_ENDING_ACCESS	   depth_end{get_store_op(cmd->depth_stencil_attachment.depth_store_op), {}};
+		const D3D12_RENDER_PASS_ENDING_ACCESS	   stencil_end{get_store_op(cmd->depth_stencil_attachment.stencil_store_op), {}};
+		const D3D12_RENDER_PASS_DEPTH_STENCIL_DESC depth_stencil_desc{depth_dh.cpu, depth_begin, stencil_begin, depth_end, stencil_end};
+		cmd_list->BeginRenderPass(cmd->color_attachment_count, _reuse_color_attachments.data(), &depth_stencil_desc, D3D12_RENDER_PASS_FLAG_NONE);
+	}
+
+	void dx12_backend::cmd_begin_render_pass_swapchain(ID3D12GraphicsCommandList4* cmd_list, uint8* data)
+	{
+		command_begin_render_pass_swapchain* cmd = reinterpret_cast<command_begin_render_pass_swapchain*>(data);
+		_reuse_color_attachments.resize(cmd->color_attachment_count);
+
+		for (uint32 i = 0; i < cmd->color_attachment_count; i++)
+		{
+			const render_pass_color_attachment& att = cmd->color_attachments[i];
+			const swapchain&					swp = _swapchains.get(att.texture);
+			const descriptor_handle&			dh	= _descriptors.get(swp.rtv_indices[att.view_index]);
+
+			CD3DX12_CLEAR_VALUE cv;
+			cv.Format	= static_cast<DXGI_FORMAT>(swp.format);
+			cv.Color[0] = att.clear_color.x;
+			cv.Color[1] = att.clear_color.y;
+			cv.Color[2] = att.clear_color.z;
+			cv.Color[3] = att.clear_color.w;
+			const D3D12_RENDER_PASS_BEGINNING_ACCESS colorBegin{get_load_op(att.load_op), {cv}};
+			const D3D12_RENDER_PASS_ENDING_ACCESS	 colorEnd{get_store_op(att.store_op), {}};
+
+			_reuse_color_attachments[i] = {dh.cpu, colorBegin, colorEnd};
+		}
+
+		cmd_list->BeginRenderPass(cmd->color_attachment_count, _reuse_color_attachments.data(), NULL, D3D12_RENDER_PASS_FLAG_NONE);
+	}
+
+	void dx12_backend::cmd_begin_render_pass_swapchain_depth(ID3D12GraphicsCommandList4* cmd_list, uint8* data)
+	{
+		command_begin_render_pass_swapchain_depth* cmd = reinterpret_cast<command_begin_render_pass_swapchain_depth*>(data);
+		_reuse_color_attachments.resize(cmd->color_attachment_count);
+
+		for (uint32 i = 0; i < cmd->color_attachment_count; i++)
+		{
+			const render_pass_color_attachment& att = cmd->color_attachments[i];
+			const swapchain&					swp = _swapchains.get(att.texture);
+			const descriptor_handle&			dh	= _descriptors.get(swp.rtv_indices[att.view_index]);
+
+			CD3DX12_CLEAR_VALUE cv;
+			cv.Format	= static_cast<DXGI_FORMAT>(swp.format);
+			cv.Color[0] = att.clear_color.x;
+			cv.Color[1] = att.clear_color.y;
+			cv.Color[2] = att.clear_color.z;
+			cv.Color[3] = att.clear_color.w;
+			const D3D12_RENDER_PASS_BEGINNING_ACCESS colorBegin{get_load_op(att.load_op), {cv}};
+			const D3D12_RENDER_PASS_ENDING_ACCESS	 colorEnd{get_store_op(att.store_op), {}};
+
+			_reuse_color_attachments[i] = {dh.cpu, colorBegin, colorEnd};
+		}
+
+		const texture&							   depth_txt = _textures.get(cmd->depth_stencil_attachment.texture);
+		const descriptor_handle&				   depth_dh	 = _descriptors.get(depth_txt.dsvs[cmd->depth_stencil_attachment.view_index]);
+		const CD3DX12_CLEAR_VALUE				   clear_depth_stencil{static_cast<DXGI_FORMAT>(depth_txt.format), cmd->depth_stencil_attachment.clear_depth, cmd->depth_stencil_attachment.clear_stencil};
+		const D3D12_RENDER_PASS_BEGINNING_ACCESS   depth_begin{get_load_op(cmd->depth_stencil_attachment.depth_load_op), {clear_depth_stencil}};
+		const D3D12_RENDER_PASS_BEGINNING_ACCESS   stencil_begin{get_load_op(cmd->depth_stencil_attachment.stencil_load_op), {clear_depth_stencil}};
+		const D3D12_RENDER_PASS_ENDING_ACCESS	   depth_end{get_store_op(cmd->depth_stencil_attachment.depth_store_op), {}};
+		const D3D12_RENDER_PASS_ENDING_ACCESS	   stencil_end{get_store_op(cmd->depth_stencil_attachment.stencil_store_op), {}};
+		const D3D12_RENDER_PASS_DEPTH_STENCIL_DESC depth_stencil_desc{depth_dh.cpu, depth_begin, stencil_begin, depth_end, stencil_end};
+		cmd_list->BeginRenderPass(cmd->color_attachment_count, _reuse_color_attachments.data(), &depth_stencil_desc, D3D12_RENDER_PASS_FLAG_NONE);
+	}
+
+	void dx12_backend::cmd_end_render_pass(ID3D12GraphicsCommandList4* cmd_list, uint8* data)
+	{
+		command_end_render_pass* cmd = reinterpret_cast<command_end_render_pass*>(data);
+		cmd_list->EndRenderPass();
+	}
+
+	void dx12_backend::cmd_set_scissors(ID3D12GraphicsCommandList4* cmd_list, uint8* data)
+	{
+		command_set_scissors* cmd = reinterpret_cast<command_set_scissors*>(data);
+		D3D12_RECT			  sc;
+		sc.left	  = static_cast<LONG>(cmd->x);
+		sc.top	  = static_cast<LONG>(cmd->y);
+		sc.right  = static_cast<LONG>(cmd->x + cmd->width);
+		sc.bottom = static_cast<LONG>(cmd->y + cmd->height);
+		cmd_list->RSSetScissorRects(1, &sc);
+	}
+
+	void dx12_backend::cmd_set_viewport(ID3D12GraphicsCommandList4* cmd_list, uint8* data)
+	{
+		command_set_viewport* cmd = reinterpret_cast<command_set_viewport*>(data);
+		D3D12_VIEWPORT		  vp;
+		vp.MinDepth = cmd->min_depth;
+		vp.MaxDepth = cmd->max_depth;
+		vp.Height	= static_cast<float>(cmd->height);
+		vp.Width	= static_cast<float>(cmd->width);
+		vp.TopLeftX = cmd->x;
+		vp.TopLeftY = cmd->y;
+		cmd_list->RSSetViewports(1, &vp);
+	}
+
+	void dx12_backend::cmd_bind_pipeline(ID3D12GraphicsCommandList4* cmd_list, uint8* data)
+	{
+		command_bind_pipeline* cmd = reinterpret_cast<command_bind_pipeline*>(data);
+		const shader&		   sh  = _shaders.get(cmd->pipeline);
+
+		cmd_list->IASetPrimitiveTopology(static_cast<D3D12_PRIMITIVE_TOPOLOGY>(sh.topology));
+		cmd_list->SetPipelineState(sh.ptr.Get());
+	}
+
+	void dx12_backend::cmd_bind_pipeline_compute(ID3D12GraphicsCommandList4* cmd_list, uint8* data)
+	{
+		command_bind_pipeline_compute* cmd = reinterpret_cast<command_bind_pipeline_compute*>(data);
+		const shader&				   sh  = _shaders.get(cmd->pipeline);
+		cmd_list->SetPipelineState(sh.ptr.Get());
+	}
+
+	void dx12_backend::cmd_draw_instanced(ID3D12GraphicsCommandList4* cmd_list, uint8* data)
+	{
+		command_draw_instanced* cmd = reinterpret_cast<command_draw_instanced*>(data);
+		cmd_list->DrawInstanced(cmd->vertex_count_per_instance, cmd->instance_count, cmd->start_vertex_location, cmd->start_instance_location);
+	}
+
+	void dx12_backend::cmd_draw_indexed_instanced(ID3D12GraphicsCommandList4* cmd_list, uint8* data)
+	{
+		command_draw_indexed_instanced* cmd = reinterpret_cast<command_draw_indexed_instanced*>(data);
+		cmd_list->DrawIndexedInstanced(cmd->index_count_per_instance, cmd->instance_count, cmd->start_index_location, cmd->base_vertex_location, cmd->start_instance_location);
+	}
+
+	void dx12_backend::cmd_draw_indexed_indirect(ID3D12GraphicsCommandList4* cmd_list, uint8* data)
+	{
+		command_draw_indexed_indirect* cmd = reinterpret_cast<command_draw_indexed_indirect*>(data);
+		cmd_list->ExecuteIndirect(_indirect_signatures.get(cmd->indirect_signature).signature.Get(), cmd->count, _resources.get(cmd->indirect_buffer).ptr->GetResource(), cmd->indirect_buffer_offset, NULL, 0);
+	}
+
+	void dx12_backend::cmd_draw_indirect(ID3D12GraphicsCommandList4* cmd_list, uint8* data)
+	{
+		command_draw_indirect* cmd = reinterpret_cast<command_draw_indirect*>(data);
+		cmd_list->ExecuteIndirect(_indirect_signatures.get(cmd->indirect_signature).signature.Get(), cmd->count, _resources.get(cmd->indirect_buffer).ptr->GetResource(), cmd->indirect_buffer_offset, NULL, 0);
+	}
+
+	void dx12_backend::cmd_bind_vertex_buffers(ID3D12GraphicsCommandList4* cmd_list, uint8* data)
+	{
+		command_bind_vertex_buffers*   cmd	= reinterpret_cast<command_bind_vertex_buffers*>(data);
+		resource&					   res	= _resources.get(cmd->buffer);
+		const D3D12_VERTEX_BUFFER_VIEW view = {
+			.BufferLocation = res.ptr->GetResource()->GetGPUVirtualAddress(),
+			.SizeInBytes	= static_cast<uint32>(res.size),
+			.StrideInBytes	= static_cast<uint32>(cmd->vertex_size),
+		};
+
+		cmd_list->IASetVertexBuffers(cmd->slot, 1, &view);
+	}
+
+	void dx12_backend::cmd_bind_index_buffers(ID3D12GraphicsCommandList4* cmd_list, uint8* data)
+	{
+		command_bind_index_buffers* cmd = reinterpret_cast<command_bind_index_buffers*>(data);
+		resource&					res = _resources.get(cmd->buffer);
+
+		const D3D12_INDEX_BUFFER_VIEW view = {
+			.BufferLocation = res.ptr->GetResource()->GetGPUVirtualAddress(),
+			.SizeInBytes	= static_cast<uint32>(res.size),
+			.Format			= cmd->bit_depth == 16 ? DXGI_FORMAT_R16_UINT : DXGI_FORMAT_R32_UINT,
+		};
+
+		cmd_list->IASetIndexBuffer(&view);
+	}
+
+	void dx12_backend::cmd_copy_resource(ID3D12GraphicsCommandList4* cmd_list, uint8* data)
+	{
+		command_copy_resource* cmd		= reinterpret_cast<command_copy_resource*>(data);
+		resource&			   src_res	= _resources.get(cmd->source);
+		resource&			   dest_res = _resources.get(cmd->destination);
+		cmd_list->CopyResource(dest_res.ptr->GetResource(), src_res.ptr->GetResource());
+	}
+
+	uint32 dx12_backend::get_aligned_texture_size(uint32 width, uint32 height, uint32 bpp)
+	{
+		const uint32 row_pitch	 = static_cast<uint32>((width * bpp + (D3D12_TEXTURE_DATA_PITCH_ALIGNMENT - 1)) & ~(D3D12_TEXTURE_DATA_PITCH_ALIGNMENT - 1));
+		const uint32 slice_pitch = row_pitch * height;
+		return (slice_pitch + D3D12_TEXTURE_DATA_PLACEMENT_ALIGNMENT - 1) & ~(D3D12_TEXTURE_DATA_PLACEMENT_ALIGNMENT - 1);
+	}
+
+	void* dx12_backend::adjust_buffer_pitch(void* data, uint32 width, uint32 height, uint32 bpp)
+	{
+		const uint32 alignment	 = D3D12_TEXTURE_DATA_PITCH_ALIGNMENT;
+		const uint32 row_pitch	 = (width * bpp + (alignment - 1)) & ~(alignment - 1);
+		const uint32 slice_pitch = row_pitch * height;
+		char*		 buffer		 = reinterpret_cast<char*>(GAME_MALLOC(static_cast<size_t>(slice_pitch)));
+		char*		 src		 = reinterpret_cast<char*>(data);
+		char*		 dst		 = buffer;
+
+		if (dst != 0)
+		{
+			for (uint32 i = 0; i < height; ++i)
+			{
+				GAME_MEMCPY(dst, src, width * bpp);
+				dst += row_pitch;
+				src += width * bpp;
+			}
+		}
+
+		return buffer;
+	}
+
+	void dx12_backend::cmd_copy_buffer_to_texture(ID3D12GraphicsCommandList4* cmd_list, uint8* data)
+	{
+		command_copy_buffer_to_texture* cmd = reinterpret_cast<command_copy_buffer_to_texture*>(data);
+
+		_reuse_subresource_data.resize(0);
+		for (uint8 i = 0; i < cmd->mip_levels; i++)
+		{
+			const texture_buffer& tb		= cmd->textures[i];
+			const LONG_PTR		  row_pitch = static_cast<LONG_PTR>((tb.size.x * tb.bpp + (D3D12_TEXTURE_DATA_PITCH_ALIGNMENT - 1)) & ~(D3D12_TEXTURE_DATA_PITCH_ALIGNMENT - 1));
+
+			const D3D12_SUBRESOURCE_DATA texture_data = {
+				.pData		= tb.pixels,
+				.RowPitch	= row_pitch,
+				.SlicePitch = row_pitch * static_cast<LONG_PTR>(tb.size.y),
+			};
+
+			_reuse_subresource_data.push_back(texture_data);
+		}
+
+		resource& res = _resources.get(cmd->intermediate_buffer);
+		texture&  txt = _textures.get(cmd->destination_texture);
+		UpdateSubresources(cmd_list, txt.ptr->GetResource(), res.ptr->GetResource(), 0, cmd->mip_levels * cmd->destination_slice, cmd->mip_levels, _reuse_subresource_data.data());
+	}
+
+	void dx12_backend::cmd_copy_texture_to_buffer(ID3D12GraphicsCommandList4* cmd_list, uint8* data)
+	{
+		command_copy_texture_to_buffer* cmd = reinterpret_cast<command_copy_texture_to_buffer*>(data);
+
+		texture&						  txt			= _textures.get(cmd->src_texture);
+		resource&						  res			= _resources.get(cmd->dest_buffer);
+		const D3D12_TEXTURE_COPY_LOCATION dest_location = {
+			.pResource = res.ptr->GetResource(),
+			.Type	   = D3D12_TEXTURE_COPY_TYPE_PLACED_FOOTPRINT,
+			.PlacedFootprint =
+				{
+					.Offset = 0,
+					.Footprint =
+						{
+							.Format	  = static_cast<DXGI_FORMAT>(txt.format),
+							.Width	  = static_cast<UINT>(cmd->size.x),
+							.Height	  = static_cast<UINT>(cmd->size.y),
+							.Depth	  = 1,
+							.RowPitch = static_cast<UINT>(cmd->size.x * cmd->bpp),
+						},
+				},
+		};
+
+		const D3D12_TEXTURE_COPY_LOCATION src_location = {
+			.pResource		  = txt.ptr->GetResource(),
+			.Type			  = D3D12_TEXTURE_COPY_TYPE_SUBRESOURCE_INDEX,
+			.SubresourceIndex = D3D12CalcSubresource(cmd->src_mip, cmd->src_layer, 0, 1, 1),
+		};
+
+		cmd_list->CopyTextureRegion(&dest_location, 0, 0, 0, &src_location, NULL);
+	}
+
+	void dx12_backend::cmd_copy_texture_to_texture(ID3D12GraphicsCommandList4* cmd_list, uint8* data)
+	{
+		command_copy_texture_to_texture* cmd = reinterpret_cast<command_copy_texture_to_texture*>(data);
+		texture&						 src = _textures.get(cmd->source);
+		texture&						 dst = _textures.get(cmd->destination);
+
+		const D3D12_TEXTURE_COPY_LOCATION src_location = {
+			.pResource		  = src.ptr->GetResource(),
+			.Type			  = D3D12_TEXTURE_COPY_TYPE_SUBRESOURCE_INDEX,
+			.SubresourceIndex = cmd->source_layer * cmd->source_total_mips + cmd->source_mip,
+		};
+
+		const D3D12_TEXTURE_COPY_LOCATION dst_location = {
+			.pResource		  = dst.ptr->GetResource(),
+			.Type			  = D3D12_TEXTURE_COPY_TYPE_SUBRESOURCE_INDEX,
+			.SubresourceIndex = cmd->destination_layer * cmd->destination_total_mips + cmd->destination_mip,
+		};
+
+		cmd_list->CopyTextureRegion(&dst_location, 0, 0, 0, &src_location, nullptr);
+	}
+
+	void dx12_backend::cmd_bind_constants(ID3D12GraphicsCommandList4* cmd_list, uint8* data)
+	{
+		command_bind_constants* cmd = reinterpret_cast<command_bind_constants*>(data);
+		cmd_list->SetGraphicsRoot32BitConstants(static_cast<uint32>(cmd->param_index), static_cast<uint32>(cmd->count), cmd->data, cmd->offset);
+	}
+
+	void dx12_backend::cmd_bind_layout(ID3D12GraphicsCommandList4* cmd_list, uint8* data)
+	{
+		command_bind_layout* cmd	= reinterpret_cast<command_bind_layout*>(data);
+		const bind_layout&	 layout = _bind_layouts.get(cmd->layout);
+		cmd_list->SetGraphicsRootSignature(layout.root_signature.Get());
+	}
+
+	void dx12_backend::cmd_bind_layout_compute(ID3D12GraphicsCommandList4* cmd_list, uint8* data)
+	{
+		command_bind_layout_compute* cmd	= reinterpret_cast<command_bind_layout_compute*>(data);
+		const bind_layout&			 layout = _bind_layouts.get(cmd->layout);
+		cmd_list->SetComputeRootSignature(layout.root_signature.Get());
+	}
+
+	void dx12_backend::cmd_bind_group(ID3D12GraphicsCommandList4* cmd_list, uint8* data)
+	{
+		command_bind_group* cmd	  = reinterpret_cast<command_bind_group*>(data);
+		const bind_group&	group = _bind_groups.get(cmd->group);
 
 		for (uint8 i = 0; i < group.bindings_count; i++)
 		{
-			group_binding& binding = group.bindings[i];
-			if (binding.flags.is_set(binding_flags::bf_table))
-				cmd_list->SetGraphicsRootDescriptorTable(binding.root_param_index, {binding.handle.gpu});
-			else if (binding.flags.is_set(binding_flags::bf_ubo))
-				cmd_list->SetGraphicsRootConstantBufferView(binding.root_param_index, binding.handle.gpu);
-			else if (binding.flags.is_set(binding_flags::bf_ssbo) || binding.flags.is_set(binding_flags::bf_texture))
-				cmd_list->SetGraphicsRootShaderResourceView(binding.root_param_index, binding.handle.gpu);
-			else if (binding.flags.is_set(binding_flags::bf_uav))
-				cmd_list->SetGraphicsRootUnorderedAccessView(binding.root_param_index, binding.handle.gpu);
-			else if (binding.flags.is_set(binding_flags::bf_constant))
-				cmd_list->SetGraphicsRoot32BitConstant(binding.root_param_index, static_cast<uint32>(binding.handle.cpu), static_cast<uint32>(binding.handle.gpu));
+			const group_binding&	 binding = group.bindings[i];
+			const descriptor_handle& dh		 = _descriptors.get(binding.descriptor_index);
+			const descriptor_type	 type	 = static_cast<descriptor_type>(binding.descriptor_type);
+
+			if (type == descriptor_type::sampler || type == descriptor_type::pointer)
+				cmd_list->SetGraphicsRootDescriptorTable(binding.root_param_index, {dh.gpu});
+			else if (type == descriptor_type::ubo)
+				cmd_list->SetGraphicsRootConstantBufferView(binding.root_param_index, dh.gpu);
+			else if (type == descriptor_type::ssbo || type == descriptor_type::texture)
+				cmd_list->SetGraphicsRootShaderResourceView(binding.root_param_index, dh.gpu);
+			else if (type == descriptor_type::uav)
+				cmd_list->SetGraphicsRootUnorderedAccessView(binding.root_param_index, dh.gpu);
+			else if (type == descriptor_type::constant)
+				GAME_ASSERT(false);
 		}
 	}
+
+	void dx12_backend::cmd_dispatch(ID3D12GraphicsCommandList4* cmd_list, uint8* data)
+	{
+		command_dispatch* cmd = reinterpret_cast<command_dispatch*>(data);
+		cmd_list->Dispatch(cmd->group_size_x, cmd->group_size_y, cmd->group_size_z);
+	}
+
+	void dx12_backend::cmd_barrier(ID3D12GraphicsCommandList4* cmd_list, uint8* data)
+	{
+		command_barrier* cmd = reinterpret_cast<command_barrier*>(data);
+
+		_reuse_barriers.resize(0);
+
+		for (uint16 i = 0; i < cmd->barrier_count; i++)
+		{
+			const barrier& barrier = cmd->barriers[i];
+			resource&	   res	   = _resources.get(barrier.resource);
+			_reuse_barriers.push_back(CD3DX12_RESOURCE_BARRIER::Transition(res.ptr->GetResource(), get_resource_state(barrier.from_state), get_resource_state(barrier.to_state)));
+		}
+
+		if (!_reuse_barriers.empty())
+			cmd_list->ResourceBarrier(static_cast<UINT>(_reuse_barriers.size()), _reuse_barriers.data());
+	}
+
 }

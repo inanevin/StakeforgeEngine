@@ -7,7 +7,7 @@
 #include "data/bitmask.hpp"
 #include "data/vector.hpp"
 #include "format.hpp"
-#include "gfx_common.hpp"
+#include "resource_limits.hpp"
 
 namespace Game
 {
@@ -26,7 +26,14 @@ namespace Game
 		vector2ui16 size = vector2ui16::zero;
 	};
 
-	enum class blend_op
+	struct texture_buffer
+	{
+		uint8*		pixels = nullptr;
+		vector2ui16 size   = vector2ui16::zero;
+		uint8		bpp	   = 0;
+	};
+
+	enum class blend_op : uint8
 	{
 		add,
 		subtract,
@@ -35,7 +42,7 @@ namespace Game
 		max
 	};
 
-	enum class blend_factor
+	enum class blend_factor : uint16
 	{
 		zero,
 		one,
@@ -49,7 +56,7 @@ namespace Game
 		one_minus_dst_alpha,
 	};
 
-	enum class logic_op
+	enum class logic_op : uint16
 	{
 		clear,
 		and_,
@@ -63,14 +70,14 @@ namespace Game
 		equivalent,
 	};
 
-	enum class command_type
+	enum class command_type : uint8
 	{
 		graphics,
 		transfer,
 		compute,
 	};
 
-	enum class topology
+	enum class topology : uint8
 	{
 		point_list,
 		line_list,
@@ -82,27 +89,27 @@ namespace Game
 		triangle_strip_adjacency,
 	};
 
-	enum class polygon_mode
+	enum class polygon_mode : uint8
 	{
 		fill,
 		line,
 		point
 	};
 
-	enum class cull_mode
+	enum class cull_mode : uint8
 	{
 		none,
 		front,
 		back,
 	};
 
-	enum class front_face
+	enum class front_face : uint8
 	{
 		ccw,
 		cw,
 	};
 
-	enum class stencil_op
+	enum class stencil_op : uint8
 	{
 		keep,
 		zero,
@@ -114,7 +121,7 @@ namespace Game
 		decrement_wrap,
 	};
 
-	enum class load_op
+	enum class load_op : uint8
 	{
 		load,
 		clear,
@@ -122,7 +129,7 @@ namespace Game
 		none,
 	};
 
-	enum class compare_op
+	enum class compare_op : uint8
 	{
 		never,
 		less,
@@ -134,11 +141,39 @@ namespace Game
 		always
 	};
 
-	enum class store_op
+	enum class store_op : uint8
 	{
 		store,
 		dont_care,
 		none,
+	};
+
+	enum class shader_stage : uint8
+	{
+		vertex,
+		fragment,
+		compute,
+		all
+	};
+
+	enum class resource_state : uint8
+	{
+		common,
+		vertex_cbv,
+		index_buffer,
+		render_target,
+		uav,
+		depth_write,
+		depth_read,
+		non_ps_resource,
+		ps_resource,
+		indirect_arg,
+		copy_dest,
+		copy_source,
+		resolve_dest,
+		resolve_source,
+		generic_read,
+		present,
 	};
 
 	enum resource_flags
@@ -159,6 +194,17 @@ namespace Game
 		sf_vsync_every_v_blank	= 1 << 1,
 		sf_vsync_every_2v_blank = 1 << 2,
 		sf_allow_tearing		= 1 << 3,
+	};
+
+	enum class descriptor_type : uint8
+	{
+		constant,
+		ubo,
+		ssbo,
+		uav,
+		pointer,
+		sampler,
+		texture
 	};
 
 	enum binding_flags
@@ -266,26 +312,46 @@ namespace Game
 		char			  debug_name[16]	   = {"Texture"};
 	};
 
+	struct layout_entry
+	{
+		descriptor_type type	= descriptor_type::constant;
+		uint8			count	= 1;
+		uint8			set		= 0;
+		uint8			binding = 0;
+	};
+
 	struct binding
 	{
-		uint32		   constant_value  = 0;
-		uint32		   constant_offset = 0;
-		uint8		   root_index	   = 0;
-		uint8		   count		   = 1;
-		bitmask<uint8> flags		   = 0;
+		vector<layout_entry> entry_table;
+		shader_stage		 visibility_stage = shader_stage::vertex;
+	};
+
+	struct bind_layout_desc
+	{
+		vector<binding> bindings   = {};
+		uint8			is_compute = 0;
+	};
+
+	struct bind_group_binding
+	{
+		uint32			root_index		= 0;
+		uint32			count			= 0;
+		descriptor_type type			= descriptor_type::constant;
+		uint32			constant_value	= 0;
+		uint32			constant_offset = 0;
 	};
 
 	struct bind_group_desc
 	{
-		vector<binding> bindings;
+		vector<bind_group_binding> bindings;
 	};
 
 	struct binding_update
 	{
-		uint32				   binding_index  = 0;
-		vector<bitmask<uint8>> resource_flags = {};
-		vector<resource_id>	   resources	  = {};
-		vector<uint32>		   resource_views = {};
+		uint32					binding_index  = 0;
+		vector<descriptor_type> resource_types = {};
+		vector<resource_id>		resources	   = {};
+		vector<uint32>			resource_views = {};
 	};
 
 	struct bind_group_update_desc
