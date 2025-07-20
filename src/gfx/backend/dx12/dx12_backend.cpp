@@ -752,8 +752,18 @@ namespace Game
 
 	void dx12_backend::execute_commands(span<uint8> data, resource_id cmd_buffer)
 	{
-		command_buffer&				cmd_buf	 = _command_buffers.get(cmd_buffer);
-		ID3D12GraphicsCommandList4* cmd_list = cmd_buf.ptr.Get();
+		command_buffer&				cmd_buf	  = _command_buffers.get(cmd_buffer);
+		ID3D12GraphicsCommandList4* cmd_list  = cmd_buf.ptr.Get();
+		ID3D12CommandAllocator*		cmd_alloc = _command_allocators.get(cmd_buf.allocator).ptr.Get();
+
+		throw_if_failed(cmd_alloc->Reset());
+		throw_if_failed(cmd_list->Reset(cmd_alloc, nullptr));
+
+		if (cmd_buf.is_transfer == 0)
+		{
+			ID3D12DescriptorHeap* heaps[] = {_heap_gpu_buffer.get_heap(), _heap_gpu_sampler.get_heap()};
+			cmd_list->SetDescriptorHeaps(_countof(heaps), heaps);
+		}
 
 		uint8* ptr = data.data;
 		uint8* end = data.data + data.size;
@@ -770,6 +780,52 @@ namespace Game
 			uint8* command_data = ptr;
 			_function_bindings[tid](cmd_list, command_data);
 			ptr += size;
+		}
+
+		throw_if_failed(cmd_list->Close());
+	}
+
+	void dx12_backend::submit_commands(resource_id queue_id, resource_id* commands, uint8 commands_count)
+	{
+		queue& q = _queues.get(queue_id);
+		_reuse_lists.resize(0);
+
+		for (uint8 i = 0; i < commands_count; i++)
+		{
+			command_buffer& cb = _command_buffers.get(commands[i]);
+			_reuse_lists.push_back(cb.ptr.Get());
+		}
+
+		q.ptr->ExecuteCommandLists(static_cast<uint32>(commands_count), _reuse_lists.data());
+	}
+
+	void dx12_backend::queue_wait(resource_id queue_id, resource_id* semaphores, uint8 semaphore_count, uint64* semaphore_values)
+	{
+		queue& q = _queues.get(queue_id);
+		_reuse_fences.resize(0);
+		_reuse_values.resize(0);
+
+		for (uint8 i = 0; i < semaphore_count; i++)
+			q.ptr->Wait(_semaphores.get(semaphores[i]).ptr.Get(), semaphore_values[i]);
+	}
+
+	void dx12_backend::queue_signal(resource_id queue_id, resource_id* semaphores, uint8 semaphore_count, uint64* semaphore_values)
+	{
+		queue& q = _queues.get(queue_id);
+		_reuse_fences.resize(0);
+		_reuse_values.resize(0);
+
+		for (uint8 i = 0; i < semaphore_count; i++)
+			q.ptr->Signal(_semaphores.get(semaphores[i]).ptr.Get(), semaphore_values[i]);
+	}
+
+	void dx12_backend::present(const present_desc& desc)
+	{
+		for (uint8 i = 0; i < desc.swapchain_count; i++)
+		{
+			swapchain& swp = _swapchains.get(desc.swapchains[i]);
+			throw_if_failed(swp.ptr->Present(swp.vsync, 0));
+			swp.image_index = swp.ptr->GetCurrentBackBufferIndex();
 		}
 	}
 
@@ -1258,6 +1314,7 @@ namespace Game
 			descriptor_handle& dh = _descriptors.get(swp.rtv_indices[i]);
 
 			throw_if_failed(swp.ptr->GetBuffer(i, IID_PPV_ARGS(&swp.textures[i])));
+			swp.image_index = swp.ptr->GetCurrentBackBufferIndex();
 
 			const D3D12_RENDER_TARGET_VIEW_DESC rtv_desc = {
 				.Format		   = swap_format,
@@ -1665,9 +1722,12 @@ namespace Game
 	resource_id dx12_backend::create_command_buffer(const command_buffer_desc& desc)
 	{
 		const resource_id  id	 = _command_buffers.add();
-		command_allocator& alloc = _command_allocators.get(id);
+		command_allocator& alloc = _command_allocators.get(desc.allocator);
 		command_buffer&	   cmd	 = _command_buffers.get(id);
 		throw_if_failed(_device->CreateCommandList(0, get_command_type(desc.type), alloc.ptr.Get(), nullptr, IID_PPV_ARGS(cmd.ptr.GetAddressOf())));
+		cmd.allocator	= create_command_allocator(static_cast<uint8>(desc.type));
+		cmd.is_transfer = desc.type == command_type::transfer;
+
 		NAME_DX12_OBJECT_CSTR(cmd.ptr, desc.debug_name);
 		return id;
 	}
@@ -1676,6 +1736,7 @@ namespace Game
 	{
 		command_buffer& cmd = _command_buffers.get(id);
 		cmd.ptr.Reset();
+		destroy_command_allocator(cmd.allocator);
 		_command_buffers.remove(id);
 	}
 
@@ -1852,7 +1913,7 @@ namespace Game
 
 	void dx12_backend::cmd_begin_render_pass(ID3D12GraphicsCommandList4* cmd_list, uint8* data)
 	{
-		command_begin_render_pass_swapchain* cmd = reinterpret_cast<command_begin_render_pass_swapchain*>(data);
+		command_begin_render_pass* cmd = reinterpret_cast<command_begin_render_pass*>(data);
 		_reuse_color_attachments.resize(cmd->color_attachment_count);
 
 		for (uint32 i = 0; i < cmd->color_attachment_count; i++)
@@ -1919,7 +1980,7 @@ namespace Game
 		{
 			const render_pass_color_attachment& att = cmd->color_attachments[i];
 			const swapchain&					swp = _swapchains.get(att.texture);
-			const descriptor_handle&			dh	= _descriptors.get(swp.rtv_indices[att.view_index]);
+			const descriptor_handle&			dh	= _descriptors.get(swp.rtv_indices[swp.image_index]);
 
 			CD3DX12_CLEAR_VALUE cv;
 			cv.Format	= static_cast<DXGI_FORMAT>(swp.format);
@@ -1945,7 +2006,7 @@ namespace Game
 		{
 			const render_pass_color_attachment& att = cmd->color_attachments[i];
 			const swapchain&					swp = _swapchains.get(att.texture);
-			const descriptor_handle&			dh	= _descriptors.get(swp.rtv_indices[att.view_index]);
+			const descriptor_handle&			dh	= _descriptors.get(swp.rtv_indices[swp.image_index]);
 
 			CD3DX12_CLEAR_VALUE cv;
 			cv.Format	= static_cast<DXGI_FORMAT>(swp.format);

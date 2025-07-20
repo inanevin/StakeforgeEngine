@@ -477,4 +477,10 @@ namespace Game
 		resource_id	 allocator		= 0;
 		char		 debug_name[16] = {"CmdBuffer"};
 	};
+
+	struct present_desc
+	{
+		resource_id* swapchains		 = nullptr;
+		uint8		 swapchain_count = 0;
+	};
 }

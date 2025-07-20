@@ -32,6 +32,7 @@ namespace Game
 	struct queue_desc;
 	struct bind_group_update_desc;
 	struct bind_layout_desc;
+	struct present_desc;
 
 	struct command_bind_group;
 
@@ -69,7 +70,9 @@ namespace Game
 			Microsoft::WRL::ComPtr<IDXGISwapChain3> ptr = NULL;
 			Microsoft::WRL::ComPtr<ID3D12Resource>	textures[gfx_util::BACK_BUFFER_COUNT];
 			resource_id								rtv_indices[gfx_util::BACK_BUFFER_COUNT];
-			uint8									format = 0;
+			uint8									format		= 0;
+			uint8									image_index = 0;
+			uint8									vsync		= 0;
 		};
 
 		struct semaphore
@@ -106,6 +109,8 @@ namespace Game
 		struct command_buffer
 		{
 			Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList4> ptr;
+			resource_id										   allocator   = 0;
+			uint8											   is_transfer = 0;
 		};
 
 		struct command_allocator
@@ -167,6 +172,10 @@ namespace Game
 		void init();
 		void uninit();
 		void execute_commands(span<uint8> data, resource_id cmd_buffer);
+		void submit_commands(resource_id queue, resource_id* commands, uint8 commands_count);
+		void queue_wait(resource_id queue, resource_id* semaphores, uint8 semaphore_count, uint64* semaphore_values);
+		void queue_signal(resource_id queue, resource_id* semaphores, uint8 semaphore_count, uint64* semaphore_values);
+		void present(const present_desc& desc);
 
 		bool compile_shader(uint8 stage, const string& source, span<uint8>& out_data, bool compile_root_sig, span<uint8>& out_signature_data);
 
@@ -202,6 +211,21 @@ namespace Game
 
 		uint32 get_aligned_texture_size(uint32 width, uint32 height, uint32 bpp);
 		void*  adjust_buffer_pitch(void* data, uint32 width, uint32 height, uint32 bpp);
+
+		inline resource_id get_queue_gfx() const
+		{
+			return _queue_graphics;
+		}
+
+		inline resource_id get_queue_transfer() const
+		{
+			return _queue_transfer;
+		}
+
+		inline resource_id get_queue_compute() const
+		{
+			return _queue_compute;
+		}
 
 	private:
 		void wait_for_fence(ID3D12Fence* fence, uint64 value);
@@ -270,6 +294,9 @@ namespace Game
 		vector<CD3DX12_ROOT_PARAMETER1>				 _reuse_root_params		 = {};
 		vector<CD3DX12_DESCRIPTOR_RANGE1>			 _reuse_root_ranges		 = {};
 		vector<D3D12_SUBRESOURCE_DATA>				 _reuse_subresource_data = {};
+		vector<ID3D12CommandList*>					 _reuse_lists			 = {};
+		vector<ID3D12Fence*>						 _reuse_fences			 = {};
+		vector<uint64>								 _reuse_values			 = {};
 
 		resource_id _queue_graphics = 0;
 		resource_id _queue_transfer = 0;
