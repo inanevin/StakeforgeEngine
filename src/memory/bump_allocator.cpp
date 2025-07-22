@@ -5,19 +5,21 @@
 
 namespace Game
 {
-	bum_allocator::bum_allocator(size_t sz)
+	void bump_allocator::init(size_t sz, size_t alignment)
 	{
+
 		GAME_ASSERT(sz != 0);
 		_size = sz;
-		_raw  = GAME_MALLOC(sz);
+		_raw  = GAME_ALIGNED_MALLOC(alignment, sz);
 	}
 
-	bum_allocator::~bum_allocator()
+	void bump_allocator::uninit()
 	{
-		GAME_FREE(_raw);
+		GAME_ALIGNED_FREE(_raw);
+		_raw = nullptr;
 	}
 
-	void* bum_allocator::allocate(size_t size, size_t alignment)
+	void* bump_allocator::allocate(size_t size, size_t alignment)
 	{
 		GAME_ASSERT(_head + size < _size);
 
@@ -25,7 +27,8 @@ namespace Game
 		size_t space	   = _size - _head;
 
 		void* aligned_ptr = std::align(alignment, size, current_ptr, space);
-		if (aligned_ptr == nullptr) return nullptr;
+		if (aligned_ptr == nullptr)
+			return nullptr;
 
 		_head = _size - space + size;
 		return aligned_ptr;

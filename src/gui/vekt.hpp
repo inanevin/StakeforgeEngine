@@ -22,6 +22,9 @@
 #define VEKT_INLINE inline
 #define VEKT_API	extern
 
+#undef min
+#undef max
+
 namespace vekt
 {
 
@@ -80,11 +83,14 @@ namespace vekt
 	extern config_data config;
 
 #define V_LOG(...)                                                                                                                                                                                                                                                 \
-	if (vekt::config.on_log) vekt::config.on_log(vekt::log_verbosity::info, __VA_ARGS__)
+	if (vekt::config.on_log)                                                                                                                                                                                                                                       \
+	vekt::config.on_log(vekt::log_verbosity::info, __VA_ARGS__)
 #define V_ERR(...)                                                                                                                                                                                                                                                 \
-	if (vekt::config.on_log) vekt::config.on_log(vekt::log_verbosity::error, __VA_ARGS__)
+	if (vekt::config.on_log)                                                                                                                                                                                                                                       \
+	vekt::config.on_log(vekt::log_verbosity::error, __VA_ARGS__)
 #define V_WARN(...)                                                                                                                                                                                                                                                \
-	if (vekt::config.on_log) vekt::config.on_log(vekt::log_verbosity::warning, __VA_ARGS__)
+	if (vekt::config.on_log)                                                                                                                                                                                                                                       \
+	vekt::config.on_log(vekt::log_verbosity::warning, __VA_ARGS__)
 
 #define MALLOC(SZ) malloc(SZ)
 #define FREE(X)	   free(X)
@@ -105,11 +111,15 @@ namespace vekt
 		vector(){};
 		vector(const vector<T>& other)
 		{
-			if (other.empty()) { return; }
+			if (other.empty())
+			{
+				return;
+			}
 
 			_capacity = other._capacity;
 			_elements = reinterpret_cast<T*>(MALLOC(_capacity * sizeof(T)));
-			if (!_elements) throw std::bad_alloc();
+			if (!_elements)
+				throw std::bad_alloc();
 
 			for (unsigned int i = 0; i < other._count; ++i)
 			{
@@ -120,15 +130,24 @@ namespace vekt
 
 		vector<T>& operator=(const vector<T>& other)
 		{
-			if (this == &other) { return *this; }
+			if (this == &other)
+			{
+				return *this;
+			}
 
 			clear();
 
-			if (other.empty()) { return *this; }
+			if (other.empty())
+			{
+				return *this;
+			}
 
 			_capacity = other._capacity;
 			_elements = reinterpret_cast<T*>(MALLOC(_capacity * sizeof(T)));
-			if (!_elements) { throw std::bad_alloc(); }
+			if (!_elements)
+			{
+				throw std::bad_alloc();
+			}
 
 			_count = other._count;
 			MEMCPY(_elements, other._elements, _count * sizeof(T));
@@ -164,7 +183,8 @@ namespace vekt
 		{
 			const bool req_place = _count >= _capacity;
 			check_grow();
-			if (req_place) new (&_elements[_count]) T();
+			if (req_place)
+				new (&_elements[_count]) T();
 			_count++;
 		}
 
@@ -175,7 +195,10 @@ namespace vekt
 
 		inline void remove_index(unsigned int index)
 		{
-			if (index >= _count) { return; }
+			if (index >= _count)
+			{
+				return;
+			}
 			_elements[index].~T();
 
 			if (index < _count - 1)
@@ -208,7 +231,10 @@ namespace vekt
 			for (unsigned int i = 0; i < _count; ++i)
 				_elements[i].~T();
 
-			if (_elements) { FREE(_elements); }
+			if (_elements)
+			{
+				FREE(_elements);
+			}
 			_elements = nullptr;
 			_count	  = 0;
 			_capacity = 0;
@@ -216,10 +242,16 @@ namespace vekt
 
 		inline void reserve(unsigned int new_capacity)
 		{
-			if (new_capacity <= _capacity) { return; }
+			if (new_capacity <= _capacity)
+			{
+				return;
+			}
 
 			T* new_elements = (T*)MALLOC(new_capacity * sizeof(T));
-			if (!new_elements) { throw std::bad_alloc(); }
+			if (!new_elements)
+			{
+				throw std::bad_alloc();
+			}
 
 			for (unsigned int i = 0; i < _count; ++i)
 			{
@@ -232,7 +264,10 @@ namespace vekt
 				new (&new_elements[i]) T();
 			}
 
-			if (_elements) { FREE(_elements); }
+			if (_elements)
+			{
+				FREE(_elements);
+			}
 
 			_elements = new_elements;
 			_capacity = new_capacity;
@@ -250,7 +285,8 @@ namespace vekt
 			if (sz > _capacity)
 			{
 				T* new_elements = (T*)MALLOC(sz * sizeof(T));
-				if (!new_elements) throw std::bad_alloc();
+				if (!new_elements)
+					throw std::bad_alloc();
 
 				// Move existing elements
 				for (unsigned int i = 0; i < _count; ++i)
@@ -278,7 +314,8 @@ namespace vekt
 			if (sz > _capacity)
 			{
 				T* new_elements = (T*)MALLOC(sz * sizeof(T));
-				if (!new_elements) throw std::bad_alloc();
+				if (!new_elements)
+					throw std::bad_alloc();
 
 				// Move existing elements
 				for (unsigned int i = 0; i < _count; ++i)
@@ -303,7 +340,8 @@ namespace vekt
 		inline int index_of(const T& t) const
 		{
 			for (int i = 0; i < _count; i++)
-				if (t == _elements[i]) return i;
+				if (t == _elements[i])
+					return i;
 			return -1;
 		};
 
@@ -311,7 +349,8 @@ namespace vekt
 		{
 			for (unsigned int i = 0; i < _count; i++)
 			{
-				if (t == _elements[i]) return _elements + i;
+				if (t == _elements[i])
+					return _elements + i;
 			}
 			return end();
 		};
@@ -320,7 +359,8 @@ namespace vekt
 		{
 			for (unsigned int i = 0; i < _count; i++)
 			{
-				if (predicate(_elements[i])) return _elements + i;
+				if (predicate(_elements[i]))
+					return _elements + i;
 			}
 			return end();
 		};
@@ -1471,10 +1511,14 @@ namespace vekt
 		_gfx_arena.base_ptr	   = nullptr;
 		_misc_arena.base_ptr   = nullptr;
 
-		if (_vertex_buffer) FREE(_vertex_buffer);
-		if (_index_buffer) FREE(_index_buffer);
-		if (_text_cache_vertex_buffer) FREE(_text_cache_vertex_buffer);
-		if (_text_cache_index_buffer) FREE(_text_cache_index_buffer);
+		if (_vertex_buffer)
+			FREE(_vertex_buffer);
+		if (_index_buffer)
+			FREE(_index_buffer);
+		if (_text_cache_vertex_buffer)
+			FREE(_text_cache_vertex_buffer);
+		if (_text_cache_index_buffer)
+			FREE(_text_cache_index_buffer);
 
 		_vertex_buffer = nullptr;
 		_index_buffer  = nullptr;
@@ -1508,7 +1552,8 @@ namespace vekt
 
 	void builder::flush()
 	{
-		if (!_on_draw) return;
+		if (!_on_draw)
+			return;
 		std::sort(_draw_buffers.begin(), _draw_buffers.end(), [](const draw_buffer& a, const draw_buffer& b) { return a.draw_order < b.draw_order; });
 
 		for (draw_buffer& db : _draw_buffers)
@@ -1706,7 +1751,8 @@ namespace vekt
 			if (sz.flags & size_flags::sf_custom_pass)
 			{
 				custom_passes& passes = _custom_passes[widget];
-				if (passes.custom_size_pass) passes.custom_size_pass(this, widget);
+				if (passes.custom_size_pass)
+					passes.custom_size_pass(this, widget);
 				continue;
 			}
 
@@ -1714,8 +1760,10 @@ namespace vekt
 
 			vec2 final_size = sz.size;
 
-			if (sz.flags & size_flags::sf_x_abs) final_size.x = sz.size.x;
-			if (sz.flags & size_flags::sf_y_abs) final_size.y = sz.size.y;
+			if (sz.flags & size_flags::sf_x_abs)
+				final_size.x = sz.size.x;
+			if (sz.flags & size_flags::sf_y_abs)
+				final_size.y = sz.size.y;
 
 			const bool x_relative = sz.flags & size_flags::sf_x_relative;
 			const bool y_relative = sz.flags & size_flags::sf_y_relative;
@@ -1724,8 +1772,10 @@ namespace vekt
 			{
 				const size_props&  parent_sz  = _size_properties[meta.parent];
 				const size_result& parent_res = _size_results[meta.parent];
-				if (x_relative) final_size.x = (parent_res.size.x - parent_sz.child_margins.left - parent_sz.child_margins.right) * sz.size.x;
-				if (y_relative) final_size.y = (parent_res.size.y - parent_sz.child_margins.top - parent_sz.child_margins.bottom) * sz.size.y;
+				if (x_relative)
+					final_size.x = (parent_res.size.x - parent_sz.child_margins.left - parent_sz.child_margins.right) * sz.size.x;
+				if (y_relative)
+					final_size.y = (parent_res.size.y - parent_sz.child_margins.top - parent_sz.child_margins.bottom) * sz.size.y;
 			}
 
 			if (sz.flags & size_flags::sf_x_copy_y)
@@ -1765,8 +1815,10 @@ namespace vekt
 						final_size.y += child_res.size.y + sz.spacing;
 				}
 
-				if (sz.flags & size_flags::sf_x_total_children && !math::equals(final_size.x, 0.0f, 0.001f)) final_size.x -= sz.spacing;
-				if (sz.flags & size_flags::sf_x_total_children && !math::equals(final_size.y, 0.0f, 0.001f)) final_size.y -= sz.spacing;
+				if (sz.flags & size_flags::sf_x_total_children && !math::equals(final_size.x, 0.0f, 0.001f))
+					final_size.x -= sz.spacing;
+				if (sz.flags & size_flags::sf_x_total_children && !math::equals(final_size.y, 0.0f, 0.001f))
+					final_size.y -= sz.spacing;
 
 				final_size.x += sz.child_margins.left + sz.child_margins.right;
 				final_size.y += sz.child_margins.top + sz.child_margins.bottom;
@@ -1791,8 +1843,10 @@ namespace vekt
 				{
 					const size_result& child_res = _size_results[child];
 
-					if (fill_x_children.find(child) != fill_x_children.end()) x_left -= child_res.size.x;
-					if (fill_y_children.find(child) != fill_y_children.end()) y_left -= child_res.size.y;
+					if (fill_x_children.find(child) != fill_x_children.end())
+						x_left -= child_res.size.x;
+					if (fill_y_children.find(child) != fill_y_children.end())
+						y_left -= child_res.size.y;
 				}
 
 				for (id child : fill_x_children)
@@ -1802,7 +1856,8 @@ namespace vekt
 
 					child_res.size.x = x_left / static_cast<float>(fill_x_children.size());
 
-					if (child_props.flags & size_flags::sf_x_copy_y) child_res.size.y = child_res.size.x;
+					if (child_props.flags & size_flags::sf_x_copy_y)
+						child_res.size.y = child_res.size.x;
 				}
 
 				for (id child : fill_y_children)
@@ -1811,7 +1866,8 @@ namespace vekt
 					const size_props& child_props = _size_properties[child];
 					child_res.size.y			  = x_left / static_cast<float>(fill_y_children.size());
 
-					if (child_props.flags & size_flags::sf_y_copy_x) child_res.size.x = child_res.size.y;
+					if (child_props.flags & size_flags::sf_y_copy_x)
+						child_res.size.x = child_res.size.y;
 				}
 			}
 
@@ -1838,7 +1894,8 @@ namespace vekt
 			if (pp.flags & pos_flags::pf_custom_pass)
 			{
 				custom_passes& passes = _custom_passes[widget];
-				if (passes.custom_pos_pass) passes.custom_pos_pass(this, widget);
+				if (passes.custom_pos_pass)
+					passes.custom_pos_pass(this, widget);
 				continue;
 			}
 
@@ -1847,8 +1904,10 @@ namespace vekt
 
 			vec2 final_pos = pr.pos;
 
-			if (pp.flags & pos_flags::pf_x_abs) final_pos.x = pp.pos.x;
-			if (pp.flags & pos_flags::pf_y_abs) final_pos.y = pp.pos.y;
+			if (pp.flags & pos_flags::pf_x_abs)
+				final_pos.x = pp.pos.x;
+			if (pp.flags & pos_flags::pf_y_abs)
+				final_pos.y = pp.pos.y;
 
 			const bool x_relative = pp.flags & pos_flags::pf_x_relative;
 			const bool y_relative = pp.flags & pos_flags::pf_x_relative;
@@ -1968,8 +2027,10 @@ namespace vekt
 			if (gfx.flags & gfx_flags::gfx_custom_pass)
 			{
 				custom_passes& passes = _custom_passes[widget];
-				if (passes.custom_draw_pass) passes.custom_draw_pass(this, widget);
-				if (has_clip) _clip_stack.push_back({widget_clip, info.depth});
+				if (passes.custom_draw_pass)
+					passes.custom_draw_pass(this, widget);
+				if (has_clip)
+					_clip_stack.push_back({widget_clip, info.depth});
 				i++;
 				continue;
 			}
@@ -2030,9 +2091,13 @@ namespace vekt
 				else
 					add_stroke_rect(props);
 			}
-			else if (gfx.flags & gfx_is_text) { add_text(_texts[widget], gfx.color, pos, size, gfx.draw_order, gfx.user_data); }
+			else if (gfx.flags & gfx_is_text)
+			{
+				add_text(_texts[widget], gfx.color, pos, size, gfx.draw_order, gfx.user_data);
+			}
 
-			if (has_clip) _clip_stack.push_back({widget_clip, info.depth});
+			if (has_clip)
+				_clip_stack.push_back({widget_clip, info.depth});
 
 			i++;
 		}
@@ -2190,8 +2255,10 @@ namespace vekt
 
 			hover_callback& hover_state = _hover_callbacks[widget];
 
-			if (!hovered && hover_state.is_hovered && hover_state.on_hover_end) hover_state.on_hover_end(this, widget);
-			if (hovered && !hover_state.is_hovered && hover_state.on_hover_begin) hover_state.on_hover_begin(this, widget);
+			if (!hovered && hover_state.is_hovered && hover_state.on_hover_end)
+				hover_state.on_hover_end(this, widget);
+			if (hovered && !hover_state.is_hovered && hover_state.on_hover_begin)
+				hover_state.on_hover_begin(this, widget);
 			hover_state.is_hovered = hovered;
 		}
 	}
@@ -2221,10 +2288,14 @@ namespace vekt
 				if (ms.on_mouse)
 				{
 					res = ms.on_mouse(this, widget, ev, input_event_phase::tunneling);
-					if (res == input_event_result::handled) break;
+					if (res == input_event_result::handled)
+						break;
 				}
 			}
-			if (res == input_event_result::handled) { return res; }
+			if (res == input_event_result::handled)
+			{
+				return res;
+			}
 
 			begin = end - 1;
 			end	  = root_idx;
@@ -2236,11 +2307,15 @@ namespace vekt
 				if (ms.on_mouse)
 				{
 					res = ms.on_mouse(this, widget, ev, input_event_phase::bubbling);
-					if (res == input_event_result::handled) break;
+					if (res == input_event_result::handled)
+						break;
 				}
 			}
 
-			if (res == input_event_result::handled) { return res; }
+			if (res == input_event_result::handled)
+			{
+				return res;
+			}
 		}
 
 		return input_event_result::not_handled;
@@ -2271,7 +2346,8 @@ namespace vekt
 				if (ms.on_mouse_wheel)
 				{
 					res = ms.on_mouse_wheel(this, widget, ev);
-					if (res == input_event_result::handled) return res;
+					if (res == input_event_result::handled)
+						return res;
 				}
 			}
 		}
@@ -2304,7 +2380,8 @@ namespace vekt
 				if (ks.on_key)
 				{
 					res = ks.on_key(this, widget, ev);
-					if (res == input_event_result::handled) return res;
+					if (res == input_event_result::handled)
+						return res;
 				}
 			}
 		}
@@ -2648,7 +2725,10 @@ namespace vekt
 		generate_offset_rect(_reuse_inner_path, _reuse_outer_path, static_cast<float>(out_p.thickness));
 
 		generate_offset_rect(_reuse_aa_outer_path, _reuse_outer_path, -static_cast<float>(aa_p.thickness));
-		if (!_reuse_inner_path.empty()) { generate_offset_rect(_reuse_aa_inner_path, _reuse_inner_path, static_cast<float>(aa_p.thickness)); }
+		if (!_reuse_inner_path.empty())
+		{
+			generate_offset_rect(_reuse_aa_inner_path, _reuse_inner_path, static_cast<float>(aa_p.thickness));
+		}
 
 		// Original stroke
 		const unsigned int out_start = db->vertex_count;
@@ -2706,7 +2786,10 @@ namespace vekt
 		generate_rounded_rect(_reuse_inner_path, props.min + vec2(out_p.thickness, out_p.thickness), props.max - vec2(out_p.thickness, out_p.thickness), rp.rounding, rp.segments);
 
 		generate_offset_rect(_reuse_aa_outer_path, _reuse_outer_path, -static_cast<float>(aa_p.thickness));
-		if (!_reuse_inner_path.empty()) { generate_offset_rect(_reuse_aa_inner_path, _reuse_inner_path, static_cast<float>(aa_p.thickness)); }
+		if (!_reuse_inner_path.empty())
+		{
+			generate_offset_rect(_reuse_aa_inner_path, _reuse_inner_path, static_cast<float>(aa_p.thickness));
+		}
 
 		// Original stroke
 		const unsigned int out_start = db->vertex_count;
@@ -2781,7 +2864,10 @@ namespace vekt
 		const float spacing = static_cast<float>(text.spacing) * scale;
 
 		auto draw_char = [&](const glyph& g, unsigned long c, unsigned long previous_char) {
-			if (previous_char != 0) { pen.x += static_cast<float>(text.font->glyph_info[previous_char].kern_advance[c]) * scale; }
+			if (previous_char != 0)
+			{
+				pen.x += static_cast<float>(text.font->glyph_info[previous_char].kern_advance[c]) * scale;
+			}
 
 			const float quad_left	= pen.x + g.x_offset / subpixel * text.scale;
 			const float quad_top	= pen.y + g.y_offset * text.scale;
@@ -3009,7 +3095,8 @@ namespace vekt
 
 	void builder::generate_offset_rect(vector<vec2>& out_path, const vector<vec2>& base_path, float distance)
 	{
-		if (base_path.size() < 2) return;
+		if (base_path.size() < 2)
+			return;
 		out_path.resize_explicit(base_path.size());
 
 		const size_t num_points = base_path.size();
@@ -3109,7 +3196,8 @@ namespace vekt
 	{
 		r = math::min(r, math::min((max.x - min.x) * 0.5f, (max.y - min.y) * 0.5f)); // Clamp radius
 
-		if (segments == 0) segments = 10;
+		if (segments == 0)
+			segments = 10;
 
 		segments = math::min(math::max(1, segments), 90);
 
@@ -3181,7 +3269,10 @@ namespace vekt
 
 		for (draw_buffer& db : _draw_buffers)
 		{
-			if (db.clip.equals(clip, 0.9f) && db.draw_order == draw_order && db.user_data == user_data && db.used_font == fnt) { return &db; }
+			if (db.clip.equals(clip, 0.9f) && db.draw_order == draw_order && db.user_data == user_data && db.used_font == fnt)
+			{
+				return &db;
+			}
 		}
 
 		ASSERT(_buffer_counter < _buffer_count);
@@ -3208,7 +3299,10 @@ namespace vekt
 		const float right  = math::min(r1.x + r1.z, r2.x + r2.z);
 		const float bottom = math::min(r1.y + r1.w, r2.y + r2.w);
 
-		if (right < x || bottom < y) { return vec4(); }
+		if (right < x || bottom < y)
+		{
+			return vec4();
+		}
 		return {x, y, right - x, bottom - y};
 	}
 
@@ -3253,14 +3347,16 @@ namespace vekt
 
 	bool atlas::add_font(font* font)
 	{
-		if (font->_atlas_required_height > _height) return false;
+		if (font->_atlas_required_height > _height)
+			return false;
 
 		unsigned int best_slice_diff = _height;
 		slice*		 best_slice		 = nullptr;
 
 		for (slice* slc : _available_slices)
 		{
-			if (slc->height < font->_atlas_required_height) continue;
+			if (slc->height < font->_atlas_required_height)
+				continue;
 
 			const unsigned int diff = slc->height - font->_atlas_required_height;
 			if (diff < best_slice_diff)
@@ -3270,7 +3366,8 @@ namespace vekt
 			}
 		}
 
-		if (best_slice == nullptr) return false;
+		if (best_slice == nullptr)
+			return false;
 
 		font->_atlas	 = this;
 		font->_atlas_pos = best_slice->pos;
@@ -3299,13 +3396,18 @@ namespace vekt
 	{
 		for (atlas* atl : _atlases)
 		{
-			if (atl->get_is_lcd() != (fnt->type == font_type::lcd)) continue;
-			if (atl->add_font(fnt)) { return; }
+			if (atl->get_is_lcd() != (fnt->type == font_type::lcd))
+				continue;
+			if (atl->add_font(fnt))
+			{
+				return;
+			}
 		}
 
 		atlas* atl = new atlas(config.atlas_width, config.atlas_height, fnt->type == font_type::lcd);
 		_atlases.push_back(atl);
-		if (_atlas_created_cb) _atlas_created_cb(atl);
+		if (_atlas_created_cb)
+			_atlas_created_cb(atl);
 		const bool ok = atl->add_font(fnt);
 		ASSERT(ok);
 	}
@@ -3357,7 +3459,8 @@ namespace vekt
 				glyph_info.y_offset = static_cast<float>(iy0);
 			}
 
-			if (glyph_info.width >= 1) total_width += glyph_info.width + x_padding;
+			if (glyph_info.width >= 1)
+				total_width += glyph_info.width + x_padding;
 			max_height = static_cast<int>(math::max(max_height, glyph_info.height));
 			stbtt_GetCodepointHMetrics(&stb_font, i, &glyph_info.advance_x, &glyph_info.left_bearing);
 
@@ -3401,7 +3504,10 @@ namespace vekt
 				current_atlas_pen_y += max_height;
 			}
 
-			if (current_atlas_pen_y + h > static_cast<int>(fnt->_atlas_required_height)) { ASSERT(false); }
+			if (current_atlas_pen_y + h > static_cast<int>(fnt->_atlas_required_height))
+			{
+				ASSERT(false);
+			}
 
 			glyph_info.atlas_x = current_atlas_pen_x;
 			glyph_info.atlas_y = fnt->_atlas_pos + current_atlas_pen_y;
@@ -3421,7 +3527,10 @@ namespace vekt
 					std::memcpy(dest_pixel_ptr + row * atlas_stride, glyph_info.sdf_data + row * w, w);
 				}
 			}
-			else if (type == font_type::lcd) { stbtt_MakeCodepointBitmapSubpixel(&stb_font, dest_pixel_ptr, w, h, fnt->_atlas->get_width() * 3, fnt->_scale * 3, fnt->_scale, 1.0f, 0.0f, i); }
+			else if (type == font_type::lcd)
+			{
+				stbtt_MakeCodepointBitmapSubpixel(&stb_font, dest_pixel_ptr, w, h, fnt->_atlas->get_width() * 3, fnt->_scale * 3, fnt->_scale, 1.0f, 0.0f, i);
+			}
 			else
 			{
 				stbtt_MakeCodepointBitmap(&stb_font,
@@ -3437,7 +3546,8 @@ namespace vekt
 			current_atlas_pen_x += w + x_padding;
 		}
 
-		if (_atlas_updated_cb) _atlas_updated_cb(fnt->_atlas);
+		if (_atlas_updated_cb)
+			_atlas_updated_cb(fnt->_atlas);
 		return fnt;
 	}
 
@@ -3478,7 +3588,8 @@ namespace vekt
 		{
 			_atlases.remove(fnt->_atlas);
 
-			if (_atlas_destroyed_cb) _atlas_destroyed_cb(fnt->_atlas);
+			if (_atlas_destroyed_cb)
+				_atlas_destroyed_cb(fnt->_atlas);
 
 			delete fnt->_atlas;
 		}
@@ -3495,7 +3606,8 @@ namespace vekt
 	{
 		for (atlas* atl : _atlases)
 		{
-			if (_atlas_destroyed_cb) _atlas_destroyed_cb(atl);
+			if (_atlas_destroyed_cb)
+				_atlas_destroyed_cb(atl);
 			delete atl;
 		}
 
@@ -3512,7 +3624,8 @@ namespace vekt
 		{
 			glyph& g = glyph_info[i];
 
-			if (g.sdf_data) stbtt_FreeSDF(g.sdf_data, nullptr);
+			if (g.sdf_data)
+				stbtt_FreeSDF(g.sdf_data, nullptr);
 		}
 	}
 }

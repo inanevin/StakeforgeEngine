@@ -10,6 +10,7 @@
 #ifdef ENABLE_MEMORY_TRACER
 #include "data/hash_map.hpp"
 #include "data/mutex.hpp"
+#include "common/size_definitions.hpp"
 #include "malloc_allocator_map.hpp"
 #include "malloc_allocator_stl.hpp"
 
@@ -32,6 +33,7 @@ namespace Game
 		alloc_map	allocations;
 		const char* name	   = nullptr;
 		size_t		total_size = 0;
+		uint8		id		   = 0;
 	};
 
 	class memory_tracer
@@ -67,7 +69,9 @@ namespace Game
 
 		mutex						   _category_mtx;
 		vector_malloc<memory_category> _categories;
-		alloc_map					   _leaks;
+		vector_malloc<uint8>		   _category_ids;
+		uint8						   _current_active_category = 0;
+		static uint8				   s_category_counter;
 	};
 
 #define PUSH_MEMORY_CATEGORY(NAME) Game::memory_tracer::get().push_category(NAME)
@@ -78,4 +82,5 @@ namespace Game
 
 #define PUSH_MEMORY_CATEGORY(NAME)
 #define POP_MEMORY_CATEGORY()
+#define CHECK_LEAKS()
 #endif

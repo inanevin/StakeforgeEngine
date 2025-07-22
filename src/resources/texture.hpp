@@ -4,13 +4,8 @@
 
 #include "common/size_definitions.hpp"
 #include "data/vector.hpp"
-#include "common/linagx_incl.hpp"
-
-namespace LinaGX
-{
-	class CommandStream;
-	struct TextureDesc;
-}
+#include "gfx/common/format.hpp"
+#include "gfx/common/gfx_common.hpp"
 
 namespace Game
 {
@@ -19,11 +14,11 @@ namespace Game
 	private:
 	public:
 		~texture();
-		void copy(LinaGX::CommandStream* cmd);
+		// void copy(LinaGX::CommandStream* cmd);
 		void destroy();
 
 		void create_cpu(uint8* data, uint32 width, uint32 height, uint32 bbp, uint8 channels, bool linear);
-		void create_hw(const LinaGX::TextureDesc& desc);
+		// void create_hw(const LinaGX::TextureDesc& desc);
 		void create_hw_default();
 		void destroy_cpu();
 		void populate_mips_from_cpu(uint32 max_level = 0);
@@ -33,33 +28,33 @@ namespace Game
 			_clear_buffers_after_copy = clear;
 		}
 
-		inline uint32 get_bpp() const
+		inline uint8 get_bpp() const
 		{
-			return _cpu.empty() ? 0 : _cpu[0].bytesPerPixel;
+			return _cpu.empty() ? 0 : _cpu[0].bpp;
 		}
 
-		inline uint32 get_width() const
+		inline uint16 get_width() const
 		{
-			return _cpu.empty() ? 0 : _cpu[0].width;
+			return _cpu.empty() ? 0 : _cpu[0].size.x;
 		}
 
-		inline uint32 get_height() const
+		inline uint16 get_height() const
 		{
-			return _cpu.empty() ? 0 : _cpu[0].height;
+			return _cpu.empty() ? 0 : _cpu[0].size.y;
 		}
 
 	private:
-		LinaGX::Format determine_format_from_cpu();
+		format determine_format_from_cpu();
 
 	private:
-		vector<LinaGX::TextureBuffer> _cpu						= {};
-		uint32						  _hw						= 0;
-		uint8						  _mip_levels				= 1;
-		uint8						  _channels					= 1;
-		LinaGX::Format				  _format					= LinaGX::Format::UNDEFINED;
-		bool						  _is_linear				= false;
-		bool						  _owns_hw					= false;
-		bool						  _clear_buffers_after_copy = false;
+		vector<texture_buffer> _cpu						 = {};
+		uint32				   _hw						 = 0;
+		uint8				   _mip_levels				 = 1;
+		uint8				   _channels				 = 1;
+		format				   _format					 = format::undefined;
+		bool				   _is_linear				 = false;
+		bool				   _owns_hw					 = false;
+		bool				   _clear_buffers_after_copy = false;
 	};
 
 }

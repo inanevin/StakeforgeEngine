@@ -1,14 +1,10 @@
 // Copyright (c) 2025 Inan Evin
 
 #pragma once
-#include "gfx/backend/dx12/sdk/d3dx12.h"
-#include "gfx/backend/dx12/sdk/d3d12shader.h"
+
 #include "data/string.hpp"
 #include "common/size_definitions.hpp"
 #include "io/log.hpp"
-#include <dxcapi/dxcapi.h>
-#include <dxgi1_6.h>
-#include <wrl/client.h>
 #include <stdexcept>
 
 namespace Game
@@ -44,11 +40,4 @@ namespace Game
 		}
 	}
 
-	struct descriptor_handle
-	{
-		size_t cpu	 = NULL;
-		uint64 gpu	 = NULL;
-		uint32 index = 0;
-		uint32 count = 0;
-	};
 } // namespace LinaGX

@@ -32,7 +32,7 @@ OF THE POSSIBILITY OF SUCH DAMAGE.
 
 */
 
-#include "LinaGX/Platform/DX12/SDK/D3D12MemAlloc.h"
+#include "gfx/backend/dx12/sdk/D3D12MemAlloc.h"
 
 #include <combaseapi.h>
 #include <mutex>

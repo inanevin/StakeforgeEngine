@@ -1,7 +1,6 @@
 // Copyright (c) 2025 Inan Evin
 
 #include "texture_sampler.hpp"
-#include "common/linagx_incl.hpp"
 
 namespace Game
 {
@@ -9,13 +8,13 @@ namespace Game
 	{
 	}
 
-	void texture_sampler::create(const LinaGX::SamplerDesc& desc)
-	{
-		_hw = LinaGX::instance()->CreateSampler(desc);
-	}
-
-	void texture_sampler::destroy()
-	{
-		LinaGX::instance()->DestroySampler(_hw);
-	}
+	// void texture_sampler::create(const LinaGX::SamplerDesc& desc)
+	// {
+	// 	_hw = LinaGX::instance()->CreateSampler(desc);
+	// }
+	//
+	// void texture_sampler::destroy()
+	// {
+	// 	LinaGX::instance()->DestroySampler(_hw);
+	// }
 }

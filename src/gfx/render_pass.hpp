@@ -3,14 +3,7 @@
 
 #include "common/size_definitions.hpp"
 #include "data/vector.hpp"
-#include "common/linagx_incl.hpp"
-#include "gfx/gfx_util.hpp"
-#include "common/linagx_incl.hpp"
-
-namespace LinaGX
-{
-	class CommandStream;
-}
+#include "gfx/common/gfx_constants.hpp"
 
 namespace Game
 {
@@ -33,8 +26,8 @@ namespace Game
 
 		struct per_frame_data
 		{
-			vector<LinaGX::RenderPassColorAttachment> _color_attachments;
-			LinaGX::RenderPassDepthStencilAttachment  _depth_stencil_attachment = {};
+			// vector<LinaGX::RenderPassColorAttachment> _color_attachments;
+			// LinaGX::RenderPassDepthStencilAttachment  _depth_stencil_attachment = {};
 		};
 
 	public:
@@ -42,22 +35,22 @@ namespace Game
 		void uninit();
 
 		void add_indexed_draw(indexed_draw draw);
-		void render(LinaGX::CommandStream* cs, uint32 frame_index, const vector2ui& size);
+		//	void render(LinaGX::CommandStream* cs, uint32 frame_index, const vector2ui& size);
 
-		inline vector<LinaGX::RenderPassColorAttachment>& get_color_attachments(uint32 frame_index)
-		{
-			return _pfd[frame_index]._color_attachments;
-		}
-
-		inline LinaGX::RenderPassDepthStencilAttachment& get_depth_stencil_attachment(uint32 frame_index)
-		{
-			return _pfd[frame_index]._depth_stencil_attachment;
-		}
+		//	inline vector<LinaGX::RenderPassColorAttachment>& get_color_attachments(uint32 frame_index)
+		//	{
+		//		return _pfd[frame_index]._color_attachments;
+		//	}
+		//
+		//	inline LinaGX::RenderPassDepthStencilAttachment& get_depth_stencil_attachment(uint32 frame_index)
+		//	{
+		//		return _pfd[frame_index]._depth_stencil_attachment;
+		//	}
 
 	private:
 		vector<indexed_draw> _indexed_draws;
-		uint16				 _descriptor_sets[gfx_util::FRAMES_IN_FLIGHT];
-		uint16				 _descriptor_layout				  = 0;
-		per_frame_data		 _pfd[gfx_util::FRAMES_IN_FLIGHT] = {};
+		uint16				 _descriptor_sets[FRAMES_IN_FLIGHT];
+		uint16				 _descriptor_layout		= 0;
+		per_frame_data		 _pfd[FRAMES_IN_FLIGHT] = {};
 	};
 }

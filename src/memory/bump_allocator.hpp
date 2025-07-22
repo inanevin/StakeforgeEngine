@@ -4,19 +4,24 @@
 
 #include "common/size_definitions.hpp"
 #include "io/assert.hpp"
+#include "memory.hpp"
 #include <new>
 
 namespace Game
 {
-	class bum_allocator
+	class bump_allocator
 	{
 	public:
-		bum_allocator(size_t sz);
-		~bum_allocator();
+		void init(size_t sz, size_t alignment);
+		void uninit();
 
-		bum_allocator()										 = delete;
-		bum_allocator& operator=(const bum_allocator& other) = delete;
-		bum_allocator(const bum_allocator& other)			 = delete;
+		bump_allocator()									   = default;
+		bump_allocator& operator=(const bump_allocator& other) = delete;
+		bump_allocator(const bump_allocator& other)			   = delete;
+		~bump_allocator()
+		{
+			GAME_ASSERT(_raw == nullptr);
+		}
 
 		void* allocate(size_t size, size_t alignment = 1);
 
@@ -27,7 +32,8 @@ namespace Game
 
 		template <typename T, typename... Args> T* allocate(size_t count, Args&&... args)
 		{
-			if (count == 0) return nullptr;
+			if (count == 0)
+				return nullptr;
 
 			void* ptr	   = allocate(sizeof(T) * count, std::alignment_of<T>::value);
 			T*	  arrayPtr = reinterpret_cast<T*>(ptr);
@@ -40,16 +46,27 @@ namespace Game
 		{
 			uint8* initial_head = (uint8*)_raw + _head;
 
-			// Place the first value in memory
 			uint8* current_head = initial_head;
 			GAME_MEMCPY(current_head, &firstValue, sizeof(T));
 			_head += sizeof(T);
 			GAME_ASSERT(_head < _size);
 
-			// Recursively place the remaining values in memory
-			if constexpr (sizeof...(remainingValues) > 0) { emplace_aux<T>(remainingValues...); }
+			if constexpr (sizeof...(remainingValues) > 0)
+			{
+				emplace_aux<T>(remainingValues...);
+			}
 
 			return reinterpret_cast<T*>(initial_head);
+		}
+
+		inline size_t get_size() const
+		{
+			return _size;
+		}
+
+		inline size_t get_head() const
+		{
+			return _head;
 		}
 
 	private:

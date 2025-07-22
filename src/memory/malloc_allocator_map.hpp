@@ -6,6 +6,8 @@
 #include <new>
 #include <limits>
 
+#undef max
+
 namespace Game
 {
 	template <class T> struct malloc_allocator_map
@@ -48,9 +50,11 @@ namespace Game
 
 		pointer allocate(size_type s, void const* = 0)
 		{
-			if (0 == s) return NULL;
+			if (0 == s)
+				return NULL;
 			pointer temp = (pointer)malloc(s * sizeof(T));
-			if (temp == NULL) throw std::bad_alloc();
+			if (temp == NULL)
+				throw std::bad_alloc();
 			return temp;
 		}
 

@@ -1,4 +1,5 @@
 // Copyright (c) 2025 Inan Evin
+/*
 #include "renderer.hpp"
 #include "game/game.hpp"
 #include "platform/window.hpp"
@@ -404,11 +405,10 @@ namespace Game
 		};
 		_resource_queue.add_texture_request(&buffer, 1, it->hw);
 
-		/*
-		_material.create(set_description);
-		_material.set
 
-		*/
+		// _material.create(set_description);
+		// _material.set
+
 	}
 
 	void renderer::atlas_destroyed(vekt::atlas* atlas)
@@ -476,4 +476,4 @@ namespace Game
 			LinaGX::instance()->WaitForUserSemaphore(pfd.semaphore_copy.semaphore(), pfd.semaphore_copy.value());
 		}
 	}
-}
+}*/

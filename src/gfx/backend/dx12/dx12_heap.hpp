@@ -2,8 +2,9 @@
 
 #pragma once
 
-#include "dx12_common.hpp"
 #include "data/vector.hpp"
+#include "gfx/common/gfx_common.hpp"
+#include "sdk/d3d12.h"
 
 namespace Game
 {

@@ -5,17 +5,14 @@
 #include "common/size_definitions.hpp"
 #include "data/string.hpp"
 
-namespace LinaGX
-{
-	struct ShaderDesc;
-}
-
 namespace Game
 {
+	struct shader_desc;
+
 	class shader
 	{
 	public:
-		bool create_from_file_default(const char* file, const LinaGX::ShaderDesc& desc);
+		bool create_from_file_vertex_pixel(const char* file, const shader_desc& desc);
 		void destroy();
 
 		inline uint16 get_hw() const

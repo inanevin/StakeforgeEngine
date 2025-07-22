@@ -2,14 +2,18 @@
 #pragma once
 
 #include "common/size_definitions.hpp"
-#include "gfx/common/resource_limits.hpp"
+#include "gfx/common/gfx_constants.hpp"
 #include "data/vector.hpp"
 #include "data/span.hpp"
+#include "data/string.hpp"
 #include "data/bitmask.hpp"
 #include "io/assert.hpp"
 #include "dx12_heap.hpp"
-#include "gfx/gfx_util.hpp"
+#include "gfx/backend/dx12/sdk/d3dx12.h"
 #include <functional>
+#include <wrl/client.h>
+#include <dxgi1_6.h>
+#include <dxcapi.h>
 
 namespace D3D12MA
 {
@@ -19,7 +23,6 @@ namespace D3D12MA
 
 namespace Game
 {
-
 	struct resource_desc;
 	struct texture_desc;
 	struct sampler_desc;
@@ -32,7 +35,33 @@ namespace Game
 	struct queue_desc;
 	struct bind_group_update_desc;
 	struct bind_layout_desc;
-	struct present_desc;
+
+	struct command_begin_render_pass;
+	struct command_begin_render_pass_depth;
+	struct command_begin_render_pass_swapchain;
+	struct command_begin_render_pass_swapchain_depth;
+	struct command_end_render_pass;
+	struct command_set_scissors;
+	struct command_set_viewport;
+	struct command_bind_pipeline;
+	struct command_bind_pipeline_compute;
+	struct command_draw_instanced;
+	struct command_draw_instanced;
+	struct command_draw_indexed_instanced;
+	struct command_draw_indexed_indirect;
+	struct command_draw_indirect;
+	struct command_bind_vertex_buffers;
+	struct command_bind_index_buffers;
+	struct command_copy_resource;
+	struct command_copy_buffer_to_texture;
+	struct command_copy_texture_to_buffer;
+	struct command_copy_texture_to_texture;
+	struct command_bind_constants;
+	struct command_bind_layout;
+	struct command_bind_layout_compute;
+	struct command_bind_group;
+	struct command_dispatch;
+	struct command_barrier;
 
 	struct command_bind_group;
 
@@ -40,7 +69,7 @@ namespace Game
 
 	class dx12_backend
 	{
-	public:
+	private:
 		struct resource
 		{
 			D3D12MA::Allocation* ptr			  = nullptr;
@@ -68,8 +97,8 @@ namespace Game
 		struct swapchain
 		{
 			Microsoft::WRL::ComPtr<IDXGISwapChain3> ptr = NULL;
-			Microsoft::WRL::ComPtr<ID3D12Resource>	textures[gfx_util::BACK_BUFFER_COUNT];
-			resource_id								rtv_indices[gfx_util::BACK_BUFFER_COUNT];
+			Microsoft::WRL::ComPtr<ID3D12Resource>	textures[BACK_BUFFER_COUNT];
+			resource_id								rtv_indices[BACK_BUFFER_COUNT];
 			uint8									format		= 0;
 			uint8									image_index = 0;
 			uint8									vsync		= 0;
@@ -86,6 +115,7 @@ namespace Game
 			Microsoft::WRL::ComPtr<ID3D12RootSignature> root_signature	   = nullptr;
 			uint8										indirect_signature = 0;
 			uint8										topology		   = 0;
+			uint8										owns_root_sig	   = 0;
 		};
 
 		struct indirect_signature
@@ -166,9 +196,19 @@ namespace Game
 				GAME_ASSERT(id < N);
 				return resources[id];
 			}
+
+			inline void verify_uninit()
+			{
+				GAME_ASSERT(static_cast<resource_id>(free_list.size()) == head);
+			}
 		};
 
 	public:
+		inline static dx12_backend* get()
+		{
+			return s_instance;
+		}
+
 		void init();
 		void uninit();
 		void reset_command_buffer(resource_id cmd_buffer);
@@ -176,9 +216,10 @@ namespace Game
 		void submit_commands(resource_id queue, resource_id* commands, uint8 commands_count);
 		void queue_wait(resource_id queue, resource_id* semaphores, uint8 semaphore_count, uint64* semaphore_values);
 		void queue_signal(resource_id queue, resource_id* semaphores, uint8 semaphore_count, uint64* semaphore_values);
-		void present(const present_desc& desc);
+		void present(resource_id* swapchains, uint8 swapchain_count);
 
-		bool compile_shader(uint8 stage, const string& source, span<uint8>& out_data, bool compile_root_sig, span<uint8>& out_signature_data);
+		bool compile_shader_vertex_pixel(const string& source, const char* vertex_entry, const char* pixel_entry, span<uint8>& vertex_out, span<uint8>& pixel_out, bool compile_layout, span<uint8>& out_layout);
+		bool compile_shader_compute(const string& source, const char* entry, span<uint8>& out, bool compile_layout, span<uint8>& out_layout);
 
 		resource_id create_resource(const resource_desc& desc);
 		resource_id create_texture(const texture_desc& desc);
@@ -241,7 +282,7 @@ namespace Game
 		void cmd_bind_pipeline(resource_id cmd_list, const command_bind_pipeline& command);
 		void cmd_bind_pipeline_compute(resource_id cmd_list, const command_bind_pipeline_compute& command);
 		void cmd_draw_instanced(resource_id cmd_list, const command_draw_instanced& command);
-		void cmd_draw_instanced(resource_id cmd_list, const command_draw_instanced& command);
+		void cmd_draw_indexed_instanced(resource_id cmd_list, const command_draw_instanced& command);
 		void cmd_draw_indexed_instanced(resource_id cmd_list, const command_draw_indexed_instanced& command);
 		void cmd_draw_indexed_indirect(resource_id cmd_list, const command_draw_indexed_indirect& command);
 		void cmd_draw_indirect(resource_id cmd_list, const command_draw_indirect& command);
@@ -299,9 +340,14 @@ namespace Game
 		vector<ID3D12CommandList*>					 _reuse_lists			 = {};
 		vector<ID3D12Fence*>						 _reuse_fences			 = {};
 		vector<uint64>								 _reuse_values			 = {};
+		vector<D3D12_STATIC_SAMPLER_DESC>			 _reuse_static_samplers	 = {};
 
 		resource_id _queue_graphics = 0;
 		resource_id _queue_transfer = 0;
 		resource_id _queue_compute	= 0;
+
+		friend class renderer;
+
+		static dx12_backend* s_instance;
 	};
 }

@@ -112,7 +112,8 @@ namespace Game
 		}
 		case WM_INPUT: {
 
-			if (!wnd->_flags.is_set(wf_high_freq)) return 0;
+			if (!wnd->_flags.is_set(wf_high_freq))
+				return 0;
 
 			UINT		dwSize = sizeof(RAWINPUT);
 			static BYTE lpb[sizeof(RAWINPUT)];
@@ -122,20 +123,15 @@ namespace Game
 			if (raw->header.dwType == RIM_TYPEKEYBOARD)
 			{
 				// Handle keyboard input
-				const USHORT key	   = raw->data.keyboard.VKey;
-				USHORT		 scanCode  = raw->data.keyboard.MakeCode;
-				const bool	 isPress   = raw->data.keyboard.Flags & RI_KEY_MAKE;
-				const bool	 isRelease = raw->data.keyboard.Flags & RI_KEY_BREAK;
-
-				uint8 flags = wef_is_key | wef_high_freq;
-				if (isRelease)
-					flags |= wef_is_release;
-				else
-					flags |= wef_is_press;
+				const USHORT key		= raw->data.keyboard.VKey;
+				USHORT		 scanCode	= raw->data.keyboard.MakeCode;
+				const bool	 is_release = raw->data.keyboard.Flags & RI_KEY_BREAK;
 
 				const window_event ev = {
-					.value = vector2i(static_cast<int32>(scanCode), 0),
-					.flags = flags,
+					.value	  = vector2i(static_cast<int32>(scanCode), 0),
+					.type	  = window_event_type::key,
+					.sub_type = is_release ? window_event_sub_type::release : window_event_sub_type::press,
+					.flags	  = wef_high_freq,
 				};
 				wnd->add_event(ev);
 			}
@@ -153,49 +149,50 @@ namespace Game
 				window_event ev = {
 
 					.value = relative,
-					.flags = wef_is_mouse | wef_high_freq,
+					.type  = window_event_type::mouse,
+					.flags = wef_high_freq,
 				};
 
-				bool WindowEventExists = false;
+				bool ev_exists = false;
 
 				if (mouse_flags & RI_MOUSE_LEFT_BUTTON_DOWN)
 				{
-					ev.button = input_code::Mouse0;
-					ev.flags.set(wef_is_press);
-					WindowEventExists = true;
+					ev.button	= input_code::Mouse0;
+					ev.sub_type = window_event_sub_type::press;
+					ev_exists	= true;
 				}
 				if (mouse_flags & RI_MOUSE_LEFT_BUTTON_UP)
 				{
-					ev.button = input_code::Mouse0;
-					ev.flags.set(wef_is_release);
-					WindowEventExists = true;
+					ev.button	= input_code::Mouse0;
+					ev.sub_type = window_event_sub_type::release;
+					ev_exists	= true;
 				}
 				if (mouse_flags & RI_MOUSE_RIGHT_BUTTON_DOWN)
 				{
-					ev.button = input_code::Mouse1;
-					ev.flags.set(wef_is_press);
-					WindowEventExists = true;
+					ev.button	= input_code::Mouse1;
+					ev.sub_type = window_event_sub_type::press;
+					ev_exists	= true;
 				}
 				if (mouse_flags & RI_MOUSE_RIGHT_BUTTON_UP)
 				{
-					ev.button = input_code::Mouse1;
-					ev.flags.set(wef_is_release);
-					WindowEventExists = true;
+					ev.button	= input_code::Mouse1;
+					ev.sub_type = window_event_sub_type::release;
+					ev_exists	= true;
 				}
 				if (mouse_flags & RI_MOUSE_MIDDLE_BUTTON_DOWN)
 				{
-					ev.button = input_code::Mouse2;
-					ev.flags.set(wef_is_press);
-					WindowEventExists = true;
+					ev.button	= input_code::Mouse2;
+					ev.sub_type = window_event_sub_type::press;
+					ev_exists	= true;
 				}
 				if (mouse_flags & RI_MOUSE_MIDDLE_BUTTON_UP)
 				{
-					ev.button = input_code::Mouse2;
-					ev.flags.set(wef_is_release);
-					WindowEventExists = true;
+					ev.button	= input_code::Mouse2;
+					ev.sub_type = window_event_sub_type::release;
+					ev_exists	= true;
 				}
 
-				if (WindowEventExists)
+				if (ev_exists)
 					wnd->add_event(ev);
 				else if (mouse_flags & RI_MOUSE_WHEEL)
 				{
@@ -204,7 +201,8 @@ namespace Game
 
 					const window_event mwe = {
 						.value = vector2i(0, wheel),
-						.flags = wef_is_wheel | wef_high_freq,
+						.type  = window_event_type::wheel,
+						.flags = wef_high_freq,
 					};
 					wnd->add_event(mwe);
 				}
@@ -215,7 +213,8 @@ namespace Game
 
 					const window_event mdEvent = {
 						.value = vector2i(xPosRelative, yPosRelative),
-						.flags = wef_is_delta | wef_high_freq,
+						.type  = window_event_type::delta,
+						.flags = wef_high_freq,
 					};
 
 					wnd->add_event(mdEvent);
@@ -225,30 +224,26 @@ namespace Game
 		}
 		case WM_KEYDOWN: {
 
-			if (wnd->_flags.is_set(wf_high_freq)) return 0;
+			if (wnd->_flags.is_set(wf_high_freq))
+				return 0;
 
-			const WORD key_flags  = HIWORD(lParam);
-			const WORD scanCode	  = LOBYTE(key_flags);
-			const int  extended	  = (lParam & 0x01000000) != 0;
-			const bool isRepeated = (HIWORD(lParam) & KF_REPEAT) != 0;
-			uint32	   key		  = static_cast<uint32>(wParam);
+			const WORD key_flags = HIWORD(lParam);
+			const WORD scanCode	 = LOBYTE(key_flags);
+			const int  extended	 = (lParam & 0x01000000) != 0;
+			const bool is_repeat = (HIWORD(lParam) & KF_REPEAT) != 0;
+			uint32	   key		 = static_cast<uint32>(wParam);
 
 			if (wParam == VK_SHIFT)
 				key = extended == 0 ? VK_LSHIFT : VK_RSHIFT;
 			else if (wParam == VK_CONTROL)
 				key = extended == 0 ? VK_LCONTROL : VK_RCONTROL;
 
-			uint8 flags = wef_is_key;
-			if (isRepeated)
-				flags |= wef_is_repeat;
-			else
-				flags |= wef_is_press;
-
 			const window_event ev = {
 
-				.value	= vector2i(scanCode, 0),
-				.flags	= flags,
-				.button = static_cast<input_code>(key),
+				.value	  = vector2i(scanCode, 0),
+				.button	  = static_cast<input_code>(key),
+				.type	  = window_event_type::key,
+				.sub_type = is_repeat ? window_event_sub_type::repeat : window_event_sub_type::press,
 			};
 
 			wnd->add_event(ev);
@@ -257,30 +252,26 @@ namespace Game
 		}
 		case WM_KEYUP: {
 
-			if (wnd->_flags.is_set(wf_high_freq)) return 0;
+			if (wnd->_flags.is_set(wf_high_freq))
+				return 0;
 
-			const WORD key_flags  = HIWORD(lParam);
-			const WORD scanCode	  = LOBYTE(key_flags);
-			const int  extended	  = (lParam & 0x01000000) != 0;
-			const bool isRepeated = (HIWORD(lParam) & KF_REPEAT) != 0;
-			uint32	   key		  = static_cast<uint32>(wParam);
+			const WORD key_flags = HIWORD(lParam);
+			const WORD scanCode	 = LOBYTE(key_flags);
+			const int  extended	 = (lParam & 0x01000000) != 0;
+			const bool is_repeat = (HIWORD(lParam) & KF_REPEAT) != 0;
+			uint32	   key		 = static_cast<uint32>(wParam);
 
 			if (wParam == VK_SHIFT)
 				key = extended ? VK_LSHIFT : VK_RSHIFT;
 			else if (wParam == VK_CONTROL)
 				key = extended ? VK_LCONTROL : VK_RCONTROL;
 
-			uint8 flags = wef_is_key;
-			if (isRepeated)
-				flags |= wef_is_repeat;
-			else
-				flags |= wef_is_release;
-
 			const window_event ev = {
 
-				.value	= vector2i(scanCode, 0),
-				.flags	= flags,
-				.button = static_cast<input_code>(key),
+				.value	  = vector2i(scanCode, 0),
+				.button	  = static_cast<input_code>(key),
+				.type	  = window_event_type::key,
+				.sub_type = is_repeat ? window_event_sub_type::repeat : window_event_sub_type::press,
 			};
 
 			wnd->add_event(ev);
@@ -290,7 +281,8 @@ namespace Game
 
 		case WM_MOUSEMOVE: {
 
-			if (wnd->_flags.is_set(wf_high_freq)) return 0;
+			if (wnd->_flags.is_set(wf_high_freq))
+				return 0;
 
 			const int32 xPos = GET_X_LPARAM(lParam);
 			const int32 yPos = GET_Y_LPARAM(lParam);
@@ -304,7 +296,7 @@ namespace Game
 
 			const window_event ev = {
 				.value = delta,
-				.flags = wef_is_delta,
+				.type  = window_event_type::delta,
 			};
 
 			wnd->add_event(ev);
@@ -313,11 +305,12 @@ namespace Game
 		}
 		case WM_MOUSEWHEEL: {
 
-			if (wnd->_flags.is_set(wf_high_freq)) return 0;
+			if (wnd->_flags.is_set(wf_high_freq))
+				return 0;
 			const int16		   delta = GET_WHEEL_DELTA_WPARAM(wParam) / (int16)(WHEEL_DELTA);
 			const window_event mwe	 = {
 				  .value = vector2i(0, delta),
-				  .flags = wef_is_wheel,
+				  .type	 = window_event_type::wheel,
 			  };
 
 			wnd->add_event(mwe);
@@ -326,16 +319,18 @@ namespace Game
 		}
 		case WM_LBUTTONDOWN: {
 
-			if (wnd->_flags.is_set(wf_high_freq)) return 0;
+			if (wnd->_flags.is_set(wf_high_freq))
+				return 0;
 
 			const int32 x = static_cast<int32>(GET_X_LPARAM(lParam));
 			const int32 y = static_cast<int32>(GET_Y_LPARAM(lParam));
 
 			const window_event ev = {
 
-				.value	= vector2i(x, y),
-				.flags	= wef_is_mouse | wef_is_press,
-				.button = input_code::Mouse0,
+				.value	  = vector2i(x, y),
+				.button	  = input_code::Mouse0,
+				.type	  = window_event_type::mouse,
+				.sub_type = window_event_sub_type::press,
 			};
 
 			wnd->add_event(ev);
@@ -349,9 +344,10 @@ namespace Game
 
 			const window_event ev = {
 
-				.value	= vector2i(x, y),
-				.flags	= wef_is_mouse | wef_is_repeat,
-				.button = input_code::Mouse0,
+				.value	  = vector2i(x, y),
+				.button	  = input_code::Mouse0,
+				.type	  = window_event_type::mouse,
+				.sub_type = window_event_sub_type::repeat,
 			};
 			wnd->add_event(ev);
 
@@ -359,16 +355,18 @@ namespace Game
 		}
 		case WM_RBUTTONDOWN: {
 
-			if (wnd->_flags.is_set(wf_high_freq)) return 0;
+			if (wnd->_flags.is_set(wf_high_freq))
+				return 0;
 
 			const int32 x = static_cast<int32>(GET_X_LPARAM(lParam));
 			const int32 y = static_cast<int32>(GET_Y_LPARAM(lParam));
 
 			const window_event ev = {
 
-				.value	= vector2i(x, y),
-				.flags	= wef_is_mouse | wef_is_press,
-				.button = input_code::Mouse1,
+				.value	  = vector2i(x, y),
+				.button	  = input_code::Mouse1,
+				.type	  = window_event_type::mouse,
+				.sub_type = window_event_sub_type::press,
 			};
 
 			wnd->add_event(ev);
@@ -382,9 +380,10 @@ namespace Game
 
 			const window_event ev = {
 
-				.value	= vector2i(x, y),
-				.flags	= wef_is_mouse | wef_is_repeat,
-				.button = input_code::Mouse1,
+				.value	  = vector2i(x, y),
+				.button	  = input_code::Mouse1,
+				.type	  = window_event_type::mouse,
+				.sub_type = window_event_sub_type::repeat,
 			};
 
 			wnd->add_event(ev);
@@ -393,16 +392,18 @@ namespace Game
 		}
 		case WM_MBUTTONDOWN: {
 
-			if (wnd->_flags.is_set(wf_high_freq)) return 0;
+			if (wnd->_flags.is_set(wf_high_freq))
+				return 0;
 
 			const int32 x = static_cast<int32>(GET_X_LPARAM(lParam));
 			const int32 y = static_cast<int32>(GET_Y_LPARAM(lParam));
 
 			const window_event ev = {
 
-				.value	= vector2i(x, y),
-				.flags	= wef_is_mouse | wef_is_press,
-				.button = input_code::Mouse2,
+				.value	  = vector2i(x, y),
+				.button	  = input_code::Mouse2,
+				.type	  = window_event_type::mouse,
+				.sub_type = window_event_sub_type::press,
 			};
 
 			wnd->add_event(ev);
@@ -410,16 +411,18 @@ namespace Game
 		}
 		case WM_LBUTTONUP: {
 
-			if (wnd->_flags.is_set(wf_high_freq)) return 0;
+			if (wnd->_flags.is_set(wf_high_freq))
+				return 0;
 
 			const int32 x = static_cast<int32>(GET_X_LPARAM(lParam));
 			const int32 y = static_cast<int32>(GET_Y_LPARAM(lParam));
 
 			const window_event ev = {
 
-				.value	= vector2i(x, y),
-				.flags	= wef_is_mouse | wef_is_release,
-				.button = input_code::Mouse0,
+				.value	  = vector2i(x, y),
+				.button	  = input_code::Mouse0,
+				.type	  = window_event_type::mouse,
+				.sub_type = window_event_sub_type::release,
 			};
 
 			wnd->add_event(ev);
@@ -428,16 +431,18 @@ namespace Game
 		}
 		case WM_RBUTTONUP: {
 
-			if (wnd->_flags.is_set(wf_high_freq)) return 0;
+			if (wnd->_flags.is_set(wf_high_freq))
+				return 0;
 
 			const int32 x = static_cast<int32>(GET_X_LPARAM(lParam));
 			const int32 y = static_cast<int32>(GET_Y_LPARAM(lParam));
 
 			const window_event ev = {
 
-				.value	= vector2i(x, y),
-				.flags	= wef_is_mouse | wef_is_release,
-				.button = input_code::Mouse1,
+				.value	  = vector2i(x, y),
+				.button	  = input_code::Mouse1,
+				.type	  = window_event_type::mouse,
+				.sub_type = window_event_sub_type::release,
 			};
 
 			wnd->add_event(ev);
@@ -446,16 +451,18 @@ namespace Game
 		}
 		case WM_MBUTTONUP: {
 
-			if (wnd->_flags.is_set(wf_high_freq)) return 0;
+			if (wnd->_flags.is_set(wf_high_freq))
+				return 0;
 
 			const int32 x = static_cast<int32>(GET_X_LPARAM(lParam));
 			const int32 y = static_cast<int32>(GET_Y_LPARAM(lParam));
 
 			const window_event ev = {
 
-				.value	= vector2i(x, y),
-				.flags	= wef_is_mouse | wef_is_release,
-				.button = input_code::Mouse2,
+				.value	  = vector2i(x, y),
+				.button	  = input_code::Mouse2,
+				.type	  = window_event_type::mouse,
+				.sub_type = window_event_sub_type::release,
 			};
 
 			wnd->add_event(ev);
@@ -508,7 +515,8 @@ namespace Game
 		}
 
 		HWND hwnd = CreateWindowExA(exStyle, title, title, stylew, _position.x, _position.y, _true_size.x, _true_size.y, NULL, NULL, hinst, NULL);
-		if (!hwnd) return false;
+		if (!hwnd)
+			return false;
 
 		_platform_handle = static_cast<void*>(hinst);
 		_window_handle	 = static_cast<void*>(hwnd);
@@ -537,7 +545,8 @@ namespace Game
 
 	void window::destroy()
 	{
-		if (_window_handle) DestroyWindow(static_cast<HWND>(_window_handle));
+		if (_window_handle)
+			DestroyWindow(static_cast<HWND>(_window_handle));
 	}
 
 	void window::set_position(const vector2i& pos)

@@ -3,6 +3,7 @@
 #pragma once
 
 #include "dx12_heap.hpp"
+#include "dx12_common.hpp"
 #include "io/log.hpp"
 #include "io/assert.hpp"
 

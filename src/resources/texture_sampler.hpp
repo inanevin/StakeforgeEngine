@@ -4,10 +4,6 @@
 
 #include "common/size_definitions.hpp"
 
-namespace LinaGX
-{
-	struct SamplerDesc;
-}
 namespace Game
 {
 	class texture_sampler
@@ -15,8 +11,8 @@ namespace Game
 	public:
 		~texture_sampler();
 
-		void create(const LinaGX::SamplerDesc& desc);
-		void destroy();
+		// void create(const LinaGX::SamplerDesc& desc);
+		// void destroy();
 
 		inline uint32 get_hw() const
 		{

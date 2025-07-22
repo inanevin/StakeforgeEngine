@@ -6,6 +6,7 @@
 #include "math/vector2ui16.hpp"
 #include "data/bitmask.hpp"
 #include "data/vector.hpp"
+#include "data/span.hpp"
 #include "format.hpp"
 #include "resource_limits.hpp"
 
@@ -24,13 +25,6 @@ namespace Game
 	{
 		vector2ui16 pos	 = vector2ui16::zero;
 		vector2ui16 size = vector2ui16::zero;
-	};
-
-	struct texture_buffer
-	{
-		uint8*		pixels = nullptr;
-		vector2ui16 size   = vector2ui16::zero;
-		uint8		bpp	   = 0;
 	};
 
 	enum class blend_op : uint8
@@ -242,6 +236,7 @@ namespace Game
 		shf_enable_depth_bias	  = 1 << 1,
 		shf_enable_alpha_to_cov	  = 1 << 2,
 		shf_enable_blend_logic_op = 1 << 3,
+		shf_use_embedded_layout	  = 1 << 4,
 	};
 
 	enum sampler_flags
@@ -277,10 +272,10 @@ namespace Game
 	struct swapchain_recreate_desc
 	{
 		vector2ui	   size		 = vector2ui::zero;
+		resource_id	   swapchain = 0;
 		float		   scaling	 = 1.0f;
 		format		   format	 = format::undefined;
 		bitmask<uint8> flags	 = 0;
-		resource_id	   swapchain = 0;
 	};
 
 	struct resource_desc
@@ -312,18 +307,29 @@ namespace Game
 		char			  debug_name[16]	   = {"Texture"};
 	};
 
+	struct sampler_desc
+	{
+		uint32			anisotropy	   = 0;
+		float			min_lod		   = 0.0f;
+		float			max_lod		   = 1.0f;
+		float			lod_bias	   = 0.0f;
+		bitmask<uint16> flags		   = 0;
+		char			debug_name[16] = {"Sampler"};
+	};
+
 	struct layout_entry
 	{
-		descriptor_type type	= descriptor_type::constant;
-		uint8			count	= 1;
-		uint8			set		= 0;
-		uint8			binding = 0;
+		descriptor_type type				   = descriptor_type::constant;
+		uint8			count				   = 1;
+		uint8			set					   = 0;
+		uint8			binding				   = 0;
+		sampler_desc	immutable_sampler_desc = {};
 	};
 
 	struct binding
 	{
 		vector<layout_entry> entry_table;
-		shader_stage		 visibility_stage = shader_stage::vertex;
+		shader_stage		 visibility = shader_stage::vertex;
 	};
 
 	struct bind_layout_desc
@@ -368,8 +374,9 @@ namespace Game
 
 	struct vertex_input
 	{
-		string name		= "TEXCOORD0";
+		char   name[16] = "TEXCOORD";
 		uint8  location = 0;
+		uint8  index	= 0;
 		size_t offset	= 0;
 		size_t size		= 0;
 		format format	= format::undefined;
@@ -434,11 +441,14 @@ namespace Game
 
 	struct shader_desc
 	{
-		bitmask<uint16>					flags		   = 0;
-		span<uint8>						signature_data = {};
-		vector<shader_blob>				blobs		   = {};
-		vector<shader_color_attachment> attachments	   = {};
-		vector<vertex_input>			inputs		   = {};
+		const char*						vertex_entry  = "VSMain";
+		const char*						pixel_entry	  = "PSMain";
+		const char*						compute_entry = "CSMain";
+		bitmask<uint16>					flags		  = 0;
+		span<uint8>						layout_data	  = {};
+		vector<shader_blob>				blobs		  = {};
+		vector<shader_color_attachment> attachments	  = {};
+		vector<vertex_input>			inputs		  = {};
 
 		shader_depth_stencil_desc depth_stencil_desc = {};
 		logic_op				  blend_logic_op	 = logic_op::and_;
@@ -446,6 +456,7 @@ namespace Game
 		cull_mode				  cull				 = cull_mode::back;
 		front_face				  front				 = front_face::cw;
 		polygon_mode			  poly_mode			 = polygon_mode::fill;
+		resource_id				  layout			 = 0;
 
 		uint32 samples			   = 1;
 		float  depth_bias_constant = 0.0f;
@@ -453,16 +464,6 @@ namespace Game
 		float  depth_bias_slope	   = 0.0f;
 
 		char debug_name[16] = {"Shader"};
-	};
-
-	struct sampler_desc
-	{
-		uint32			anisotropy	   = 0;
-		float			min_lod		   = 0.0f;
-		float			max_lod		   = 1.0f;
-		float			lod_bias	   = 0.0f;
-		bitmask<uint16> flags		   = 0;
-		char			debug_name[16] = {"Sampler"};
 	};
 
 	struct queue_desc
@@ -478,9 +479,4 @@ namespace Game
 		char		 debug_name[16] = {"CmdBuffer"};
 	};
 
-	struct present_desc
-	{
-		resource_id* swapchains		 = nullptr;
-		uint8		 swapchain_count = 0;
-	};
 }

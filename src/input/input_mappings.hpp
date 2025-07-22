@@ -440,7 +440,7 @@ namespace Game
 		GamepadDpadLast	 = GAME_GAMEPAD_LAST,
 		GamepadLTrigger	 = GAME_GAMEPAD_LEFT_TRIGGER,
 		GamepadRTrigger	 = GAME_GAMEPAD_RIGHT_TRIGGER,
-		GamepadLast		 = GAME_GAMEPAD_LAST
+		GamepadLast		 = GAME_GAMEPAD_LAST,
 	};
 
 } // namespace SFG

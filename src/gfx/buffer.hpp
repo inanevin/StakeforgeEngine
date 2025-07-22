@@ -33,12 +33,6 @@ SOFTWARE.
 #include "data/atomic.hpp"
 #include "data/bitmask.hpp"
 
-namespace LinaGX
-{
-	class CommandStream;
-	enum class IndexType;
-} // namespace LinaGX
-
 namespace Game
 {
 	class buffer
@@ -58,10 +52,10 @@ namespace Game
 		void create(uint32 hintFlags, uint32 size, const string& debugName = "GPUBuffer", bool stagingOnly = false);
 		void set_data(size_t padding, uint8* data, size_t size);
 		void memset_mapped(int32 v);
-		bool copy(LinaGX::CommandStream* stream);
+		// bool copy(LinaGX::CommandStream* stream);
 		void destroy();
-		void bind_vertex(LinaGX::CommandStream* stream, uint32 vertexSize);
-		void bind_index(LinaGX::CommandStream* stream, LinaGX::IndexType indexType);
+		// void bind_vertex(LinaGX::CommandStream* stream, uint32 vertexSize);
+		// void bind_index(LinaGX::CommandStream* stream, LinaGX::IndexType indexType);
 
 		inline void mark_dirty()
 		{

@@ -1,6 +1,6 @@
 // Copyright (c) 2025 Inan Evin
 #pragma once
-
+/*
 #include "common/size_definitions.hpp"
 #include "mesh_manager.hpp"
 #include "gfx/gfx_util.hpp"
@@ -110,4 +110,4 @@ namespace Game
 		shader			_shader_gui_sdf			   = {};
 		texture_sampler _sampler_gui_text		   = {};
 	};
-}
+}*/

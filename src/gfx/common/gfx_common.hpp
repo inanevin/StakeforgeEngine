@@ -29,4 +29,25 @@ namespace Game
 		mesh_data data;
 	};
 
+	struct semaphore_data
+	{
+		resource_id semaphore = 0;
+		uint64		value	  = 0;
+	};
+
+	struct texture_buffer
+	{
+		uint8*		pixels = nullptr;
+		vector2ui16 size   = vector2ui16::zero;
+		uint8		bpp	   = 0;
+	};
+
+	struct descriptor_handle
+	{
+		size_t cpu	 = NULL;
+		uint64 gpu	 = NULL;
+		uint32 index = 0;
+		uint32 count = 0;
+	};
+
 }

@@ -29,30 +29,32 @@ namespace Game
 		wf_style_borderless = 1 << 5,
 	};
 
-	enum class window_event_type
-	{
-		key,
-		mouse_button,
-		mouse_wheel,
-		mouse_delta,
-	};
-
 	enum window_event_flags
 	{
-		wef_is_key	   = 1 << 0,
-		wef_is_mouse   = 1 << 1,
-		wef_is_wheel   = 1 << 2,
-		wef_is_press   = 1 << 3,
-		wef_is_repeat  = 1 << 4,
-		wef_is_release = 1 << 5,
-		wef_is_delta   = 1 << 6,
-		wef_high_freq  = 1 << 7,
+		wef_high_freq = 1 << 0,
+	};
+
+	enum class window_event_type : uint8
+	{
+		key = 0,
+		mouse,
+		wheel,
+		delta,
+	};
+
+	enum class window_event_sub_type : uint8
+	{
+		press,
+		release,
+		repeat,
 	};
 
 	struct window_event
 	{
-		vector2i	   value = vector2i();
-		bitmask<uint8> flags = 0;
-		input_code	   button;
+		vector2i			  value = vector2i();
+		input_code			  button;
+		window_event_type	  type	   = window_event_type::key;
+		window_event_sub_type sub_type = window_event_sub_type::press;
+		bitmask<uint8>		  flags	   = 0;
 	};
 }

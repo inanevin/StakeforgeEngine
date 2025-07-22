@@ -93,8 +93,7 @@ src/gfx/*.cpp
 src/gfx/backend/*.cpp
 src/gfx/common/*.cpp
 src/resources/*.cpp
-src/game/*.cpp
-src/game/gfx/*.cpp
+src/app/*.cpp
 )
 
 file(GLOB HEADERS 
@@ -109,9 +108,8 @@ src/gfx/*.hpp
 src/gfx/backend/*.hpp
 src/gfx/common/*.hpp
 src/gui/*.hpp
+src/app/*.hpp
 src/resources/*.hpp
-src/game/*.hpp
-src/game/gfx/*.hpp
 src/vendor/stb/*.h
 )
 
@@ -155,29 +153,38 @@ target_include_directories(${PROJECT_NAME} PUBLIC ${PROJECT_SOURCE_DIR}/src)
 target_include_directories(${PROJECT_NAME} PRIVATE ${PROJECT_SOURCE_DIR}/deps/phmap/include)
 
 # ------------- DEPS -------------
-add_subdirectory(deps/glm-0.9.9.8/glm)
 add_subdirectory(deps/lz4-1.9.4)
-add_subdirectory(deps/fmt-7.0.3)
 
-set(LINAGX_RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin/$<CONFIGURATION>/")
-add_subdirectory(deps/LinaGX-1.1.0)
+if(WIN32)
+
+include(deps/dxc/link.cmake)
+link_dxc()
+
+target_link_libraries(${PROJECT_NAME} 
+			PRIVATE d3d12.lib
+			PRIVATE dxgi.lib
+			PRIVATE dxguid.lib
+		)
+
+endif()
 
 target_link_libraries(${PROJECT_NAME} 
 PUBLIC lz4
-PUBLIC fmt
-PUBLIC glm_static
-PUBLIC Lina::GX
 )
 
 set_target_properties(lz4 PROPERTIES FOLDER "Dependencies")
-set_target_properties(fmt PROPERTIES FOLDER "Dependencies")
-set_target_properties(glm_static PROPERTIES FOLDER "Dependencies")
-set_target_properties(LinaGX PROPERTIES FOLDER "Dependencies")
 
 add_custom_command(
 TARGET ${PROJECT_NAME}
 POST_BUILD
 COMMAND ${CMAKE_COMMAND} -E copy_directory "${CMAKE_CURRENT_SOURCE_DIR}/assets" "${CMAKE_BINARY_DIR}/bin/$<CONFIGURATION>/assets")
+
+if(WIN32)
+add_custom_command(
+TARGET ${PROJECT_NAME}
+POST_BUILD
+COMMAND ${CMAKE_COMMAND} -E copy_directory "${CMAKE_CURRENT_SOURCE_DIR}/deps/dx12_bin" "${CMAKE_BINARY_DIR}/bin/$<CONFIGURATION>/")
+endif()
 
 include(${CMAKE_SOURCE_DIR}/utils/cmake/common_functions.cmake)
 group_sources(HEADERS SOURCES PLATFORM_HEADERS PLATFORM_SOURCES)
