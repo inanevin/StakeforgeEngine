@@ -274,7 +274,6 @@ namespace Game
 		vector2ui	   size		 = vector2ui::zero;
 		resource_id	   swapchain = 0;
 		float		   scaling	 = 1.0f;
-		format		   format	 = format::undefined;
 		bitmask<uint8> flags	 = 0;
 	};
 
@@ -475,7 +474,6 @@ namespace Game
 	struct command_buffer_desc
 	{
 		command_type type			= command_type::graphics;
-		resource_id	 allocator		= 0;
 		char		 debug_name[16] = {"CmdBuffer"};
 	};
 

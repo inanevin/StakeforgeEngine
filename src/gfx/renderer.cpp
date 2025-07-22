@@ -2,20 +2,21 @@
 #include "renderer.hpp"
 #include "gfx/backend/backend.hpp"
 #include "gfx/common/descriptions.hpp"
+#include "gfx/common/commands.hpp"
 #include "gfx/gfx_util.hpp"
 #include "platform/window.hpp"
 #include "math/vector4.hpp"
+#include "memory/memory_tracer.hpp"
 
 namespace Game
 {
 	void renderer::init(const window& main_window)
 	{
 		gfx_backend::s_instance = new gfx_backend();
-		gfx_backend::get()->init();
+		gfx_backend* backend	= gfx_backend::get();
+		backend->init();
 
-		_frame_allocator.init(1024 * 1024, 4);
-
-		_swapchain_main = gfx_backend::get()->create_swapchain({
+		_swapchain_main = backend->create_swapchain({
 			.window	   = main_window.get_window_handle(),
 			.os_handle = main_window.get_platform_handle(),
 			.scaling   = 1.0f,
@@ -25,7 +26,7 @@ namespace Game
 			.flags	   = swapchain_flags::sf_allow_tearing | swapchain_flags::sf_vsync_every_v_blank,
 		});
 
-		_bind_layout_gui_default = gfx_backend::get()->create_bind_layout({
+		_bind_layout_gui_default = backend->create_bind_layout({
 			.bindings =
 				{
 					{
@@ -111,7 +112,12 @@ namespace Game
 		for (uint32 i = 0; i < FRAMES_IN_FLIGHT; i++)
 		{
 			per_frame_data& pfd			  = _pfd[i];
-			pfd.frame_semaphore.semaphore = gfx_backend::get()->create_semaphore();
+			pfd.frame_semaphore.semaphore = backend->create_semaphore();
+			pfd.gfx_buffer				  = backend->create_command_buffer({
+							   .type	   = command_type::graphics,
+							   .debug_name = "renderer_gfx",
+			   });
+			_frame_allocator[i].init(1024 * 1024, 4);
 		}
 	}
 
@@ -119,19 +125,21 @@ namespace Game
 	{
 		_shader_gui_default.destroy();
 
-		gfx_backend::get()->destroy_bind_layout(_bind_layout_gui_default);
+		gfx_backend* backend = gfx_backend::get();
+
+		backend->destroy_bind_layout(_bind_layout_gui_default);
 
 		for (uint32 i = 0; i < FRAMES_IN_FLIGHT; i++)
 		{
 			per_frame_data& pfd = _pfd[i];
-			gfx_backend::get()->destroy_semaphore(pfd.frame_semaphore.semaphore);
+			backend->destroy_semaphore(pfd.frame_semaphore.semaphore);
+			backend->destroy_command_buffer(pfd.gfx_buffer);
+			_frame_allocator[i].uninit();
 		}
 
-		gfx_backend::get()->destroy_swapchain(_swapchain_main);
+		backend->destroy_swapchain(_swapchain_main);
 
-		_frame_allocator.uninit();
-
-		gfx_backend::get()->uninit();
+		backend->uninit();
 		delete gfx_backend::s_instance;
 		gfx_backend::s_instance = nullptr;
 	}
@@ -145,6 +153,8 @@ namespace Game
 			per_frame_data& pfd = _pfd[i];
 			backend->wait_semaphore(pfd.frame_semaphore.semaphore, pfd.frame_semaphore.value);
 		}
+
+		_frame_index = 0;
 	}
 
 	void renderer::populate_render_data(uint8 index)
@@ -155,28 +165,79 @@ namespace Game
 
 	void renderer::render(uint8 index, const vector2ui& size)
 	{
+		PUSH_MEMORY_CATEGORY("Gfx");
+
 		render_data& read_data = _render_data[index];
-		_frame_allocator.reset();
 
 		gfx_backend*	backend = gfx_backend::get();
 		per_frame_data& pfd		= _pfd[_frame_index];
+		bump_allocator& alloc	= _frame_allocator[_frame_index];
+		alloc.reset();
+
+		const resource_id queue_gfx = backend->get_queue_gfx();
 
 		backend->wait_semaphore(pfd.frame_semaphore.semaphore, pfd.frame_semaphore.value);
 
-		// begin gui pass on swapchain
+		backend->reset_command_buffer(pfd.gfx_buffer);
 
-		//
-		// flush vekt, get draw comamnds, bind shader and call draw commands on backend.
-		// lets think of root signature.
+		// Present -> RT barrier
+		{
+			barrier* b	  = alloc.allocate<barrier>(1);
+			b->flags	  = barrier_flags::baf_is_swapchain;
+			b->to_state	  = resource_state::render_target;
+			b->from_state = resource_state::present;
+			b->resource	  = _swapchain_main;
 
-		// end gui pass on swapchain
+			backend->cmd_barrier(pfd.gfx_buffer,
+								 {
+									 .barriers		= b,
+									 .barrier_count = 1,
+								 });
+		}
 
+		// RENDER PASS
+		{
+			render_pass_color_attachment* attachment = alloc.allocate<render_pass_color_attachment>(1);
+			attachment->clear_color					 = vector4(0.6f, 0.0f, 0.0f, 1.0f);
+			attachment->load_op						 = load_op::clear;
+			attachment->store_op					 = store_op::store;
+			attachment->texture						 = _swapchain_main;
+
+			backend->cmd_begin_render_pass_swapchain(pfd.gfx_buffer,
+													 {
+														 .color_attachments		 = attachment,
+														 .color_attachment_count = 1,
+													 });
+
+			backend->cmd_set_viewport(pfd.gfx_buffer, {.width = static_cast<uint16>(size.x), .height = static_cast<uint16>(size.y)});
+			backend->cmd_set_scissors(pfd.gfx_buffer, {.width = static_cast<uint16>(size.x), .height = static_cast<uint16>(size.y)});
+			backend->cmd_end_render_pass(pfd.gfx_buffer, {});
+		}
+
+		// Rt -> Present Barrier
+		{
+			barrier* b	  = alloc.allocate<barrier>(1);
+			b->flags	  = barrier_flags::baf_is_swapchain;
+			b->from_state = resource_state::render_target;
+			b->to_state	  = resource_state::present;
+			b->resource	  = _swapchain_main;
+
+			backend->cmd_barrier(pfd.gfx_buffer,
+								 {
+									 .barriers		= b,
+									 .barrier_count = 1,
+								 });
+		}
+
+		backend->close_command_buffer(pfd.gfx_buffer);
+		backend->submit_commands(queue_gfx, &pfd.gfx_buffer, 1);
 		backend->present(&_swapchain_main, 1);
 
 		pfd.frame_semaphore.value++;
-		backend->queue_signal(backend->get_queue_gfx(), &pfd.frame_semaphore.semaphore, 1, &pfd.frame_semaphore.value);
+		backend->queue_signal(queue_gfx, &pfd.frame_semaphore.semaphore, 1, &pfd.frame_semaphore.value);
 
 		_frame_index = (_frame_index + 1) % FRAMES_IN_FLIGHT;
+		POP_MEMORY_CATEGORY();
 	}
 
 	bool renderer::on_window_event(const window_event& ev)
@@ -190,7 +251,6 @@ namespace Game
 		backend->recreate_swapchain({
 			.size	   = size,
 			.swapchain = _swapchain_main,
-			.format	   = format::b8g8r8a8_unorm,
 			.flags	   = swapchain_flags::sf_allow_tearing | swapchain_flags::sf_vsync_every_v_blank,
 		});
 	}

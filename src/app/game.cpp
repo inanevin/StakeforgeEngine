@@ -111,8 +111,13 @@ namespace Game
 
 		_render_joined.store(1, std::memory_order_release);
 		_frame_available_semaphore.release();
+
+		PUSH_MEMORY_CATEGORY("General");
+
 		if (_render_thread.joinable())
 			_render_thread.join();
+
+		POP_MEMORY_CATEGORY();
 		_renderer.wait_backend();
 	}
 

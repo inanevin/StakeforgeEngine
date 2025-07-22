@@ -730,8 +730,6 @@ namespace Game
 	void dx12_backend::queue_wait(resource_id queue_id, resource_id* semaphores, uint8 semaphore_count, uint64* semaphore_values)
 	{
 		queue& q = _queues.get(queue_id);
-		_reuse_fences.resize(0);
-		_reuse_values.resize(0);
 
 		for (uint8 i = 0; i < semaphore_count; i++)
 			q.ptr->Wait(_semaphores.get(semaphores[i]).ptr.Get(), semaphore_values[i]);
@@ -740,11 +738,11 @@ namespace Game
 	void dx12_backend::queue_signal(resource_id queue_id, resource_id* semaphores, uint8 semaphore_count, uint64* semaphore_values)
 	{
 		queue& q = _queues.get(queue_id);
-		_reuse_fences.resize(0);
-		_reuse_values.resize(0);
 
 		for (uint8 i = 0; i < semaphore_count; i++)
+		{
 			q.ptr->Signal(_semaphores.get(semaphores[i]).ptr.Get(), semaphore_values[i]);
+		}
 	}
 
 	void dx12_backend::present(resource_id* swapchains, uint8 swapchain_count)
@@ -1232,27 +1230,25 @@ namespace Game
 	{
 		swapchain& swp = _swapchains.get(desc.swapchain);
 
-		DXGI_FORMAT swap_format = DXGI_FORMAT_B8G8R8A8_UNORM;
-		if (desc.format == format::r16g16b16a16_sfloat)
-			swap_format = DXGI_FORMAT_R16G16B16A16_FLOAT;
-		else if (desc.format == format::r8g8b8a8_unorm)
-			swap_format = DXGI_FORMAT_R8G8B8A8_UNORM;
-		else if (desc.format == format::r8g8b8a8_srgb)
-			swap_format = DXGI_FORMAT_R8G8B8A8_UNORM;
-
 		DXGI_SWAP_CHAIN_DESC swp_desc = {};
 		swp.ptr->GetDesc(&swp_desc);
 
 		for (uint32 i = 0; i < BACK_BUFFER_COUNT; i++)
 		{
 			swp.textures[i].Reset();
+		}
+
+		throw_if_failed(swp.ptr->ResizeBuffers(BACK_BUFFER_COUNT, static_cast<UINT>(desc.size.x), static_cast<UINT>(desc.size.y), swp_desc.BufferDesc.Format, desc.flags.is_set(swapchain_flags::sf_allow_tearing) ? DXGI_SWAP_CHAIN_FLAG_ALLOW_TEARING : (UINT)0));
+		swp.image_index = swp.ptr->GetCurrentBackBufferIndex();
+
+		for (uint32 i = 0; i < BACK_BUFFER_COUNT; i++)
+		{
 			descriptor_handle& dh = _descriptors.get(swp.rtv_indices[i]);
 
 			throw_if_failed(swp.ptr->GetBuffer(i, IID_PPV_ARGS(&swp.textures[i])));
-			swp.image_index = swp.ptr->GetCurrentBackBufferIndex();
 
 			const D3D12_RENDER_TARGET_VIEW_DESC rtv_desc = {
-				.Format		   = swap_format,
+				.Format		   = swp_desc.BufferDesc.Format,
 				.ViewDimension = D3D12_RTV_DIMENSION_TEXTURE2D,
 			};
 			_device->CreateRenderTargetView(swp.textures[i].Get(), &rtv_desc, {dh.cpu});
@@ -1794,13 +1790,14 @@ namespace Game
 
 	resource_id dx12_backend::create_command_buffer(const command_buffer_desc& desc)
 	{
-		const resource_id  id	 = _command_buffers.add();
-		command_allocator& alloc = _command_allocators.get(desc.allocator);
-		command_buffer&	   cmd	 = _command_buffers.get(id);
+		const resource_id  id		= _command_buffers.add();
+		const resource_id  alloc_id = create_command_allocator(static_cast<uint8>(desc.type));
+		command_allocator& alloc	= _command_allocators.get(alloc_id);
+		command_buffer&	   cmd		= _command_buffers.get(id);
 		throw_if_failed(_device->CreateCommandList(0, get_command_type(desc.type), alloc.ptr.Get(), nullptr, IID_PPV_ARGS(cmd.ptr.GetAddressOf())));
-		cmd.allocator	= create_command_allocator(static_cast<uint8>(desc.type));
+		cmd.allocator	= alloc_id;
 		cmd.is_transfer = desc.type == command_type::transfer;
-
+		cmd.ptr->Close();
 		NAME_DX12_OBJECT_CSTR(cmd.ptr, desc.debug_name);
 		return id;
 	}
@@ -1838,6 +1835,7 @@ namespace Game
 			.Flags = D3D12_COMMAND_QUEUE_FLAG_NONE,
 		};
 		throw_if_failed(_device->CreateCommandQueue(&queue_desc, IID_PPV_ARGS(&q.ptr)));
+		NAME_DX12_OBJECT_CSTR(q.ptr, desc.debug_name);
 		return id;
 	}
 
@@ -2028,10 +2026,10 @@ namespace Game
 			cv.Color[1] = att.clear_color.y;
 			cv.Color[2] = att.clear_color.z;
 			cv.Color[3] = att.clear_color.w;
-			const D3D12_RENDER_PASS_BEGINNING_ACCESS colorBegin{get_load_op(att.load_op), {cv}};
-			const D3D12_RENDER_PASS_ENDING_ACCESS	 colorEnd{get_store_op(att.store_op), {}};
+			const D3D12_RENDER_PASS_BEGINNING_ACCESS color_begin{get_load_op(att.load_op), {cv}};
+			const D3D12_RENDER_PASS_ENDING_ACCESS	 color_end{get_store_op(att.store_op), {}};
 
-			_reuse_color_attachments[i] = {dh.cpu, colorBegin, colorEnd};
+			_reuse_color_attachments[i] = {dh.cpu, color_begin, color_end};
 		}
 
 		cmd_list->BeginRenderPass(cmd.color_attachment_count, _reuse_color_attachments.data(), NULL, D3D12_RENDER_PASS_FLAG_NONE);
@@ -2055,10 +2053,10 @@ namespace Game
 			cv.Color[1] = att.clear_color.y;
 			cv.Color[2] = att.clear_color.z;
 			cv.Color[3] = att.clear_color.w;
-			const D3D12_RENDER_PASS_BEGINNING_ACCESS colorBegin{get_load_op(att.load_op), {cv}};
-			const D3D12_RENDER_PASS_ENDING_ACCESS	 colorEnd{get_store_op(att.store_op), {}};
+			const D3D12_RENDER_PASS_BEGINNING_ACCESS color_begin{get_load_op(att.load_op), {cv}};
+			const D3D12_RENDER_PASS_ENDING_ACCESS	 color_end{get_store_op(att.store_op), {}};
 
-			_reuse_color_attachments[i] = {dh.cpu, colorBegin, colorEnd};
+			_reuse_color_attachments[i] = {dh.cpu, color_begin, color_end};
 		}
 
 		const texture&							   depth_txt = _textures.get(cmd.depth_stencil_attachment.texture);
@@ -2090,10 +2088,10 @@ namespace Game
 			cv.Color[1] = att.clear_color.y;
 			cv.Color[2] = att.clear_color.z;
 			cv.Color[3] = att.clear_color.w;
-			const D3D12_RENDER_PASS_BEGINNING_ACCESS colorBegin{get_load_op(att.load_op), {cv}};
-			const D3D12_RENDER_PASS_ENDING_ACCESS	 colorEnd{get_store_op(att.store_op), {}};
+			const D3D12_RENDER_PASS_BEGINNING_ACCESS color_begin{get_load_op(att.load_op), {cv}};
+			const D3D12_RENDER_PASS_ENDING_ACCESS	 color_end{get_store_op(att.store_op), {}};
 
-			_reuse_color_attachments[i] = {dh.cpu, colorBegin, colorEnd};
+			_reuse_color_attachments[i] = {dh.cpu, color_begin, color_end};
 		}
 
 		cmd_list->BeginRenderPass(cmd.color_attachment_count, _reuse_color_attachments.data(), NULL, D3D12_RENDER_PASS_FLAG_NONE);
@@ -2117,10 +2115,10 @@ namespace Game
 			cv.Color[1] = att.clear_color.y;
 			cv.Color[2] = att.clear_color.z;
 			cv.Color[3] = att.clear_color.w;
-			const D3D12_RENDER_PASS_BEGINNING_ACCESS colorBegin{get_load_op(att.load_op), {cv}};
-			const D3D12_RENDER_PASS_ENDING_ACCESS	 colorEnd{get_store_op(att.store_op), {}};
+			const D3D12_RENDER_PASS_BEGINNING_ACCESS color_begin{get_load_op(att.load_op), {cv}};
+			const D3D12_RENDER_PASS_ENDING_ACCESS	 color_end{get_store_op(att.store_op), {}};
 
-			_reuse_color_attachments[i] = {dh.cpu, colorBegin, colorEnd};
+			_reuse_color_attachments[i] = {dh.cpu, color_begin, color_end};
 		}
 
 		const texture&							   depth_txt = _textures.get(cmd.depth_stencil_attachment.texture);

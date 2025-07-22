@@ -21,7 +21,7 @@ namespace Game
 #define BACK_BUFFER_COUNT 3
 
 	// 0 discrete, 1 integrated
-#define GPU_DEVICE 0
+#define GPU_DEVICE 1
 
 	typedef unsigned short resource_id;
 }

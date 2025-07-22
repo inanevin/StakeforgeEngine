@@ -30,12 +30,13 @@ namespace Game
 		struct per_frame_data
 		{
 			semaphore_data frame_semaphore = {};
+			resource_id	   gfx_buffer	   = 0;
 		};
 
 	private:
 		per_frame_data _pfd[FRAMES_IN_FLIGHT];
-		bump_allocator _frame_allocator	   = {};
-		shader		   _shader_gui_default = {};
+		bump_allocator _frame_allocator[FRAMES_IN_FLIGHT] = {};
+		shader		   _shader_gui_default				  = {};
 		render_data	   _render_data[2];
 		resource_id	   _swapchain_main			= 0;
 		resource_id	   _bind_layout_gui_default = 0;

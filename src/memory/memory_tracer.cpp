@@ -23,17 +23,24 @@ namespace Game
 {
 	uint8 memory_tracer::s_category_counter = 0;
 
+	namespace
+	{
+		void print(uint32 n)
+		{
+			const size_t bufferSize = 256;
+			char*		 buffer		= static_cast<char*>(malloc(bufferSize));
+			if (!buffer)
+				return;
+			const int written = snprintf(buffer, bufferSize, " %d\n", n);
+			if (written > 0 && static_cast<size_t>(written) < bufferSize)
+			{
+				WriteConsole(GetStdHandle(STD_OUTPUT_HANDLE), buffer, static_cast<DWORD>(written), NULL, NULL);
+			}
+		}
+	}
 	void memory_tracer::on_allocation(void* ptr, size_t sz)
 	{
 		LOCK_GUARD(_category_mtx);
-
-#if 0
-		const size_t bufferSize = 256;
-		char*		 buffer		= static_cast<char*>(malloc(bufferSize));
-		if (!buffer) return;
-		const int written = snprintf(buffer, bufferSize, " %d\n", sz);
-		if (written > 0 && static_cast<size_t>(written) < bufferSize) { WriteConsole(GetStdHandle(STD_OUTPUT_HANDLE), buffer, static_cast<DWORD>(written), NULL, NULL); }
-#endif
 
 		if (_categories.empty() || _current_active_category == 0)
 			return;
@@ -103,7 +110,7 @@ namespace Game
 		}
 		else
 		{
-			_current_active_category = 0;
+			_current_active_category = 1;
 		}
 	}
 
