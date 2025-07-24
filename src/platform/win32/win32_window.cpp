@@ -51,9 +51,9 @@ namespace Game
 
 			UINT	dpiX, dpiY;
 			HRESULT temp2	= GetDpiForMonitor(monitor, MDT_EFFECTIVE_DPI, &dpiX, &dpiY);
-			info.size		= {static_cast<uint32>(monitor_info.rcMonitor.right - monitor_info.rcMonitor.left), static_cast<uint32>(monitor_info.rcMonitor.bottom - monitor_info.rcMonitor.top)};
-			info.work_size	= {static_cast<uint32>(monitor_info.rcWork.right - monitor_info.rcWork.left), static_cast<uint32>(monitor_info.rcWork.bottom - monitor_info.rcWork.top)};
-			info.position	= {static_cast<int32>(monitor_info.rcWork.left), static_cast<int32>(monitor_info.rcWork.top)};
+			info.size		= {static_cast<uint16>(monitor_info.rcMonitor.right - monitor_info.rcMonitor.left), static_cast<uint16>(monitor_info.rcMonitor.bottom - monitor_info.rcMonitor.top)};
+			info.work_size	= {static_cast<uint16>(monitor_info.rcWork.right - monitor_info.rcWork.left), static_cast<uint16>(monitor_info.rcWork.bottom - monitor_info.rcWork.top)};
+			info.position	= {static_cast<int16>(monitor_info.rcWork.left), static_cast<int16>(monitor_info.rcWork.top)};
 			info.is_primary = (monitor_info.dwFlags & MONITORINFOF_PRIMARY) != 0;
 			info.dpi		= dpiX;
 			info.dpi_scale	= static_cast<float>(dpiX) / 96.0f;
@@ -87,7 +87,7 @@ namespace Game
 		case WM_MOVE: {
 			const int32 x  = static_cast<int32>((short)LOWORD(lParam));
 			const int32 y  = static_cast<int32>((short)HIWORD(lParam));
-			wnd->_position = vector2i(x, y);
+			wnd->_position = vector2i16(x, y);
 			return 0;
 		}
 		case WM_SIZE: {
@@ -100,7 +100,7 @@ namespace Game
 
 			RECT clientRect;
 			GetClientRect(hwnd, &clientRect);
-			wnd->_size = vector2ui(width, height);
+			wnd->_size = vector2ui16(static_cast<uint16>(width), static_cast<uint16>(height));
 			wnd->_flags.set(wf_size_dirty);
 
 			if (wnd->_flags.is_set(window_flags::wf_style_windowed))
@@ -137,7 +137,7 @@ namespace Game
 					s_key_down_map[key] = 0;
 
 				const window_event ev = {
-					.value	  = vector2i(static_cast<int32>(scanCode), 0),
+					.value	  = vector2i16(static_cast<int32>(scanCode), 0),
 					.button	  = static_cast<input_code>(key),
 					.type	  = window_event_type::key,
 					.sub_type = is_release ? window_event_sub_type::release : (is_repeat ? window_event_sub_type::repeat : window_event_sub_type::press),
@@ -151,10 +151,10 @@ namespace Game
 				POINT  cursorPos;
 				GetCursorPos(&cursorPos);
 
-				wnd->_mouse_position_abs = vector2i(static_cast<int32>(cursorPos.x), static_cast<int32>(cursorPos.y));
+				wnd->_mouse_position_abs = vector2i16(static_cast<int32>(cursorPos.x), static_cast<int32>(cursorPos.y));
 
-				const vector2i relative = wnd->_mouse_position_abs - wnd->_position;
-				wnd->_mouse_position	= vector2i::clamp(relative, vector2i(), vector2i(wnd->_size));
+				const vector2i16 relative = wnd->_mouse_position_abs - wnd->_position;
+				wnd->_mouse_position	  = vector2i16::clamp(relative, vector2i16(), vector2i16(static_cast<int16>(wnd->_size.x), static_cast<int16>(wnd->_size.y)));
 
 				window_event ev = {
 
@@ -210,7 +210,7 @@ namespace Game
 					const short	 wheel		= (short)raw->data.mouse.usButtonData / (short)WHEEL_DELTA;
 
 					const window_event mwe = {
-						.value = vector2i(0, wheel),
+						.value = vector2i16(0, wheel),
 						.type  = window_event_type::wheel,
 						.flags = wef_high_freq,
 					};
@@ -222,7 +222,7 @@ namespace Game
 					const int32 yPosRelative = raw->data.mouse.lLastY;
 
 					const window_event mdEvent = {
-						.value = vector2i(xPosRelative, yPosRelative),
+						.value = vector2i16(xPosRelative, yPosRelative),
 						.type  = window_event_type::delta,
 						.flags = wef_high_freq,
 					};
@@ -250,7 +250,7 @@ namespace Game
 
 			const window_event ev = {
 
-				.value	  = vector2i(scanCode, 0),
+				.value	  = vector2i16(scanCode, 0),
 				.button	  = static_cast<input_code>(key),
 				.type	  = window_event_type::key,
 				.sub_type = is_repeat ? window_event_sub_type::repeat : window_event_sub_type::press,
@@ -277,7 +277,7 @@ namespace Game
 
 			const window_event ev = {
 
-				.value = vector2i(scanCode, 0), .button = static_cast<input_code>(key), .type = window_event_type::key, .sub_type = window_event_sub_type::release};
+				.value = vector2i16(scanCode, 0), .button = static_cast<input_code>(key), .type = window_event_type::key, .sub_type = window_event_sub_type::release};
 
 			wnd->add_event(ev);
 
@@ -292,12 +292,12 @@ namespace Game
 			const int32 xPos = GET_X_LPARAM(lParam);
 			const int32 yPos = GET_Y_LPARAM(lParam);
 
-			static vector2i previousPosition = vector2i();
-			wnd->_mouse_position			 = vector2i(xPos, yPos);
-			wnd->_mouse_position_abs		 = wnd->get_position() + wnd->_mouse_position;
+			static vector2i16 previousPosition = vector2i16::zero;
+			wnd->_mouse_position			   = vector2i16(xPos, yPos);
+			wnd->_mouse_position_abs		   = wnd->get_position() + wnd->_mouse_position;
 
-			const vector2i delta = wnd->_mouse_position - previousPosition;
-			previousPosition	 = wnd->_mouse_position;
+			const vector2i16 delta = wnd->_mouse_position - previousPosition;
+			previousPosition	   = wnd->_mouse_position;
 
 			const window_event ev = {
 				.value = delta,
@@ -314,7 +314,7 @@ namespace Game
 				return 0;
 			const int16		   delta = GET_WHEEL_DELTA_WPARAM(wParam) / (int16)(WHEEL_DELTA);
 			const window_event mwe	 = {
-				  .value = vector2i(0, delta),
+				  .value = vector2i16(0, delta),
 				  .type	 = window_event_type::wheel,
 			  };
 
@@ -332,7 +332,7 @@ namespace Game
 
 			const window_event ev = {
 
-				.value	  = vector2i(x, y),
+				.value	  = vector2i16(x, y),
 				.button	  = input_code::Mouse0,
 				.type	  = window_event_type::mouse,
 				.sub_type = window_event_sub_type::press,
@@ -349,7 +349,7 @@ namespace Game
 
 			const window_event ev = {
 
-				.value	  = vector2i(x, y),
+				.value	  = vector2i16(x, y),
 				.button	  = input_code::Mouse0,
 				.type	  = window_event_type::mouse,
 				.sub_type = window_event_sub_type::repeat,
@@ -368,7 +368,7 @@ namespace Game
 
 			const window_event ev = {
 
-				.value	  = vector2i(x, y),
+				.value	  = vector2i16(x, y),
 				.button	  = input_code::Mouse1,
 				.type	  = window_event_type::mouse,
 				.sub_type = window_event_sub_type::press,
@@ -385,7 +385,7 @@ namespace Game
 
 			const window_event ev = {
 
-				.value	  = vector2i(x, y),
+				.value	  = vector2i16(x, y),
 				.button	  = input_code::Mouse1,
 				.type	  = window_event_type::mouse,
 				.sub_type = window_event_sub_type::repeat,
@@ -405,7 +405,7 @@ namespace Game
 
 			const window_event ev = {
 
-				.value	  = vector2i(x, y),
+				.value	  = vector2i16(x, y),
 				.button	  = input_code::Mouse2,
 				.type	  = window_event_type::mouse,
 				.sub_type = window_event_sub_type::press,
@@ -424,7 +424,7 @@ namespace Game
 
 			const window_event ev = {
 
-				.value	  = vector2i(x, y),
+				.value	  = vector2i16(x, y),
 				.button	  = input_code::Mouse0,
 				.type	  = window_event_type::mouse,
 				.sub_type = window_event_sub_type::release,
@@ -444,7 +444,7 @@ namespace Game
 
 			const window_event ev = {
 
-				.value	  = vector2i(x, y),
+				.value	  = vector2i16(x, y),
 				.button	  = input_code::Mouse1,
 				.type	  = window_event_type::mouse,
 				.sub_type = window_event_sub_type::release,
@@ -464,7 +464,7 @@ namespace Game
 
 			const window_event ev = {
 
-				.value	  = vector2i(x, y),
+				.value	  = vector2i16(x, y),
 				.button	  = input_code::Mouse2,
 				.type	  = window_event_type::mouse,
 				.sub_type = window_event_sub_type::release,
@@ -480,7 +480,7 @@ namespace Game
 		return DefWindowProcA(hwnd, msg, wParam, lParam);
 	}
 
-	bool window::create(const char* title, uint8 flags, const vector2i& pos, const vector2ui& size)
+	bool window::create(const char* title, uint8 flags, const vector2i16& pos, const vector2ui16& size)
 	{
 		HINSTANCE  hinst = GetModuleHandle(0);
 		WNDCLASSEX wcx;
@@ -554,13 +554,13 @@ namespace Game
 			DestroyWindow(static_cast<HWND>(_window_handle));
 	}
 
-	void window::set_position(const vector2i& pos)
+	void window::set_position(const vector2i16& pos)
 	{
 		HWND hwnd = static_cast<HWND>(_window_handle);
 		SetWindowPos(hwnd, NULL, pos.x, pos.y, 0, 0, SWP_NOSIZE | SWP_NOZORDER | SWP_NOREDRAW);
 	}
 
-	void window::set_size(const vector2i& size)
+	void window::set_size(const vector2ui16& size)
 	{
 		HWND hwnd = static_cast<HWND>(_window_handle);
 

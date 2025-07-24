@@ -18,19 +18,19 @@ namespace Game
 		typedef phmap::flat_hash_map<uint16, uint8, phmap::priv::hash_default_hash<uint16>, phmap::priv::hash_default_eq<uint16>, malloc_allocator_map<uint16>> map;
 
 	public:
-		bool create(const char* title, uint8 flags, const vector2i& pos, const vector2ui& size);
+		bool create(const char* title, uint8 flags, const vector2i16& pos, const vector2ui16& size);
 		void destroy();
-		void set_position(const vector2i& pos);
-		void set_size(const vector2i& size);
+		void set_position(const vector2i16& pos);
+		void set_size(const vector2ui16& size);
 		void set_style(window_flags flags);
 		void bring_to_front();
 		void add_event(const window_event& ev);
 
-		inline const vector2i get_position() const
+		inline const vector2i16 get_position() const
 		{
 			return _position;
 		}
-		inline const vector2ui get_size() const
+		inline const vector2ui16 get_size() const
 		{
 			return _size;
 		}
@@ -74,11 +74,11 @@ namespace Game
 		monitor_info   _monitor_info	   = {};
 		void*		   _window_handle	   = nullptr;
 		void*		   _platform_handle	   = nullptr;
-		vector2i	   _mouse_position	   = vector2i();
-		vector2i	   _mouse_position_abs = vector2i();
-		vector2i	   _position		   = vector2i();
-		vector2ui	   _true_size		   = vector2ui();
-		vector2ui	   _size			   = vector2ui();
+		vector2i16	   _mouse_position	   = vector2i16::zero;
+		vector2i16	   _mouse_position_abs = vector2i16::zero;
+		vector2i16	   _position		   = vector2i16::zero;
+		vector2ui16	   _true_size		   = vector2ui16::zero;
+		vector2ui16	   _size			   = vector2ui16::zero;
 		uint32		   _event_count		   = 0;
 		bitmask<uint8> _flags			   = 0;
 		static map	   s_key_down_map;

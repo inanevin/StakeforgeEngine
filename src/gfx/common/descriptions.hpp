@@ -34,26 +34,6 @@ namespace Game
 		compute,
 	};
 
-	enum class resource_state : uint8
-	{
-		common,
-		vertex_cbv,
-		index_buffer,
-		render_target,
-		uav,
-		depth_write,
-		depth_read,
-		non_ps_resource,
-		ps_resource,
-		indirect_arg,
-		copy_dest,
-		copy_source,
-		resolve_dest,
-		resolve_source,
-		generic_read,
-		present,
-	};
-
 	enum resource_flags
 	{
 		rf_vertex_buffer   = 1 << 0,
@@ -99,7 +79,7 @@ namespace Game
 
 	enum texture_flags
 	{
-		tf_color_attachment			= 1 << 0,
+		tf_render_target			= 1 << 0,
 		tf_depth_texture			= 1 << 1,
 		tf_stencil_texture			= 1 << 2,
 		tf_linear_tiling			= 1 << 3,
@@ -139,14 +119,14 @@ namespace Game
 		void*		   os_handle = nullptr;
 		float		   scaling	 = 1.0f;
 		format		   format	 = format::undefined;
-		vector2ui	   pos		 = vector2ui::zero;
-		vector2ui	   size		 = vector2ui::zero;
+		vector2ui16	   pos		 = vector2ui16::zero;
+		vector2ui16	   size		 = vector2ui16::zero;
 		bitmask<uint8> flags	 = 0;
 	};
 
 	struct swapchain_recreate_desc
 	{
-		vector2ui	   size		 = vector2ui::zero;
+		vector2ui16	   size		 = vector2ui16::zero;
 		resource_id	   swapchain = 0;
 		float		   scaling	 = 1.0f;
 		bitmask<uint8> flags	 = 0;

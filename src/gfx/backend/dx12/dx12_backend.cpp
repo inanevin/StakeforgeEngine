@@ -949,7 +949,7 @@ namespace Game
 		if (desc.flags.is_set(texture_flags::tf_depth_texture) || desc.flags.is_set(texture_flags::tf_stencil_texture))
 			resource_desc.Flags |= D3D12_RESOURCE_FLAG_ALLOW_DEPTH_STENCIL;
 
-		if (desc.flags.is_set(texture_flags::tf_color_attachment))
+		if (desc.flags.is_set(texture_flags::tf_render_target))
 			resource_desc.Flags |= D3D12_RESOURCE_FLAG_ALLOW_RENDER_TARGET;
 
 		if (desc.samples == 1 && !desc.flags.is_set(texture_flags::tf_sampled) && !desc.flags.is_set(texture_flags::tf_sampled_outside_fragment) && (desc.flags.is_set(texture_flags::tf_depth_texture) || desc.flags.is_set(texture_flags::tf_stencil_texture)))
@@ -1115,9 +1115,9 @@ namespace Game
 				dh					  = _heap_dsv.get_heap_handle_block(1);
 				create_dsv(depth_format, base_level, remaining_level, base_mip, remaining_mip, dh);
 			}
-			if (desc.flags.is_set(texture_flags::tf_color_attachment))
+			if (desc.flags.is_set(texture_flags::tf_render_target))
 			{
-				txt.rtv_count;
+				txt.rtv_count++;
 				txt.rtvs[i]			  = _descriptors.add();
 				descriptor_handle& dh = _descriptors.get(txt.rtvs[i]);
 				dh					  = _heap_rtv.get_heap_handle_block(1);

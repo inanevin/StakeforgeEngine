@@ -1877,18 +1877,18 @@ namespace vekt
 
 			if (widget == fill_parent)
 			{
-				fill_parent = -1;
-
-				float x_left = final_size.x - sz.child_margins.left - sz.child_margins.right;
-				float y_left = final_size.y - sz.child_margins.top - sz.child_margins.bottom;
+				fill_parent			= -1;
+				size_result& res	= _size_results[widget];
+				float		 x_left = res.size.x - sz.child_margins.left - sz.child_margins.right;
+				float		 y_left = res.size.y - sz.child_margins.top - sz.child_margins.bottom;
 
 				for (id child : meta.children)
 				{
 					const size_result& child_res = _size_results[child];
 
-					if (fill_x_children.find(child) != fill_x_children.end())
+					if (fill_x_children.find(child) == fill_x_children.end())
 						x_left -= child_res.size.x;
-					if (fill_y_children.find(child) != fill_y_children.end())
+					if (fill_y_children.find(child) == fill_y_children.end())
 						y_left -= child_res.size.y;
 				}
 
@@ -1907,11 +1907,14 @@ namespace vekt
 				{
 					size_result&	  child_res	  = _size_results[child];
 					const size_props& child_props = _size_properties[child];
-					child_res.size.y			  = x_left / static_cast<float>(fill_y_children.size());
+					child_res.size.y			  = y_left / static_cast<float>(fill_y_children.size());
 
 					if (child_props.flags & size_flags::sf_y_copy_x)
 						child_res.size.x = child_res.size.y;
 				}
+
+				fill_y_children.resize(0);
+				fill_x_children.resize(0);
 			}
 
 			if (sz.flags & size_flags::sf_x_fill)

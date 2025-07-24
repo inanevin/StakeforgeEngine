@@ -1,3 +1,4 @@
+
 // Copyright (c) 2025 Inan Evin
 #include "renderer.hpp"
 #include "gfx/backend/backend.hpp"
@@ -23,7 +24,7 @@ namespace Game
 			.os_handle = main_window.get_platform_handle(),
 			.scaling   = 1.0f,
 			.format	   = format::r8g8b8a8_srgb,
-			.pos	   = vector2ui::zero,
+			.pos	   = vector2ui16::zero,
 			.size	   = main_window.get_size(),
 			.flags	   = swapchain_flags::sf_allow_tearing | swapchain_flags::sf_vsync_every_v_blank,
 		});
@@ -48,7 +49,8 @@ namespace Game
 
 		_buffer_queue.init();
 		_texture_queue.init();
-		_debug_controller.init(&_texture_queue);
+		_debug_controller.init(&_texture_queue, main_window.get_size());
+		_reuse_barriers.reserve(256);
 	}
 
 	void renderer::uninit()
@@ -98,7 +100,7 @@ namespace Game
 		reset_render_data(index);
 	}
 
-	void renderer::render(uint8 index, const vector2ui& size)
+	void renderer::render(uint8 index, const vector2ui16& size)
 	{
 		gfx_backend*	  backend	= gfx_backend::get();
 		const resource_id queue_gfx = backend->get_queue_gfx();
@@ -124,37 +126,27 @@ namespace Game
 		// Begin frame cmd list
 		backend->reset_command_buffer(pfd.cmd_gfx);
 
-		// Present -> RT barrier
-		{
-			barrier* b	  = alloc.allocate<barrier>(1);
-			b->flags	  = barrier_flags::baf_is_swapchain;
-			b->to_state	  = resource_state::render_target;
-			b->from_state = resource_state::present;
-			b->resource	  = _swapchain_main;
-
-			backend->cmd_barrier(pfd.cmd_gfx,
-								 {
-									 .barriers		= b,
-									 .barrier_count = 1,
-								 });
-		}
+		_reuse_barriers.push_back({
+			.resource	= _swapchain_main,
+			.flags		= barrier_flags::baf_is_swapchain,
+			.from_state = resource_state::present,
+			.to_state	= resource_state::render_target,
+		});
+		_debug_controller.collect_barriers(_reuse_barriers);
+		send_barriers(pfd.cmd_gfx);
 
 		// Console stuff
 		_debug_controller.render(pfd.cmd_gfx, _swapchain_main, _frame_index, size, alloc);
 
 		// Rt -> Present Barrier
 		{
-			barrier* b	  = alloc.allocate<barrier>(1);
-			b->flags	  = barrier_flags::baf_is_swapchain;
-			b->from_state = resource_state::render_target;
-			b->to_state	  = resource_state::present;
-			b->resource	  = _swapchain_main;
-
-			backend->cmd_barrier(pfd.cmd_gfx,
-								 {
-									 .barriers		= b,
-									 .barrier_count = 1,
-								 });
+			_reuse_barriers.push_back({
+				.resource	= _swapchain_main,
+				.flags		= barrier_flags::baf_is_swapchain,
+				.from_state = resource_state::render_target,
+				.to_state	= resource_state::present,
+			});
+			send_barriers(pfd.cmd_gfx);
 		}
 
 		/*
@@ -181,7 +173,7 @@ namespace Game
 		return _debug_controller.on_window_event(ev);
 	}
 
-	void renderer::on_window_resize(const vector2ui& size)
+	void renderer::on_window_resize(const vector2ui16& size)
 	{
 		VERIFY_THREAD_MAIN();
 
@@ -191,6 +183,8 @@ namespace Game
 			.swapchain = _swapchain_main,
 			.flags	   = swapchain_flags::sf_allow_tearing | swapchain_flags::sf_vsync_every_v_blank,
 		});
+
+		_debug_controller.on_window_resize(size);
 	}
 
 	void renderer::reset_render_data(uint8 index)
@@ -212,6 +206,18 @@ namespace Game
 			backend->submit_commands(queue, &pfd.cmd_copy, 1);
 			backend->queue_signal(queue, &pfd.sem_copy.semaphore, 1, &pfd.sem_copy.value);
 		}
+	}
+
+	void renderer::send_barriers(resource_id cmd_list)
+	{
+		gfx_backend* backend = gfx_backend::get();
+		backend->cmd_barrier(cmd_list,
+							 {
+								 .barriers		= _reuse_barriers.data(),
+								 .barrier_count = static_cast<uint16>(_reuse_barriers.size()),
+							 });
+
+		_reuse_barriers.resize(0);
 	}
 
 }

@@ -1,8 +1,8 @@
 // Copyright (c) 2025 Inan Evin
 
 #include "common/size_definitions.hpp"
-#include "math/vector2i.hpp"
-#include "math/vector2ui.hpp"
+#include "math/vector2i16.hpp"
+#include "math/vector2ui16.hpp"
 #include "data/bitmask.hpp"
 
 namespace Game
@@ -11,12 +11,12 @@ namespace Game
 
 	struct monitor_info
 	{
-		vector2i  position	 = vector2i();
-		vector2ui size		 = vector2ui();
-		vector2ui work_size	 = vector2ui();
-		uint32	  dpi		 = 0;
-		float	  dpi_scale	 = 0.0f;
-		bool	  is_primary = false;
+		vector2i16	position   = vector2i16::zero;
+		vector2ui16 size	   = vector2ui16::zero;
+		vector2ui16 work_size  = vector2ui16::zero;
+		uint32		dpi		   = 0;
+		float		dpi_scale  = 0.0f;
+		bool		is_primary = false;
 	};
 
 	enum window_flags
@@ -51,7 +51,7 @@ namespace Game
 
 	struct window_event
 	{
-		vector2i			  value = vector2i();
+		vector2i16			  value = vector2i16::zero;
 		input_code			  button;
 		window_event_type	  type	   = window_event_type::key;
 		window_event_sub_type sub_type = window_event_sub_type::press;

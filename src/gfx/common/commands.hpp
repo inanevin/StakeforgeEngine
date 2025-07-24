@@ -6,6 +6,7 @@
 #include "math/vector4.hpp"
 #include "data/bitmask.hpp"
 #include "gfx/common/descriptions.hpp"
+#include "gfx/common/barrier_description.hpp"
 
 namespace Game
 {
@@ -50,19 +51,6 @@ namespace Game
 	{
 		rpa_resolve_mode_min = 1 << 0,
 		rpa_resolve_mode_avg = 1 << 1,
-	};
-
-	struct texture_barrier
-	{
-		resource_id	   texture		= 0;
-		bitmask<uint8> state_flags	= 0;
-		uint8		   is_swapchain = 0;
-	};
-
-	struct resource_barrier
-	{
-		resource_id	   resource	   = 0;
-		bitmask<uint8> state_flags = 0;
 	};
 
 	struct render_pass_color_attachment
@@ -291,21 +279,6 @@ namespace Game
 		uint32 group_size_x = 0;
 		uint32 group_size_y = 0;
 		uint32 group_size_z = 0;
-	};
-
-	enum barrier_flags
-	{
-		baf_is_resource	 = 1 << 0,
-		baf_is_texture	 = 1 << 1,
-		baf_is_swapchain = 1 << 2,
-	};
-
-	struct barrier
-	{
-		resource_id	   resource	  = 0;
-		bitmask<uint8> flags	  = 0;
-		resource_state from_state = resource_state::common;
-		resource_state to_state	  = resource_state::common;
 	};
 
 	struct command_barrier

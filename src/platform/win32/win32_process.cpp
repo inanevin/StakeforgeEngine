@@ -24,9 +24,9 @@ namespace
 
 		UINT	dpiX, dpiY;
 		HRESULT temp2	= GetDpiForMonitor(monitor, MDT_EFFECTIVE_DPI, &dpiX, &dpiY);
-		info.size		= {static_cast<uint32>(monitor_info.rcMonitor.right - monitor_info.rcMonitor.left), static_cast<uint32>(monitor_info.rcMonitor.bottom - monitor_info.rcMonitor.top)};
-		info.work_size	= {static_cast<uint32>(monitor_info.rcWork.right - monitor_info.rcWork.left), static_cast<uint32>(monitor_info.rcWork.bottom - monitor_info.rcWork.top)};
-		info.position	= {static_cast<int32>(monitor_info.rcWork.left), static_cast<int32>(monitor_info.rcWork.top)};
+		info.size		= {static_cast<uint16>(monitor_info.rcMonitor.right - monitor_info.rcMonitor.left), static_cast<uint16>(monitor_info.rcMonitor.bottom - monitor_info.rcMonitor.top)};
+		info.work_size	= {static_cast<uint16>(monitor_info.rcWork.right - monitor_info.rcWork.left), static_cast<uint16>(monitor_info.rcWork.bottom - monitor_info.rcWork.top)};
+		info.position	= {static_cast<int16>(monitor_info.rcWork.left), static_cast<int16>(monitor_info.rcWork.top)};
 		info.is_primary = (monitor_info.dwFlags & MONITORINFOF_PRIMARY) != 0;
 		info.dpi		= dpiX;
 		info.dpi_scale	= static_cast<float>(dpiX) / 96.0f;

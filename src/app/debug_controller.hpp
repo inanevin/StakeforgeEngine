@@ -26,16 +26,19 @@ namespace Game
 	class buffer_queue;
 	class texture_queue;
 	struct window_event;
+	struct barrier;
 
 #define MAX_GUI_DRAW_CALLS 1000
 
 	class debug_controller
 	{
 	public:
-		void init(texture_queue* texture_queue);
+		void init(texture_queue* texture_queue, const vector2ui16& screen_size);
 		void uninit();
-		void render(resource_id cmd_buffer, resource_id render_target, uint8 frame_index, const vector2ui& size, bump_allocator& alloc);
-		void upload(buffer_queue& q, uint8 frame_index, const vector2ui& size);
+		void collect_barriers(vector<barrier>& out_barriers);
+		void render(resource_id cmd_buffer, resource_id render_target, uint8 frame_index, const vector2ui16& size, bump_allocator& alloc);
+		void upload(buffer_queue& q, uint8 frame_index, const vector2ui16& size);
+		void on_window_resize(const vector2ui16& size);
 		bool on_window_event(const window_event& ev);
 
 	private:
@@ -66,6 +69,7 @@ namespace Game
 			buffer		  buf_gui_idx			 = {};
 			buffer		  buf_gui_pass_view		 = {};
 			resource_id	  bind_group_gui_default = 0;
+			resource_id	  render_target			 = 0;
 			unsigned int  counter_vtx			 = 0;
 			unsigned int  counter_idx			 = 0;
 			uint16		  draw_call_count		 = 0;
@@ -133,7 +137,7 @@ namespace Game
 	private:
 		text_allocator<10000> _text_allocator = {};
 		shaders				  _shaders		  = {};
-		gfx_resources		  _gfx_resources  = {};
+		gfx_resources		  _gfx_data		  = {};
 		vekt_data			  _vekt_data	  = {};
 		input_field			  _input_field	  = {};
 		per_frame_data		  _pfd[FRAMES_IN_FLIGHT];
