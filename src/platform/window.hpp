@@ -2,6 +2,8 @@
 #pragma once
 
 #include "window_common.hpp"
+#include "data/hash_map.hpp"
+#include "memory/malloc_allocator_map.hpp"
 
 #ifdef GAME_PLATFORM_WINDOWS
 struct HWND__;
@@ -12,6 +14,9 @@ namespace Game
 
 	class window
 	{
+	private:
+		typedef phmap::flat_hash_map<uint16, uint8, phmap::priv::hash_default_hash<uint16>, phmap::priv::hash_default_eq<uint16>, malloc_allocator_map<uint16>> map;
+
 	public:
 		bool create(const char* title, uint8 flags, const vector2i& pos, const vector2ui& size);
 		void destroy();
@@ -55,6 +60,11 @@ namespace Game
 			return _flags;
 		}
 
+		inline const monitor_info& get_monitor_info() const
+		{
+			return _monitor_info;
+		}
+
 #ifdef GAME_PLATFORM_WINDOWS
 		static __int64 wnd_proc(HWND__* hwnd, unsigned int msg, unsigned __int64 wParam, __int64 lParam);
 #endif
@@ -71,6 +81,7 @@ namespace Game
 		vector2ui	   _size			   = vector2ui();
 		uint32		   _event_count		   = 0;
 		bitmask<uint8> _flags			   = 0;
+		static map	   s_key_down_map;
 	};
 
 	/*

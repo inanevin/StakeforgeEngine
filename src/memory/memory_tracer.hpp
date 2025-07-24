@@ -30,7 +30,6 @@ namespace Game
 
 	struct memory_category
 	{
-		alloc_map	allocations;
 		const char* name	   = nullptr;
 		size_t		total_size = 0;
 		uint8		id		   = 0;
@@ -70,8 +69,10 @@ namespace Game
 		mutex						   _category_mtx;
 		vector_malloc<memory_category> _categories;
 		vector_malloc<uint8>		   _category_ids;
-		uint8						   _current_active_category = 0;
-		static uint8				   s_category_counter;
+		alloc_map					   _allocations;
+
+		uint8		 _current_active_category = 0;
+		static uint8 s_category_counter;
 	};
 
 #define PUSH_MEMORY_CATEGORY(NAME) Game::memory_tracer::get().push_category(NAME)

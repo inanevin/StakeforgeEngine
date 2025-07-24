@@ -2,9 +2,10 @@
 #include "game.hpp"
 #include "platform/time.hpp"
 #include "platform/process.hpp"
-#include "gfx/backend/backend.hpp"
 #include "memory/memory_tracer.hpp"
+#include "common/system_info.hpp"
 #include "gfx/common/render_data.hpp"
+#include "gfx/backend/backend.hpp"
 #include "io/log.hpp"
 
 namespace Game
@@ -13,10 +14,19 @@ namespace Game
 
 	void game_app::init()
 	{
+		REGISTER_THREAD_MAIN();
+
 		time::init();
 
 		PUSH_MEMORY_CATEGORY("Gfx");
-		_main_window.create("Game", window_flags::wf_style_windowed | window_flags::wf_high_freq, vector2i(110, 110), vector2ui(800, 600));
+		_main_window.create("Game", window_flags::wf_style_windowed | window_flags::wf_high_freq, vector2i(0, 0), vector2ui(1920, 1080));
+
+		vector<monitor_info> out_infos;
+		process::get_all_monitors(out_infos);
+
+		_main_window.set_position(out_infos[1].position);
+		_main_window.set_size(out_infos[1].work_size);
+
 		_renderer.init(_main_window);
 		POP_MEMORY_CATEGORY();
 
@@ -66,6 +76,8 @@ namespace Game
 				on_window_event(ev);
 			}
 
+			_main_window.clear_events();
+
 			if (window_flags.is_set(window_flags::wf_size_dirty))
 			{
 				window_flags.remove(window_flags::wf_size_dirty);
@@ -106,18 +118,17 @@ namespace Game
 
 	void game_app::join_render()
 	{
+		REGISTER_THREAD_MAIN();
+
 		if (_render_joined.load() == 1)
 			return;
 
 		_render_joined.store(1, std::memory_order_release);
 		_frame_available_semaphore.release();
 
-		PUSH_MEMORY_CATEGORY("General");
-
 		if (_render_thread.joinable())
 			_render_thread.join();
 
-		POP_MEMORY_CATEGORY();
 		_renderer.wait_backend();
 	}
 
@@ -137,6 +148,7 @@ namespace Game
 	void game_app::render_loop()
 	{
 		const vector2ui& screen_size = _main_window.get_size();
+		REGISTER_THREAD_RENDER();
 
 		while (_render_joined.load(std::memory_order_acquire) == 0)
 		{

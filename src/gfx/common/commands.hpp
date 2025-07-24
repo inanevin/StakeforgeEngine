@@ -142,8 +142,8 @@ namespace Game
 	{
 		static constexpr uint8 TID = 3;
 
-		uint32 x	  = 0;
-		uint32 y	  = 0;
+		uint16 x	  = 0;
+		uint16 y	  = 0;
 		uint16 width  = 0;
 		uint16 height = 0;
 	};

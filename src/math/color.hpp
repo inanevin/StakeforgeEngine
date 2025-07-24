@@ -14,6 +14,8 @@ namespace Game
 	public:
 		color(float rv = 1.0f, float gv = 1.0f, float bv = 1.0f, float av = 1.0f) : x(rv), y(gv), z(bv), w(av){};
 		static color from255(float r, float g, float b, float a);
+		static color linear_to_srgb(const color& linear_color);
+		static color srgb_to_linear(const color& srgb_color);
 
 		vector4 to_vector() const;
 		void	round();

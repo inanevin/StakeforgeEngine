@@ -1,0 +1,141 @@
+// Copyright (c) 2025 Inan Evin
+#pragma once
+#include "resources/shader.hpp"
+#include "math/matrix4x4.hpp"
+#include "math/vector4ui16.hpp"
+#include "data/vector.hpp"
+#include "gfx/buffer.hpp"
+#include "gfx/common/gfx_constants.hpp"
+#include "gfx/common/gfx_common.hpp"
+#include "memory/text_allocator.hpp"
+#include "data/string.hpp"
+
+namespace vekt
+{
+	class builder;
+	struct draw_buffer;
+	class atlas;
+	struct font;
+}
+
+namespace Game
+{
+	class vector2ui;
+	class render_pass;
+	class bump_allocator;
+	class buffer_queue;
+	class texture_queue;
+	struct window_event;
+
+#define MAX_GUI_DRAW_CALLS 1000
+
+	class debug_controller
+	{
+	public:
+		void init(texture_queue* texture_queue);
+		void uninit();
+		void render(resource_id cmd_buffer, resource_id render_target, uint8 frame_index, const vector2ui& size, bump_allocator& alloc);
+		void upload(buffer_queue& q, uint8 frame_index, const vector2ui& size);
+		bool on_window_event(const window_event& ev);
+
+	private:
+		void build_console();
+		void console_logic();
+		void add_console_text(const string& text);
+		void update_console_input_field();
+		void on_draw(const vekt::draw_buffer& buffer);
+		void on_atlas_created(vekt::atlas* atlas);
+		void on_atlas_updated(vekt::atlas* atlas);
+		void on_atlas_destroyed(vekt::atlas* atlas);
+
+	private:
+		struct gui_draw_call
+		{
+			uint32		start_vtx	= 0;
+			uint32		start_idx	= 0;
+			uint32		index_count = 0;
+			resource_id shader		= 0;
+			resource_id bind_group	= 0;
+			vector4ui16 scissors	= vector4ui16::zero;
+		};
+
+		struct per_frame_data
+		{
+			gui_draw_call draw_calls[MAX_GUI_DRAW_CALLS];
+			buffer		  buf_gui_vtx			 = {};
+			buffer		  buf_gui_idx			 = {};
+			buffer		  buf_gui_pass_view		 = {};
+			resource_id	  bind_group_gui_default = 0;
+			unsigned int  counter_vtx			 = 0;
+			unsigned int  counter_idx			 = 0;
+			uint16		  draw_call_count		 = 0;
+
+			inline void reset()
+			{
+				counter_vtx = counter_idx = 0;
+				draw_call_count			  = 0;
+			}
+		};
+
+		struct gui_pass_view
+		{
+			matrix4x4 proj = matrix4x4::identity;
+		};
+
+		struct atlas_ref
+		{
+			vekt::atlas*   atlas   = nullptr;
+			resource_id	   texture = 0;
+			resource_id	   bind_group[FRAMES_IN_FLIGHT];
+			resource_id	   intermediate_buffer = 0;
+			texture_buffer buffer			   = {};
+			uint8		   res_alive		   = false;
+		};
+
+		struct shaders
+		{
+			shader gui_default = {};
+			shader gui_text	   = {};
+			shader gui_sdf	   = {};
+		};
+
+		struct gfx_resources
+		{
+			vector<atlas_ref> atlases;
+			resource_id		  bind_layout_gui = 0;
+			resource_id		  txt_dummy		  = 0;
+			texture_queue*	  texture_queue	  = nullptr;
+			uint64			  frame_counter	  = 0;
+			uint8			  frame_index	  = 0;
+		};
+
+		struct vekt_data
+		{
+			vector<int32>  console_texts			 = {};
+			vekt::builder* builder					 = nullptr;
+			vekt::font*	   font_debug				 = nullptr;
+			vekt::font*	   font_icon				 = nullptr;
+			int32		   widget_console_bg		 = -1;
+			int32		   widget_input_field		 = -1;
+			int32		   widget_input_text		 = {};
+			float		   console_total_text_size_y = 0.0f;
+		};
+
+		struct input_field
+		{
+			vector<const char*> history			  = {};
+			const char*			text			  = nullptr;
+			int8				history_traversal = 0;
+			int8				caret_pos		  = 0;
+			int8				text_size		  = 0;
+		};
+
+	private:
+		text_allocator<10000> _text_allocator = {};
+		shaders				  _shaders		  = {};
+		gfx_resources		  _gfx_resources  = {};
+		vekt_data			  _vekt_data	  = {};
+		input_field			  _input_field	  = {};
+		per_frame_data		  _pfd[FRAMES_IN_FLIGHT];
+	};
+}

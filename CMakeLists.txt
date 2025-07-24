@@ -114,6 +114,11 @@ src/vendor/stb/*.h
 )
 
 if(WIN32)
+file(GLOB SHADERS
+assets/engine/shaders/*.hlsl
+assets/engine/shaders/gui/*.hlsl
+)
+
 file(GLOB PLATFORM_SOURCES 
 src/platform/win32/*.cpp
 src/gfx/backend/dx12/*.cpp
@@ -143,7 +148,14 @@ endif()
 # ------------- TARGET -------------
 
 if(WIN32)
-	add_executable(${PROJECT_NAME} WIN32 ${SOURCES} ${HEADERS} ${PLATFORM_HEADERS} ${PLATFORM_SOURCES} ${ICON})
+
+# prevent FXC from compiling hlsl sources automatically.
+set_source_files_properties(${SHADERS}
+    PROPERTIES
+      VS_TOOL_OVERRIDE "None"
+)
+
+	add_executable(${PROJECT_NAME} WIN32 ${SOURCES} ${HEADERS} ${SHADERS} ${PLATFORM_HEADERS} ${PLATFORM_SOURCES} ${ICON})
 else()
 	add_executable(${PROJECT_NAME} MACOSX_BUNDLE ${SOURCES} ${HEADERS} ${PLATFORM_HEADERS} ${PLATFORM_SOURCES} ${ICON})
 endif()
@@ -187,7 +199,7 @@ COMMAND ${CMAKE_COMMAND} -E copy_directory "${CMAKE_CURRENT_SOURCE_DIR}/deps/dx1
 endif()
 
 include(${CMAKE_SOURCE_DIR}/utils/cmake/common_functions.cmake)
-group_sources(HEADERS SOURCES PLATFORM_HEADERS PLATFORM_SOURCES)
+group_sources(HEADERS SOURCES SHADERS PLATFORM_HEADERS PLATFORM_SOURCES)
 group_generated()
 
 set_property(GLOBAL PROPERTY USE_FOLDERS ON)

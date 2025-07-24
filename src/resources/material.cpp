@@ -47,6 +47,5 @@ namespace Game
 
 	void material::set_ubo_data(size_t padding, uint8* data, size_t size)
 	{
-		_buffer.set_data(padding, data, size);
 	}
 } // namespace

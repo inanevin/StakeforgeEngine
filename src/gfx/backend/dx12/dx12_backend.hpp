@@ -30,11 +30,12 @@ namespace Game
 	struct swapchain_recreate_desc;
 	struct shader_desc;
 	struct bind_group_desc;
-	struct pipeline_layout_desc;
 	struct command_buffer_desc;
 	struct queue_desc;
 	struct bind_group_update_desc;
 	struct bind_layout_desc;
+	struct bind_layout_pointer_param;
+	struct bind_group_pointer;
 
 	struct command_begin_render_pass;
 	struct command_begin_render_pass_depth;
@@ -125,15 +126,16 @@ namespace Game
 
 		struct group_binding
 		{
+			uint8*		constants		 = nullptr;
 			resource_id descriptor_index = 0;
 			uint32		root_param_index = 0;
-			uint8		descriptor_type	 = 0;
+			uint8		binding_type	 = 0;
+			uint8		count			 = 0;
 		};
 
 		struct bind_group
 		{
-			group_binding bindings[8];
-			uint8		  bindings_count = 0;
+			vector<group_binding> bindings;
 		};
 
 		struct command_buffer
@@ -218,8 +220,8 @@ namespace Game
 		void queue_signal(resource_id queue, resource_id* semaphores, uint8 semaphore_count, uint64* semaphore_values);
 		void present(resource_id* swapchains, uint8 swapchain_count);
 
-		bool compile_shader_vertex_pixel(const string& source, const char* vertex_entry, const char* pixel_entry, span<uint8>& vertex_out, span<uint8>& pixel_out, bool compile_layout, span<uint8>& out_layout);
-		bool compile_shader_compute(const string& source, const char* entry, span<uint8>& out, bool compile_layout, span<uint8>& out_layout);
+		bool compile_shader_vertex_pixel(const string& source, const char* vertex_entry, const char* pixel_entry, span<uint8>& vertex_out, span<uint8>& pixel_out, bool compile_layout, span<uint8>& out_layout) const;
+		bool compile_shader_compute(const string& source, const char* entry, span<uint8>& out, bool compile_layout, span<uint8>& out_layout) const;
 
 		resource_id create_resource(const resource_desc& desc);
 		resource_id create_texture(const texture_desc& desc);
@@ -228,11 +230,22 @@ namespace Game
 		resource_id recreate_swapchain(const swapchain_recreate_desc& desc);
 		resource_id create_semaphore();
 		resource_id create_shader(const shader_desc& desc);
-		resource_id create_bind_group(const bind_group_desc& desc);
+		resource_id create_empty_bind_group();
 		resource_id create_command_buffer(const command_buffer_desc& desc);
 		resource_id create_command_allocator(uint8 ctype);
 		resource_id create_queue(const queue_desc& desc);
-		resource_id create_bind_layout(const bind_layout_desc& desc);
+		resource_id create_empty_bind_layout();
+		void		bind_group_add_descriptor(resource_id group, uint8 param_index, uint8 binding_type);
+		void		bind_group_add_constant(resource_id group, uint8 param_index, uint8* data, uint8 count);
+		void		bind_group_add_pointer(resource_id group, uint8 param_index, uint8 count, bool is_sampler);
+		void		bind_layout_add_constant(resource_id layout, uint32 count, uint32 set, uint32 binding, uint8 shader_stage_visibility);
+		void		bind_layout_add_descriptor(resource_id layout, uint8 type, uint32 set, uint32 binding, uint8 shader_stage_visibility);
+		void		bind_layout_add_pointer(resource_id layout, const vector<bind_layout_pointer_param>& pointer_params, uint8 shader_stage_visibility);
+		void		bind_layout_add_immutable_sampler(resource_id layout, uint32 set, uint32 binding, const sampler_desc& desc, uint8 shader_stage_visibility);
+		void		finalize_bind_layout(resource_id id, bool is_compute);
+		void		bind_group_update_constants(resource_id group, uint8 param_index, uint8* constants, uint8 count);
+		void		bind_group_update_descriptor(resource_id group, uint8 param_index, resource_id resource);
+		void		bind_group_update_pointer(resource_id group, uint8 param_index, const vector<bind_group_pointer>& updates);
 
 		void destroy_resource(resource_id id);
 		void destroy_texture(resource_id id);
@@ -246,13 +259,38 @@ namespace Game
 		void destroy_queue(resource_id id);
 		void destroy_bind_layout(resource_id id);
 
-		void wait_semaphore(resource_id id, uint64 value);
-		void map_resource(resource_id id, uint8* ptr);
-		void unmap_resource(resource_id id);
-		void update_bind_group(resource_id, const bind_group_update_desc& update);
+		void wait_semaphore(resource_id id, uint64 value) const;
+		void map_resource(resource_id id, uint8*& ptr) const;
+		void unmap_resource(resource_id id) const;
 
-		uint32 get_aligned_texture_size(uint32 width, uint32 height, uint32 bpp);
-		void*  adjust_buffer_pitch(void* data, uint32 width, uint32 height, uint32 bpp);
+		uint32 get_aligned_texture_size(uint32 width, uint32 height, uint32 bpp) const;
+		void*  adjust_buffer_pitch(void* data, uint32 width, uint32 height, uint8 bpp, uint32& out_total_size) const;
+
+		void cmd_begin_render_pass(resource_id cmd_list, const command_begin_render_pass& command);
+		void cmd_begin_render_pass_depth(resource_id cmd_list, const command_begin_render_pass_depth& command);
+		void cmd_begin_render_pass_swapchain(resource_id cmd_list, const command_begin_render_pass_swapchain& command);
+		void cmd_begin_render_pass_swapchain_depth(resource_id cmd_list, const command_begin_render_pass_swapchain_depth& command);
+		void cmd_end_render_pass(resource_id cmd_list, const command_end_render_pass& command) const;
+		void cmd_set_scissors(resource_id cmd_list, const command_set_scissors& command) const;
+		void cmd_set_viewport(resource_id cmd_list, const command_set_viewport& command) const;
+		void cmd_bind_pipeline(resource_id cmd_list, const command_bind_pipeline& command) const;
+		void cmd_bind_pipeline_compute(resource_id cmd_list, const command_bind_pipeline_compute& command) const;
+		void cmd_draw_instanced(resource_id cmd_list, const command_draw_instanced& command) const;
+		void cmd_draw_indexed_instanced(resource_id cmd_list, const command_draw_indexed_instanced& command) const;
+		void cmd_draw_indexed_indirect(resource_id cmd_list, const command_draw_indexed_indirect& command) const;
+		void cmd_draw_indirect(resource_id cmd_list, const command_draw_indirect& command) const;
+		void cmd_bind_vertex_buffers(resource_id cmd_list, const command_bind_vertex_buffers& command) const;
+		void cmd_bind_index_buffers(resource_id cmd_list, const command_bind_index_buffers& command) const;
+		void cmd_copy_resource(resource_id cmd_list, const command_copy_resource& command) const;
+		void cmd_copy_buffer_to_texture(resource_id cmd_list, const command_copy_buffer_to_texture& command);
+		void cmd_copy_texture_to_buffer(resource_id cmd_list, const command_copy_texture_to_buffer& command) const;
+		void cmd_copy_texture_to_texture(resource_id cmd_list, const command_copy_texture_to_texture& command) const;
+		void cmd_bind_constants(resource_id cmd_list, const command_bind_constants& command) const;
+		void cmd_bind_layout(resource_id cmd_list, const command_bind_layout& command) const;
+		void cmd_bind_layout_compute(resource_id cmd_list, const command_bind_layout_compute& command) const;
+		void cmd_bind_group(resource_id cmd_list, const command_bind_group& command) const;
+		void cmd_dispatch(resource_id cmd_list, const command_dispatch& command) const;
+		void cmd_barrier(resource_id cmd_list, const command_barrier& command);
 
 		inline resource_id get_queue_gfx() const
 		{
@@ -270,34 +308,7 @@ namespace Game
 		}
 
 	private:
-		void wait_for_fence(ID3D12Fence* fence, uint64 value);
-
-		void cmd_begin_render_pass(resource_id cmd_list, const command_begin_render_pass& command);
-		void cmd_begin_render_pass_depth(resource_id cmd_list, const command_begin_render_pass_depth& command);
-		void cmd_begin_render_pass_swapchain(resource_id cmd_list, const command_begin_render_pass_swapchain& command);
-		void cmd_begin_render_pass_swapchain_depth(resource_id cmd_list, const command_begin_render_pass_swapchain_depth& command);
-		void cmd_end_render_pass(resource_id cmd_list, const command_end_render_pass& command);
-		void cmd_set_scissors(resource_id cmd_list, const command_set_scissors& command);
-		void cmd_set_viewport(resource_id cmd_list, const command_set_viewport& command);
-		void cmd_bind_pipeline(resource_id cmd_list, const command_bind_pipeline& command);
-		void cmd_bind_pipeline_compute(resource_id cmd_list, const command_bind_pipeline_compute& command);
-		void cmd_draw_instanced(resource_id cmd_list, const command_draw_instanced& command);
-		void cmd_draw_indexed_instanced(resource_id cmd_list, const command_draw_instanced& command);
-		void cmd_draw_indexed_instanced(resource_id cmd_list, const command_draw_indexed_instanced& command);
-		void cmd_draw_indexed_indirect(resource_id cmd_list, const command_draw_indexed_indirect& command);
-		void cmd_draw_indirect(resource_id cmd_list, const command_draw_indirect& command);
-		void cmd_bind_vertex_buffers(resource_id cmd_list, const command_bind_vertex_buffers& command);
-		void cmd_bind_index_buffers(resource_id cmd_list, const command_bind_index_buffers& command);
-		void cmd_copy_resource(resource_id cmd_list, const command_copy_resource& command);
-		void cmd_copy_buffer_to_texture(resource_id cmd_list, const command_copy_buffer_to_texture& command);
-		void cmd_copy_texture_to_buffer(resource_id cmd_list, const command_copy_texture_to_buffer& command);
-		void cmd_copy_texture_to_texture(resource_id cmd_list, const command_copy_texture_to_texture& command);
-		void cmd_bind_constants(resource_id cmd_list, const command_bind_constants& command);
-		void cmd_bind_layout(resource_id cmd_list, const command_bind_layout& command);
-		void cmd_bind_layout_compute(resource_id cmd_list, const command_bind_layout_compute& command);
-		void cmd_bind_group(resource_id cmd_list, const command_bind_group& command);
-		void cmd_dispatch(resource_id cmd_list, const command_dispatch& command);
-		void cmd_barrier(resource_id cmd_list, const command_barrier& command);
+		void wait_for_fence(ID3D12Fence* fence, uint64 value) const;
 
 	private:
 		pool<resource, MAX_RESOURCES>					_resources;
@@ -312,7 +323,7 @@ namespace Game
 		pool<queue, MAX_QUEUES>							_queues;
 		pool<indirect_signature, 255>					_indirect_signatures;
 		pool<descriptor_handle, MAX_DESCRIPTOR_HANDLES> _descriptors;
-		pool<bind_layout, MAX_BIND_LAYOUTs>				_bind_layouts;
+		pool<bind_layout, MAX_BIND_LAYOUTS>				_bind_layouts;
 
 		dx12_heap _heap_rtv			= {};
 		dx12_heap _heap_buffer		= {};

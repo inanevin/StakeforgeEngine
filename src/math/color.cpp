@@ -20,6 +20,38 @@ namespace Game
 	color color::brown	= color(0.647f, 0.164f, 0.164f);
 	color color::gray	= color(0.5f, 0.5f, 0.5f);
 
+	color color::linear_to_srgb(const color& linear_color)
+	{
+		auto convert = [](float value) {
+			if (value <= 0.0031308f)
+			{
+				return value * 12.92f;
+			}
+			else
+			{
+				return 1.055f * math::pow(value, 1.0f / 2.4f) - 0.055f;
+			}
+		};
+
+		return color(convert(linear_color.x), convert(linear_color.y), convert(linear_color.z), convert(linear_color.w));
+	}
+
+	color color::srgb_to_linear(const color& srgb_color)
+	{
+		auto convert = [](float value) {
+			if (value <= 0.04045f)
+			{
+				return value / 12.92f;
+			}
+			else
+			{
+				return math::pow((value + 0.055f) / 1.055f, 2.4f);
+			}
+		};
+
+		return color(convert(srgb_color.x), convert(srgb_color.y), convert(srgb_color.z), convert(srgb_color.w));
+	}
+
 	color color::from255(float r, float g, float b, float a)
 	{
 		return color(r / 255.0f, g / 255.0f, b / 255.0f, a / 255.0f);

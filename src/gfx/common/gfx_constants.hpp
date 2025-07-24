@@ -11,7 +11,7 @@ namespace Game
 #define MAX_PIPELINE_LAYOUTS   256
 #define MAX_SWAPCHAINS		   8
 #define MAX_BIND_GROUPS		   512
-#define MAX_BIND_LAYOUTs	   128
+#define MAX_BIND_LAYOUTS	   128
 #define MAX_COMMAND_BUFFERS	   256
 #define MAX_QUEUES			   8
 #define MAX_DESCRIPTOR_HANDLES 1024

@@ -5,6 +5,7 @@
 #include "data/string.hpp"
 #include "common/size_definitions.hpp"
 #include "io/log.hpp"
+#include "io/assert.hpp"
 #include <stdexcept>
 
 namespace Game
@@ -36,6 +37,7 @@ namespace Game
 		if (FAILED(hr))
 		{
 			GAME_FATAL("DX12 Exception! {0}", hr);
+			DBG_BRK;
 			throw HrException(hr);
 		}
 	}

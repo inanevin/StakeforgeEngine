@@ -54,7 +54,12 @@ namespace vekt
 #define MEMSET(...)	 memset(__VA_ARGS__)
 
 #ifndef VEKT_STRING
+
+#ifdef VEKT_STRING_CSTR
+#define VEKT_STRING const char*
+#else
 #define VEKT_STRING std::string
+#endif
 #endif
 
 #ifndef VEKT_VARIANT
@@ -469,6 +474,8 @@ namespace vekt
 		}
 	};
 
+#ifndef VEKT_VEC2
+
 	struct vec2
 	{
 		float x = 0.0f;
@@ -555,6 +562,11 @@ namespace vekt
 		}
 	};
 
+#define VEKT_VEC2 vec2
+#endif
+
+#ifndef VEKT_VEC4
+
 	struct vec4
 	{
 		float x = 0.0f;
@@ -566,9 +578,9 @@ namespace vekt
 		{
 			return math::equals(x, other.x, eps) && math::equals(y, other.y, eps) && math::equals(z, other.z, eps) && math::equals(w, other.w, eps);
 		}
-		bool is_point_inside(const vec2& point) const
+		bool is_point_inside(float _x, float _y) const
 		{
-			return point.x >= x && point.x <= x + z && point.y >= y && point.y <= y + w;
+			return _x >= x && _x <= x + z && _y >= y && _y <= y + w;
 		}
 
 		static inline vec4 lerp(const vec4& a, const vec4& b, float t)
@@ -612,6 +624,9 @@ namespace vekt
 		}
 	};
 
+#define VEKT_VEC4 vec4
+#endif
+
 	////////////////////////////////////////////////////////////////////////////////
 	// :: INPUT
 	////////////////////////////////////////////////////////////////////////////////
@@ -639,7 +654,7 @@ namespace vekt
 	{
 		input_event_type type	  = input_event_type::pressed;
 		int				 button	  = 0;
-		vec2			 position = vec2();
+		VEKT_VEC2		 position = VEKT_VEC2();
 	};
 
 	struct mouse_wheel_event
@@ -744,18 +759,19 @@ namespace vekt
 		gfx_is_rect			 = 1 << 0,
 		gfx_is_stroke		 = 1 << 1,
 		gfx_is_text			 = 1 << 2,
-		gfx_has_stroke		 = 1 << 3,
-		gfx_has_aa			 = 1 << 4,
-		gfx_has_second_color = 1 << 5,
-		gfx_has_rounding	 = 1 << 6,
-		gfx_clip_children	 = 1 << 7,
-		gfx_invisible		 = 1 << 8,
-		gfx_custom_pass		 = 1 << 9,
+		gfx_is_text_cached	 = 1 << 4,
+		gfx_has_stroke		 = 1 << 4,
+		gfx_has_aa			 = 1 << 5,
+		gfx_has_second_color = 1 << 6,
+		gfx_has_rounding	 = 1 << 7,
+		gfx_clip_children	 = 1 << 8,
+		gfx_invisible		 = 1 << 9,
+		gfx_custom_pass		 = 1 << 10,
 	};
 
 	struct stroke_props
 	{
-		vec4		 color	   = {};
+		VEKT_VEC4	 color	   = {};
 		unsigned int thickness = 0;
 	};
 
@@ -766,7 +782,7 @@ namespace vekt
 
 	struct second_color_props
 	{
-		vec4	  color		= vec4(1, 1, 1, 1);
+		VEKT_VEC4 color		= VEKT_VEC4(1, 1, 1, 1);
 		direction direction = direction::horizontal;
 	};
 
@@ -788,7 +804,7 @@ namespace vekt
 
 	struct widget_gfx
 	{
-		vec4		   color	  = vec4(1, 1, 1, 1);
+		VEKT_VEC4	   color	  = VEKT_VEC4(1, 1, 1, 1);
 		void*		   user_data  = nullptr;
 		unsigned int   draw_order = 0;
 		unsigned short flags	  = 0;
@@ -803,7 +819,7 @@ namespace vekt
 	typedef input_event_result (*mouse_func)(builder* b, id widget, const mouse_event& ev, input_event_phase phase);
 	typedef input_event_result (*key_func)(builder* b, id widget, const key_event& ev);
 	typedef input_event_result (*wheel_func)(builder* b, id widget, const mouse_wheel_event& ev);
-	typedef void			   (*drag_func)(builder* b, id widget, const vec2& mouse, const vec2& mouse_delta);
+	typedef void			   (*drag_func)(builder* b, id widget, const VEKT_VEC2& mouse, const VEKT_VEC2& mouse_delta);
 
 	////////////////////////////////////////////////////////////////////////////////
 	// :: VERTICES
@@ -811,9 +827,9 @@ namespace vekt
 
 	struct vertex
 	{
-		vec2 pos;
-		vec2 uv;
-		vec4 color;
+		VEKT_VEC2 pos;
+		VEKT_VEC2 uv;
+		VEKT_VEC4 color;
 	};
 
 	typedef unsigned short index;
@@ -826,7 +842,7 @@ namespace vekt
 	{
 		void*		 user_data	   = nullptr;
 		font*		 used_font	   = nullptr;
-		vec4		 clip		   = vec4();
+		VEKT_VEC4	 clip		   = VEKT_VEC4();
 		vertex*		 vertex_start  = nullptr;
 		index*		 index_start   = nullptr;
 		unsigned int draw_order	   = 0;
@@ -879,20 +895,20 @@ namespace vekt
 	class theme
 	{
 	public:
-		static vec4	 color_item_bg;
-		static vec4	 color_item_hover;
-		static vec4	 color_item_press;
-		static vec4	 color_panel_bg;
-		static vec4	 color_divider;
-		static vec4	 color_item_outline;
-		static vec4	 color_item_fg;
-		static float item_height;
-		static float item_spacing;
-		static float indent_horizontal;
-		static float margin_horizontal;
-		static float margin_vertical;
-		static float border_thickness;
-		static float outline_thickness;
+		static VEKT_VEC4 color_item_bg;
+		static VEKT_VEC4 color_item_hover;
+		static VEKT_VEC4 color_item_press;
+		static VEKT_VEC4 color_panel_bg;
+		static VEKT_VEC4 color_divider;
+		static VEKT_VEC4 color_item_outline;
+		static VEKT_VEC4 color_item_fg;
+		static float	 item_height;
+		static float	 item_spacing;
+		static float	 indent_horizontal;
+		static float	 margin_horizontal;
+		static float	 margin_vertical;
+		static float	 border_thickness;
+		static float	 outline_thickness;
 	};
 
 	struct hover_callback
@@ -922,25 +938,26 @@ namespace vekt
 	struct size_props
 	{
 		margins		   child_margins = margins();
-		vec2		   size			 = vec2();
+		VEKT_VEC2	   size			 = VEKT_VEC2();
 		float		   spacing		 = 0.0f;
 		unsigned short flags		 = 0;
 	};
 
 	struct size_result
 	{
-		vec2 size = vec2();
+		VEKT_VEC2 size = VEKT_VEC2();
 	};
 
 	struct pos_result
 	{
-		vec2 pos = vec2();
+		VEKT_VEC2 pos = VEKT_VEC2();
 	};
 
 	struct pos_props
 	{
-		vec2		   pos	 = vec2();
-		unsigned short flags = 0;
+		VEKT_VEC2	   pos			 = VEKT_VEC2();
+		float		   scroll_offset = 0.0f;
+		unsigned short flags		 = 0;
 	};
 
 	struct custom_passes
@@ -962,7 +979,7 @@ namespace vekt
 			return a ^ (b + 0x9e3779b97f4a7c15ull + (a << 12) + (a >> 4));
 		}
 
-		static inline uint64_t hash_text_props(const vekt::text_props& text, const vec4& color)
+		static inline uint64_t hash_text_props(const vekt::text_props& text, const VEKT_VEC4& color)
 		{
 			uint64_t h = std::hash<VEKT_STRING>{}(text.text);
 			h		   = hash_combine_64(h, std::hash<void*>{}(text.font));
@@ -979,21 +996,22 @@ namespace vekt
 	class builder
 	{
 
-	private:
+	public:
 		struct rect_props
 		{
 			const widget_gfx& gfx;
-			const vec2&		  min;
-			const vec2&		  max;
+			const VEKT_VEC2&  min;
+			const VEKT_VEC2&  max;
 			bool			  use_hovered;
 			bool			  use_pressed;
-			vec4			  color_start;
-			vec4			  color_end;
+			VEKT_VEC4		  color_start;
+			VEKT_VEC4		  color_end;
 			direction		  color_direction;
 			id				  widget_id = 0;
 			bool			  multi_color;
 		};
 
+	private:
 	public:
 		struct input_layer
 		{
@@ -1023,20 +1041,21 @@ namespace vekt
 
 		void				init(const init_config& conf);
 		void				uninit();
-		void				build(const vec2& screen_size);
+		void				build_begin(const VEKT_VEC2& screen_size);
+		void				build_end();
 		void				flush();
-		void				widget_set_size(id widget_id, const vec2& size, helper_size_type helper_x = helper_size_type::relative, helper_size_type helper_y = helper_size_type::relative);
+		void				widget_set_size(id widget_id, const VEKT_VEC2& size, helper_size_type helper_x = helper_size_type::relative, helper_size_type helper_y = helper_size_type::relative);
 		void				widget_set_pos(id				  widget_id,
-										   const vec2&		  pos,
+										   const VEKT_VEC2&	  pos,
 										   helper_pos_type	  helper_x = helper_pos_type::relative,
 										   helper_pos_type	  helper_y = helper_pos_type::relative,
 										   helper_anchor_type anchor_x = helper_anchor_type::start,
 										   helper_anchor_type anchor_y = helper_anchor_type::start);
-		const vec2&			widget_get_size(id widget_id) const;
-		const vec2&			widget_get_pos(id widget_id) const;
+		const VEKT_VEC2&	widget_get_size(id widget_id) const;
+		const VEKT_VEC2&	widget_get_pos(id widget_id) const;
 		size_props&			widget_get_size_props(id widget_id);
 		pos_props&			widget_get_pos_props(id widget_id);
-		vec4				widget_get_clip(id widget_id) const;
+		VEKT_VEC4			widget_get_clip(id widget_id) const;
 		widget_gfx&			widget_get_gfx(id widget);
 		stroke_props&		widget_get_stroke(id widget);
 		rounding_props&		widget_get_rounding(id widget);
@@ -1052,7 +1071,7 @@ namespace vekt
 		void				widget_set_visible(id widget, bool is_visible);
 		bool				widget_get_visible(id widget) const;
 
-		void			   on_mouse_move(const vec2& mouse);
+		void			   on_mouse_move(const VEKT_VEC2& mouse);
 		input_event_result on_mouse_event(const mouse_event& ev);
 		input_event_result on_mouse_wheel_event(const mouse_wheel_event& ev);
 		input_event_result on_key_event(const key_event& ev);
@@ -1070,10 +1089,11 @@ namespace vekt
 		void			   add_stroke_rect_aa(const rect_props& props);
 		void			   add_stroke_rect_rounding(const rect_props& props);
 		void			   add_stroke_rect_aa_rounding(const rect_props& props);
-		void			   add_text(const text_props& text, const vec4& color, const vec2& position, const vec2& size, unsigned int draw_order, void* user_data);
-		static vec2		   get_text_size(const text_props& text, const vec2& parent_size = vec2());
+		void			   add_text(const text_props& text, const VEKT_VEC4& color, const VEKT_VEC2& position, const VEKT_VEC2& size, unsigned int draw_order, void* user_data);
+		void			   add_text_cached(const text_props& text, const VEKT_VEC4& color, const VEKT_VEC2& position, const VEKT_VEC2& size, unsigned int draw_order, void* user_data);
+		static VEKT_VEC2   get_text_size(const text_props& text, const VEKT_VEC2& parent_size = VEKT_VEC2());
 		draw_buffer*	   get_draw_buffer(unsigned int draw_order, void* user_data, font* fnt = nullptr);
-		vec4			   calculate_intersection(const vec4& clip0, const vec4& clip1) const;
+		VEKT_VEC4		   calculate_intersection(const VEKT_VEC4& clip0, const VEKT_VEC4& clip1) const;
 		id				   allocate();
 		void			   deallocate(id w);
 		void			   clear_text_cache();
@@ -1081,9 +1101,9 @@ namespace vekt
 		// Widgets
 		void widget_add_debug_wrap(id widget);
 
-		inline vec4 get_current_clip() const
+		inline VEKT_VEC4 get_current_clip() const
 		{
-			return _clip_stack.empty() ? vec4() : _clip_stack[_clip_stack.size() - 1].rect;
+			return _clip_stack.empty() ? VEKT_VEC4() : _clip_stack[_clip_stack.size() - 1].rect;
 		}
 
 		inline void set_on_draw(draw_callback cb)
@@ -1103,23 +1123,24 @@ namespace vekt
 		void		 calculate_sizes();
 		void		 calculate_positions();
 		void		 calculate_draw();
-		void		 generate_rounded_rect(vector<vec2>& out_path, const vec2& min, const vec2& max, float rounding, int segments);
-		void		 generate_sharp_rect(vector<vec2>& out_path, const vec2& min, const vec2& max);
-		void		 generate_offset_rect_4points(vector<vec2>& out_path, const vec2& min, const vec2& max, float amount);
-		void		 generate_offset_rect(vector<vec2>& out_path, const vector<vec2>& base_path, float amount);
+		void		 generate_rounded_rect(vector<VEKT_VEC2>& out_path, const VEKT_VEC2& min, const VEKT_VEC2& max, float rounding, int segments);
+		void		 generate_sharp_rect(vector<VEKT_VEC2>& out_path, const VEKT_VEC2& min, const VEKT_VEC2& max);
+		void		 generate_offset_rect_4points(vector<VEKT_VEC2>& out_path, const VEKT_VEC2& min, const VEKT_VEC2& max, float amount);
+		void		 generate_offset_rect(vector<VEKT_VEC2>& out_path, const vector<VEKT_VEC2>& base_path, float amount);
 		void		 add_strip(draw_buffer* db, unsigned int outer_start, unsigned int inner_start, unsigned int size, bool add_ccw);
 		void		 add_filled_rect(draw_buffer* db, unsigned int start);
 		void		 add_filled_rect_central(draw_buffer* db, unsigned int start, unsigned int central_start, unsigned int size);
-		void		 add_vertices(draw_buffer* db, const vector<vec2>& path, const vec4& color, const vec2& min, const vec2& max);
-		void		 add_vertices_multicolor(draw_buffer* db, const vector<vec2>& path, const vec4& color_start, const vec4& color_end, direction direction, const vec2& min, const vec2& max);
-		void		 add_central_vertex(draw_buffer* db, const vec4& color, const vec2& min, const vec2& max);
-		void		 add_central_vertex_multicolor(draw_buffer* db, const vec4& color_start, const vec4& color_end, const vec2& min, const vec2& max);
-		void		 add_vertices_aa(draw_buffer* db, const vector<vec2>& path, unsigned int original_vertices_idx, float alpha, const vec2& min, const vec2& max);
+		void		 add_vertices(draw_buffer* db, const vector<VEKT_VEC2>& path, const VEKT_VEC4& color, const VEKT_VEC2& min, const VEKT_VEC2& max);
+		void		 add_vertices_multicolor(draw_buffer* db, const vector<VEKT_VEC2>& path, const VEKT_VEC4& color_start, const VEKT_VEC4& color_end, direction direction, const VEKT_VEC2& min, const VEKT_VEC2& max);
+		void		 add_central_vertex(draw_buffer* db, const VEKT_VEC4& color, const VEKT_VEC2& min, const VEKT_VEC2& max);
+		void		 add_central_vertex_multicolor(draw_buffer* db, const VEKT_VEC4& color_start, const VEKT_VEC4& color_end, const VEKT_VEC2& min, const VEKT_VEC2& max);
+		void		 add_vertices_aa(draw_buffer* db, const vector<VEKT_VEC2>& path, unsigned int original_vertices_idx, float alpha, const VEKT_VEC2& min, const VEKT_VEC2& max);
+		void		 deallocate_impl(id widget);
 
 	private:
 		struct clip_info
 		{
-			vec4		 rect  = vec4();
+			VEKT_VEC4	 rect  = VEKT_VEC4();
 			unsigned int depth = 0;
 		};
 
@@ -1145,7 +1166,7 @@ namespace vekt
 		vector<draw_buffer> _draw_buffers;
 		id					_root			= 0;
 		draw_callback		_on_draw		= nullptr;
-		vec2				_mouse_position = {};
+		VEKT_VEC2			_mouse_position = {};
 
 		arena _layout_arena = {};
 		arena _gfx_arena	= {};
@@ -1172,11 +1193,11 @@ namespace vekt
 		key_callback*		_key_callbacks	 = {};
 		custom_passes*		_custom_passes	 = {};
 
-		vector<vec2> _reuse_outer_path;
-		vector<vec2> _reuse_inner_path;
-		vector<vec2> _reuse_outline_path;
-		vector<vec2> _reuse_aa_outer_path;
-		vector<vec2> _reuse_aa_inner_path;
+		vector<VEKT_VEC2> _reuse_outer_path;
+		vector<VEKT_VEC2> _reuse_inner_path;
+		vector<VEKT_VEC2> _reuse_outline_path;
+		vector<VEKT_VEC2> _reuse_aa_outer_path;
+		vector<VEKT_VEC2> _reuse_aa_inner_path;
 
 		vertex*		 _vertex_buffer			   = nullptr;
 		index*		 _index_buffer			   = nullptr;
@@ -1361,20 +1382,20 @@ namespace vekt
 	// :: THEME IMPL
 	////////////////////////////////////////////////////////////////////////////////
 
-	vec4  theme::color_item_bg		= {3.0f / 255.0f, 3.0f / 255.0f, 3.0f / 255.0f, 1.0f};
-	vec4  theme::color_item_hover	= {32.0f / 255.0f, 32.0f / 255.0f, 32.0f / 255.0f, 1.0f};
-	vec4  theme::color_item_press	= {24.0f / 255.0f, 24.0f / 255.0f, 24.0f / 255.0f, 1.0f};
-	vec4  theme::color_panel_bg		= {24.0f / 255.0f, 24.0f / 255.0f, 24.0f / 255.0f, 1.0f};
-	vec4  theme::color_divider		= {12.0f / 255.0f, 12.0f / 255.0f, 12.0f / 255.0f, 1.0f};
-	vec4  theme::color_item_outline = {42.0f / 255.0f, 42.0f / 255.0f, 42.0f / 255.0f, 1.0f};
-	vec4  theme::color_item_fg		= {200.0f / 255.0f, 200.0f / 255.0f, 200.0f / 255.0f, 1.0f};
-	float theme::item_height		= 24.0f;
-	float theme::item_spacing		= 8.0f;
-	float theme::indent_horizontal	= 8.0f;
-	float theme::margin_horizontal	= 4.0f;
-	float theme::margin_vertical	= 2.0f;
-	float theme::border_thickness	= 6.0f;
-	float theme::outline_thickness	= 2.0f;
+	VEKT_VEC4 theme::color_item_bg		= {3.0f / 255.0f, 3.0f / 255.0f, 3.0f / 255.0f, 1.0f};
+	VEKT_VEC4 theme::color_item_hover	= {32.0f / 255.0f, 32.0f / 255.0f, 32.0f / 255.0f, 1.0f};
+	VEKT_VEC4 theme::color_item_press	= {24.0f / 255.0f, 24.0f / 255.0f, 24.0f / 255.0f, 1.0f};
+	VEKT_VEC4 theme::color_panel_bg		= {24.0f / 255.0f, 24.0f / 255.0f, 24.0f / 255.0f, 1.0f};
+	VEKT_VEC4 theme::color_divider		= {12.0f / 255.0f, 12.0f / 255.0f, 12.0f / 255.0f, 1.0f};
+	VEKT_VEC4 theme::color_item_outline = {42.0f / 255.0f, 42.0f / 255.0f, 42.0f / 255.0f, 1.0f};
+	VEKT_VEC4 theme::color_item_fg		= {200.0f / 255.0f, 200.0f / 255.0f, 200.0f / 255.0f, 1.0f};
+	float	  theme::item_height		= 24.0f;
+	float	  theme::item_spacing		= 8.0f;
+	float	  theme::indent_horizontal	= 8.0f;
+	float	  theme::margin_horizontal	= 4.0f;
+	float	  theme::margin_vertical	= 2.0f;
+	float	  theme::border_thickness	= 6.0f;
+	float	  theme::outline_thickness	= 2.0f;
 
 	////////////////////////////////////////////////////////////////////////////////
 	// :: BUILDER IMPL
@@ -1524,7 +1545,7 @@ namespace vekt
 		_index_buffer  = nullptr;
 	}
 
-	void builder::build(const vec2& screen_size)
+	void builder::build_begin(const VEKT_VEC2& screen_size)
 	{
 		_draw_buffers.resize(0);
 		_clip_stack.resize_explicit(0);
@@ -1534,7 +1555,7 @@ namespace vekt
 		builder& bd = *this;
 
 		pos_props& root_pos = _pos_properties[_root];
-		root_pos.pos		= vec2();
+		root_pos.pos		= VEKT_VEC2();
 		root_pos.flags |= pos_flags::pf_x_abs | pos_flags::pf_y_abs;
 
 		size_props& root_size = _size_properties[_root];
@@ -1547,6 +1568,10 @@ namespace vekt
 		_clip_stack.resize_explicit(0);
 		_clip_stack.push_back({{0.0f, 0.0f, screen_size.x, screen_size.y}, 0});
 		calculate_draw();
+	}
+
+	void builder::build_end()
+	{
 		_clip_stack.pop_back();
 	}
 
@@ -1554,6 +1579,7 @@ namespace vekt
 	{
 		if (!_on_draw)
 			return;
+
 		std::sort(_draw_buffers.begin(), _draw_buffers.end(), [](const draw_buffer& a, const draw_buffer& b) { return a.draw_order < b.draw_order; });
 
 		for (draw_buffer& db : _draw_buffers)
@@ -1582,7 +1608,7 @@ namespace vekt
 		build_hierarchy();
 	}
 
-	inline vec4 builder::widget_get_clip(id widget_id) const
+	inline VEKT_VEC4 builder::widget_get_clip(id widget_id) const
 	{
 		const size_result& sz = _size_results[widget_id];
 		const pos_result&  ps = _pos_results[widget_id];
@@ -1669,21 +1695,12 @@ namespace vekt
 		return idx;
 	}
 
-	void builder::deallocate(id w)
+	void builder::deallocate_impl(id w)
 	{
-		for (const input_layer& layer : _input_layers)
-		{
-			if (layer.root == w)
-			{
-				V_ERR("Cannot deallocate widget %d, it is a root of an input layer. Remove the input layer first!", w);
-				ASSERT(false);
-				return;
-			}
-		}
-
 		widget_meta& meta = _metas[w];
+
 		for (id c : meta.children)
-			deallocate(c);
+			deallocate_impl(c);
 
 		_metas[w]			= widget_meta{};
 		_size_properties[w] = size_props{};
@@ -1702,6 +1719,31 @@ namespace vekt
 		_custom_passes[w]	= custom_passes{};
 
 		_free_list.push_back(w);
+	}
+
+	void builder::deallocate(id w)
+	{
+		for (const input_layer& layer : _input_layers)
+		{
+			if (layer.root == w)
+			{
+				V_ERR("Cannot deallocate widget %d, it is a root of an input layer. Remove the input layer first!", w);
+				ASSERT(false);
+				return;
+			}
+		}
+
+		widget_meta& meta = _metas[w];
+
+		if (meta.parent != -1)
+		{
+			widget_meta& parent_meta = _metas[meta.parent];
+			parent_meta.children.remove(w);
+		}
+
+		deallocate_impl(w);
+
+		build_hierarchy();
 	}
 
 	void builder::clear_text_cache()
@@ -1726,9 +1768,10 @@ namespace vekt
 		_depth_first_widgets.push_back(current_widget_id);
 		_depth_first_child_info.push_back({current_widget_id, depth, count_total_children(current_widget_id)});
 
-		widget_meta& current = _metas[current_widget_id];
+		widget_meta&	   current	   = _metas[current_widget_id];
+		const unsigned int child_depth = ++depth;
 		for (id child : current.children)
-			populate_hierarchy(child, ++depth);
+			populate_hierarchy(child, child_depth);
 	}
 
 	void builder::build_hierarchy()
@@ -1758,7 +1801,7 @@ namespace vekt
 
 			const widget_meta& meta = _metas[widget];
 
-			vec2 final_size = sz.size;
+			VEKT_VEC2 final_size = sz.size;
 
 			if (sz.flags & size_flags::sf_x_abs)
 				final_size.x = sz.size.x;
@@ -1796,7 +1839,7 @@ namespace vekt
 			const size_props&  sz	= _size_properties[widget];
 			const widget_meta& meta = _metas[widget];
 
-			vec2 final_size = vec2();
+			VEKT_VEC2 final_size = VEKT_VEC2();
 
 			if (sz.flags & size_flags::sf_x_max_children || sz.flags & size_flags::sf_y_max_children || sz.flags & size_flags::sf_x_total_children || sz.flags & size_flags::sf_y_total_children)
 			{
@@ -1902,7 +1945,7 @@ namespace vekt
 			size_result& sr = _size_results[widget];
 			pos_result&	 pr = _pos_results[widget];
 
-			vec2 final_pos = pr.pos;
+			VEKT_VEC2 final_pos = pr.pos;
 
 			if (pp.flags & pos_flags::pf_x_abs)
 				final_pos.x = pp.pos.x;
@@ -1910,7 +1953,7 @@ namespace vekt
 				final_pos.y = pp.pos.y;
 
 			const bool x_relative = pp.flags & pos_flags::pf_x_relative;
-			const bool y_relative = pp.flags & pos_flags::pf_x_relative;
+			const bool y_relative = pp.flags & pos_flags::pf_y_relative;
 
 			if (x_relative || y_relative)
 			{
@@ -1951,7 +1994,7 @@ namespace vekt
 		{
 			pos_props&	 pp		   = _pos_properties[widget];
 			widget_meta& meta	   = _metas[widget];
-			vec2		 final_pos = _pos_results[widget].pos;
+			VEKT_VEC2	 final_pos = _pos_results[widget].pos;
 
 			if (pp.flags & pf_child_pos_row)
 			{
@@ -1969,10 +2012,9 @@ namespace vekt
 			}
 			else if (pp.flags & pf_child_pos_column)
 			{
-
 				size_props& sp = _size_properties[widget];
 
-				float child_y = final_pos.y + sp.child_margins.top;
+				float child_y = final_pos.y + sp.child_margins.top + pp.scroll_offset;
 
 				for (id child : meta.children)
 				{
@@ -1987,7 +2029,7 @@ namespace vekt
 
 	void builder::calculate_draw()
 	{
-		vec4	  second_color;
+		VEKT_VEC4 second_color;
 		direction color_direction = direction::horizontal;
 		bool	  multi_color	  = false;
 
@@ -2013,11 +2055,11 @@ namespace vekt
 				continue;
 			}
 
-			const vec2& pos			 = _pos_results[widget].pos;
-			const vec2& size		 = _size_results[widget].size;
-			const vec4	widget_clip	 = vec4(pos.x, pos.y, size.x, size.y);
-			const vec4	intersection = calculate_intersection(_clip_stack.get_back().rect, widget_clip);
-			const bool	has_clip	 = gfx.flags & gfx_flags::gfx_clip_children;
+			const VEKT_VEC2& pos		  = _pos_results[widget].pos;
+			const VEKT_VEC2& size		  = _size_results[widget].size;
+			const VEKT_VEC4	 widget_clip  = VEKT_VEC4(pos.x, pos.y, size.x, size.y);
+			const VEKT_VEC4	 intersection = calculate_intersection(_clip_stack.get_back().rect, widget_clip);
+			const bool		 has_clip	  = gfx.flags & gfx_flags::gfx_clip_children;
 			if (intersection.z <= 0 || intersection.w <= 0)
 			{
 				i += info.owned_children + 1;
@@ -2095,6 +2137,10 @@ namespace vekt
 			{
 				add_text(_texts[widget], gfx.color, pos, size, gfx.draw_order, gfx.user_data);
 			}
+			else if (gfx.flags & gfx_is_text_cached)
+			{
+				add_text_cached(_texts[widget], gfx.color, pos, size, gfx.draw_order, gfx.user_data);
+			}
 
 			if (has_clip)
 				_clip_stack.push_back({widget_clip, info.depth});
@@ -2103,7 +2149,7 @@ namespace vekt
 		}
 	}
 
-	void builder::widget_set_size(id widget_id, const vec2& size, helper_size_type helper_x, helper_size_type helper_y)
+	void builder::widget_set_size(id widget_id, const VEKT_VEC2& size, helper_size_type helper_x, helper_size_type helper_y)
 	{
 		size_props& props = _size_properties[widget_id];
 		props.size		  = size;
@@ -2158,7 +2204,7 @@ namespace vekt
 		}
 	}
 
-	inline void builder::widget_set_pos(id widget_id, const vec2& pos, helper_pos_type helper_x, helper_pos_type helper_y, helper_anchor_type anchor_x, helper_anchor_type anchor_y)
+	inline void builder::widget_set_pos(id widget_id, const VEKT_VEC2& pos, helper_pos_type helper_x, helper_pos_type helper_y, helper_anchor_type anchor_x, helper_anchor_type anchor_y)
 	{
 		pos_props& props = _pos_properties[widget_id];
 		props.pos		 = pos;
@@ -2220,12 +2266,12 @@ namespace vekt
 		}
 	}
 
-	const vec2& builder::widget_get_size(id widget_id) const
+	const VEKT_VEC2& builder::widget_get_size(id widget_id) const
 	{
 		return _size_results[widget_id].size;
 	}
 
-	const vec2& builder::widget_get_pos(id widget_id) const
+	const VEKT_VEC2& builder::widget_get_pos(id widget_id) const
 	{
 		return _pos_results[widget_id].pos;
 	}
@@ -2240,18 +2286,18 @@ namespace vekt
 		return _pos_properties[widget_id];
 	}
 
-	void builder::on_mouse_move(const vec2& mouse)
+	void builder::on_mouse_move(const VEKT_VEC2& mouse)
 	{
-		const vec2 delta = mouse - _mouse_position;
-		_mouse_position	 = mouse;
+		const VEKT_VEC2 delta = mouse - _mouse_position;
+		_mouse_position		  = mouse;
 
 		const unsigned int sz = _depth_first_widgets.size();
 		for (unsigned int i = 0; i < sz; i++)
 		{
 			const id widget = _depth_first_widgets[i];
 
-			const vec4 clip	   = widget_get_clip(widget);
-			const bool hovered = clip.is_point_inside(mouse);
+			const VEKT_VEC4 clip	= widget_get_clip(widget);
+			const bool		hovered = clip.is_point_inside(mouse.x, mouse.y);
 
 			hover_callback& hover_state = _hover_callbacks[widget];
 
@@ -2756,7 +2802,7 @@ namespace vekt
 		rounding_props& rp	  = _roundings[props.widget_id];
 
 		generate_rounded_rect(_reuse_outer_path, props.min, props.max, rp.rounding, rp.segments);
-		generate_rounded_rect(_reuse_inner_path, props.min + vec2(out_p.thickness, out_p.thickness), props.max - vec2(out_p.thickness, out_p.thickness), rp.rounding, rp.segments);
+		generate_rounded_rect(_reuse_inner_path, props.min + VEKT_VEC2(out_p.thickness, out_p.thickness), props.max - VEKT_VEC2(out_p.thickness, out_p.thickness), rp.rounding, rp.segments);
 
 		_reuse_aa_outer_path.resize_explicit(0);
 		_reuse_aa_inner_path.resize_explicit(0);
@@ -2783,7 +2829,7 @@ namespace vekt
 		_reuse_aa_inner_path.resize_explicit(0);
 
 		generate_rounded_rect(_reuse_outer_path, props.min, props.max, rp.rounding, rp.segments);
-		generate_rounded_rect(_reuse_inner_path, props.min + vec2(out_p.thickness, out_p.thickness), props.max - vec2(out_p.thickness, out_p.thickness), rp.rounding, rp.segments);
+		generate_rounded_rect(_reuse_inner_path, props.min + VEKT_VEC2(out_p.thickness, out_p.thickness), props.max - VEKT_VEC2(out_p.thickness, out_p.thickness), rp.rounding, rp.segments);
 
 		generate_offset_rect(_reuse_aa_outer_path, _reuse_outer_path, -static_cast<float>(aa_p.thickness));
 		if (!_reuse_inner_path.empty())
@@ -2809,7 +2855,7 @@ namespace vekt
 		add_strip(db, in_start, in_aa_start, _reuse_aa_inner_path.size(), false);
 	}
 
-	void builder::add_text(const text_props& text, const vec4& color, const vec2& position, const vec2& size, unsigned int draw_order, void* user_data)
+	void builder::add_text(const text_props& text, const VEKT_VEC4& color, const VEKT_VEC2& position, const VEKT_VEC2& size, unsigned int draw_order, void* user_data)
 	{
 		if (text.font == nullptr)
 		{
@@ -2817,43 +2863,22 @@ namespace vekt
 			return;
 		}
 
-		draw_buffer*   db	= get_draw_buffer(draw_order, user_data, text.font);
-		const uint64_t hash = text.hash == 0 ? text_cache::hash_text_props(text, color) : text.hash;
-		auto		   it	= _text_cache.find([hash](const text_cache& cache) -> bool { return cache.hash == hash; });
-		if (it != _text_cache.end())
-		{
-			const unsigned int start_vtx = db->vertex_count;
-
-			vertex* vertices = db->add_get_vertex(it->vtx_count);
-			index*	indices	 = db->add_get_index(it->vtx_count * 6);
-			MEMCPY(vertices, &_text_cache_vertex_buffer[it->vtx_start], it->vtx_count * sizeof(vertex));
-			MEMCPY(indices, &_text_cache_index_buffer[it->idx_start], it->vtx_count * 6 * sizeof(index));
-
-			for (unsigned int i = 0; i < it->vtx_count; i++)
-			{
-				vertices[i].pos.x += position.x;
-				vertices[i].pos.y += position.y;
-			}
-
-			for (unsigned int i = 0; i < it->vtx_count * 6; i++)
-			{
-				indices[i] += start_vtx;
-			}
-
-			return;
-		}
+		draw_buffer* db = get_draw_buffer(draw_order, user_data, text.font);
 
 		const float pixel_scale = text.font->_scale;
 		const float subpixel	= text.font->type == font_type::lcd ? 3.0f : 1.0f;
 
 		const unsigned int start_vertices_idx = db->vertex_count;
 		const unsigned int start_indices_idx  = db->index_count;
-		const unsigned int char_count		  = static_cast<unsigned int>(text.text.size());
 
+#ifdef VEKT_STRING_CSTR
+		const unsigned int char_count = static_cast<unsigned int>(strlen(text.text));
+#else
+		const unsigned int char_count = static_cast<unsigned int>(text.text.size());
+#endif
 		unsigned int vtx_counter = 0;
 
-		vec2	   pen = vec2();
-		const vec2 end = pen + size;
+		VEKT_VEC2 pen = position;
 
 		vertex* vertices = db->add_get_vertex(char_count * 4);
 		index*	indices	 = db->add_get_index(char_count * 6);
@@ -2879,11 +2904,146 @@ namespace vekt
 			vertex& v2 = vertices[current_char * 4 + 2];
 			vertex& v3 = vertices[current_char * 4 + 3];
 
-			const float uv_x = g.uv_x, uv_y = g.uv_y, uv_w = g.uv_w, uv_h = g.uv_h;
-			const vec2	uv0(uv_x, uv_y);
-			const vec2	uv1(uv_x + uv_w, uv_y);
-			const vec2	uv2(uv_x + uv_w, uv_y + uv_h);
-			const vec2	uv3(uv_x, uv_y + uv_h);
+			const float		uv_x = g.uv_x, uv_y = g.uv_y, uv_w = g.uv_w, uv_h = g.uv_h;
+			const VEKT_VEC2 uv0(uv_x, uv_y);
+			const VEKT_VEC2 uv1(uv_x + uv_w, uv_y);
+			const VEKT_VEC2 uv2(uv_x + uv_w, uv_y + uv_h);
+			const VEKT_VEC2 uv3(uv_x, uv_y + uv_h);
+
+			v0.pos = {quad_left, quad_top};
+			v1.pos = {quad_right, quad_top};
+			v2.pos = {quad_right, quad_bottom};
+			v3.pos = {quad_left, quad_bottom};
+
+			v0.color = color;
+			v1.color = color;
+			v2.color = color;
+			v3.color = color;
+
+			v0.uv = uv0;
+			v1.uv = uv1;
+			v2.uv = uv2;
+			v3.uv = uv3;
+
+			indices[current_char * 6]	  = start_vertices_idx + vtx_counter;
+			indices[current_char * 6 + 1] = start_vertices_idx + vtx_counter + 1;
+			indices[current_char * 6 + 2] = start_vertices_idx + vtx_counter + 3;
+
+			indices[current_char * 6 + 3] = start_vertices_idx + vtx_counter + 1;
+			indices[current_char * 6 + 4] = start_vertices_idx + vtx_counter + 2;
+			indices[current_char * 6 + 5] = start_vertices_idx + vtx_counter + 3;
+
+			vtx_counter += 4;
+
+			pen.x += g.advance_x * scale + spacing;
+			current_char++;
+		};
+
+#ifdef VEKT_STRING_CSTR
+		const char* cstr = text.text;
+#else
+		const char* cstr = text.text.c_str();
+#endif
+		const uint8_t* c;
+		float		   max_y_offset = 0;
+		for (c = (uint8_t*)cstr; *c; c++)
+		{
+			auto		 character = *c;
+			const glyph& ch		   = text.font->glyph_info[character];
+			max_y_offset		   = math::max(max_y_offset, -ch.y_offset);
+		}
+
+		pen.y += max_y_offset * text.scale;
+
+		unsigned long previous_char = 0;
+		for (c = (uint8_t*)cstr; *c; c++)
+		{
+			auto		 character = *c;
+			const glyph& ch		   = text.font->glyph_info[character];
+			draw_char(ch, character, previous_char);
+			previous_char = character;
+		}
+	}
+
+	void builder::add_text_cached(const text_props& text, const VEKT_VEC4& color, const VEKT_VEC2& position, const VEKT_VEC2& size, unsigned int draw_order, void* user_data)
+	{
+		if (text.font == nullptr)
+		{
+			V_ERR("vekt::builder::add_text() -> No font is set!");
+			return;
+		}
+
+		draw_buffer*   db	= get_draw_buffer(draw_order, user_data, text.font);
+		const uint64_t hash = text.hash == 0 ? text_cache::hash_text_props(text, color) : text.hash;
+		auto		   it	= _text_cache.find([hash](const text_cache& cache) -> bool { return cache.hash == hash; });
+		if (it != _text_cache.end())
+		{
+			const unsigned int start_vtx = db->vertex_count;
+
+			const unsigned int idx_count = it->vtx_count / 2 * 3;
+			vertex*			   vertices	 = db->add_get_vertex(it->vtx_count);
+			index*			   indices	 = db->add_get_index(idx_count);
+			MEMCPY(vertices, &_text_cache_vertex_buffer[it->vtx_start], it->vtx_count * sizeof(vertex));
+			MEMCPY(indices, &_text_cache_index_buffer[it->idx_start], idx_count * sizeof(index));
+
+			for (unsigned int i = 0; i < it->vtx_count; i++)
+			{
+				vertices[i].pos.x += position.x;
+				vertices[i].pos.y += position.y;
+			}
+
+			for (unsigned int i = 0; i < idx_count; i++)
+			{
+				indices[i] += start_vtx;
+			}
+
+			return;
+		}
+
+		const float pixel_scale = text.font->_scale;
+		const float subpixel	= text.font->type == font_type::lcd ? 3.0f : 1.0f;
+
+		const unsigned int start_vertices_idx = db->vertex_count;
+		const unsigned int start_indices_idx  = db->index_count;
+
+#ifdef VEKT_STRING_CSTR
+		const unsigned int char_count = static_cast<unsigned int>(strlen(text.text));
+#else
+		const unsigned int char_count = static_cast<unsigned int>(text.text.size());
+#endif
+		unsigned int vtx_counter = 0;
+
+		VEKT_VEC2 pen = VEKT_VEC2();
+
+		vertex* vertices = db->add_get_vertex(char_count * 4);
+		index*	indices	 = db->add_get_index(char_count * 6);
+
+		unsigned int current_char = 0;
+
+		const float scale	= text.scale * pixel_scale;
+		const float spacing = static_cast<float>(text.spacing) * scale;
+
+		auto draw_char = [&](const glyph& g, unsigned long c, unsigned long previous_char) {
+			if (previous_char != 0)
+			{
+				pen.x += static_cast<float>(text.font->glyph_info[previous_char].kern_advance[c]) * scale;
+			}
+
+			const float quad_left	= pen.x + g.x_offset / subpixel * text.scale;
+			const float quad_top	= pen.y + g.y_offset * text.scale;
+			const float quad_right	= quad_left + g.width * text.scale;
+			const float quad_bottom = quad_top + g.height * text.scale;
+
+			vertex& v0 = vertices[current_char * 4];
+			vertex& v1 = vertices[current_char * 4 + 1];
+			vertex& v2 = vertices[current_char * 4 + 2];
+			vertex& v3 = vertices[current_char * 4 + 3];
+
+			const float		uv_x = g.uv_x, uv_y = g.uv_y, uv_w = g.uv_w, uv_h = g.uv_h;
+			const VEKT_VEC2 uv0(uv_x, uv_y);
+			const VEKT_VEC2 uv1(uv_x + uv_w, uv_y);
+			const VEKT_VEC2 uv2(uv_x + uv_w, uv_y + uv_h);
+			const VEKT_VEC2 uv3(uv_x, uv_y + uv_h);
 
 			v0.pos = {quad_left, quad_top};
 			v1.pos = {quad_right, quad_top};
@@ -2914,9 +3074,14 @@ namespace vekt
 			current_char++;
 		};
 
+#ifdef VEKT_STRING_CSTR
+		const char* cstr = text.text;
+#else
+		const char* cstr = text.text.c_str();
+#endif
 		const uint8_t* c;
 		float		   max_y_offset = 0;
-		for (c = (uint8_t*)text.text.c_str(); *c; c++)
+		for (c = (uint8_t*)cstr; *c; c++)
 		{
 			auto		 character = *c;
 			const glyph& ch		   = text.font->glyph_info[character];
@@ -2926,7 +3091,7 @@ namespace vekt
 		pen.y += max_y_offset * text.scale;
 
 		unsigned long previous_char = 0;
-		for (c = (uint8_t*)text.text.c_str(); *c; c++)
+		for (c = (uint8_t*)cstr; *c; c++)
 		{
 			auto		 character = *c;
 			const glyph& ch		   = text.font->glyph_info[character];
@@ -2934,7 +3099,7 @@ namespace vekt
 			previous_char = character;
 		}
 
-		const unsigned int idx_count = vtx_counter * 6;
+		const unsigned int idx_count = vtx_counter / 2 * 3;
 
 		if (_text_cache_vertex_count + vtx_counter < _text_cache_vertex_size && _text_cache_index_count + idx_count < _text_cache_index_size)
 		{
@@ -2962,12 +3127,12 @@ namespace vekt
 		}
 	}
 
-	vec2 builder::get_text_size(const text_props& text, const vec2& parent_size)
+	VEKT_VEC2 builder::get_text_size(const text_props& text, const VEKT_VEC2& parent_size)
 	{
 		if (text.font == nullptr)
 		{
 			V_ERR("vekt::builder::get_text_size() -> No font is set!");
-			return vec2();
+			return VEKT_VEC2();
 		}
 
 		const font* fnt			= text.font;
@@ -2984,9 +3149,11 @@ namespace vekt
 		// }
 
 		const float used_scale = text.scale;
-
+#ifdef VEKT_STRING_CSTR
+		const char* str = text.text;
+#else
 		const char* str = text.text.c_str();
-
+#endif
 		const float spacing = static_cast<float>(text.spacing) * used_scale;
 		const float scale	= pixel_scale * used_scale;
 
@@ -3007,7 +3174,7 @@ namespace vekt
 			max_y = math::max(max_y, static_cast<float>(g0.height) * used_scale);
 		}
 
-		return vec2(total_x - spacing, max_y);
+		return VEKT_VEC2(total_x - spacing, max_y);
 	}
 
 	void builder::add_strip(draw_buffer* db, unsigned int outer_start, unsigned int inner_start, unsigned int size, bool add_ccw)
@@ -3069,7 +3236,7 @@ namespace vekt
 		}
 	}
 
-	void builder::add_vertices_aa(draw_buffer* db, const vector<vec2>& path, unsigned int original_vertices_idx, float alpha, const vec2& min, const vec2& max)
+	void builder::add_vertices_aa(draw_buffer* db, const vector<VEKT_VEC2>& path, unsigned int original_vertices_idx, float alpha, const VEKT_VEC2& min, const VEKT_VEC2& max)
 	{
 		const unsigned int start_vtx_idx = db->vertex_count;
 
@@ -3084,7 +3251,7 @@ namespace vekt
 		}
 	}
 
-	void builder::generate_offset_rect_4points(vector<vec2>& out_path, const vec2& min, const vec2& max, float amount)
+	void builder::generate_offset_rect_4points(vector<VEKT_VEC2>& out_path, const VEKT_VEC2& min, const VEKT_VEC2& max, float amount)
 	{
 		out_path.resize_explicit(4);
 		out_path[0] = {min.x + amount, min.y + amount}; // Top-Left
@@ -3093,7 +3260,7 @@ namespace vekt
 		out_path[3] = {min.x + amount, max.y - amount}; // Bottom-Left
 	}
 
-	void builder::generate_offset_rect(vector<vec2>& out_path, const vector<vec2>& base_path, float distance)
+	void builder::generate_offset_rect(vector<VEKT_VEC2>& out_path, const vector<VEKT_VEC2>& base_path, float distance)
 	{
 		if (base_path.size() < 2)
 			return;
@@ -3104,23 +3271,23 @@ namespace vekt
 		for (size_t i = 0; i < num_points; ++i)
 		{
 			// Get the current, previous, and next points
-			const vec2& p_curr = base_path[i];
-			const vec2& p_prev = base_path[(i + num_points - 1) % num_points];
-			const vec2& p_next = base_path[(i + 1) % num_points];
+			const VEKT_VEC2& p_curr = base_path[i];
+			const VEKT_VEC2& p_prev = base_path[(i + num_points - 1) % num_points];
+			const VEKT_VEC2& p_next = base_path[(i + 1) % num_points];
 
-			const vec2 tangent1		= (p_curr - p_prev).normalized();
-			const vec2 tangent2		= (p_next - p_curr).normalized();
-			const vec2 normal1		= {-tangent1.y, tangent1.x};
-			const vec2 normal2		= {-tangent2.y, tangent2.x};
-			const vec2 miter_vector = (normal1 + normal2).normalized();
+			const VEKT_VEC2 tangent1	 = (p_curr - p_prev).normalized();
+			const VEKT_VEC2 tangent2	 = (p_next - p_curr).normalized();
+			const VEKT_VEC2 normal1		 = {-tangent1.y, tangent1.x};
+			const VEKT_VEC2 normal2		 = {-tangent2.y, tangent2.x};
+			const VEKT_VEC2 miter_vector = (normal1 + normal2).normalized();
 
 			// Calculate the offset vertex
-			const vec2 path = p_curr + miter_vector * distance;
-			out_path[i]		= path;
+			const VEKT_VEC2 path = p_curr + miter_vector * distance;
+			out_path[i]			 = path;
 		}
 	}
 
-	void builder::add_vertices(draw_buffer* db, const vector<vec2>& path, const vec4& color, const vec2& min, const vec2& max)
+	void builder::add_vertices(draw_buffer* db, const vector<VEKT_VEC2>& path, const VEKT_VEC4& color, const VEKT_VEC2& min, const VEKT_VEC2& max)
 	{
 		vertex*		vertices	= db->add_get_vertex(path.size());
 		const float inv_x_range = 1.0f / (max.x - min.x);
@@ -3136,7 +3303,7 @@ namespace vekt
 		}
 	}
 
-	void builder::add_vertices_multicolor(draw_buffer* db, const vector<vec2>& path, const vec4& color_start, const vec4& color_end, direction direction, const vec2& min, const vec2& max)
+	void builder::add_vertices_multicolor(draw_buffer* db, const vector<VEKT_VEC2>& path, const VEKT_VEC4& color_start, const VEKT_VEC4& color_end, direction direction, const VEKT_VEC2& min, const VEKT_VEC2& max)
 	{
 		const unsigned int start_vtx_idx = db->vertex_count;
 
@@ -3148,7 +3315,7 @@ namespace vekt
 		const float inv_color_remap_x_range = 1.0f / (max.x - min.x);
 		const float inv_color_remap_y_range = 1.0f / (max.y - min.y);
 
-		const vec4 color_diff = color_end - color_start;
+		const VEKT_VEC4 color_diff = color_end - color_start;
 
 		for (unsigned int i = 0; i < path.size(); i++)
 		{
@@ -3176,23 +3343,23 @@ namespace vekt
 		}
 	}
 
-	void builder::add_central_vertex(draw_buffer* db, const vec4& color, const vec2& min, const vec2& max)
+	void builder::add_central_vertex(draw_buffer* db, const VEKT_VEC4& color, const VEKT_VEC2& min, const VEKT_VEC2& max)
 	{
 		vertex& vtx = db->add_get_vertex();
 		vtx.pos		= (min + max) * 0.5f;
 		vtx.color	= color;
-		vtx.uv		= vec2(0.5f, 0.5f);
+		vtx.uv		= VEKT_VEC2(0.5f, 0.5f);
 	}
 
-	void builder::add_central_vertex_multicolor(draw_buffer* db, const vec4& color_start, const vec4& color_end, const vec2& min, const vec2& max)
+	void builder::add_central_vertex_multicolor(draw_buffer* db, const VEKT_VEC4& color_start, const VEKT_VEC4& color_end, const VEKT_VEC2& min, const VEKT_VEC2& max)
 	{
 		vertex& vtx = db->add_get_vertex();
 		vtx.pos		= (min + max) * 0.5f;
 		vtx.color	= (color_start + color_end) * 0.5f;
-		vtx.uv		= vec2(0.5f, 0.5f);
+		vtx.uv		= VEKT_VEC2(0.5f, 0.5f);
 	}
 
-	void builder::generate_rounded_rect(vector<vec2>& out_path, const vec2& min, const vec2& max, float r, int segments)
+	void builder::generate_rounded_rect(vector<VEKT_VEC2>& out_path, const VEKT_VEC2& min, const VEKT_VEC2& max, float r, int segments)
 	{
 		r = math::min(r, math::min((max.x - min.x) * 0.5f, (max.y - min.y) * 0.5f)); // Clamp radius
 
@@ -3203,57 +3370,57 @@ namespace vekt
 
 		// top left
 		{
-			const vec2 center = vec2(min.x + r, min.y + r);
+			const VEKT_VEC2 center = VEKT_VEC2(min.x + r, min.y + r);
 			for (int i = 0; i <= segments; ++i)
 			{
 
-				const float target_angle  = DEG_2_RAD * (270.0f + (90.0f / segments) * i);
-				const vec2	point_on_unit = vec2(math::sin(target_angle), -math::cos(target_angle)) * r;
-				const vec2	point		  = center + point_on_unit;
+				const float		target_angle  = DEG_2_RAD * (270.0f + (90.0f / segments) * i);
+				const VEKT_VEC2 point_on_unit = VEKT_VEC2(math::sin(target_angle), -math::cos(target_angle)) * r;
+				const VEKT_VEC2 point		  = center + point_on_unit;
 				out_path.push_back(point);
 			}
 		}
 		// top right
 		{
-			const vec2 center = vec2(max.x - r, min.y + r);
+			const VEKT_VEC2 center = VEKT_VEC2(max.x - r, min.y + r);
 			for (int i = 0; i <= segments; ++i)
 			{
 
-				const float target_angle  = DEG_2_RAD * ((90.0f / segments) * i);
-				const vec2	point_on_unit = vec2(math::sin(target_angle), -math::cos(target_angle)) * r;
-				const vec2	point		  = center + point_on_unit;
+				const float		target_angle  = DEG_2_RAD * ((90.0f / segments) * i);
+				const VEKT_VEC2 point_on_unit = VEKT_VEC2(math::sin(target_angle), -math::cos(target_angle)) * r;
+				const VEKT_VEC2 point		  = center + point_on_unit;
 				out_path.push_back(point);
 			}
 		}
 
 		// bottom right
 		{
-			const vec2 center = vec2(max.x - r, max.y - r);
+			const VEKT_VEC2 center = VEKT_VEC2(max.x - r, max.y - r);
 			for (int i = 0; i <= segments; ++i)
 			{
 
-				const float target_angle  = DEG_2_RAD * (90.0f + (90.0f / segments) * i);
-				const vec2	point_on_unit = vec2(math::sin(target_angle), -math::cos(target_angle)) * r;
-				const vec2	point		  = center + point_on_unit;
+				const float		target_angle  = DEG_2_RAD * (90.0f + (90.0f / segments) * i);
+				const VEKT_VEC2 point_on_unit = VEKT_VEC2(math::sin(target_angle), -math::cos(target_angle)) * r;
+				const VEKT_VEC2 point		  = center + point_on_unit;
 				out_path.push_back(point);
 			}
 		}
 
 		// bottom left
 		{
-			const vec2 center = vec2(min.x + r, max.y - r);
+			const VEKT_VEC2 center = VEKT_VEC2(min.x + r, max.y - r);
 			for (int i = 0; i <= segments; ++i)
 			{
 
-				const float target_angle  = DEG_2_RAD * (180.0f + (90.0f / segments) * i);
-				const vec2	point_on_unit = vec2(math::sin(target_angle), -math::cos(target_angle)) * r;
-				const vec2	point		  = center + point_on_unit;
+				const float		target_angle  = DEG_2_RAD * (180.0f + (90.0f / segments) * i);
+				const VEKT_VEC2 point_on_unit = VEKT_VEC2(math::sin(target_angle), -math::cos(target_angle)) * r;
+				const VEKT_VEC2 point		  = center + point_on_unit;
 				out_path.push_back(point);
 			}
 		}
 	}
 
-	void builder::generate_sharp_rect(vector<vec2>& out_path, const vec2& min, const vec2& max)
+	void builder::generate_sharp_rect(vector<VEKT_VEC2>& out_path, const VEKT_VEC2& min, const VEKT_VEC2& max)
 	{
 		const unsigned int sz = out_path.size();
 		out_path.resize_explicit(sz + 4);
@@ -3265,7 +3432,7 @@ namespace vekt
 
 	draw_buffer* builder::get_draw_buffer(unsigned int draw_order, void* user_data, font* fnt)
 	{
-		const vec4& clip = get_current_clip();
+		const VEKT_VEC4& clip = get_current_clip();
 
 		for (draw_buffer& db : _draw_buffers)
 		{
@@ -3292,7 +3459,7 @@ namespace vekt
 		return &_draw_buffers.get_back();
 	}
 
-	vec4 builder::calculate_intersection(const vec4& r1, const vec4& r2) const
+	VEKT_VEC4 builder::calculate_intersection(const VEKT_VEC4& r1, const VEKT_VEC4& r2) const
 	{
 		const float x	   = math::max(r1.x, r2.x);
 		const float y	   = math::max(r1.y, r2.y);
@@ -3301,7 +3468,7 @@ namespace vekt
 
 		if (right < x || bottom < y)
 		{
-			return vec4();
+			return VEKT_VEC4();
 		}
 		return {x, y, right - x, bottom - y};
 	}
@@ -3309,13 +3476,13 @@ namespace vekt
 	void builder::widget_add_debug_wrap(id widget)
 	{
 		id wrapper = allocate();
-		widget_set_pos(wrapper, vec2());
-		widget_set_size(wrapper, vec2(1.0f, 1.0f));
+		widget_set_pos(wrapper, VEKT_VEC2());
+		widget_set_size(wrapper, VEKT_VEC2(1.0f, 1.0f));
 
 		widget_gfx& r = widget_get_gfx(wrapper);
 		r.flags |= gfx_is_stroke;
 		_strokes[wrapper].thickness = 1;
-		r.color						= vec4(1, 0, 0, 1);
+		r.color						= VEKT_VEC4(1, 0, 0, 1);
 		widget_add_child(widget, wrapper);
 	}
 
@@ -3576,7 +3743,6 @@ namespace vekt
 			V_ERR("vekt::font_manager::load_font -> Failed reading font buffer! %s", filename);
 			return nullptr;
 		}
-
 		return load_font(ttf_buffer.data(), ttf_buffer.size(), size, range_start, range_end, type, sdf_padding, sdf_edge, sdf_distance);
 	}
 

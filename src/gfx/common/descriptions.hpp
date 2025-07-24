@@ -9,10 +9,10 @@
 #include "data/span.hpp"
 #include "format.hpp"
 #include "resource_limits.hpp"
+#include "shader_description.hpp"
 
 namespace Game
 {
-
 	struct viewport
 	{
 		vector2		pos		 = vector2::zero;
@@ -27,127 +27,11 @@ namespace Game
 		vector2ui16 size = vector2ui16::zero;
 	};
 
-	enum class blend_op : uint8
-	{
-		add,
-		subtract,
-		reverse_subtract,
-		min,
-		max
-	};
-
-	enum class blend_factor : uint16
-	{
-		zero,
-		one,
-		src_color,
-		one_minus_src_color,
-		dst_color,
-		one_minus_dst_color,
-		src_alpha,
-		one_minus_src_alpha,
-		dst_alpha,
-		one_minus_dst_alpha,
-	};
-
-	enum class logic_op : uint16
-	{
-		clear,
-		and_,
-		and_reverse,
-		copy,
-		and_inverted,
-		no_op,
-		xor_,
-		or_,
-		nor,
-		equivalent,
-	};
-
 	enum class command_type : uint8
 	{
 		graphics,
 		transfer,
 		compute,
-	};
-
-	enum class topology : uint8
-	{
-		point_list,
-		line_list,
-		line_strip,
-		triangle_list,
-		triangle_strip,
-		triangle_fan,
-		triangle_list_adjacency,
-		triangle_strip_adjacency,
-	};
-
-	enum class polygon_mode : uint8
-	{
-		fill,
-		line,
-		point
-	};
-
-	enum class cull_mode : uint8
-	{
-		none,
-		front,
-		back,
-	};
-
-	enum class front_face : uint8
-	{
-		ccw,
-		cw,
-	};
-
-	enum class stencil_op : uint8
-	{
-		keep,
-		zero,
-		replace,
-		increment_clamp,
-		decrement_clamp,
-		invert,
-		increment_wrap,
-		decrement_wrap,
-	};
-
-	enum class load_op : uint8
-	{
-		load,
-		clear,
-		dont_care,
-		none,
-	};
-
-	enum class compare_op : uint8
-	{
-		never,
-		less,
-		equal,
-		lequal,
-		greater,
-		nequal,
-		gequal,
-		always
-	};
-
-	enum class store_op : uint8
-	{
-		store,
-		dont_care,
-		none,
-	};
-
-	enum class shader_stage : uint8
-	{
-		vertex,
-		fragment,
-		compute,
-		all
 	};
 
 	enum class resource_state : uint8
@@ -190,7 +74,7 @@ namespace Game
 		sf_allow_tearing		= 1 << 3,
 	};
 
-	enum class descriptor_type : uint8
+	enum binding_type : uint8
 	{
 		constant,
 		ubo,
@@ -198,7 +82,7 @@ namespace Game
 		uav,
 		pointer,
 		sampler,
-		texture
+		texture,
 	};
 
 	enum binding_flags
@@ -228,15 +112,6 @@ namespace Game
 		tf_is_2d					= 1 << 10,
 		tf_is_3d					= 1 << 11,
 		tf_is_1d					= 1 << 12,
-	};
-
-	enum shader_flags
-	{
-		shf_enable_sample_shading = 1 << 0,
-		shf_enable_depth_bias	  = 1 << 1,
-		shf_enable_alpha_to_cov	  = 1 << 2,
-		shf_enable_blend_logic_op = 1 << 3,
-		shf_use_embedded_layout	  = 1 << 4,
 	};
 
 	enum sampler_flags
@@ -287,9 +162,9 @@ namespace Game
 	struct view_desc
 	{
 		uint8 base_arr_level = 0;
-		uint8 level_count	 = 0;
+		uint8 level_count	 = 1;
 		uint8 base_mip_level = 0;
-		uint8 mip_count		 = 0;
+		uint8 mip_count		 = 1;
 		uint8 is_cubemap	 = 0;
 	};
 
@@ -299,11 +174,13 @@ namespace Game
 		format			  depth_stencil_format = format::r32_sfloat;
 		vector2ui16		  size				   = vector2ui16::zero;
 		bitmask<uint16>	  flags				   = 0;
-		vector<view_desc> views				   = {};
-		uint8			  mip_levels		   = 1;
-		uint8			  array_length		   = 1;
-		uint8			  samples			   = 1;
-		char			  debug_name[16]	   = {"Texture"};
+		vector<view_desc> views				   = {
+			   {},
+		   };
+		uint8 mip_levels	 = 1;
+		uint8 array_length	 = 1;
+		uint8 samples		 = 1;
+		char  debug_name[16] = {"Texture"};
 	};
 
 	struct sampler_desc
@@ -318,151 +195,54 @@ namespace Game
 
 	struct layout_entry
 	{
-		descriptor_type type				   = descriptor_type::constant;
-		uint8			count				   = 1;
-		uint8			set					   = 0;
-		uint8			binding				   = 0;
-		sampler_desc	immutable_sampler_desc = {};
+		binding_type type					= binding_type::constant;
+		uint8		 count					= 1;
+		uint8		 set					= 0;
+		uint8		 binding				= 0;
+		sampler_desc immutable_sampler_desc = {};
 	};
 
 	struct binding
 	{
 		vector<layout_entry> entry_table;
-		shader_stage		 visibility = shader_stage::vertex;
+		shader_stage		 visibility;
 	};
 
-	struct bind_layout_desc
+	struct bind_layout_pointer_param
 	{
-		vector<binding> bindings   = {};
-		uint8			is_compute = 0;
+		binding_type type		 = binding_type::ubo;
+		uint8		 set		 = 0;
+		uint8		 binding	 = 0;
+		uint8		 count		 = 0;
+		uint8		 is_volatile = 0;
+	};
+
+	struct bind_group_pointer
+	{
+		resource_id	 resource = 0;
+		uint8		 view	  = 0;
+		binding_type type	  = binding_type::ubo;
 	};
 
 	struct bind_group_binding
 	{
-		uint32			root_index		= 0;
-		uint32			count			= 0;
-		descriptor_type type			= descriptor_type::constant;
-		uint32			constant_value	= 0;
-		uint32			constant_offset = 0;
-	};
-
-	struct bind_group_desc
-	{
-		vector<bind_group_binding> bindings;
+		uint8*		 constants	= nullptr;
+		uint8		 root_index = 0;
+		uint8		 count		= 0;
+		binding_type type		= binding_type::constant;
 	};
 
 	struct binding_update
 	{
-		uint32					binding_index  = 0;
-		vector<descriptor_type> resource_types = {};
-		vector<resource_id>		resources	   = {};
-		vector<uint32>			resource_views = {};
+		uint32				 binding_index	= 0;
+		vector<binding_type> resource_types = {};
+		vector<resource_id>	 resources		= {};
+		vector<uint32>		 resource_views = {};
 	};
 
 	struct bind_group_update_desc
 	{
 		vector<binding_update> updates;
-	};
-
-	struct pipeline_layout_desc
-	{
-		vector<bind_group_desc> set_descriptions = {};
-		uint8					is_compute		 = 0;
-		char					debug_name[16]	 = {"PipelineLayout"};
-	};
-
-	struct vertex_input
-	{
-		char   name[16] = "TEXCOORD";
-		uint8  location = 0;
-		uint8  index	= 0;
-		size_t offset	= 0;
-		size_t size		= 0;
-		format format	= format::undefined;
-	};
-
-	struct shader_blob
-	{
-		shader_stage stage = {};
-		span<uint8>	 data  = {};
-	};
-
-	enum color_comp_flags
-	{
-		ccf_red	  = 1 << 0,
-		ccf_green = 1 << 1,
-		ccf_blue  = 1 << 2,
-		ccf_alpha = 1 << 3,
-	};
-
-	struct color_blend_attachment
-	{
-		bool		   blend_enabled		  = false;
-		blend_factor   src_color_blend_factor = blend_factor::src_alpha;
-		blend_factor   dst_color_blend_factor = blend_factor::one_minus_src_alpha;
-		blend_op	   color_blend_op		  = blend_op::add;
-		blend_factor   src_alpha_blend_factor = blend_factor::one;
-		blend_factor   dst_alpha_blend_factor = blend_factor::zero;
-		blend_op	   alpha_blend_op		  = blend_op::add;
-		bitmask<uint8> color_comp_flags		  = ccf_red | ccf_green | ccf_blue | ccf_alpha;
-	};
-
-	struct shader_color_attachment
-	{
-		format				   format			= format::b8g8r8a8_srgb;
-		color_blend_attachment blend_attachment = {};
-	};
-
-	enum depth_stencil_flags
-	{
-		dsf_depth_write	   = 1 << 0,
-		dsf_depth_test	   = 1 << 1,
-		dsf_enable_stencil = 1 << 2,
-	};
-	struct stencil_state
-	{
-		stencil_op fail_op		 = stencil_op::keep;
-		stencil_op pass_op		 = stencil_op::keep;
-		stencil_op depth_fail_op = stencil_op::keep;
-		compare_op compare_op	 = compare_op::always;
-	};
-
-	struct shader_depth_stencil_desc
-	{
-		format		   attachment_format	= format::d32_sfloat;
-		compare_op	   depth_compare		= compare_op::lequal;
-		stencil_state  back_stencil_state	= {};
-		stencil_state  front_stencil_state	= {};
-		uint32		   stencil_compare_mask = 0xFF;
-		uint32		   stencil_write_mask	= 0xFF;
-		bitmask<uint8> flags				= 0;
-	};
-
-	struct shader_desc
-	{
-		const char*						vertex_entry  = "VSMain";
-		const char*						pixel_entry	  = "PSMain";
-		const char*						compute_entry = "CSMain";
-		bitmask<uint16>					flags		  = 0;
-		span<uint8>						layout_data	  = {};
-		vector<shader_blob>				blobs		  = {};
-		vector<shader_color_attachment> attachments	  = {};
-		vector<vertex_input>			inputs		  = {};
-
-		shader_depth_stencil_desc depth_stencil_desc = {};
-		logic_op				  blend_logic_op	 = logic_op::and_;
-		topology				  topo				 = topology::triangle_list;
-		cull_mode				  cull				 = cull_mode::back;
-		front_face				  front				 = front_face::cw;
-		polygon_mode			  poly_mode			 = polygon_mode::fill;
-		resource_id				  layout			 = 0;
-
-		uint32 samples			   = 1;
-		float  depth_bias_constant = 0.0f;
-		float  depth_bias_clamp	   = 0.0f;
-		float  depth_bias_slope	   = 0.0f;
-
-		char debug_name[16] = {"Shader"};
 	};
 
 	struct queue_desc

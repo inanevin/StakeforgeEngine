@@ -4,8 +4,10 @@
 #include "gfx/common/gfx_constants.hpp"
 #include "gfx/common/gfx_common.hpp"
 #include "gfx/common/render_data.hpp"
+#include "gfx/buffer_queue.hpp"
+#include "gfx/texture_queue.hpp"
 #include "memory/bump_allocator.hpp"
-#include "resources/shader.hpp"
+#include "app/debug_controller.hpp"
 
 namespace Game
 {
@@ -27,19 +29,25 @@ namespace Game
 		void reset_render_data(uint8 index);
 
 	private:
+		void send_uploads();
+
+	private:
 		struct per_frame_data
 		{
-			semaphore_data frame_semaphore = {};
-			resource_id	   gfx_buffer	   = 0;
+			semaphore_data sem_frame = {};
+			semaphore_data sem_copy	 = {};
+			resource_id	   cmd_gfx	 = 0;
+			resource_id	   cmd_copy	 = 0;
 		};
 
 	private:
-		per_frame_data _pfd[FRAMES_IN_FLIGHT];
-		bump_allocator _frame_allocator[FRAMES_IN_FLIGHT] = {};
-		shader		   _shader_gui_default				  = {};
-		render_data	   _render_data[2];
-		resource_id	   _swapchain_main			= 0;
-		resource_id	   _bind_layout_gui_default = 0;
-		uint8		   _frame_index				= 0;
+		debug_controller _debug_controller = {};
+		per_frame_data	 _pfd[FRAMES_IN_FLIGHT];
+		bump_allocator	 _frame_allocator[FRAMES_IN_FLIGHT] = {};
+		buffer_queue	 _buffer_queue						= {};
+		texture_queue	 _texture_queue						= {};
+		render_data		 _render_data[2];
+		resource_id		 _swapchain_main = 0;
+		uint8			 _frame_index	 = 0;
 	};
 }

@@ -425,11 +425,29 @@ namespace Game
 			case topology::triangle_list:
 			case topology::triangle_strip:
 			case topology::triangle_fan:
-			case topology::triangle_list_adjacency:
-			case topology::triangle_strip_adjacency:
-				return D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE;
 			default:
 				return D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE;
+			}
+		}
+
+		D3D12_PRIMITIVE_TOPOLOGY get_topology(topology tp)
+		{
+			switch (tp)
+			{
+			case topology::point_list:
+				return D3D_PRIMITIVE_TOPOLOGY_POINTLIST;
+			case topology::line_list:
+				return D3D_PRIMITIVE_TOPOLOGY_LINELIST;
+			case topology::line_strip:
+				return D3D_PRIMITIVE_TOPOLOGY_LINESTRIP;
+			case topology::triangle_list:
+				return D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST;
+			case topology::triangle_strip:
+				return D3D_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP;
+			case topology::triangle_fan:
+				return D3D_PRIMITIVE_TOPOLOGY_TRIANGLEFAN;
+			default:
+				return D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST;
 			}
 		}
 
@@ -629,11 +647,11 @@ namespace Game
 			.debug_name = {"GfxQueue"},
 		});
 		_queue_transfer = create_queue({
-			.type		= command_type::graphics,
+			.type		= command_type::transfer,
 			.debug_name = {"TransferQueue"},
 		});
 		_queue_compute	= create_queue({
-			 .type		 = command_type::graphics,
+			 .type		 = command_type::compute,
 			 .debug_name = {"CmpQueue"},
 		 });
 
@@ -649,6 +667,20 @@ namespace Game
 		_heap_sampler.init(_device.Get(), D3D12_DESCRIPTOR_HEAP_TYPE_SAMPLER, 1024, size_sampler, false);
 		_heap_gpu_buffer.init(_device.Get(), D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, 1024, size_cbv_srv_uav, true);
 		_heap_gpu_sampler.init(_device.Get(), D3D12_DESCRIPTOR_HEAP_TYPE_SAMPLER, 1024, size_sampler, true);
+
+		_reuse_dest_descriptors_buffer.reserve(100);
+		_reuse_dest_descriptors_sampler.reserve(100);
+		_reuse_src_descriptors_buffer.reserve(100);
+		_reuse_src_descriptors_sampler.reserve(100);
+		_reuse_barriers.reserve(100);
+		_reuse_color_attachments.reserve(100);
+		_reuse_root_params.reserve(100);
+		_reuse_root_ranges.reserve(100);
+		_reuse_subresource_data.reserve(100);
+		_reuse_lists.reserve(100);
+		_reuse_fences.reserve(100);
+		_reuse_values.reserve(100);
+		_reuse_static_samplers.reserve(100);
 	}
 
 	void dx12_backend::uninit()
@@ -857,28 +889,27 @@ namespace Game
 			_device->CreateUnorderedAccessView(res.ptr->GetResource(), NULL, &desc, {dh.cpu});
 		}
 
-		NAME_DX12_OBJECT_CSTR(res.ptr, desc.debug_name);
+		NAME_DX12_OBJECT_CSTR(res.ptr->GetResource(), desc.debug_name);
 
 		return id;
 	}
 
-	void dx12_backend::map_resource(resource_id id, uint8* ptr)
+	void dx12_backend::map_resource(resource_id id, uint8*& ptr) const
 	{
-		resource&	  res = _resources.get(id);
-		CD3DX12_RANGE range(0, 0);
+		const resource& res = _resources.get(id);
+		CD3DX12_RANGE	range(0, 0);
 		throw_if_failed(res.ptr->GetResource()->Map(0, &range, reinterpret_cast<void**>(&ptr)));
 	}
 
-	void dx12_backend::unmap_resource(resource_id id)
+	void dx12_backend::unmap_resource(resource_id id) const
 	{
-		resource&	  res = _resources.get(id);
-		CD3DX12_RANGE range(0, 0);
+		const resource& res = _resources.get(id);
+		CD3DX12_RANGE	range(0, 0);
 		res.ptr->GetResource()->Unmap(0, &range);
 	}
 
 	void dx12_backend::destroy_resource(resource_id id)
 	{
-		unmap_resource(id);
 		resource& res = _resources.get(id);
 		if (res.descriptor_index != -1)
 		{
@@ -921,7 +952,7 @@ namespace Game
 		if (desc.flags.is_set(texture_flags::tf_color_attachment))
 			resource_desc.Flags |= D3D12_RESOURCE_FLAG_ALLOW_RENDER_TARGET;
 
-		if (desc.samples == 1 && !desc.flags.is_set(texture_flags::tf_sampled) && !desc.flags.is_set(texture_flags::tf_sampled_outside_fragment))
+		if (desc.samples == 1 && !desc.flags.is_set(texture_flags::tf_sampled) && !desc.flags.is_set(texture_flags::tf_sampled_outside_fragment) && (desc.flags.is_set(texture_flags::tf_depth_texture) || desc.flags.is_set(texture_flags::tf_stencil_texture)))
 			resource_desc.Flags |= D3D12_RESOURCE_FLAG_DENY_SHADER_RESOURCE;
 
 		const D3D12MA::ALLOCATION_DESC allocation_desc = {
@@ -933,7 +964,7 @@ namespace Game
 		const D3D12_RESOURCE_ALLOCATION_INFO& allocation_info = _device->GetResourceAllocationInfo(0, 1, &resource_desc);
 
 		throw_if_failed(_allocator->CreateResource(&allocation_desc, &resource_desc, state, NULL, &txt.ptr, IID_NULL, NULL));
-		NAME_DX12_OBJECT_CSTR(txt.ptr, desc.debug_name);
+		NAME_DX12_OBJECT_CSTR(txt.ptr->GetResource(), desc.debug_name);
 
 		auto create_srv = [&](DXGI_FORMAT format, bool createForCubemap, uint32 baseArrayLayer, uint32 layerCount, uint32 baseMipLevel, uint32 mipLevels, const descriptor_handle& targetDescriptor) {
 			D3D12_SHADER_RESOURCE_VIEW_DESC srv_desc = {};
@@ -1108,14 +1139,14 @@ namespace Game
 			_descriptors.remove(txt.rtvs[i]);
 		}
 
-		for (uint8 i = 0; i < txt.rtv_count; i++)
+		for (uint8 i = 0; i < txt.srv_count; i++)
 		{
 			const descriptor_handle& dh = _descriptors.get(txt.srvs[i]);
 			_heap_texture.remove_handle(dh);
 			_descriptors.remove(txt.srvs[i]);
 		}
 
-		for (uint8 i = 0; i < txt.rtv_count; i++)
+		for (uint8 i = 0; i < txt.dsv_count; i++)
 		{
 			const descriptor_handle& dh = _descriptors.get(txt.dsvs[i]);
 			_heap_dsv.remove_handle(dh);
@@ -1178,13 +1209,20 @@ namespace Game
 
 		DXGI_FORMAT swap_format = DXGI_FORMAT_B8G8R8A8_UNORM;
 		if (desc.format == format::r16g16b16a16_sfloat)
+		{
 			swap_format = DXGI_FORMAT_R16G16B16A16_FLOAT;
+		}
 		else if (desc.format == format::r8g8b8a8_unorm)
+		{
 			swap_format = DXGI_FORMAT_R8G8B8A8_UNORM;
+		}
 		else if (desc.format == format::r8g8b8a8_srgb)
+		{
 			swap_format = DXGI_FORMAT_R8G8B8A8_UNORM;
+		}
 
-		swp.format = static_cast<uint8>(swap_format);
+		// this is view(rtv) format
+		swp.format = static_cast<uint8>(get_format(desc.format));
 
 		const DXGI_SWAP_CHAIN_DESC1 swapchain_desc = {
 			.Width	= static_cast<UINT>(desc.size.x),
@@ -1214,7 +1252,7 @@ namespace Game
 				dh					  = _heap_rtv.get_heap_handle_block(1);
 
 				const D3D12_RENDER_TARGET_VIEW_DESC rtv_desc = {
-					.Format		   = swap_format,
+					.Format		   = static_cast<DXGI_FORMAT>(swp.format),
 					.ViewDimension = D3D12_RTV_DIMENSION_TEXTURE2D,
 				};
 
@@ -1248,7 +1286,7 @@ namespace Game
 			throw_if_failed(swp.ptr->GetBuffer(i, IID_PPV_ARGS(&swp.textures[i])));
 
 			const D3D12_RENDER_TARGET_VIEW_DESC rtv_desc = {
-				.Format		   = swp_desc.BufferDesc.Format,
+				.Format		   = static_cast<DXGI_FORMAT>(swp.format),
 				.ViewDimension = D3D12_RTV_DIMENSION_TEXTURE2D,
 			};
 			_device->CreateRenderTargetView(swp.textures[i].Get(), &rtv_desc, {dh.cpu});
@@ -1282,9 +1320,9 @@ namespace Game
 		return id;
 	}
 
-	void dx12_backend::wait_semaphore(resource_id id, uint64 value)
+	void dx12_backend::wait_semaphore(resource_id id, uint64 value) const
 	{
-		semaphore& sem = _semaphores.get(id);
+		const semaphore& sem = _semaphores.get(id);
 		wait_for_fence(sem.ptr.Get(), value);
 	}
 
@@ -1295,7 +1333,7 @@ namespace Game
 		_semaphores.remove(id);
 	}
 
-	bool dx12_backend::compile_shader_vertex_pixel(const string& source, const char* vertex_entry, const char* pixel_entry, span<uint8>& vertex_out, span<uint8>& pixel_out, bool compile_root_sig, span<uint8>& out_signature_data)
+	bool dx12_backend::compile_shader_vertex_pixel(const string& source, const char* vertex_entry, const char* pixel_entry, span<uint8>& vertex_out, span<uint8>& pixel_out, bool compile_root_sig, span<uint8>& out_signature_data) const
 	{
 		Microsoft::WRL::ComPtr<IDxcCompiler3> idxc_compiler;
 		throw_if_failed(DxcCreateInstance(CLSID_DxcCompiler, IID_PPV_ARGS(&idxc_compiler)));
@@ -1428,7 +1466,7 @@ namespace Game
 		return true;
 	}
 
-	bool dx12_backend::compile_shader_compute(const string& source, const char* entry, span<uint8>& out, bool compile_layout, span<uint8>& out_layout)
+	bool dx12_backend::compile_shader_compute(const string& source, const char* entry, span<uint8>& out, bool compile_layout, span<uint8>& out_layout) const
 	{
 		Microsoft::WRL::ComPtr<IDxcCompiler3> idxc_compiler;
 		throw_if_failed(DxcCreateInstance(CLSID_DxcCompiler, IID_PPV_ARGS(&idxc_compiler)));
@@ -1545,7 +1583,7 @@ namespace Game
 	{
 		const resource_id id = _shaders.add();
 		shader&			  sh = _shaders.get(id);
-		sh.topology			 = static_cast<uint8>(get_topology_type(desc.topo));
+		sh.topology			 = static_cast<uint8>(get_topology(desc.topo));
 
 		if (desc.flags.is_set(shader_flags::shf_use_embedded_layout))
 		{
@@ -1662,7 +1700,6 @@ namespace Game
 
 		throw_if_failed(_device->CreateGraphicsPipelineState(&pso_desc, IID_PPV_ARGS(&sh.ptr)));
 		NAME_DX12_OBJECT_CSTR(sh.ptr, desc.debug_name);
-
 		return id;
 	}
 
@@ -1676,85 +1713,120 @@ namespace Game
 		_shaders.remove(id);
 	}
 
-	resource_id dx12_backend::create_bind_group(const bind_group_desc& desc)
+	resource_id dx12_backend::create_empty_bind_group()
 	{
-		const resource_id id	= _bind_groups.add();
-		bind_group&		  group = _bind_groups.get(id);
-
-		uint32 i = 0;
-		for (const bind_group_binding& binding : desc.bindings)
-		{
-			const resource_id  handle = _descriptors.add();
-			descriptor_handle& dh	  = _descriptors.get(handle);
-
-			GAME_ASSERT(binding.type != descriptor_type::constant);
-
-			if (binding.type == descriptor_type::sampler)
-				dh = _heap_gpu_sampler.get_heap_handle_block(binding.count);
-			else
-				dh = _heap_gpu_buffer.get_heap_handle_block(binding.count);
-
-			if (binding.count != 1 && (binding.type != descriptor_type::pointer && binding.type != descriptor_type::sampler))
-			{
-				GAME_ASSERT(false);
-			}
-
-			group.bindings[i] = {
-				.descriptor_index = handle,
-				.root_param_index = binding.root_index,
-				.descriptor_type  = static_cast<uint8>(binding.type),
-			};
-			i++;
-		}
-
-		group.bindings_count = i;
+		const resource_id id = _bind_groups.add();
 		return id;
 	}
 
-	void dx12_backend::update_bind_group(resource_id id, const bind_group_update_desc& update)
+	void dx12_backend::bind_group_add_descriptor(resource_id group, uint8 param_index, uint8 type)
 	{
-		const bind_group& group = _bind_groups.get(id);
+		bind_group& bind_group = _bind_groups.get(group);
+		bind_group.bindings.push_back({});
+		group_binding& gbinding	  = bind_group.bindings.back();
+		gbinding.descriptor_index = _descriptors.add();
+		gbinding.root_param_index = param_index;
+		gbinding.count			  = 1;
+		gbinding.binding_type	  = type;
+
+		const binding_type tp = static_cast<binding_type>(type);
+		GAME_ASSERT(tp != binding_type::pointer && tp != binding_type::sampler);
+	}
+
+	void dx12_backend::bind_group_add_constant(resource_id group, uint8 param_index, uint8* data, uint8 count)
+	{
+		bind_group& bind_group = _bind_groups.get(group);
+		bind_group.bindings.push_back({});
+		group_binding& gbinding	  = bind_group.bindings.back();
+		gbinding.descriptor_index = _descriptors.add();
+		gbinding.root_param_index = param_index;
+		gbinding.count			  = count;
+		gbinding.binding_type	  = binding_type::constant;
+		gbinding.constants		  = data;
+	}
+
+	void dx12_backend::bind_group_add_pointer(resource_id group, uint8 param_index, uint8 count, bool is_sampler)
+	{
+		bind_group& bind_group = _bind_groups.get(group);
+		bind_group.bindings.push_back({});
+		group_binding& gbinding	  = bind_group.bindings.back();
+		gbinding.descriptor_index = _descriptors.add();
+		gbinding.root_param_index = param_index;
+		gbinding.count			  = count;
+		gbinding.binding_type	  = binding_type::pointer;
+
+		if (is_sampler)
+		{
+			descriptor_handle& dh = _descriptors.get(gbinding.descriptor_index);
+			dh					  = _heap_gpu_sampler.get_heap_handle_block(count);
+		}
+		else
+		{
+			descriptor_handle& dh = _descriptors.get(gbinding.descriptor_index);
+			dh					  = _heap_gpu_buffer.get_heap_handle_block(count);
+		}
+	}
+
+	void dx12_backend::bind_group_update_constants(resource_id id, uint8 param_index, uint8* constants, uint8 count)
+	{
+		bind_group&	   group   = _bind_groups.get(id);
+		group_binding& binding = group.bindings[param_index];
+		binding.constants	   = constants;
+		binding.count		   = count;
+	}
+
+	void dx12_backend::bind_group_update_descriptor(resource_id id, uint8 param_index, resource_id res_id)
+	{
+		bind_group&	   group   = _bind_groups.get(id);
+		group_binding& binding = group.bindings[param_index];
+
+		descriptor_handle& dh  = _descriptors.get(binding.descriptor_index);
+		const resource&	   res = _resources.get(res_id);
+		dh.gpu				   = res.ptr->GetResource()->GetGPUVirtualAddress();
+	}
+
+	void dx12_backend::bind_group_update_pointer(resource_id id, uint8 param_index, const vector<bind_group_pointer>& updates)
+	{
+		bind_group&	   group   = _bind_groups.get(id);
+		group_binding& binding = group.bindings[param_index];
 
 		_reuse_dest_descriptors_buffer.resize(0);
 		_reuse_dest_descriptors_sampler.resize(0);
 		_reuse_src_descriptors_buffer.resize(0);
 		_reuse_src_descriptors_sampler.resize(0);
 
-		for (const binding_update& up : update.updates)
+		descriptor_handle& binding_dh = _descriptors.get(binding.descriptor_index);
+
+		uint8 i = 0;
+		for (const bind_group_pointer& p : updates)
 		{
-			const group_binding& binding = group.bindings[up.binding_index];
-
-			GAME_ASSERT(binding.descriptor_type != static_cast<uint8>(descriptor_type::constant));
-
-			const descriptor_handle& binding_dh = _descriptors.get(binding.descriptor_index);
-
-			for (size_t i = 0; i < up.resources.size(); i++)
+			if (p.type == binding_type::texture)
 			{
-				const resource_id	  res_id = up.resources[i];
-				const descriptor_type type	 = up.resource_types[i];
-
-				if (type == descriptor_type::ubo || type == descriptor_type::ssbo || type == descriptor_type::uav)
-				{
-					const resource&			 res = _resources.get(res_id);
-					const descriptor_handle& dh	 = _descriptors.get(res.descriptor_index);
-					_reuse_src_descriptors_buffer.push_back({dh.cpu});
-					_reuse_dest_descriptors_buffer.push_back({binding_dh.cpu + i * _heap_gpu_buffer.get_descriptor_size()});
-				}
-				else if (type == descriptor_type::texture)
-				{
-					const texture&			 txt = _textures.get(res_id);
-					const descriptor_handle& dh	 = _descriptors.get(txt.srvs[i]);
-					_reuse_src_descriptors_buffer.push_back({dh.cpu});
-					_reuse_dest_descriptors_buffer.push_back({binding_dh.cpu + i * _heap_gpu_buffer.get_descriptor_size()});
-				}
-				else if (type == descriptor_type::sampler)
-				{
-					const sampler&			 smp = _samplers.get(res_id);
-					const descriptor_handle& dh	 = _descriptors.get(smp.descriptor_index);
-					_reuse_src_descriptors_sampler.push_back({dh.cpu});
-					_reuse_dest_descriptors_sampler.push_back({binding_dh.cpu + i * _heap_gpu_sampler.get_descriptor_size()});
-				}
+				const texture& txt = _textures.get(p.resource);
+				GAME_ASSERT(txt.srv_count > p.view);
+				const descriptor_handle& dh = _descriptors.get(txt.srvs[p.view]);
+				_reuse_src_descriptors_buffer.push_back({dh.cpu});
+				_reuse_dest_descriptors_buffer.push_back({binding_dh.cpu + i * _heap_gpu_buffer.get_descriptor_size()});
 			}
+			else if (p.type == binding_type::sampler)
+			{
+				const sampler&			 smp = _samplers.get(p.resource);
+				const descriptor_handle& dh	 = _descriptors.get(smp.descriptor_index);
+				_reuse_src_descriptors_sampler.push_back({dh.cpu});
+				_reuse_dest_descriptors_sampler.push_back({binding_dh.cpu + i * _heap_gpu_sampler.get_descriptor_size()});
+			}
+			else if (p.type == binding_type::ubo || p.type == binding_type::ssbo || p.type == binding_type::uav)
+			{
+				const resource&	   res = _resources.get(p.resource);
+				descriptor_handle& dh  = _descriptors.get(res.descriptor_index);
+				_reuse_src_descriptors_buffer.push_back({dh.cpu});
+				_reuse_dest_descriptors_buffer.push_back({binding_dh.cpu + i * _heap_gpu_buffer.get_descriptor_size()});
+			}
+			else
+			{
+				GAME_ASSERT(false);
+			}
+			i++;
 		}
 
 		const uint32 descriptor_count_buffer  = static_cast<uint32>(_reuse_dest_descriptors_buffer.size());
@@ -1771,16 +1843,23 @@ namespace Game
 	{
 		bind_group& group = _bind_groups.get(id);
 
-		for (const group_binding& binding : group.bindings)
+		const uint8 sz = static_cast<uint8>(group.bindings.size());
+		for (uint8 i = 0; i < sz; i++)
 		{
-			descriptor_handle& dh = _descriptors.get(binding.descriptor_index);
+			const group_binding& binding = group.bindings[i];
 
-			const descriptor_type type = static_cast<descriptor_type>(binding.descriptor_type);
+			const binding_type type = static_cast<binding_type>(binding.binding_type);
 
-			if (type == descriptor_type::sampler)
+			if (type == binding_type::sampler)
+			{
+				const descriptor_handle& dh = _descriptors.get(binding.descriptor_index);
 				_heap_gpu_sampler.remove_handle(dh);
-			else if (type != descriptor_type::constant)
+			}
+			else if (type == binding_type::pointer)
+			{
+				const descriptor_handle& dh = _descriptors.get(binding.descriptor_index);
 				_heap_gpu_buffer.remove_handle(dh);
+			}
 
 			_descriptors.remove(binding.descriptor_index);
 		}
@@ -1839,131 +1918,106 @@ namespace Game
 		return id;
 	}
 
-	resource_id dx12_backend::create_bind_layout(const bind_layout_desc& desc)
+	resource_id dx12_backend::create_empty_bind_layout()
 	{
-		const resource_id id	 = _bind_layouts.add();
-		bind_layout&	  layout = _bind_layouts.get(id);
-
+		const resource_id id = _bind_layouts.add();
 		_reuse_root_params.resize(0);
 		_reuse_static_samplers.resize(0);
-		_reuse_root_ranges.resize(100);
-		uint32 root_range_counter = 0;
+		_reuse_root_ranges.resize(0);
+		return id;
+	}
 
-		for (size_t i = 0; i < desc.bindings.size(); i++)
+	void dx12_backend::bind_layout_add_constant(resource_id layout, uint32 count, uint32 set, uint32 binding, uint8 vis)
+	{
+		const D3D12_SHADER_VISIBILITY visibility = get_visibility(static_cast<shader_stage>(vis));
+		_reuse_root_params.push_back({});
+		CD3DX12_ROOT_PARAMETER1& param = _reuse_root_params.back();
+		param.InitAsConstants(count, binding, set, visibility);
+	}
+
+	void dx12_backend::bind_layout_add_descriptor(resource_id layout, uint8 type, uint32 set, uint32 binding, uint8 vis)
+	{
+		const D3D12_SHADER_VISIBILITY visibility = get_visibility(static_cast<shader_stage>(vis));
+		_reuse_root_params.push_back({});
+		CD3DX12_ROOT_PARAMETER1& param = _reuse_root_params.back();
+
+		const binding_type tp = static_cast<binding_type>(type);
+
+		if (tp == binding_type::ubo)
+			param.InitAsConstantBufferView(binding, set, D3D12_ROOT_DESCRIPTOR_FLAG_NONE, visibility);
+		else if (tp == binding_type::ssbo)
+			param.InitAsShaderResourceView(binding, set, D3D12_ROOT_DESCRIPTOR_FLAG_NONE, visibility);
+		else if (tp == binding_type::uav)
+			param.InitAsUnorderedAccessView(binding, set, D3D12_ROOT_DESCRIPTOR_FLAG_NONE, visibility);
+		else
+			GAME_ASSERT(false);
+	}
+
+	void dx12_backend::bind_layout_add_pointer(resource_id layout, const vector<bind_layout_pointer_param>& pointer_params, uint8 vis)
+	{
+		const uint32 start = static_cast<uint32>(_reuse_root_ranges.size());
+		for (const bind_layout_pointer_param& p : pointer_params)
 		{
-			const binding& b = desc.bindings[i];
+			_reuse_root_ranges.push_back({});
+			CD3DX12_DESCRIPTOR_RANGE1& range = _reuse_root_ranges.back();
 
-			const D3D12_SHADER_VISIBILITY visibility = get_visibility(b.visibility);
+			const D3D12_DESCRIPTOR_RANGE_FLAGS flags = p.is_volatile ? D3D12_DESCRIPTOR_RANGE_FLAG_DATA_VOLATILE : D3D12_DESCRIPTOR_RANGE_FLAG_NONE;
 
-			// either a constant, cbv, uav, srv or texture
-			if (b.entry_table.size() == 1)
-			{
-				const layout_entry& e = b.entry_table[0];
-
-				if (e.type == descriptor_type::constant)
-				{
-					_reuse_root_params.push_back({});
-					CD3DX12_ROOT_PARAMETER1& param = _reuse_root_params.back();
-					param.InitAsConstants(e.count, e.binding, e.set, visibility);
-				}
-				else if (e.type == descriptor_type::ubo)
-				{
-					GAME_ASSERT(e.count == 1);
-					_reuse_root_params.push_back({});
-					CD3DX12_ROOT_PARAMETER1& param = _reuse_root_params.back();
-					param.InitAsConstantBufferView(e.binding, e.set, D3D12_ROOT_DESCRIPTOR_FLAG_NONE, visibility);
-				}
-				else if (e.type == descriptor_type::ssbo || e.type == descriptor_type::texture)
-				{
-					GAME_ASSERT(e.count == 1);
-					_reuse_root_params.push_back({});
-					CD3DX12_ROOT_PARAMETER1& param = _reuse_root_params.back();
-					param.InitAsShaderResourceView(e.binding, e.set, D3D12_ROOT_DESCRIPTOR_FLAG_NONE, visibility);
-				}
-				else if (e.type == descriptor_type::uav)
-				{
-					GAME_ASSERT(e.count == 1);
-					_reuse_root_params.push_back({});
-					CD3DX12_ROOT_PARAMETER1& param = _reuse_root_params.back();
-					param.InitAsUnorderedAccessView(e.binding, e.set, D3D12_ROOT_DESCRIPTOR_FLAG_NONE, visibility);
-				}
-				else if (e.type == descriptor_type::sampler)
-				{
-					const D3D12_TEXTURE_ADDRESS_MODE address_mode = get_address_mode(e.immutable_sampler_desc.flags);
-
-					_reuse_static_samplers.push_back({
-						.Filter			  = get_filter(e.immutable_sampler_desc.flags),
-						.AddressU		  = address_mode,
-						.AddressV		  = address_mode,
-						.AddressW		  = address_mode,
-						.MipLODBias		  = static_cast<FLOAT>(e.immutable_sampler_desc.lod_bias),
-						.MaxAnisotropy	  = e.immutable_sampler_desc.anisotropy,
-						.ComparisonFunc	  = D3D12_COMPARISON_FUNC_NONE,
-						.MinLOD			  = e.immutable_sampler_desc.min_lod,
-						.MaxLOD			  = e.immutable_sampler_desc.max_lod,
-						.ShaderRegister	  = e.binding,
-						.RegisterSpace	  = e.set,
-						.ShaderVisibility = visibility,
-					});
-				}
-			}
-			else
-			{
-				const uint32 sz = static_cast<uint32>(b.entry_table.size());
-
-				const uint32 ctr_now = root_range_counter;
-
-				for (uint32 k = 0; k < sz; k++)
-				{
-					const layout_entry&		   e	 = b.entry_table[k];
-					CD3DX12_DESCRIPTOR_RANGE1& range = _reuse_root_ranges[root_range_counter];
-
-					if (e.type == descriptor_type::ubo)
-					{
-						range.Init(D3D12_DESCRIPTOR_RANGE_TYPE_CBV, e.count, e.binding, e.set, D3D12_DESCRIPTOR_RANGE_FLAG_NONE, 0);
-					}
-					else if (e.type == descriptor_type::ssbo)
-					{
-						range.Init(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, e.count, e.binding, e.set, D3D12_DESCRIPTOR_RANGE_FLAG_DATA_VOLATILE, 0);
-					}
-					else if (e.type == descriptor_type::texture)
-					{
-						range.Init(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, e.count, e.binding, e.set, D3D12_DESCRIPTOR_RANGE_FLAG_NONE, 0);
-					}
-					else if (e.type == descriptor_type::uav)
-					{
-						range.Init(D3D12_DESCRIPTOR_RANGE_TYPE_UAV, e.count, e.binding, e.set, D3D12_DESCRIPTOR_RANGE_FLAG_NONE, 0);
-					}
-					else if (e.type == descriptor_type::sampler)
-					{
-						range.Init(D3D12_DESCRIPTOR_RANGE_TYPE_SAMPLER, e.count, e.binding, e.set, D3D12_DESCRIPTOR_RANGE_FLAG_NONE, 0);
-					}
-					else
-					{
-						GAME_ASSERT(false);
-					}
-
-					root_range_counter++;
-				}
-				_reuse_root_params.push_back({});
-				CD3DX12_ROOT_PARAMETER1& param = _reuse_root_params.back();
-				param.InitAsDescriptorTable(root_range_counter - ctr_now, &_reuse_root_ranges[ctr_now], visibility);
-			}
+			if (p.type == binding_type::ubo)
+				range.Init(D3D12_DESCRIPTOR_RANGE_TYPE_CBV, p.count, p.binding, p.set, flags, 0);
+			else if (p.type == binding_type::ssbo || p.type == binding_type::texture)
+				range.Init(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, p.count, p.binding, p.set, flags, 0);
+			else if (p.type == binding_type::uav)
+				range.Init(D3D12_DESCRIPTOR_RANGE_TYPE_UAV, p.count, p.binding, p.set, flags, 0);
+			else if (p.type == binding_type::sampler)
+				range.Init(D3D12_DESCRIPTOR_RANGE_TYPE_SAMPLER, p.count, p.binding, p.set, flags, 0);
 		}
 
+		const uint32				  size_now	 = static_cast<uint32>(_reuse_root_ranges.size());
+		const D3D12_SHADER_VISIBILITY visibility = get_visibility(static_cast<shader_stage>(vis));
+		_reuse_root_params.push_back({});
+		CD3DX12_ROOT_PARAMETER1& param = _reuse_root_params.back();
+		param.InitAsDescriptorTable(size_now - start, &_reuse_root_ranges[start], visibility);
+	}
+
+	void dx12_backend::bind_layout_add_immutable_sampler(resource_id layout, uint32 set, uint32 binding, const sampler_desc& desc, uint8 vis)
+	{
+		const D3D12_TEXTURE_ADDRESS_MODE address_mode = get_address_mode(desc.flags);
+		const D3D12_SHADER_VISIBILITY	 visibility	  = get_visibility(static_cast<shader_stage>(vis));
+
+		_reuse_static_samplers.push_back({
+			.Filter			  = get_filter(desc.flags),
+			.AddressU		  = address_mode,
+			.AddressV		  = address_mode,
+			.AddressW		  = address_mode,
+			.MipLODBias		  = static_cast<FLOAT>(desc.lod_bias),
+			.MaxAnisotropy	  = desc.anisotropy,
+			.ComparisonFunc	  = D3D12_COMPARISON_FUNC_NONE,
+			.MinLOD			  = desc.min_lod,
+			.MaxLOD			  = desc.max_lod,
+			.ShaderRegister	  = binding,
+			.RegisterSpace	  = set,
+			.ShaderVisibility = visibility,
+		});
+	}
+
+	void dx12_backend::finalize_bind_layout(resource_id id, bool is_compute)
+	{
+		bind_layout&								layout = _bind_layouts.get(id);
 		const CD3DX12_VERSIONED_ROOT_SIGNATURE_DESC rootSig(static_cast<uint32>(_reuse_root_params.size()),
 															_reuse_root_params.data(),
 															static_cast<uint32>(_reuse_static_samplers.size()),
 															_reuse_static_samplers.data(),
-															desc.is_compute ? D3D12_ROOT_SIGNATURE_FLAG_NONE : D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT);
+															is_compute ? D3D12_ROOT_SIGNATURE_FLAG_NONE : D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT);
 		ComPtr<ID3DBlob>							signature = nullptr;
 		ComPtr<ID3DBlob>							error	  = nullptr;
 		throw_if_failed(D3D12SerializeVersionedRootSignature(&rootSig, &signature, &error));
 		throw_if_failed(_device->CreateRootSignature(0, signature->GetBufferPointer(), signature->GetBufferSize(), IID_PPV_ARGS(&layout.root_signature)));
 		signature.Reset();
 		error.Reset();
-
-		return id;
+		_reuse_root_params.resize(0);
+		_reuse_static_samplers.resize(0);
+		_reuse_root_ranges.resize(0);
 	}
 
 	void dx12_backend::destroy_bind_layout(resource_id id)
@@ -1980,7 +2034,7 @@ namespace Game
 		_queues.remove(id);
 	}
 
-	void dx12_backend::wait_for_fence(ID3D12Fence* fence, uint64 value)
+	void dx12_backend::wait_for_fence(ID3D12Fence* fence, uint64 value) const
 	{
 		const UINT64 last_fence = fence->GetCompletedValue();
 
@@ -2132,16 +2186,16 @@ namespace Game
 		cmd_list->BeginRenderPass(cmd.color_attachment_count, _reuse_color_attachments.data(), &depth_stencil_desc, D3D12_RENDER_PASS_FLAG_NONE);
 	}
 
-	void dx12_backend::cmd_end_render_pass(resource_id cmd_id, const command_end_render_pass& cmd)
+	void dx12_backend::cmd_end_render_pass(resource_id cmd_id, const command_end_render_pass& cmd) const
 	{
-		command_buffer&				buffer	 = _command_buffers.get(cmd_id);
+		const command_buffer&		buffer	 = _command_buffers.get(cmd_id);
 		ID3D12GraphicsCommandList4* cmd_list = buffer.ptr.Get();
 		cmd_list->EndRenderPass();
 	}
 
-	void dx12_backend::cmd_set_scissors(resource_id cmd_id, const command_set_scissors& cmd)
+	void dx12_backend::cmd_set_scissors(resource_id cmd_id, const command_set_scissors& cmd) const
 	{
-		command_buffer&				buffer	 = _command_buffers.get(cmd_id);
+		const command_buffer&		buffer	 = _command_buffers.get(cmd_id);
 		ID3D12GraphicsCommandList4* cmd_list = buffer.ptr.Get();
 		D3D12_RECT					sc;
 		sc.left	  = static_cast<LONG>(cmd.x);
@@ -2151,9 +2205,9 @@ namespace Game
 		cmd_list->RSSetScissorRects(1, &sc);
 	}
 
-	void dx12_backend::cmd_set_viewport(resource_id cmd_id, const command_set_viewport& cmd)
+	void dx12_backend::cmd_set_viewport(resource_id cmd_id, const command_set_viewport& cmd) const
 	{
-		command_buffer&				buffer	 = _command_buffers.get(cmd_id);
+		const command_buffer&		buffer	 = _command_buffers.get(cmd_id);
 		ID3D12GraphicsCommandList4* cmd_list = buffer.ptr.Get();
 		D3D12_VIEWPORT				vp;
 		vp.MinDepth = cmd.min_depth;
@@ -2165,57 +2219,57 @@ namespace Game
 		cmd_list->RSSetViewports(1, &vp);
 	}
 
-	void dx12_backend::cmd_bind_pipeline(resource_id cmd_id, const command_bind_pipeline& cmd)
+	void dx12_backend::cmd_bind_pipeline(resource_id cmd_id, const command_bind_pipeline& cmd) const
 	{
-		command_buffer&				buffer	 = _command_buffers.get(cmd_id);
+		const command_buffer&		buffer	 = _command_buffers.get(cmd_id);
 		ID3D12GraphicsCommandList4* cmd_list = buffer.ptr.Get();
 		const shader&				sh		 = _shaders.get(cmd.pipeline);
 
+		cmd_list->SetPipelineState(sh.ptr.Get());
 		cmd_list->IASetPrimitiveTopology(static_cast<D3D12_PRIMITIVE_TOPOLOGY>(sh.topology));
-		cmd_list->SetPipelineState(sh.ptr.Get());
 	}
 
-	void dx12_backend::cmd_bind_pipeline_compute(resource_id cmd_id, const command_bind_pipeline_compute& cmd)
+	void dx12_backend::cmd_bind_pipeline_compute(resource_id cmd_id, const command_bind_pipeline_compute& cmd) const
 	{
-		command_buffer&				buffer	 = _command_buffers.get(cmd_id);
+		const command_buffer&		buffer	 = _command_buffers.get(cmd_id);
 		ID3D12GraphicsCommandList4* cmd_list = buffer.ptr.Get();
 		const shader&				sh		 = _shaders.get(cmd.pipeline);
 		cmd_list->SetPipelineState(sh.ptr.Get());
 	}
 
-	void dx12_backend::cmd_draw_instanced(resource_id cmd_id, const command_draw_instanced& cmd)
+	void dx12_backend::cmd_draw_instanced(resource_id cmd_id, const command_draw_instanced& cmd) const
 	{
-		command_buffer&				buffer	 = _command_buffers.get(cmd_id);
+		const command_buffer&		buffer	 = _command_buffers.get(cmd_id);
 		ID3D12GraphicsCommandList4* cmd_list = buffer.ptr.Get();
 		cmd_list->DrawInstanced(cmd.vertex_count_per_instance, cmd.instance_count, cmd.start_vertex_location, cmd.start_instance_location);
 	}
 
-	void dx12_backend::cmd_draw_indexed_instanced(resource_id cmd_id, const command_draw_indexed_instanced& cmd)
+	void dx12_backend::cmd_draw_indexed_instanced(resource_id cmd_id, const command_draw_indexed_instanced& cmd) const
 	{
-		command_buffer&				buffer	 = _command_buffers.get(cmd_id);
+		const command_buffer&		buffer	 = _command_buffers.get(cmd_id);
 		ID3D12GraphicsCommandList4* cmd_list = buffer.ptr.Get();
 		cmd_list->DrawIndexedInstanced(cmd.index_count_per_instance, cmd.instance_count, cmd.start_index_location, cmd.base_vertex_location, cmd.start_instance_location);
 	}
 
-	void dx12_backend::cmd_draw_indexed_indirect(resource_id cmd_id, const command_draw_indexed_indirect& cmd)
+	void dx12_backend::cmd_draw_indexed_indirect(resource_id cmd_id, const command_draw_indexed_indirect& cmd) const
 	{
-		command_buffer&				buffer	 = _command_buffers.get(cmd_id);
+		const command_buffer&		buffer	 = _command_buffers.get(cmd_id);
 		ID3D12GraphicsCommandList4* cmd_list = buffer.ptr.Get();
 		cmd_list->ExecuteIndirect(_indirect_signatures.get(cmd.indirect_signature).signature.Get(), cmd.count, _resources.get(cmd.indirect_buffer).ptr->GetResource(), cmd.indirect_buffer_offset, NULL, 0);
 	}
 
-	void dx12_backend::cmd_draw_indirect(resource_id cmd_id, const command_draw_indirect& cmd)
+	void dx12_backend::cmd_draw_indirect(resource_id cmd_id, const command_draw_indirect& cmd) const
 	{
-		command_buffer&				buffer	 = _command_buffers.get(cmd_id);
+		const command_buffer&		buffer	 = _command_buffers.get(cmd_id);
 		ID3D12GraphicsCommandList4* cmd_list = buffer.ptr.Get();
 		cmd_list->ExecuteIndirect(_indirect_signatures.get(cmd.indirect_signature).signature.Get(), cmd.count, _resources.get(cmd.indirect_buffer).ptr->GetResource(), cmd.indirect_buffer_offset, NULL, 0);
 	}
 
-	void dx12_backend::cmd_bind_vertex_buffers(resource_id cmd_id, const command_bind_vertex_buffers& cmd)
+	void dx12_backend::cmd_bind_vertex_buffers(resource_id cmd_id, const command_bind_vertex_buffers& cmd) const
 	{
-		command_buffer&				   buffer	= _command_buffers.get(cmd_id);
+		const command_buffer&		   buffer	= _command_buffers.get(cmd_id);
 		ID3D12GraphicsCommandList4*	   cmd_list = buffer.ptr.Get();
-		resource&					   res		= _resources.get(cmd.buffer);
+		const resource&				   res		= _resources.get(cmd.buffer);
 		const D3D12_VERTEX_BUFFER_VIEW view		= {
 				.BufferLocation = res.ptr->GetResource()->GetGPUVirtualAddress(),
 				.SizeInBytes	= static_cast<uint32>(res.size),
@@ -2225,11 +2279,11 @@ namespace Game
 		cmd_list->IASetVertexBuffers(cmd.slot, 1, &view);
 	}
 
-	void dx12_backend::cmd_bind_index_buffers(resource_id cmd_id, const command_bind_index_buffers& cmd)
+	void dx12_backend::cmd_bind_index_buffers(resource_id cmd_id, const command_bind_index_buffers& cmd) const
 	{
-		command_buffer&				buffer	 = _command_buffers.get(cmd_id);
+		const command_buffer&		buffer	 = _command_buffers.get(cmd_id);
 		ID3D12GraphicsCommandList4* cmd_list = buffer.ptr.Get();
-		resource&					res		 = _resources.get(cmd.buffer);
+		const resource&				res		 = _resources.get(cmd.buffer);
 
 		const D3D12_INDEX_BUFFER_VIEW view = {
 			.BufferLocation = res.ptr->GetResource()->GetGPUVirtualAddress(),
@@ -2240,38 +2294,39 @@ namespace Game
 		cmd_list->IASetIndexBuffer(&view);
 	}
 
-	void dx12_backend::cmd_copy_resource(resource_id cmd_id, const command_copy_resource& cmd)
+	void dx12_backend::cmd_copy_resource(resource_id cmd_id, const command_copy_resource& cmd) const
 	{
-		command_buffer&				buffer	 = _command_buffers.get(cmd_id);
+		const command_buffer&		buffer	 = _command_buffers.get(cmd_id);
 		ID3D12GraphicsCommandList4* cmd_list = buffer.ptr.Get();
-		resource&					src_res	 = _resources.get(cmd.source);
-		resource&					dest_res = _resources.get(cmd.destination);
+		const resource&				src_res	 = _resources.get(cmd.source);
+		const resource&				dest_res = _resources.get(cmd.destination);
 		cmd_list->CopyResource(dest_res.ptr->GetResource(), src_res.ptr->GetResource());
 	}
 
-	uint32 dx12_backend::get_aligned_texture_size(uint32 width, uint32 height, uint32 bpp)
+	uint32 dx12_backend::get_aligned_texture_size(uint32 width, uint32 height, uint32 bpp) const
 	{
 		const uint32 row_pitch	 = static_cast<uint32>((width * bpp + (D3D12_TEXTURE_DATA_PITCH_ALIGNMENT - 1)) & ~(D3D12_TEXTURE_DATA_PITCH_ALIGNMENT - 1));
 		const uint32 slice_pitch = row_pitch * height;
 		return (slice_pitch + D3D12_TEXTURE_DATA_PLACEMENT_ALIGNMENT - 1) & ~(D3D12_TEXTURE_DATA_PLACEMENT_ALIGNMENT - 1);
 	}
 
-	void* dx12_backend::adjust_buffer_pitch(void* data, uint32 width, uint32 height, uint32 bpp)
+	void* dx12_backend::adjust_buffer_pitch(void* data, uint32 width, uint32 height, uint8 bpp, uint32& out_total_size) const
 	{
-		const uint32 alignment	 = D3D12_TEXTURE_DATA_PITCH_ALIGNMENT;
-		const uint32 row_pitch	 = (width * bpp + (alignment - 1)) & ~(alignment - 1);
-		const uint32 slice_pitch = row_pitch * height;
-		char*		 buffer		 = reinterpret_cast<char*>(GAME_MALLOC(static_cast<size_t>(slice_pitch)));
-		char*		 src		 = reinterpret_cast<char*>(data);
-		char*		 dst		 = buffer;
+		const uint32 _bpp	   = static_cast<uint32>(bpp);
+		const uint32 alignment = D3D12_TEXTURE_DATA_PITCH_ALIGNMENT;
+		const uint32 row_pitch = (width * _bpp + (alignment - 1)) & ~(alignment - 1);
+		out_total_size		   = row_pitch * height;
+		char* buffer		   = reinterpret_cast<char*>(new uint8[out_total_size]);
+		char* src			   = reinterpret_cast<char*>(data);
+		char* dst			   = buffer;
 
 		if (dst != 0)
 		{
 			for (uint32 i = 0; i < height; ++i)
 			{
-				GAME_MEMCPY(dst, src, width * bpp);
+				GAME_MEMCPY(dst, src, width * _bpp);
 				dst += row_pitch;
-				src += width * bpp;
+				src += width * _bpp;
 			}
 		}
 
@@ -2302,12 +2357,12 @@ namespace Game
 		UpdateSubresources(cmd_list, txt.ptr->GetResource(), res.ptr->GetResource(), 0, cmd.mip_levels * cmd.destination_slice, cmd.mip_levels, _reuse_subresource_data.data());
 	}
 
-	void dx12_backend::cmd_copy_texture_to_buffer(resource_id cmd_id, const command_copy_texture_to_buffer& cmd)
+	void dx12_backend::cmd_copy_texture_to_buffer(resource_id cmd_id, const command_copy_texture_to_buffer& cmd) const
 	{
-		command_buffer&					  buffer		= _command_buffers.get(cmd_id);
+		const command_buffer&			  buffer		= _command_buffers.get(cmd_id);
 		ID3D12GraphicsCommandList4*		  cmd_list		= buffer.ptr.Get();
-		texture&						  txt			= _textures.get(cmd.src_texture);
-		resource&						  res			= _resources.get(cmd.dest_buffer);
+		const texture&					  txt			= _textures.get(cmd.src_texture);
+		const resource&					  res			= _resources.get(cmd.dest_buffer);
 		const D3D12_TEXTURE_COPY_LOCATION dest_location = {
 			.pResource = res.ptr->GetResource(),
 			.Type	   = D3D12_TEXTURE_COPY_TYPE_PLACED_FOOTPRINT,
@@ -2334,12 +2389,12 @@ namespace Game
 		cmd_list->CopyTextureRegion(&dest_location, 0, 0, 0, &src_location, NULL);
 	}
 
-	void dx12_backend::cmd_copy_texture_to_texture(resource_id cmd_id, const command_copy_texture_to_texture& cmd)
+	void dx12_backend::cmd_copy_texture_to_texture(resource_id cmd_id, const command_copy_texture_to_texture& cmd) const
 	{
-		command_buffer&				buffer	 = _command_buffers.get(cmd_id);
+		const command_buffer&		buffer	 = _command_buffers.get(cmd_id);
 		ID3D12GraphicsCommandList4* cmd_list = buffer.ptr.Get();
-		texture&					src		 = _textures.get(cmd.source);
-		texture&					dst		 = _textures.get(cmd.destination);
+		const texture&				src		 = _textures.get(cmd.source);
+		const texture&				dst		 = _textures.get(cmd.destination);
 
 		const D3D12_TEXTURE_COPY_LOCATION src_location = {
 			.pResource		  = src.ptr->GetResource(),
@@ -2356,57 +2411,58 @@ namespace Game
 		cmd_list->CopyTextureRegion(&dst_location, 0, 0, 0, &src_location, nullptr);
 	}
 
-	void dx12_backend::cmd_bind_constants(resource_id cmd_id, const command_bind_constants& cmd)
+	void dx12_backend::cmd_bind_constants(resource_id cmd_id, const command_bind_constants& cmd) const
 	{
-		command_buffer&				buffer	 = _command_buffers.get(cmd_id);
+		const command_buffer&		buffer	 = _command_buffers.get(cmd_id);
 		ID3D12GraphicsCommandList4* cmd_list = buffer.ptr.Get();
 		cmd_list->SetGraphicsRoot32BitConstants(static_cast<uint32>(cmd.param_index), static_cast<uint32>(cmd.count), cmd.data, cmd.offset);
 	}
 
-	void dx12_backend::cmd_bind_layout(resource_id cmd_id, const command_bind_layout& cmd)
+	void dx12_backend::cmd_bind_layout(resource_id cmd_id, const command_bind_layout& cmd) const
 	{
-		command_buffer&				buffer	 = _command_buffers.get(cmd_id);
+		const command_buffer&		buffer	 = _command_buffers.get(cmd_id);
 		ID3D12GraphicsCommandList4* cmd_list = buffer.ptr.Get();
 		const bind_layout&			layout	 = _bind_layouts.get(cmd.layout);
 		cmd_list->SetGraphicsRootSignature(layout.root_signature.Get());
 	}
 
-	void dx12_backend::cmd_bind_layout_compute(resource_id cmd_id, const command_bind_layout_compute& cmd)
+	void dx12_backend::cmd_bind_layout_compute(resource_id cmd_id, const command_bind_layout_compute& cmd) const
 	{
-		command_buffer&				buffer	 = _command_buffers.get(cmd_id);
+		const command_buffer&		buffer	 = _command_buffers.get(cmd_id);
 		ID3D12GraphicsCommandList4* cmd_list = buffer.ptr.Get();
 		const bind_layout&			layout	 = _bind_layouts.get(cmd.layout);
 		cmd_list->SetComputeRootSignature(layout.root_signature.Get());
 	}
 
-	void dx12_backend::cmd_bind_group(resource_id cmd_id, const command_bind_group& cmd)
+	void dx12_backend::cmd_bind_group(resource_id cmd_id, const command_bind_group& cmd) const
 	{
-		command_buffer&				buffer	 = _command_buffers.get(cmd_id);
+		const command_buffer&		buffer	 = _command_buffers.get(cmd_id);
 		ID3D12GraphicsCommandList4* cmd_list = buffer.ptr.Get();
 		const bind_group&			group	 = _bind_groups.get(cmd.group);
+		const uint8					sz		 = static_cast<uint8>(group.bindings.size());
 
-		for (uint8 i = 0; i < group.bindings_count; i++)
+		for (uint8 i = 0; i < sz; i++)
 		{
 			const group_binding&	 binding = group.bindings[i];
 			const descriptor_handle& dh		 = _descriptors.get(binding.descriptor_index);
-			const descriptor_type	 type	 = static_cast<descriptor_type>(binding.descriptor_type);
+			const binding_type		 type	 = static_cast<binding_type>(binding.binding_type);
 
-			if (type == descriptor_type::sampler || type == descriptor_type::pointer)
+			if (type == binding_type::sampler || type == binding_type::pointer)
 				cmd_list->SetGraphicsRootDescriptorTable(binding.root_param_index, {dh.gpu});
-			else if (type == descriptor_type::ubo)
+			else if (type == binding_type::ubo)
 				cmd_list->SetGraphicsRootConstantBufferView(binding.root_param_index, dh.gpu);
-			else if (type == descriptor_type::ssbo || type == descriptor_type::texture)
+			else if (type == binding_type::ssbo)
 				cmd_list->SetGraphicsRootShaderResourceView(binding.root_param_index, dh.gpu);
-			else if (type == descriptor_type::uav)
+			else if (type == binding_type::uav)
 				cmd_list->SetGraphicsRootUnorderedAccessView(binding.root_param_index, dh.gpu);
-			else if (type == descriptor_type::constant)
-				GAME_ASSERT(false);
+			else if (type == binding_type::constant)
+				cmd_list->SetGraphicsRoot32BitConstants(binding.root_param_index, binding.count, binding.constants, 0);
 		}
 	}
 
-	void dx12_backend::cmd_dispatch(resource_id cmd_id, const command_dispatch& cmd)
+	void dx12_backend::cmd_dispatch(resource_id cmd_id, const command_dispatch& cmd) const
 	{
-		command_buffer&				buffer	 = _command_buffers.get(cmd_id);
+		const command_buffer&		buffer	 = _command_buffers.get(cmd_id);
 		ID3D12GraphicsCommandList4* cmd_list = buffer.ptr.Get();
 		cmd_list->Dispatch(cmd.group_size_x, cmd.group_size_y, cmd.group_size_z);
 	}

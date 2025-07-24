@@ -42,13 +42,15 @@ namespace Game
 	{
 		LOCK_GUARD(_category_mtx);
 
+		memory_track& track = _allocations[ptr];
+		track.ptr			= ptr;
+		track.size			= sz;
+		capture_trace(track);
+
 		if (_categories.empty() || _current_active_category == 0)
 			return;
 
-		memory_category& cat   = _categories[_current_active_category - 1];
-		memory_track&	 track = cat.allocations[ptr];
-		track.ptr			   = ptr;
-		track.size			   = sz;
+		memory_category& cat = _categories[_current_active_category - 1];
 		cat.total_size += track.size;
 
 		capture_trace(track);
@@ -58,16 +60,17 @@ namespace Game
 	{
 		LOCK_GUARD(_category_mtx);
 
-		if (_categories.empty() || _current_active_category == 0)
-			return;
-
-		memory_category& cat = _categories[_current_active_category - 1];
-
-		auto it = cat.allocations.find(ptr);
-		if (it != cat.allocations.end())
+		auto it = _allocations.find(ptr);
+		if (it != _allocations.end())
 		{
-			cat.total_size -= it->second.size;
-			cat.allocations.erase(it);
+			_allocations.erase(it);
+
+			if (!_categories.empty() && _current_active_category != 0)
+			{
+				memory_category& cat = _categories[_current_active_category - 1];
+				cat.total_size -= it->second.size;
+			}
+
 			return;
 		}
 	}
@@ -132,91 +135,88 @@ namespace Game
 
 	void memory_tracer::check_leaks()
 	{
-		for (const memory_category& cat : _categories)
+		for (auto& [ptr, alloc] : _allocations)
 		{
-			for (auto& [ptr, alloc] : cat.allocations)
+			std::ostringstream ss;
+
+			ss << "****************** LEAK DETECTED ******************\n";
+			ss << "Size: " << alloc.size << " bytes \n";
+
+			HANDLE		process = GetCurrentProcess();
+			static bool inited	= false;
+
+			if (!inited)
 			{
-				std::ostringstream ss;
-
-				ss << "****************** LEAK DETECTED ******************\n";
-				ss << "Size: " << alloc.size << " bytes \n";
-
-				HANDLE		process = GetCurrentProcess();
-				static bool inited	= false;
-
-				if (!inited)
-				{
-					inited = true;
-					SymInitialize(process, nullptr, TRUE);
-				}
-
-				void* symbolAll = calloc(sizeof(SYMBOL_INFO) + MAX_SYM_NAME * sizeof(TCHAR), 1);
-
-				if (symbolAll == NULL)
-					return;
-
-				SYMBOL_INFO* symbol	 = static_cast<SYMBOL_INFO*>(symbolAll);
-				symbol->MaxNameLen	 = 255;
-				symbol->SizeOfStruct = sizeof(SYMBOL_INFO);
-
-				DWORD			 displacement;
-				IMAGEHLP_LINE64* line = NULL;
-				line				  = (IMAGEHLP_LINE64*)std::malloc(sizeof(IMAGEHLP_LINE64));
-
-				if (line == NULL)
-					return;
-
-				line->SizeOfStruct = sizeof(IMAGEHLP_LINE64);
-
-				bool not_valid = false;
-
-				for (int i = 0; i < alloc.stack_size; ++i)
-				{
-					ss << "------ Stack Trace " << i << "------\n";
-
-					DWORD64 address = (DWORD64)(alloc.stack[i]);
-
-					SymFromAddr(process, address, NULL, symbol);
-
-					if (SymGetLineFromAddr64(process, address, &displacement, line))
-					{
-						const string fn = line->FileName;
-
-						if (fn.find("LinaGX") != string::npos)
-						{
-							not_valid = true;
-							break;
-						}
-
-						ss << "Location:" << line->FileName << "\n";
-						ss << "Smybol:" << symbol->Name << "\n";
-						ss << "Line:" << line->LineNumber << "\n";
-						ss << "SymbolAddr:" << symbol->Address << "\n";
-					}
-					else
-					{
-						ss << "Smybol:" << symbol->Name << "\n";
-						ss << "SymbolAddr:" << symbol->Address << "\n";
-					}
-
-					IMAGEHLP_MODULE64 moduleInfo;
-					moduleInfo.SizeOfStruct = sizeof(moduleInfo);
-					if (::SymGetModuleInfo64(process, symbol->ModBase, &moduleInfo))
-						ss << "Module:" << moduleInfo.ModuleName << "\n";
-				}
-
-				if (not_valid)
-					continue;
-
-				std::free(line);
-				std::free(symbolAll);
-
-				ss << "\n";
-				ss << "\n";
-
-				process::message_box(ss.str().c_str());
-				ss.clear();
+				inited = true;
+				SymInitialize(process, nullptr, TRUE);
 			}
+
+			void* symbolAll = calloc(sizeof(SYMBOL_INFO) + MAX_SYM_NAME * sizeof(TCHAR), 1);
+
+			if (symbolAll == NULL)
+				return;
+
+			SYMBOL_INFO* symbol	 = static_cast<SYMBOL_INFO*>(symbolAll);
+			symbol->MaxNameLen	 = 255;
+			symbol->SizeOfStruct = sizeof(SYMBOL_INFO);
+
+			DWORD			 displacement;
+			IMAGEHLP_LINE64* line = NULL;
+			line				  = (IMAGEHLP_LINE64*)std::malloc(sizeof(IMAGEHLP_LINE64));
+
+			if (line == NULL)
+				return;
+
+			line->SizeOfStruct = sizeof(IMAGEHLP_LINE64);
+
+			bool not_valid = false;
+
+			for (int i = 0; i < alloc.stack_size; ++i)
+			{
+				ss << "------ Stack Trace " << i << "------\n";
+
+				DWORD64 address = (DWORD64)(alloc.stack[i]);
+
+				SymFromAddr(process, address, NULL, symbol);
+
+				if (SymGetLineFromAddr64(process, address, &displacement, line))
+				{
+					const string fn = line->FileName;
+
+					if (fn.find("LinaGX") != string::npos)
+					{
+						not_valid = true;
+						break;
+					}
+
+					ss << "Location:" << line->FileName << "\n";
+					ss << "Smybol:" << symbol->Name << "\n";
+					ss << "Line:" << line->LineNumber << "\n";
+					ss << "SymbolAddr:" << symbol->Address << "\n";
+				}
+				else
+				{
+					ss << "Smybol:" << symbol->Name << "\n";
+					ss << "SymbolAddr:" << symbol->Address << "\n";
+				}
+
+				IMAGEHLP_MODULE64 moduleInfo;
+				moduleInfo.SizeOfStruct = sizeof(moduleInfo);
+				if (::SymGetModuleInfo64(process, symbol->ModBase, &moduleInfo))
+					ss << "Module:" << moduleInfo.ModuleName << "\n";
+			}
+
+			if (not_valid)
+				continue;
+
+			std::free(line);
+			std::free(symbolAll);
+
+			ss << "\n";
+			ss << "\n";
+
+			process::message_box(ss.str().c_str());
+			ss.clear();
 		}
 	}
 } // namespace Lina

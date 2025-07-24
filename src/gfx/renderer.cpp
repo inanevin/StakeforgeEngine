@@ -7,6 +7,8 @@
 #include "platform/window.hpp"
 #include "math/vector4.hpp"
 #include "memory/memory_tracer.hpp"
+#include "io/log.hpp"
+#include "common/system_info.hpp"
 
 namespace Game
 {
@@ -20,120 +22,51 @@ namespace Game
 			.window	   = main_window.get_window_handle(),
 			.os_handle = main_window.get_platform_handle(),
 			.scaling   = 1.0f,
-			.format	   = format::b8g8r8a8_unorm,
+			.format	   = format::r8g8b8a8_srgb,
 			.pos	   = vector2ui::zero,
 			.size	   = main_window.get_size(),
 			.flags	   = swapchain_flags::sf_allow_tearing | swapchain_flags::sf_vsync_every_v_blank,
 		});
 
-		_bind_layout_gui_default = backend->create_bind_layout({
-			.bindings =
-				{
-					{
-						.entry_table =
-							{
-								{
-									.type	 = descriptor_type::ubo,
-									.count	 = 1,
-									.set	 = 0,
-									.binding = 0,
-								},
-							},
-						.visibility = shader_stage::all,
-					},
-					{
-						.entry_table =
-							{
-								{
-									.type					= descriptor_type::sampler,
-									.count					= 1,
-									.set					= 0,
-									.binding				= 0,
-									.immutable_sampler_desc = gfx_util::get_sampler_desc_gui_default(),
-								},
-							},
-						.visibility = shader_stage::all,
-					},
-				},
-
-		});
-
-		_shader_gui_default.create_from_file_vertex_pixel("assets/engine/gui/gui_default.hlsl",
-														  {
-															  .vertex_entry = "VSMain",
-															  .pixel_entry	= "PSMain",
-															  .flags		= 0,
-															  .attachments =
-																  {
-																	  {
-																		  .format			= format::b8g8r8a8_unorm,
-																		  .blend_attachment = gfx_util::get_blend_attachment_alpha_blending(),
-																	  },
-																  },
-															  .inputs =
-																  {
-																	  {
-																		  .name		= "POSITION",
-																		  .location = 0,
-																		  .index	= 0,
-																		  .offset	= 0,
-																		  .size		= sizeof(vector2),
-																		  .format	= format::r32g32_sfloat,
-																	  },
-																	  {
-																		  .name		= "TEXCOORD",
-																		  .location = 0,
-																		  .index	= 0,
-																		  .offset	= sizeof(vector2),
-																		  .size		= sizeof(vector2),
-																		  .format	= format::r32g32_sfloat,
-																	  },
-																	  {
-																		  .name		= "COLOR",
-																		  .location = 0,
-																		  .index	= 0,
-																		  .offset	= sizeof(vector2) * 2,
-																		  .size		= sizeof(vector4),
-																		  .format	= format::r32g32b32a32_sfloat,
-																	  },
-																  },
-															  .depth_stencil_desc =
-																  {
-																	  .flags = 0,
-																  },
-															  .topo		  = topology::triangle_list,
-															  .cull		  = cull_mode::back,
-															  .front	  = front_face::cw,
-															  .poly_mode  = polygon_mode::fill,
-															  .samples	  = 1,
-															  .debug_name = "gui_default",
-														  });
-
 		for (uint32 i = 0; i < FRAMES_IN_FLIGHT; i++)
 		{
-			per_frame_data& pfd			  = _pfd[i];
-			pfd.frame_semaphore.semaphore = backend->create_semaphore();
-			pfd.gfx_buffer				  = backend->create_command_buffer({
-							   .type	   = command_type::graphics,
-							   .debug_name = "renderer_gfx",
-			   });
+			per_frame_data& pfd		= _pfd[i];
+			pfd.sem_frame.semaphore = backend->create_semaphore();
+			pfd.sem_copy.semaphore	= backend->create_semaphore();
+			pfd.cmd_gfx				= backend->create_command_buffer({
+							.type		= command_type::graphics,
+							.debug_name = "renderer_gfx",
+			});
+
+			pfd.cmd_copy = backend->create_command_buffer({
+				.type		= command_type::transfer,
+				.debug_name = "renderer_copy",
+			});
+
 			_frame_allocator[i].init(1024 * 1024, 4);
 		}
+
+		_buffer_queue.init();
+		_texture_queue.init();
+		_debug_controller.init(&_texture_queue);
 	}
 
 	void renderer::uninit()
 	{
-		_shader_gui_default.destroy();
+		_debug_controller.uninit();
+		_texture_queue.uninit();
+		_buffer_queue.uninit();
 
 		gfx_backend* backend = gfx_backend::get();
-
-		backend->destroy_bind_layout(_bind_layout_gui_default);
 
 		for (uint32 i = 0; i < FRAMES_IN_FLIGHT; i++)
 		{
 			per_frame_data& pfd = _pfd[i];
-			backend->destroy_semaphore(pfd.frame_semaphore.semaphore);
-			backend->destroy_command_buffer(pfd.gfx_buffer);
+			backend->destroy_semaphore(pfd.sem_frame.semaphore);
+			backend->destroy_semaphore(pfd.sem_copy.semaphore);
+
+			backend->destroy_command_buffer(pfd.cmd_gfx);
+			backend->destroy_command_buffer(pfd.cmd_copy);
 			_frame_allocator[i].uninit();
 		}
 
@@ -146,12 +79,14 @@ namespace Game
 
 	void renderer::wait_backend()
 	{
+		GAME_TRACE("call: renderer::wait_backend()");
+
 		gfx_backend* backend = gfx_backend::get();
 
 		for (uint32 i = 0; i < FRAMES_IN_FLIGHT; i++)
 		{
 			per_frame_data& pfd = _pfd[i];
-			backend->wait_semaphore(pfd.frame_semaphore.semaphore, pfd.frame_semaphore.value);
+			backend->wait_semaphore(pfd.sem_frame.semaphore, pfd.sem_frame.value);
 		}
 
 		_frame_index = 0;
@@ -165,20 +100,29 @@ namespace Game
 
 	void renderer::render(uint8 index, const vector2ui& size)
 	{
-		PUSH_MEMORY_CATEGORY("Gfx");
-
-		render_data& read_data = _render_data[index];
-
-		gfx_backend*	backend = gfx_backend::get();
-		per_frame_data& pfd		= _pfd[_frame_index];
-		bump_allocator& alloc	= _frame_allocator[_frame_index];
+		gfx_backend*	  backend	= gfx_backend::get();
+		const resource_id queue_gfx = backend->get_queue_gfx();
+		render_data&	  read_data = _render_data[index];
+		per_frame_data&	  pfd		= _pfd[_frame_index];
+		bump_allocator&	  alloc		= _frame_allocator[_frame_index];
 		alloc.reset();
 
-		const resource_id queue_gfx = backend->get_queue_gfx();
+		/*
+			Wait for frame's fence, then send any uploads needed.
+		*/
 
-		backend->wait_semaphore(pfd.frame_semaphore.semaphore, pfd.frame_semaphore.value);
+		backend->wait_semaphore(pfd.sem_frame.semaphore, pfd.sem_frame.value);
+		_debug_controller.upload(_buffer_queue, _frame_index, size);
+		const uint64 previous_copy_value = pfd.sem_copy.value;
+		send_uploads();
 
-		backend->reset_command_buffer(pfd.gfx_buffer);
+		/*
+			Start frame command list.
+			Transition swapchain, then render console & retransition.
+		*/
+
+		// Begin frame cmd list
+		backend->reset_command_buffer(pfd.cmd_gfx);
 
 		// Present -> RT barrier
 		{
@@ -188,31 +132,15 @@ namespace Game
 			b->from_state = resource_state::present;
 			b->resource	  = _swapchain_main;
 
-			backend->cmd_barrier(pfd.gfx_buffer,
+			backend->cmd_barrier(pfd.cmd_gfx,
 								 {
 									 .barriers		= b,
 									 .barrier_count = 1,
 								 });
 		}
 
-		// RENDER PASS
-		{
-			render_pass_color_attachment* attachment = alloc.allocate<render_pass_color_attachment>(1);
-			attachment->clear_color					 = vector4(0.6f, 0.0f, 0.0f, 1.0f);
-			attachment->load_op						 = load_op::clear;
-			attachment->store_op					 = store_op::store;
-			attachment->texture						 = _swapchain_main;
-
-			backend->cmd_begin_render_pass_swapchain(pfd.gfx_buffer,
-													 {
-														 .color_attachments		 = attachment,
-														 .color_attachment_count = 1,
-													 });
-
-			backend->cmd_set_viewport(pfd.gfx_buffer, {.width = static_cast<uint16>(size.x), .height = static_cast<uint16>(size.y)});
-			backend->cmd_set_scissors(pfd.gfx_buffer, {.width = static_cast<uint16>(size.x), .height = static_cast<uint16>(size.y)});
-			backend->cmd_end_render_pass(pfd.gfx_buffer, {});
-		}
+		// Console stuff
+		_debug_controller.render(pfd.cmd_gfx, _swapchain_main, _frame_index, size, alloc);
 
 		// Rt -> Present Barrier
 		{
@@ -222,31 +150,41 @@ namespace Game
 			b->to_state	  = resource_state::present;
 			b->resource	  = _swapchain_main;
 
-			backend->cmd_barrier(pfd.gfx_buffer,
+			backend->cmd_barrier(pfd.cmd_gfx,
 								 {
 									 .barriers		= b,
 									 .barrier_count = 1,
 								 });
 		}
 
-		backend->close_command_buffer(pfd.gfx_buffer);
-		backend->submit_commands(queue_gfx, &pfd.gfx_buffer, 1);
+		/*
+			End the frame command list.
+			Insert queue wait if there were any uploads.
+			Submit & present, then insert queue signal for this frame's fence.
+		*/
+		backend->close_command_buffer(pfd.cmd_gfx);
+
+		if (previous_copy_value != pfd.sem_copy.value)
+			backend->queue_wait(queue_gfx, &pfd.sem_copy.semaphore, 1, &pfd.sem_copy.value);
+
+		backend->submit_commands(queue_gfx, &pfd.cmd_gfx, 1);
 		backend->present(&_swapchain_main, 1);
 
-		pfd.frame_semaphore.value++;
-		backend->queue_signal(queue_gfx, &pfd.frame_semaphore.semaphore, 1, &pfd.frame_semaphore.value);
+		pfd.sem_frame.value++;
+		backend->queue_signal(queue_gfx, &pfd.sem_frame.semaphore, 1, &pfd.sem_frame.value);
 
 		_frame_index = (_frame_index + 1) % FRAMES_IN_FLIGHT;
-		POP_MEMORY_CATEGORY();
 	}
 
 	bool renderer::on_window_event(const window_event& ev)
 	{
-		return false;
+		return _debug_controller.on_window_event(ev);
 	}
 
 	void renderer::on_window_resize(const vector2ui& size)
 	{
+		VERIFY_THREAD_MAIN();
+
 		gfx_backend* backend = gfx_backend::get();
 		backend->recreate_swapchain({
 			.size	   = size,
@@ -257,6 +195,23 @@ namespace Game
 
 	void renderer::reset_render_data(uint8 index)
 	{
+	}
+
+	void renderer::send_uploads()
+	{
+		per_frame_data&	  pfd	  = _pfd[_frame_index];
+		gfx_backend*	  backend = gfx_backend::get();
+		const resource_id queue	  = backend->get_queue_transfer();
+		if (!_buffer_queue.empty() || !_texture_queue.empty())
+		{
+			pfd.sem_copy.value++;
+			backend->reset_command_buffer(pfd.cmd_copy);
+			_buffer_queue.flush_all(pfd.cmd_copy);
+			_texture_queue.flush_all(pfd.cmd_copy);
+			backend->close_command_buffer(pfd.cmd_copy);
+			backend->submit_commands(queue, &pfd.cmd_copy, 1);
+			backend->queue_signal(queue, &pfd.sem_copy.semaphore, 1, &pfd.sem_copy.value);
+		}
 	}
 
 }

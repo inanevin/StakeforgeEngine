@@ -36,10 +36,18 @@ namespace Game
 		float		   magnitude() const;
 		float		   magnitude_sqr() const;
 
+		inline bool is_point_inside(float _x, float _y) const
+		{
+			return _x >= x && _x <= x + z && _y >= y && _y <= y + w;
+		}
+
 		inline vector4 normalized() const
 		{
 			float mag = magnitude();
-			if (mag > MATH_EPS) { return vector4(x / mag, y / mag, z / mag, w / mag); }
+			if (mag > MATH_EPS)
+			{
+				return vector4(x / mag, y / mag, z / mag, w / mag);
+			}
 			return vector4::zero;
 		}
 
@@ -53,7 +61,10 @@ namespace Game
 				z /= mag;
 				w /= mag;
 			}
-			else { x = y = z = w = 0.0f; }
+			else
+			{
+				x = y = z = w = 0.0f;
+			}
 		}
 
 		inline vector4 operator+(const vector4& other) const

@@ -5,7 +5,6 @@
 #include "input/input_common.hpp"
 #include "input/input_mappings.hpp"
 #include "math/math.hpp"
-
 #include <windowsx.h>
 #include <hidusage.h>
 #include <shellscalingapi.h>
@@ -15,9 +14,10 @@
 
 namespace Game
 {
+	window::map window::s_key_down_map = {};
+
 	namespace
 	{
-
 		auto composition_enabled() -> bool
 		{
 			BOOL composition_enabled = FALSE;
@@ -127,10 +127,20 @@ namespace Game
 				USHORT		 scanCode	= raw->data.keyboard.MakeCode;
 				const bool	 is_release = raw->data.keyboard.Flags & RI_KEY_BREAK;
 
+				uint8 is_repeat = 0;
+				if (!is_release)
+				{
+					is_repeat			= s_key_down_map[key];
+					s_key_down_map[key] = 1;
+				}
+				else
+					s_key_down_map[key] = 0;
+
 				const window_event ev = {
 					.value	  = vector2i(static_cast<int32>(scanCode), 0),
+					.button	  = static_cast<input_code>(key),
 					.type	  = window_event_type::key,
-					.sub_type = is_release ? window_event_sub_type::release : window_event_sub_type::press,
+					.sub_type = is_release ? window_event_sub_type::release : (is_repeat ? window_event_sub_type::repeat : window_event_sub_type::press),
 					.flags	  = wef_high_freq,
 				};
 				wnd->add_event(ev);
@@ -230,7 +240,7 @@ namespace Game
 			const WORD key_flags = HIWORD(lParam);
 			const WORD scanCode	 = LOBYTE(key_flags);
 			const int  extended	 = (lParam & 0x01000000) != 0;
-			const bool is_repeat = (HIWORD(lParam) & KF_REPEAT) != 0;
+			const bool is_repeat = (lParam & 1 << 30);
 			uint32	   key		 = static_cast<uint32>(wParam);
 
 			if (wParam == VK_SHIFT)
@@ -258,7 +268,6 @@ namespace Game
 			const WORD key_flags = HIWORD(lParam);
 			const WORD scanCode	 = LOBYTE(key_flags);
 			const int  extended	 = (lParam & 0x01000000) != 0;
-			const bool is_repeat = (HIWORD(lParam) & KF_REPEAT) != 0;
 			uint32	   key		 = static_cast<uint32>(wParam);
 
 			if (wParam == VK_SHIFT)
@@ -268,11 +277,7 @@ namespace Game
 
 			const window_event ev = {
 
-				.value	  = vector2i(scanCode, 0),
-				.button	  = static_cast<input_code>(key),
-				.type	  = window_event_type::key,
-				.sub_type = is_repeat ? window_event_sub_type::repeat : window_event_sub_type::press,
-			};
+				.value = vector2i(scanCode, 0), .button = static_cast<input_code>(key), .type = window_event_type::key, .sub_type = window_event_sub_type::release};
 
 			wnd->add_event(ev);
 
