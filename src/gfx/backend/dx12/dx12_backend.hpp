@@ -220,8 +220,8 @@ namespace Game
 		void queue_signal(resource_id queue, resource_id* semaphores, uint8 semaphore_count, uint64* semaphore_values);
 		void present(resource_id* swapchains, uint8 swapchain_count);
 
-		bool compile_shader_vertex_pixel(const string& source, const char* vertex_entry, const char* pixel_entry, span<uint8>& vertex_out, span<uint8>& pixel_out, bool compile_layout, span<uint8>& out_layout) const;
-		bool compile_shader_compute(const string& source, const char* entry, span<uint8>& out, bool compile_layout, span<uint8>& out_layout) const;
+		bool compile_shader_vertex_pixel(const string& source, const char* source_path, const char* vertex_entry, const char* pixel_entry, span<uint8>& vertex_out, span<uint8>& pixel_out, bool compile_layout, span<uint8>& out_layout) const;
+		bool compile_shader_compute(const string& source, const char* source_path, const char* entry, span<uint8>& out, bool compile_layout, span<uint8>& out_layout) const;
 
 		resource_id create_resource(const resource_desc& desc);
 		resource_id create_texture(const texture_desc& desc);
@@ -235,17 +235,17 @@ namespace Game
 		resource_id create_command_allocator(uint8 ctype);
 		resource_id create_queue(const queue_desc& desc);
 		resource_id create_empty_bind_layout();
-		void		bind_group_add_descriptor(resource_id group, uint8 param_index, uint8 binding_type);
-		void		bind_group_add_constant(resource_id group, uint8 param_index, uint8* data, uint8 count);
-		void		bind_group_add_pointer(resource_id group, uint8 param_index, uint8 count, bool is_sampler);
+		void		bind_group_add_descriptor(resource_id group, uint8 root_param_index, uint8 binding_type);
+		void		bind_group_add_constant(resource_id group, uint8 root_param_index, uint8* data, uint8 count);
+		void		bind_group_add_pointer(resource_id group, uint8 root_param_index, uint8 count, bool is_sampler);
 		void		bind_layout_add_constant(resource_id layout, uint32 count, uint32 set, uint32 binding, uint8 shader_stage_visibility);
 		void		bind_layout_add_descriptor(resource_id layout, uint8 type, uint32 set, uint32 binding, uint8 shader_stage_visibility);
 		void		bind_layout_add_pointer(resource_id layout, const vector<bind_layout_pointer_param>& pointer_params, uint8 shader_stage_visibility);
 		void		bind_layout_add_immutable_sampler(resource_id layout, uint32 set, uint32 binding, const sampler_desc& desc, uint8 shader_stage_visibility);
-		void		finalize_bind_layout(resource_id id, bool is_compute);
-		void		bind_group_update_constants(resource_id group, uint8 param_index, uint8* constants, uint8 count);
-		void		bind_group_update_descriptor(resource_id group, uint8 param_index, resource_id resource);
-		void		bind_group_update_pointer(resource_id group, uint8 param_index, const vector<bind_group_pointer>& updates);
+		void		finalize_bind_layout(resource_id id, bool is_compute, const char* name);
+		void		bind_group_update_constants(resource_id group, uint8 binding_index, uint8* constants, uint8 count);
+		void		bind_group_update_descriptor(resource_id group, uint8 binding_index, resource_id resource);
+		void		bind_group_update_pointer(resource_id group, uint8 binding_index, const vector<bind_group_pointer>& updates);
 
 		void destroy_resource(resource_id id);
 		void destroy_texture(resource_id id);

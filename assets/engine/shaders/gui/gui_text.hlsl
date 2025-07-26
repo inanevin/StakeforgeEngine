@@ -1,3 +1,5 @@
+#include "../layout_defines.hlsl"
+
 //------------------------------------------------------------------------------
 // In & Outs
 //------------------------------------------------------------------------------
@@ -21,9 +23,11 @@ struct VSOutput
 // Vertex Shader
 //------------------------------------------------------------------------------
 
-cbuffer ProjectionCB : register(b0)
+cbuffer RenderPassCBV : register(b0, space1)
 {
-	float4x4 uProjection; // projection matrix
+	float4x4 _rp_projection;
+	float _sdf_thickness;
+	float _sdf_softness;
 }
 
 VSOutput VSMain(VSInput IN)
@@ -32,21 +36,20 @@ VSOutput VSMain(VSInput IN)
     
     // Transform 2D pos into clip space.
 	float4 worldPos = float4(IN.pos, 0.0f, 1.0f);
-	OUT.pos = mul(uProjection, worldPos);
+	OUT.pos = mul(_rp_projection, worldPos);
 	OUT.uv = IN.uv;
 	OUT.color = IN.color;
 	return OUT;
 }
 
-float2 SDF_Constants : register(b0);
-Texture2D g_atlas : register(t0);
-SamplerState g_Sampler : register(s0);
+Texture2D _txt_atlas : material_texture0;
+SamplerState _smp_base : static_sampler_gui_text;
 
 //------------------------------------------------------------------------------
 // Pixel Shader: just output the interpolated vertex color
 //------------------------------------------------------------------------------
 float4 PSMain(VSOutput IN) : SV_TARGET
 {
-	float4 tex_color = g_atlas.SampleLevel(g_Sampler, IN.uv, 0);
+	float4 tex_color = _txt_atlas.SampleLevel(_smp_base, IN.uv, 0);
 	return float4(IN.color.xyz, tex_color.r * IN.color.w);
 }

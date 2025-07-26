@@ -150,10 +150,7 @@ endif()
 if(WIN32)
 
 # prevent FXC from compiling hlsl sources automatically.
-set_source_files_properties(${SHADERS}
-    PROPERTIES
-      VS_TOOL_OVERRIDE "None"
-)
+set_source_files_properties(${SHADERS} PROPERTIES HEADER_FILE_ONLY ON)
 
 	add_executable(${PROJECT_NAME} WIN32 ${SOURCES} ${HEADERS} ${SHADERS} ${PLATFORM_HEADERS} ${PLATFORM_SOURCES} ${ICON})
 else()
@@ -161,7 +158,7 @@ else()
 endif()
 include(${CMAKE_SOURCE_DIR}/utils/cmake/executable_settings.cmake)
 
-target_include_directories(${PROJECT_NAME} PUBLIC ${PROJECT_SOURCE_DIR}/src)
+target_include_directories(${PROJECT_NAME} PUBLIC ${PROJECT_SOURCE_DIR}/src/)
 target_include_directories(${PROJECT_NAME} PRIVATE ${PROJECT_SOURCE_DIR}/deps/phmap/include)
 
 # ------------- DEPS -------------

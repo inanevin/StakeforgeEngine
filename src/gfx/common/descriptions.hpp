@@ -199,9 +199,10 @@ namespace Game
 
 	struct bind_group_pointer
 	{
-		resource_id	 resource = 0;
-		uint8		 view	  = 0;
-		binding_type type	  = binding_type::ubo;
+		resource_id	 resource	   = 0;
+		uint8		 view		   = 0;
+		uint8		 pointer_index = 0;
+		binding_type type		   = binding_type::ubo;
 	};
 
 	struct bind_group_binding

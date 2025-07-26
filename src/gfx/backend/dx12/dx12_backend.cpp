@@ -13,7 +13,6 @@
 #include "math/math_common.hpp"
 
 #define SERIALIZE_DEBUG_INFORMATION 0
-
 #ifdef SERIALIZE_DEBUG_INFORMATION
 #include <fstream>
 #endif
@@ -1333,7 +1332,7 @@ namespace Game
 		_semaphores.remove(id);
 	}
 
-	bool dx12_backend::compile_shader_vertex_pixel(const string& source, const char* vertex_entry, const char* pixel_entry, span<uint8>& vertex_out, span<uint8>& pixel_out, bool compile_root_sig, span<uint8>& out_signature_data) const
+	bool dx12_backend::compile_shader_vertex_pixel(const string& source, const char* source_path, const char* vertex_entry, const char* pixel_entry, span<uint8>& vertex_out, span<uint8>& pixel_out, bool compile_root_sig, span<uint8>& out_signature_data) const
 	{
 		Microsoft::WRL::ComPtr<IDxcCompiler3> idxc_compiler;
 		throw_if_failed(DxcCreateInstance(CLSID_DxcCompiler, IID_PPV_ARGS(&idxc_compiler)));
@@ -1351,8 +1350,10 @@ namespace Game
 		source_buffer.Size	   = source_blob->GetBufferSize();
 		source_buffer.Encoding = 0;
 
+		const wchar_t* include_path = string_util::char_to_wchar(source_path);
+
 		auto compile = [&](const wchar_t* target_profile, const wchar_t* target_entry, span<uint8>& out, bool root_sig) -> bool {
-			vector<LPCWSTR> arguments = {L"-T", target_profile, L"-E", target_entry, DXC_ARG_WARNINGS_ARE_ERRORS, L"-HV 2021"};
+			vector<LPCWSTR> arguments = {L"-T", target_profile, L"-E", target_entry, DXC_ARG_WARNINGS_ARE_ERRORS, L"-HV 2021", L"-I", include_path};
 #ifdef GAME_DEBUG
 			arguments.push_back(DXC_ARG_DEBUG);
 			arguments.push_back(DXC_ARG_PREFER_FLOW_CONTROL);
@@ -1363,8 +1364,11 @@ namespace Game
 			arguments.push_back(DXC_ARG_OPTIMIZATION_LEVEL3);
 #endif
 
+			ComPtr<IDxcIncludeHandler> include_handler;
+			throw_if_failed(utils->CreateDefaultIncludeHandler(&include_handler));
+
 			ComPtr<IDxcResult> result;
-			throw_if_failed(idxc_compiler->Compile(&source_buffer, arguments.data(), static_cast<uint32>(arguments.size()), NULL, IID_PPV_ARGS(result.GetAddressOf())));
+			throw_if_failed(idxc_compiler->Compile(&source_buffer, arguments.data(), static_cast<uint32>(arguments.size()), include_handler.Get(), IID_PPV_ARGS(result.GetAddressOf())));
 
 #if SERIALIZE_DEBUG_INFORMATION
 			ComPtr<IDxcBlob>	  debug_data;
@@ -1448,6 +1452,7 @@ namespace Game
 			source_blob.Reset();
 			delete[] target_entry_vertex;
 			delete[] target_entry_pixel;
+			delete[] include_path;
 		};
 
 		if (!compile(L"vs_6_0", target_entry_vertex, vertex_out, compile_root_sig))
@@ -1466,7 +1471,7 @@ namespace Game
 		return true;
 	}
 
-	bool dx12_backend::compile_shader_compute(const string& source, const char* entry, span<uint8>& out, bool compile_layout, span<uint8>& out_layout) const
+	bool dx12_backend::compile_shader_compute(const string& source, const char* source_path, const char* entry, span<uint8>& out, bool compile_layout, span<uint8>& out_layout) const
 	{
 		Microsoft::WRL::ComPtr<IDxcCompiler3> idxc_compiler;
 		throw_if_failed(DxcCreateInstance(CLSID_DxcCompiler, IID_PPV_ARGS(&idxc_compiler)));
@@ -1484,9 +1489,10 @@ namespace Game
 		source_buffer.Size	   = source_blob->GetBufferSize();
 		source_buffer.Encoding = 0;
 
-		const wchar_t* entry_point = string_util::char_to_wchar(entry);
+		const wchar_t* include_path = string_util::char_to_wchar(source_path);
+		const wchar_t* entry_point	= string_util::char_to_wchar(entry);
 
-		vector<LPCWSTR> arguments = {L"-T", L"cs_6_0", L"-E", entry_point, DXC_ARG_WARNINGS_ARE_ERRORS, L"-HV 2021"};
+		vector<LPCWSTR> arguments = {L"-T", L"cs_6_0", L"-E", entry_point, DXC_ARG_WARNINGS_ARE_ERRORS, L"-HV 2021", L"-I", include_path};
 
 #ifdef GAME_DEBUG
 		arguments.push_back(DXC_ARG_DEBUG);
@@ -1502,7 +1508,7 @@ namespace Game
 		throw_if_failed(idxc_compiler->Compile(&source_buffer, arguments.data(), static_cast<uint32>(arguments.size()), NULL, IID_PPV_ARGS(result.GetAddressOf())));
 
 		delete[] entry_point;
-
+		delete[] include_path;
 #if SERIALIZE_DEBUG_INFORMATION
 		ComPtr<IDxcBlob>	  debug_data;
 		ComPtr<IDxcBlobUtf16> debug_data_path;
@@ -1719,13 +1725,13 @@ namespace Game
 		return id;
 	}
 
-	void dx12_backend::bind_group_add_descriptor(resource_id group, uint8 param_index, uint8 type)
+	void dx12_backend::bind_group_add_descriptor(resource_id group, uint8 root_param_index, uint8 type)
 	{
 		bind_group& bind_group = _bind_groups.get(group);
 		bind_group.bindings.push_back({});
 		group_binding& gbinding	  = bind_group.bindings.back();
 		gbinding.descriptor_index = _descriptors.add();
-		gbinding.root_param_index = param_index;
+		gbinding.root_param_index = root_param_index;
 		gbinding.count			  = 1;
 		gbinding.binding_type	  = type;
 
@@ -1733,25 +1739,25 @@ namespace Game
 		GAME_ASSERT(tp != binding_type::pointer && tp != binding_type::sampler);
 	}
 
-	void dx12_backend::bind_group_add_constant(resource_id group, uint8 param_index, uint8* data, uint8 count)
+	void dx12_backend::bind_group_add_constant(resource_id group, uint8 root_param_index, uint8* data, uint8 count)
 	{
 		bind_group& bind_group = _bind_groups.get(group);
 		bind_group.bindings.push_back({});
 		group_binding& gbinding	  = bind_group.bindings.back();
 		gbinding.descriptor_index = _descriptors.add();
-		gbinding.root_param_index = param_index;
+		gbinding.root_param_index = root_param_index;
 		gbinding.count			  = count;
 		gbinding.binding_type	  = binding_type::constant;
 		gbinding.constants		  = data;
 	}
 
-	void dx12_backend::bind_group_add_pointer(resource_id group, uint8 param_index, uint8 count, bool is_sampler)
+	void dx12_backend::bind_group_add_pointer(resource_id group, uint8 root_param_index, uint8 count, bool is_sampler)
 	{
 		bind_group& bind_group = _bind_groups.get(group);
 		bind_group.bindings.push_back({});
 		group_binding& gbinding	  = bind_group.bindings.back();
 		gbinding.descriptor_index = _descriptors.add();
-		gbinding.root_param_index = param_index;
+		gbinding.root_param_index = root_param_index;
 		gbinding.count			  = count;
 		gbinding.binding_type	  = binding_type::pointer;
 
@@ -1767,28 +1773,28 @@ namespace Game
 		}
 	}
 
-	void dx12_backend::bind_group_update_constants(resource_id id, uint8 param_index, uint8* constants, uint8 count)
+	void dx12_backend::bind_group_update_constants(resource_id id, uint8 binding_index, uint8* constants, uint8 count)
 	{
 		bind_group&	   group   = _bind_groups.get(id);
-		group_binding& binding = group.bindings[param_index];
+		group_binding& binding = group.bindings[binding_index];
 		binding.constants	   = constants;
 		binding.count		   = count;
 	}
 
-	void dx12_backend::bind_group_update_descriptor(resource_id id, uint8 param_index, resource_id res_id)
+	void dx12_backend::bind_group_update_descriptor(resource_id id, uint8 binding_index, resource_id res_id)
 	{
 		bind_group&	   group   = _bind_groups.get(id);
-		group_binding& binding = group.bindings[param_index];
+		group_binding& binding = group.bindings[binding_index];
 
 		descriptor_handle& dh  = _descriptors.get(binding.descriptor_index);
 		const resource&	   res = _resources.get(res_id);
 		dh.gpu				   = res.ptr->GetResource()->GetGPUVirtualAddress();
 	}
 
-	void dx12_backend::bind_group_update_pointer(resource_id id, uint8 param_index, const vector<bind_group_pointer>& updates)
+	void dx12_backend::bind_group_update_pointer(resource_id id, uint8 binding_index, const vector<bind_group_pointer>& updates)
 	{
 		bind_group&	   group   = _bind_groups.get(id);
-		group_binding& binding = group.bindings[param_index];
+		group_binding& binding = group.bindings[binding_index];
 
 		_reuse_dest_descriptors_buffer.resize(0);
 		_reuse_dest_descriptors_sampler.resize(0);
@@ -1797,7 +1803,6 @@ namespace Game
 
 		descriptor_handle& binding_dh = _descriptors.get(binding.descriptor_index);
 
-		uint8 i = 0;
 		for (const bind_group_pointer& p : updates)
 		{
 			if (p.type == binding_type::texture)
@@ -1806,27 +1811,26 @@ namespace Game
 				GAME_ASSERT(txt.srv_count > p.view);
 				const descriptor_handle& dh = _descriptors.get(txt.srvs[p.view]);
 				_reuse_src_descriptors_buffer.push_back({dh.cpu});
-				_reuse_dest_descriptors_buffer.push_back({binding_dh.cpu + i * _heap_gpu_buffer.get_descriptor_size()});
+				_reuse_dest_descriptors_buffer.push_back({binding_dh.cpu + p.pointer_index * _heap_gpu_buffer.get_descriptor_size()});
 			}
 			else if (p.type == binding_type::sampler)
 			{
 				const sampler&			 smp = _samplers.get(p.resource);
 				const descriptor_handle& dh	 = _descriptors.get(smp.descriptor_index);
 				_reuse_src_descriptors_sampler.push_back({dh.cpu});
-				_reuse_dest_descriptors_sampler.push_back({binding_dh.cpu + i * _heap_gpu_sampler.get_descriptor_size()});
+				_reuse_dest_descriptors_sampler.push_back({binding_dh.cpu + p.pointer_index * _heap_gpu_sampler.get_descriptor_size()});
 			}
 			else if (p.type == binding_type::ubo || p.type == binding_type::ssbo || p.type == binding_type::uav)
 			{
 				const resource&	   res = _resources.get(p.resource);
 				descriptor_handle& dh  = _descriptors.get(res.descriptor_index);
 				_reuse_src_descriptors_buffer.push_back({dh.cpu});
-				_reuse_dest_descriptors_buffer.push_back({binding_dh.cpu + i * _heap_gpu_buffer.get_descriptor_size()});
+				_reuse_dest_descriptors_buffer.push_back({binding_dh.cpu + p.pointer_index * _heap_gpu_buffer.get_descriptor_size()});
 			}
 			else
 			{
 				GAME_ASSERT(false);
 			}
-			i++;
 		}
 
 		const uint32 descriptor_count_buffer  = static_cast<uint32>(_reuse_dest_descriptors_buffer.size());
@@ -1956,21 +1960,34 @@ namespace Game
 	void dx12_backend::bind_layout_add_pointer(resource_id layout, const vector<bind_layout_pointer_param>& pointer_params, uint8 vis)
 	{
 		const uint32 start = static_cast<uint32>(_reuse_root_ranges.size());
+
+		UINT offset = 0;
+
 		for (const bind_layout_pointer_param& p : pointer_params)
 		{
 			_reuse_root_ranges.push_back({});
 			CD3DX12_DESCRIPTOR_RANGE1& range = _reuse_root_ranges.back();
 
-			const D3D12_DESCRIPTOR_RANGE_FLAGS flags = p.is_volatile ? D3D12_DESCRIPTOR_RANGE_FLAG_DATA_VOLATILE : D3D12_DESCRIPTOR_RANGE_FLAG_NONE;
+			const D3D12_DESCRIPTOR_RANGE_FLAGS flags = p.is_volatile ? D3D12_DESCRIPTOR_RANGE_FLAG_DESCRIPTORS_VOLATILE : D3D12_DESCRIPTOR_RANGE_FLAG_NONE;
 
 			if (p.type == binding_type::ubo)
-				range.Init(D3D12_DESCRIPTOR_RANGE_TYPE_CBV, p.count, p.binding, p.set, flags, 0);
+			{
+				range.Init(D3D12_DESCRIPTOR_RANGE_TYPE_CBV, p.count, p.binding, p.set, flags, offset);
+			}
 			else if (p.type == binding_type::ssbo || p.type == binding_type::texture)
-				range.Init(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, p.count, p.binding, p.set, flags, 0);
+			{
+				range.Init(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, p.count, p.binding, p.set, flags, offset);
+			}
 			else if (p.type == binding_type::uav)
-				range.Init(D3D12_DESCRIPTOR_RANGE_TYPE_UAV, p.count, p.binding, p.set, flags, 0);
+			{
+				range.Init(D3D12_DESCRIPTOR_RANGE_TYPE_UAV, p.count, p.binding, p.set, flags, offset);
+			}
 			else if (p.type == binding_type::sampler)
-				range.Init(D3D12_DESCRIPTOR_RANGE_TYPE_SAMPLER, p.count, p.binding, p.set, flags, 0);
+			{
+				range.Init(D3D12_DESCRIPTOR_RANGE_TYPE_SAMPLER, p.count, p.binding, p.set, D3D12_DESCRIPTOR_RANGE_FLAG_NONE, offset);
+			}
+
+			offset += p.count;
 		}
 
 		const uint32				  size_now	 = static_cast<uint32>(_reuse_root_ranges.size());
@@ -2001,7 +2018,7 @@ namespace Game
 		});
 	}
 
-	void dx12_backend::finalize_bind_layout(resource_id id, bool is_compute)
+	void dx12_backend::finalize_bind_layout(resource_id id, bool is_compute, const char* name)
 	{
 		bind_layout&								layout = _bind_layouts.get(id);
 		const CD3DX12_VERSIONED_ROOT_SIGNATURE_DESC rootSig(static_cast<uint32>(_reuse_root_params.size()),
@@ -2011,8 +2028,17 @@ namespace Game
 															is_compute ? D3D12_ROOT_SIGNATURE_FLAG_NONE : D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT);
 		ComPtr<ID3DBlob>							signature = nullptr;
 		ComPtr<ID3DBlob>							error	  = nullptr;
-		throw_if_failed(D3D12SerializeVersionedRootSignature(&rootSig, &signature, &error));
+		const HRESULT								res		  = D3D12SerializeVersionedRootSignature(&rootSig, &signature, &error);
+
+		if (FAILED(res) && error)
+		{
+			const char* error_msg = static_cast<const char*>(error->GetBufferPointer());
+			GAME_ERR("{0}", error_msg);
+			throw_if_failed(res);
+		}
+
 		throw_if_failed(_device->CreateRootSignature(0, signature->GetBufferPointer(), signature->GetBufferSize(), IID_PPV_ARGS(&layout.root_signature)));
+		NAME_DX12_OBJECT_CSTR(layout.root_signature, name);
 		signature.Reset();
 		error.Reset();
 		_reuse_root_params.resize(0);

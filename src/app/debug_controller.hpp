@@ -33,11 +33,11 @@ namespace Game
 	class debug_controller
 	{
 	public:
-		void init(texture_queue* texture_queue, const vector2ui16& screen_size);
+		void init(texture_queue* texture_queue, resource_id global_bind_layout, const vector2ui16& screen_size);
 		void uninit();
 		void collect_barriers(vector<barrier>& out_barriers);
-		void render(resource_id cmd_buffer, resource_id render_target, uint8 frame_index, const vector2ui16& size, bump_allocator& alloc);
-		void upload(buffer_queue& q, uint8 frame_index, const vector2ui16& size);
+		void render(resource_id cmd_buffer, uint8 frame_index, bump_allocator& alloc);
+		void upload(buffer_queue& q, uint8 frame_index);
 		void on_window_resize(const vector2ui16& size);
 		bool on_window_event(const window_event& ev);
 
@@ -54,25 +54,26 @@ namespace Game
 	private:
 		struct gui_draw_call
 		{
+			vector4ui16 scissors	= vector4ui16::zero;
 			uint32		start_vtx	= 0;
 			uint32		start_idx	= 0;
 			uint32		index_count = 0;
 			resource_id shader		= 0;
 			resource_id bind_group	= 0;
-			vector4ui16 scissors	= vector4ui16::zero;
+			uint8		has_bg		= 0;
 		};
 
 		struct per_frame_data
 		{
 			gui_draw_call draw_calls[MAX_GUI_DRAW_CALLS];
-			buffer		  buf_gui_vtx			 = {};
-			buffer		  buf_gui_idx			 = {};
-			buffer		  buf_gui_pass_view		 = {};
-			resource_id	  bind_group_gui_default = 0;
-			resource_id	  render_target			 = 0;
-			unsigned int  counter_vtx			 = 0;
-			unsigned int  counter_idx			 = 0;
-			uint16		  draw_call_count		 = 0;
+			buffer		  buf_gui_vtx				 = {};
+			buffer		  buf_gui_idx				 = {};
+			buffer		  buf_gui_pass_view			 = {};
+			resource_id	  bind_group_gui_render_pass = 0;
+			resource_id	  render_target				 = 0;
+			unsigned int  counter_vtx				 = 0;
+			unsigned int  counter_idx				 = 0;
+			uint16		  draw_call_count			 = 0;
 
 			inline void reset()
 			{
@@ -83,14 +84,16 @@ namespace Game
 
 		struct gui_pass_view
 		{
-			matrix4x4 proj = matrix4x4::identity;
+			matrix4x4 proj			= matrix4x4::identity;
+			float	  sdf_thickness = 0.5f;
+			float	  sdf_softness	= 0.02f;
 		};
 
 		struct atlas_ref
 		{
-			vekt::atlas*   atlas   = nullptr;
-			resource_id	   texture = 0;
-			resource_id	   bind_group[FRAMES_IN_FLIGHT];
+			vekt::atlas*   atlas			   = nullptr;
+			resource_id	   texture			   = 0;
+			resource_id	   bind_group		   = 0;
 			resource_id	   intermediate_buffer = 0;
 			texture_buffer buffer			   = {};
 			uint8		   res_alive		   = false;
@@ -98,19 +101,19 @@ namespace Game
 
 		struct shaders
 		{
-			shader gui_default = {};
-			shader gui_text	   = {};
-			shader gui_sdf	   = {};
+			shader gui_default	 = {};
+			shader gui_text		 = {};
+			shader gui_sdf		 = {};
+			shader swapchain_gui = {};
 		};
 
-		struct gfx_resources
+		struct gfx_data
 		{
 			vector<atlas_ref> atlases;
-			resource_id		  bind_layout_gui = 0;
-			resource_id		  txt_dummy		  = 0;
-			texture_queue*	  texture_queue	  = nullptr;
-			uint64			  frame_counter	  = 0;
-			uint8			  frame_index	  = 0;
+			texture_queue*	  texture_queue = nullptr;
+			vector2ui16		  rt_size		= vector2ui16::zero;
+			uint64			  frame_counter = 0;
+			uint8			  frame_index	= 0;
 		};
 
 		struct vekt_data
@@ -137,7 +140,7 @@ namespace Game
 	private:
 		text_allocator<10000> _text_allocator = {};
 		shaders				  _shaders		  = {};
-		gfx_resources		  _gfx_data		  = {};
+		gfx_data			  _gfx_data		  = {};
 		vekt_data			  _vekt_data	  = {};
 		input_field			  _input_field	  = {};
 		per_frame_data		  _pfd[FRAMES_IN_FLIGHT];

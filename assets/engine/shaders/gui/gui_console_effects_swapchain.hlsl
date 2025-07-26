@@ -1,50 +1,60 @@
-#include "../layout_defines.hlsl"
-
 //------------------------------------------------------------------------------
 // In & Outs
 //------------------------------------------------------------------------------
-
-struct VSInput
-{
-	float2 pos : POSITION; // XY position
-	float2 uv : TEXCOORD0; // UV coords (unused in PS here, but available)
-	float4 color : COLOR0; // RGBA vertex color
-};
-
 
 struct VSOutput
 {
 	float4 pos : SV_POSITION; // transformed position
 	float2 uv : TEXCOORD0; // pass-through UV
-	float4 color : COLOR0; // pass-through color
 };
 
 //------------------------------------------------------------------------------
 // Vertex Shader
 //------------------------------------------------------------------------------
 
-cbuffer RenderPassCBV : render_pass_ubo0
+static const float2 NDC_POS[6] =
 {
-	float4x4 _rp_projection;
-	float _sdf_thickness;
-	float _sdf_softness;
-}
+	float2(-1.0f, 1.0f), 
+    float2(1.0f, 1.0f), 
+	 float2(-1.0f, 0.0f),
+	 float2(1.0f, 1.0f),
+    float2(1.0f, 0.0f),
+    float2(-1.0f, 0.0f) 
+};
 
-VSOutput VSMain(VSInput IN)
+static const float2 NDC_UV[6] =
+{
+	float2(0.0f, 0.0f),
+    float2(1.0f, 0.0f),
+	 float2(0.0f, 1.0f),
+	 float2(1.0f, 0.0f),
+    float2(1.0f, 1.0f),
+    float2(0.0f, 1.0f)
+};
+
+VSOutput VSMain(uint vertexID : SV_VertexID)
 {
 	VSOutput OUT;
-    
-	float4 worldPos = float4(IN.pos, 0.0f, 1.0f);
-	OUT.pos = mul(_rp_projection, worldPos);
-	OUT.uv = IN.uv;
-	OUT.color = IN.color;
+	OUT.pos = float4(NDC_POS[vertexID], 0.0f, 1.0f);
+	OUT.uv = NDC_UV[vertexID];
 	return OUT;
 }
+
+cbuffer EngineCBV : register(b0, space0)
+{
+	float _time;
+	float _pad;
+}
+
+Texture2D _txt_source: register(t4, space1);
+SamplerState _smp_base : register(s6);
 
 //------------------------------------------------------------------------------
 // Pixel Shader: just output the interpolated vertex color
 //------------------------------------------------------------------------------
 float4 PSMain(VSOutput IN) : SV_TARGET
 {
-	return IN.color;
+	float4 color = _txt_source.SampleLevel(_smp_base, IN.uv, 0);
+	return color;
+
 }

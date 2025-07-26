@@ -1,0 +1,33 @@
+#define global_cbv register(b0, space0)
+
+#define render_pass_ubo0 register(b0, space1)
+#define render_pass_ubo1 register(b1, space1)
+#define render_pass_ssbo0 register(t0, space1)
+#define render_pass_ssbo1 register(t1, space1)
+#define render_pass_ssbo2 register(t2, space1)
+#define render_pass_ssbo3 register(t3, space1)
+#define render_pass_texture0 register(t4, space1)
+#define render_pass_texture1 register(t5, space1)
+#define render_pass_texture2 register(t6, space1)
+#define render_pass_texture3 register(t7, space1)
+
+#define material_ubo0 register(b0, space2)
+#define material_ssbo0 register(t0, space2)
+#define material_texture0 register(t1, space2)
+#define material_texture1 register(t2, space2)
+#define material_texture2 register(t3, space2)
+#define material_texture3 register(t4, space2)
+
+#define object_ubo0 register(b0, space3)
+#define object_texture0 register(t0, space3)
+
+#define dyn_sampler0 register(s0, space0)
+#define dyn_sampler1 register(s1, space0)
+#define dyn_sampler2 register(s2, space0)
+#define dyn_sampler3 register(s3, space0)
+
+#define static_sampler_anisotropic register(s5, space0)
+#define static_sampler_linear register(s6, space0)
+#define static_sampler_nearest register(s7, space0)
+#define static_sampler_gui_default register(s8, space0)
+#define static_sampler_gui_text register(s9, space0)

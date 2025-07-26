@@ -29,7 +29,8 @@ namespace Game
 		span<uint8> layout_data	   = {};
 		const bool	compile_layout = _desc.flags.is_set(shader_flags::shf_use_embedded_layout);
 
-		if (!backend->compile_shader_vertex_pixel(shader_text, _desc.vertex_entry, _desc.pixel_entry, _desc.blobs[0].data, _desc.blobs[1].data, compile_layout, _desc.layout_data))
+		const string folder_path = file_system::get_directory_of_file(path);
+		if (!backend->compile_shader_vertex_pixel(shader_text, folder_path.c_str(), _desc.vertex_entry, _desc.pixel_entry, _desc.blobs[0].data, _desc.blobs[1].data, compile_layout, _desc.layout_data))
 			return false;
 
 		_hw = backend->create_shader(_desc);

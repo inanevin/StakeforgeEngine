@@ -32,7 +32,7 @@ namespace Game
 #define MAX_INPUT_FIELD	   127
 #define COLOR_TEXT		   color::srgb_to_linear(color(89.0f / 255.0f, 180.0f / 255.0f, 108.0f / 255.0f, 1.0f)).to_vector()
 #define COLOR_TEXT_LIGHT   color::srgb_to_linear(color(119.0f / 255.0f, 210.0f / 255.0f, 138.0f / 255.0f, 1.0f)).to_vector()
-#define COLOR_CONSOLE_BG   color::srgb_to_linear(color(12.0f / 255.0f, 16.0f / 255.0f, 12.0f / 255.0f, 1.0f)).to_vector()
+#define COLOR_CONSOLE_BG   color::srgb_to_linear(color(12.0f / 255.0f, 16.0f / 255.0f, 12.0f / 255.0f, 0.99f)).to_vector()
 #define COLOR_BORDER	   color::srgb_to_linear(color(89.0f / 255.0f, 180.0f / 255.0f, 108.0f / 255.0f, 1.0f)).to_vector()
 #define DEBUG_FONT_SIZE	   16
 #define INPUT_FIELD_HEIGHT static_cast<float>(DEBUG_FONT_SIZE) * 1.5f
@@ -40,41 +40,19 @@ namespace Game
 #define MAX_HISTORY		   8
 #define RT_FORMAT		   format::r8g8b8a8_srgb
 
-	constexpr float SDF_PARAMS[2] = {0.48f, 0.03f};
-
-	void debug_controller::init(texture_queue* texture_queue, const vector2ui16& screen_size)
+	void debug_controller::init(texture_queue* texture_queue, resource_id global_bind_layout, const vector2ui16& screen_size)
 	{
 		_gfx_data.texture_queue = texture_queue;
+		_gfx_data.rt_size		= vector2ui16(screen_size.x, screen_size.y / 2);
 
 		gfx_backend* backend = gfx_backend::get();
-
-		_gfx_data.txt_dummy = backend->create_texture({
-			.texture_format = format::r8_unorm,
-			.size			= vector2ui16(1, 1),
-			.flags			= texture_flags::tf_sampled | texture_flags::tf_is_2d,
-		});
-
-		_gfx_data.bind_layout_gui = backend->create_empty_bind_layout();
-		backend->bind_layout_add_descriptor(_gfx_data.bind_layout_gui, binding_type::ubo, 0, 0, shader_stage::vertex);
-		backend->bind_layout_add_constant(_gfx_data.bind_layout_gui, 2, 0, 0, shader_stage::fragment);
-		backend->bind_layout_add_pointer(_gfx_data.bind_layout_gui,
-										 {{
-											 .type		  = binding_type::texture,
-											 .set		  = 0,
-											 .binding	  = 0,
-											 .count		  = 1,
-											 .is_volatile = false,
-										 }},
-										 shader_stage::fragment);
-		backend->bind_layout_add_immutable_sampler(_gfx_data.bind_layout_gui, 0, 0, gfx_util::get_sampler_desc_gui_text(), shader_stage::fragment);
-		backend->finalize_bind_layout(_gfx_data.bind_layout_gui, false);
 
 		// gui default
 		_shaders.gui_default.get_desc().attachments = {{.format = RT_FORMAT, .blend_attachment = gfx_util::get_blend_attachment_alpha_blending()}};
 		_shaders.gui_default.get_desc().inputs		= gfx_util::get_input_layout(input_layout_type::gui_default);
 		_shaders.gui_default.get_desc().cull		= cull_mode::back;
 		_shaders.gui_default.get_desc().front		= front_face::cw;
-		_shaders.gui_default.get_desc().layout		= _gfx_data.bind_layout_gui;
+		_shaders.gui_default.get_desc().layout		= global_bind_layout;
 		_shaders.gui_default.get_desc().set_name("gui_default");
 		_shaders.gui_default.create_from_file_vertex_pixel("assets/engine/shaders/gui/gui_default.hlsl");
 
@@ -83,7 +61,7 @@ namespace Game
 		_shaders.gui_text.get_desc().inputs		 = gfx_util::get_input_layout(input_layout_type::gui_default);
 		_shaders.gui_text.get_desc().cull		 = cull_mode::back;
 		_shaders.gui_text.get_desc().front		 = front_face::cw;
-		_shaders.gui_text.get_desc().layout		 = _gfx_data.bind_layout_gui;
+		_shaders.gui_default.get_desc().layout	 = global_bind_layout;
 		_shaders.gui_text.get_desc().set_name("gui_text");
 		_shaders.gui_text.create_from_file_vertex_pixel("assets/engine/shaders/gui/gui_text.hlsl");
 
@@ -92,9 +70,18 @@ namespace Game
 		_shaders.gui_sdf.get_desc().inputs		= gfx_util::get_input_layout(input_layout_type::gui_default);
 		_shaders.gui_sdf.get_desc().cull		= cull_mode::back;
 		_shaders.gui_sdf.get_desc().front		= front_face::cw;
-		_shaders.gui_sdf.get_desc().layout		= _gfx_data.bind_layout_gui;
+		_shaders.gui_default.get_desc().layout	= global_bind_layout;
 		_shaders.gui_sdf.get_desc().set_name("gui_sdf");
 		_shaders.gui_sdf.create_from_file_vertex_pixel("assets/engine/shaders/gui/gui_sdf.hlsl");
+
+		// gui swapchain
+		// _shaders.swapchain_gui.get_desc().attachments = {{.format = RT_FORMAT, .blend_attachment = gfx_util::get_blend_attachment_alpha_blending()}};
+		// _shaders.swapchain_gui.get_desc().inputs	  = {};
+		// _shaders.swapchain_gui.get_desc().cull		  = cull_mode::none;
+		// _shaders.swapchain_gui.get_desc().front		  = front_face::cw;
+		// _shaders.gui_default.get_desc().layout		  = global_bind_layout;
+		// _shaders.swapchain_gui.get_desc().set_name("swapchain_gui");
+		// _shaders.swapchain_gui.create_from_file_vertex_pixel("assets/engine/shaders/gui/gui_console_effects_swapchain.hlsl");
 
 		for (uint32 i = 0; i < FRAMES_IN_FLIGHT; i++)
 		{
@@ -107,16 +94,19 @@ namespace Game
 				.debug_name		= "console_rt",
 			});
 
-			pfd.bind_group_gui_default = backend->create_empty_bind_group();
-			backend->bind_group_add_descriptor(pfd.bind_group_gui_default, 0, binding_type::ubo);
-			backend->bind_group_add_constant(pfd.bind_group_gui_default, 1, (uint8*)&SDF_PARAMS, 2);
-			backend->bind_group_add_pointer(pfd.bind_group_gui_default, 2, 1, false);
-
 			pfd.buf_gui_pass_view.create_hw({
 				.size		= sizeof(gui_pass_view),
-				.flags		= resource_flags::rf_cpu_visible,
+				.flags		= resource_flags::rf_cpu_visible | resource_flags::rf_constant_buffer,
 				.debug_name = "cbv_gui_pass",
 			});
+
+			pfd.bind_group_gui_render_pass = backend->create_empty_bind_group();
+			backend->bind_group_add_pointer(pfd.bind_group_gui_render_pass, rpi_table_render_pass, 1, false);
+			backend->bind_group_update_pointer(pfd.bind_group_gui_render_pass,
+											   0,
+											   {
+												   {.resource = pfd.buf_gui_pass_view.get_hw_gpu(), .pointer_index = upi_render_pass_ubo0, .type = binding_type::ubo},
+											   });
 
 			pfd.buf_gui_vtx.create_staging_hw(
 				{
@@ -141,15 +131,6 @@ namespace Game
 					.flags		= resource_flags::rf_index_buffer | resource_flags::rf_gpu_only,
 					.debug_name = "gui_index_gpu",
 				});
-
-			backend->bind_group_update_descriptor(pfd.bind_group_gui_default, 0, pfd.buf_gui_pass_view.get_hw_gpu());
-			backend->bind_group_update_pointer(pfd.bind_group_gui_default,
-											   2,
-											   {{
-												   .resource = _gfx_data.txt_dummy,
-												   .view	 = 0,
-												   .type	 = binding_type::texture,
-											   }});
 		}
 
 		_vekt_data.builder = new vekt::builder();
@@ -355,19 +336,16 @@ namespace Game
 
 		gfx_backend* backend = gfx_backend::get();
 
-		backend->destroy_texture(_gfx_data.txt_dummy);
-
 		_shaders.gui_default.destroy();
 		_shaders.gui_text.destroy();
 		_shaders.gui_sdf.destroy();
-		backend->destroy_bind_layout(_gfx_data.bind_layout_gui);
 
 		for (uint32 i = 0; i < FRAMES_IN_FLIGHT; i++)
 		{
 			per_frame_data& pfd = _pfd[i];
 
 			backend->destroy_texture(pfd.render_target);
-			backend->destroy_bind_group(pfd.bind_group_gui_default);
+			backend->destroy_bind_group(pfd.bind_group_gui_render_pass);
 			backend->unmap_resource(pfd.buf_gui_pass_view.get_hw_gpu());
 			backend->unmap_resource(pfd.buf_gui_vtx.get_hw_staging());
 			backend->unmap_resource(pfd.buf_gui_idx.get_hw_staging());
@@ -377,14 +355,13 @@ namespace Game
 		}
 	}
 
-	void debug_controller::upload(buffer_queue& q, uint8 frame_index, const vector2ui16& size)
+	void debug_controller::upload(buffer_queue& q, uint8 frame_index)
 	{
 		per_frame_data& pfd = _pfd[frame_index];
 		pfd.reset();
-
 		_gfx_data.frame_index = frame_index;
 
-		_vekt_data.builder->build_begin(vector2(size.x / 2, size.y / 2));
+		_vekt_data.builder->build_begin(vector2(_gfx_data.rt_size.x, _gfx_data.rt_size.y));
 		console_logic();
 		_vekt_data.builder->build_end();
 		_vekt_data.builder->flush();
@@ -393,28 +370,12 @@ namespace Game
 		q.add_request({.buffer = &pfd.buf_gui_vtx});
 
 		const gui_pass_view view = {
-			.proj = matrix4x4::ortho(0, static_cast<float>(size.x), 0, static_cast<float>(size.y), 0.0f, 1.0f),
+			.proj		   = matrix4x4::ortho(0, static_cast<float>(_gfx_data.rt_size.x), 0, static_cast<float>(_gfx_data.rt_size.y), 0.0f, 1.0f),
+			.sdf_thickness = 0.5f,
+			.sdf_softness  = 0.02f,
 		};
+
 		pfd.buf_gui_pass_view.buffer_data(0, (void*)&view, sizeof(gui_pass_view));
-	}
-
-	void debug_controller::on_window_resize(const vector2ui16& size)
-	{
-		gfx_backend* backend = gfx_backend::get();
-
-		for (uint32 i = 0; i < FRAMES_IN_FLIGHT; i++)
-		{
-			per_frame_data& pfd = _pfd[i];
-			backend->destroy_texture(pfd.render_target);
-
-			pfd.render_target = backend->create_texture({
-				.texture_format = RT_FORMAT,
-				.size			= vector2ui16(size.x, size.y / 2),
-				.flags			= texture_flags::tf_sampled | texture_flags::tf_is_2d | texture_flags::tf_render_target,
-				.debug_name		= "console_rt",
-
-			});
-		}
 	}
 
 	void debug_controller::collect_barriers(vector<barrier>& out_barriers)
@@ -428,7 +389,7 @@ namespace Game
 		});
 	}
 
-	void debug_controller::render(resource_id cmd_buffer, resource_id swapchain, uint8 frame_index, const vector2ui16& size, bump_allocator& alloc)
+	void debug_controller::render(resource_id cmd_buffer, uint8 frame_index, bump_allocator& alloc)
 	{
 		gfx_backend*	backend = gfx_backend::get();
 		per_frame_data& pfd		= _pfd[frame_index];
@@ -442,10 +403,10 @@ namespace Game
 			attachment->texture						 = pfd.render_target;
 
 			backend->cmd_begin_render_pass(cmd_buffer, {.color_attachments = attachment, .color_attachment_count = 1});
-			backend->cmd_set_viewport(cmd_buffer, {.width = static_cast<uint16>(size.x), .height = static_cast<uint16>(size.y)});
-			backend->cmd_set_scissors(cmd_buffer, {.width = static_cast<uint16>(size.x), .height = static_cast<uint16>(size.y)});
+			backend->cmd_set_viewport(cmd_buffer, {.width = static_cast<uint16>(_gfx_data.rt_size.x), .height = static_cast<uint16>(_gfx_data.rt_size.y)});
 			backend->cmd_bind_vertex_buffers(cmd_buffer, {.buffer = pfd.buf_gui_vtx.get_hw_gpu(), .vertex_size = sizeof(vekt::vertex)});
 			backend->cmd_bind_index_buffers(cmd_buffer, {.buffer = pfd.buf_gui_idx.get_hw_gpu(), .bit_depth = 16});
+			backend->cmd_bind_group(cmd_buffer, {.group = pfd.bind_group_gui_render_pass});
 
 			int32 last_pipeline = -1, last_bind_group = -1;
 
@@ -459,15 +420,13 @@ namespace Game
 				{
 					backend->cmd_bind_pipeline(cmd_buffer, {.pipeline = dc.shader});
 					last_pipeline = static_cast<int32>(dc.shader);
-					backend->cmd_bind_layout(cmd_buffer, {.layout = _gfx_data.bind_layout_gui});
 				}
 
-				if (last_bind_group == -1 || last_bind_group != dc.bind_group)
+				if (dc.has_bg == 1 && (last_bind_group == -1 || last_bind_group != dc.bind_group))
 				{
 					backend->cmd_bind_group(cmd_buffer, {.group = dc.bind_group});
 					last_bind_group = static_cast<int32>(dc.bind_group);
 				}
-
 				backend->cmd_draw_indexed_instanced(cmd_buffer, {.index_count_per_instance = dc.index_count, .instance_count = 1, .start_index_location = dc.start_idx, .base_vertex_location = dc.start_vtx, .start_instance_location = 0});
 			}
 
@@ -481,19 +440,6 @@ namespace Game
 			};
 
 			backend->cmd_barrier(cmd_buffer, {.barriers = &br_rt, .barrier_count = 1});
-		}
-
-		// RENDER PASS
-		{
-			render_pass_color_attachment* attachment = alloc.allocate<render_pass_color_attachment>(1);
-			attachment->clear_color					 = vector4(0.8f, 0.7f, 0.7f, 1.0f);
-			attachment->load_op						 = load_op::clear;
-			attachment->store_op					 = store_op::store;
-			attachment->texture						 = swapchain;
-
-			backend->cmd_begin_render_pass_swapchain(cmd_buffer, {.color_attachments = attachment, .color_attachment_count = 1});
-
-			backend->cmd_end_render_pass(cmd_buffer, {});
 		}
 	}
 
@@ -544,6 +490,7 @@ namespace Game
 		pfd.buf_gui_idx.buffer_data(sizeof(vekt::index) * static_cast<size_t>(pfd.counter_idx), buffer.index_start, static_cast<size_t>(buffer.index_count) * sizeof(vekt::index));
 
 		gui_draw_call& dc = pfd.draw_calls[pfd.draw_call_count];
+		dc				  = {};
 		dc.start_idx	  = static_cast<uint32>(pfd.counter_idx);
 		dc.start_vtx	  = static_cast<uint32>(pfd.counter_vtx);
 		dc.index_count	  = static_cast<uint32>(buffer.index_count);
@@ -575,12 +522,13 @@ namespace Game
 			dc.shader = buffer.used_font->type == vekt::font_type::sdf ? _shaders.gui_sdf.get_hw() : _shaders.gui_text.get_hw();
 			auto it	  = vector_util::find_if(_gfx_data.atlases, [&](const atlas_ref& ref) -> bool { return ref.atlas == buffer.used_font->_atlas; });
 			GAME_ASSERT(it != _gfx_data.atlases.end());
-			dc.bind_group = it->bind_group[_gfx_data.frame_index];
+			dc.bind_group = it->bind_group;
+			dc.has_bg	  = 1;
 		}
 		else
 		{
-			dc.shader	  = _shaders.gui_default.get_hw();
-			dc.bind_group = pfd.bind_group_gui_default;
+			dc.shader = _shaders.gui_default.get_hw();
+			dc.has_bg = 0;
 		}
 
 		pfd.draw_call_count++;
@@ -615,22 +563,10 @@ namespace Game
 			   .debug_name = "inter_buffer",
 		   });
 
-		ref.res_alive = true;
-
-		for (uint32 i = 0; i < FRAMES_IN_FLIGHT; i++)
-		{
-			per_frame_data& pfd = _pfd[i];
-			resource_id&	bg	= ref.bind_group[i];
-
-			bg = backend->create_empty_bind_group();
-
-			backend->bind_group_add_descriptor(bg, 0, binding_type::ubo);
-			backend->bind_group_add_constant(bg, 1, (uint8*)&SDF_PARAMS, 2);
-			backend->bind_group_add_pointer(bg, 2, 1, false);
-
-			backend->bind_group_update_descriptor(bg, 0, pfd.buf_gui_pass_view.get_hw_gpu());
-			backend->bind_group_update_pointer(bg, 2, {{.resource = ref.texture, .view = 0, .type = binding_type::texture}});
-		}
+		ref.res_alive  = true;
+		ref.bind_group = backend->create_empty_bind_group();
+		backend->bind_group_add_pointer(ref.bind_group, rpi_table_material, 3, false);
+		backend->bind_group_update_pointer(ref.bind_group, 0, {{.resource = ref.texture, .view = 0, .pointer_index = upi_material_texture0, .type = binding_type::texture}});
 	}
 
 	void debug_controller::on_atlas_updated(vekt::atlas* atlas)
@@ -682,8 +618,7 @@ namespace Game
 		gfx_backend* backend = gfx_backend::get();
 
 		backend->destroy_texture(ref.texture);
-		for (uint32 i = 0; i < FRAMES_IN_FLIGHT; i++)
-			backend->destroy_bind_group(ref.bind_group[i]);
+		backend->destroy_bind_group(ref.bind_group);
 
 		backend->destroy_resource(ref.intermediate_buffer);
 
@@ -822,5 +757,31 @@ namespace Game
 		}
 
 		return false;
+	}
+
+	void debug_controller::on_window_resize(const vector2ui16& size)
+	{
+		gfx_backend* backend = gfx_backend::get();
+		_gfx_data.rt_size	 = vector2ui16(size.x, size.y / 2);
+
+		for (uint32 i = 0; i < FRAMES_IN_FLIGHT; i++)
+		{
+			per_frame_data& pfd = _pfd[i];
+			backend->destroy_texture(pfd.render_target);
+
+			pfd.render_target = backend->create_texture({
+				.texture_format = RT_FORMAT,
+				.size			= vector2ui16(size.x, size.y / 2),
+				.flags			= texture_flags::tf_sampled | texture_flags::tf_is_2d | texture_flags::tf_render_target,
+				.debug_name		= "console_rt",
+			});
+			// backend->bind_group_update_pointer(pfd.bind_group_swapchain,
+			//								   1,
+			//								   {{
+			//									   .resource = pfd.render_target,
+			//									   .view	 = 0,
+			//									   .type	 = binding_type::texture,
+			//								   }});
+		}
 	}
 }
