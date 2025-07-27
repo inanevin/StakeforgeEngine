@@ -32,7 +32,7 @@ namespace Game
 		void reset_render_data(uint8 index);
 
 	private:
-		void send_uploads();
+		void send_uploads(uint8 frame_index);
 		void send_barriers(resource_id cmd_list);
 
 	private:

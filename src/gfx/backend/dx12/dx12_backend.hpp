@@ -215,10 +215,10 @@ namespace Game
 		void uninit();
 		void reset_command_buffer(resource_id cmd_buffer);
 		void close_command_buffer(resource_id cmd_buffer);
-		void submit_commands(resource_id queue, resource_id* commands, uint8 commands_count);
-		void queue_wait(resource_id queue, resource_id* semaphores, uint8 semaphore_count, uint64* semaphore_values);
-		void queue_signal(resource_id queue, resource_id* semaphores, uint8 semaphore_count, uint64* semaphore_values);
-		void present(resource_id* swapchains, uint8 swapchain_count);
+		void submit_commands(resource_id queue, const resource_id* commands, uint8 commands_count);
+		void queue_wait(resource_id queue, const resource_id* semaphores, uint8 semaphore_count, const uint64* semaphore_values);
+		void queue_signal(resource_id queue, const resource_id* semaphores, uint8 semaphore_count, const uint64* semaphore_values);
+		void present(const resource_id* swapchains, uint8 swapchain_count);
 
 		bool compile_shader_vertex_pixel(const string& source, const char* source_path, const char* vertex_entry, const char* pixel_entry, span<uint8>& vertex_out, span<uint8>& pixel_out, bool compile_layout, span<uint8>& out_layout) const;
 		bool compile_shader_compute(const string& source, const char* source_path, const char* entry, span<uint8>& out, bool compile_layout, span<uint8>& out_layout) const;

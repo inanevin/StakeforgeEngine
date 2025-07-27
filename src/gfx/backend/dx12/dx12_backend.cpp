@@ -744,7 +744,7 @@ namespace Game
 		throw_if_failed(cmd_list->Close());
 	}
 
-	void dx12_backend::submit_commands(resource_id queue_id, resource_id* commands, uint8 commands_count)
+	void dx12_backend::submit_commands(resource_id queue_id, const resource_id* commands, uint8 commands_count)
 	{
 		queue& q = _queues.get(queue_id);
 		_reuse_lists.resize(0);
@@ -758,7 +758,7 @@ namespace Game
 		q.ptr->ExecuteCommandLists(static_cast<uint32>(commands_count), _reuse_lists.data());
 	}
 
-	void dx12_backend::queue_wait(resource_id queue_id, resource_id* semaphores, uint8 semaphore_count, uint64* semaphore_values)
+	void dx12_backend::queue_wait(resource_id queue_id, const resource_id* semaphores, uint8 semaphore_count, const uint64* semaphore_values)
 	{
 		queue& q = _queues.get(queue_id);
 
@@ -766,7 +766,7 @@ namespace Game
 			q.ptr->Wait(_semaphores.get(semaphores[i]).ptr.Get(), semaphore_values[i]);
 	}
 
-	void dx12_backend::queue_signal(resource_id queue_id, resource_id* semaphores, uint8 semaphore_count, uint64* semaphore_values)
+	void dx12_backend::queue_signal(resource_id queue_id, const resource_id* semaphores, uint8 semaphore_count, const uint64* semaphore_values)
 	{
 		queue& q = _queues.get(queue_id);
 
@@ -776,7 +776,7 @@ namespace Game
 		}
 	}
 
-	void dx12_backend::present(resource_id* swapchains, uint8 swapchain_count)
+	void dx12_backend::present(const resource_id* swapchains, uint8 swapchain_count)
 	{
 		for (uint8 i = 0; i < swapchain_count; i++)
 		{
