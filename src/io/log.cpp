@@ -1,6 +1,7 @@
 // Copyright (c) 2025 Inan Evin
 
 #include "log.hpp"
+#include "data/vector_util.hpp"
 #include "data/string.hpp"
 
 #ifdef GAME_PLATFORM_WINDOWS
@@ -10,7 +11,7 @@
 
 namespace Game
 {
-	void log::log_impl(log::level level, const char* msg)
+	void log::log_impl(log_level level, const char* msg)
 	{
 		LOCK_GUARD(_mtx);
 
@@ -20,13 +21,13 @@ namespace Game
 		HANDLE hConsole;
 		int	   color = 15;
 
-		if (level == level::trace)
+		if (level == log_level::trace)
 			color = 3;
-		else if (level == level::info)
+		else if (level == log_level::info)
 			color = 15;
-		else if ((level == level::warning))
+		else if ((level == log_level::warning))
 			color = 6;
-		else if (level == level::error)
+		else if (level == log_level::error)
 			color = 4;
 
 		hConsole = GetStdHandle(STD_OUTPUT_HANDLE);
@@ -35,19 +36,32 @@ namespace Game
 #else
 		std::cout << msgStr.c_str();
 #endif
+
+		for (const listener& l : _listeners)
+			l.f(level, msg);
 	}
 
-	const char* log::get_level(level level)
+	void log::add_listener(unsigned int id, callback_function f)
+	{
+		_listeners.push_back({.id = id, .f = f});
+	}
+
+	void log::remove_listener(unsigned int id)
+	{
+		std::erase_if(_listeners, [id](const listener& l) -> bool { return l.id == id; });
+	}
+
+	const char* log::get_level(log_level level)
 	{
 		switch (level)
 		{
-		case level::error:
+		case log_level::error:
 			return "Error";
-		case level::info:
+		case log_level::info:
 			return "Info";
-		case level::trace:
+		case log_level::trace:
 			return "Trace";
-		case level::warning:
+		case log_level::warning:
 			return "Warn";
 		default:
 			return "";

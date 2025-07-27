@@ -18,6 +18,7 @@
 #include "math/color.hpp"
 #include "platform/process.hpp"
 #include "input/input_mappings.hpp"
+#include "debug_console.hpp"
 
 #define VEKT_STRING_CSTR
 #define VEKT_VEC4 Game::vector4
@@ -31,6 +32,8 @@ namespace Game
 #define MAX_CONSOLE_TEXT   128
 #define MAX_INPUT_FIELD	   127
 #define COLOR_TEXT		   color::srgb_to_linear(color(129.0f / 255.0f, 220.0f / 255.0f, 148.0f / 255.0f, 1.0f)).to_vector()
+#define COLOR_TEXT_WARN	   color::srgb_to_linear(color(240.0f / 255.0f, 220.0f / 255.0f, 148.0f / 255.0f, 1.0f)).to_vector()
+#define COLOR_TEXT_ERR	   color::srgb_to_linear(color(250.0f / 255.0f, 120.0f / 255.0f, 88.0f / 255.0f, 1.0f)).to_vector()
 #define COLOR_TEXT_DARK	   color::srgb_to_linear(color(119.0f / 255.0f, 210.0f / 255.0f, 138.0f / 255.0f, 1.0f)).to_vector()
 #define COLOR_CONSOLE_BG   color::srgb_to_linear(color(12.0f / 255.0f, 16.0f / 255.0f, 12.0f / 255.0f, 0.99f)).to_vector()
 #define COLOR_BORDER	   color::srgb_to_linear(color(89.0f / 255.0f, 180.0f / 255.0f, 108.0f / 255.0f, 1.0f)).to_vector()
@@ -39,11 +42,13 @@ namespace Game
 #define CONSOLE_SPACING	   static_cast<float>(DEBUG_FONT_SIZE) * 0.5f
 #define MAX_HISTORY		   8
 #define RT_FORMAT		   format::r8g8b8a8_srgb
+
 	void debug_controller::init(texture_queue* texture_queue, resource_id global_bind_layout, const vector2ui16& screen_size)
 	{
 		_gfx_data.texture_queue = texture_queue;
 		_gfx_data.rt_size		= vector2ui16(screen_size.x, screen_size.y / 2);
 		_gfx_data.window_size	= vector2ui16(screen_size.x, screen_size.y);
+		log::instance().add_listener(TO_SIDC("debug_controller"), std::bind(&debug_controller::on_log, this, std::placeholders::_1, std::placeholders::_2));
 
 		gfx_backend* backend = gfx_backend::get();
 
@@ -178,57 +183,11 @@ namespace Game
 		_input_field.history.reserve(MAX_CONSOLE_TEXT);
 
 		build_console();
+	}
 
-		add_console_text("engine_init_started");
-		add_console_text("loading_config_file: config/settings.json");
-		add_console_text("config_file_loaded_successfully");
-		add_console_text("initializing_window_system");
-		add_console_text("creating_main_window: 1280x720");
-		add_console_text("main_window_created");
-		add_console_text("initializing_input_system");
-		add_console_text("input_devices_detected: keyboard, mouse, gamepad");
-		add_console_text("initializing_render_backend: vulkan");
-		add_console_text("vulkan_instance_created");
-		add_console_text("physical_device_selected: nvidia_geforce_rtx_3080");
-		add_console_text("logical_device_created");
-		add_console_text("swapchain_created: 2_buffers, vsync_enabled");
-		add_console_text("render_pass_created");
-		add_console_text("framebuffers_initialized");
-		add_console_text("initializing_shader_compiler");
-		add_console_text("compiling_shader: shaders/basic.vert");
-		add_console_text("compiling_shader: shaders/basic.frag");
-		add_console_text("shader_compilation_succeeded: basic.vert");
-		add_console_text("shader_compilation_succeeded: basic.frag");
-		add_console_text("creating_default_materials");
-		add_console_text("material_loaded: default_lit");
-		add_console_text("material_loaded: default_unlit");
-		add_console_text("initializing_texture_system");
-		add_console_text("texture_loaded: textures/white.png");
-		add_console_text("texture_loaded: textures/normal_flat.png");
-		add_console_text("initializing_mesh_system");
-		add_console_text("mesh_loaded: primitives/cube.mesh");
-		add_console_text("mesh_loaded: primitives/sphere.mesh");
-		add_console_text("initializing_audio_system");
-		add_console_text("audio_device_opened: default_output");
-		add_console_text("loading_scene: maps/test_map.level");
-		add_console_text("scene_loaded_successfully");
-		add_console_text("creating_entity: player_character");
-		add_console_text("component_added: transform_component");
-		add_console_text("component_added: mesh_renderer_component");
-		add_console_text("component_added: input_controller_component");
-		add_console_text("initializing_physics_engine");
-		add_console_text("physics_world_created");
-		add_console_text("registering_collision_shapes");
-		add_console_text("starting_game_loop");
-		add_console_text("frame_start: delta_time=0.01667");
-		add_console_text("updating_system: input_system");
-		add_console_text("updating_system: script_system");
-		add_console_text("updating_system: animation_system");
-		add_console_text("rendering_frame");
-		add_console_text("presenting_frame");
-		add_console_text("frame_end");
-		add_console_text("fps: 60");
-		add_console_text("memory_usage: 152_mb");
+	void debug_controller::on_log(log_level lvl, const char* msg)
+	{
+		add_console_text(msg, lvl);
 	}
 
 	void debug_controller::build_console()
@@ -277,16 +236,15 @@ namespace Game
 			}
 
 			// border
-			// {
-			// 	vekt::id w = _vekt_data.builder->allocate();
-			// 	_vekt_data.builder->widget_add_child(_vekt_data.builder->get_root(), w);
-			// 	_vekt_data.builder->widget_set_pos(w, vector2(0.0f, 0.0f), vekt::helper_pos_type::relative, vekt::helper_pos_type::absolute);
-			// 	_vekt_data.builder->widget_set_size(w, vector2(DEBUG_FONT_SIZE * 0.05f, 1.0f), vekt::helper_size_type::absolute, vekt::helper_size_type::relative);
-			// 	vekt::widget_gfx& gfx = _vekt_data.builder->widget_get_gfx(w);
-			// 	gfx.flags			  = vekt::gfx_flags::gfx_is_rect;
-			// 	gfx.color			  = COLOR_CONSOLE_BG;
-			// }
-
+			{
+				vekt::id w = _vekt_data.builder->allocate();
+				_vekt_data.builder->widget_add_child(header, w);
+				_vekt_data.builder->widget_set_pos(w, vector2(0.0f, 0.5f), vekt::helper_pos_type::relative, vekt::helper_pos_type::relative, vekt::helper_anchor_type::start, vekt::helper_anchor_type::center);
+				_vekt_data.builder->widget_set_size(w, vector2(DEBUG_FONT_SIZE * 0.2f, 1.0f), vekt::helper_size_type::absolute, vekt::helper_size_type::relative);
+				vekt::widget_gfx& gfx = _vekt_data.builder->widget_get_gfx(w);
+				gfx.flags			  = vekt::gfx_flags::gfx_is_rect;
+				gfx.color			  = COLOR_CONSOLE_BG;
+			}
 			{
 				vekt::id w = _vekt_data.builder->allocate();
 				_vekt_data.builder->widget_add_child(header, w);
@@ -302,6 +260,17 @@ namespace Game
 				_vekt_data.builder->widget_update_text(w);
 			}
 
+			// border
+			{
+				vekt::id w = _vekt_data.builder->allocate();
+				_vekt_data.builder->widget_add_child(header, w);
+				_vekt_data.builder->widget_set_pos(w, vector2(0.0f, 0.5f), vekt::helper_pos_type::relative, vekt::helper_pos_type::relative, vekt::helper_anchor_type::start, vekt::helper_anchor_type::center);
+				_vekt_data.builder->widget_set_size(w, vector2(DEBUG_FONT_SIZE * 0.2f, 1.0f), vekt::helper_size_type::absolute, vekt::helper_size_type::relative);
+				vekt::widget_gfx& gfx = _vekt_data.builder->widget_get_gfx(w);
+				gfx.flags			  = vekt::gfx_flags::gfx_is_rect;
+				gfx.color			  = COLOR_CONSOLE_BG;
+			}
+
 			{
 				vekt::id w = _vekt_data.builder->allocate();
 				_vekt_data.builder->widget_add_child(header, w);
@@ -315,6 +284,17 @@ namespace Game
 				tp.font				 = _vekt_data.font_debug;
 				tp.text				 = _text_allocator.allocate("Render Thread: 1 ms");
 				_vekt_data.builder->widget_update_text(w);
+			}
+
+			// border
+			{
+				vekt::id w = _vekt_data.builder->allocate();
+				_vekt_data.builder->widget_add_child(header, w);
+				_vekt_data.builder->widget_set_pos(w, vector2(0.0f, 0.5f), vekt::helper_pos_type::relative, vekt::helper_pos_type::relative, vekt::helper_anchor_type::start, vekt::helper_anchor_type::center);
+				_vekt_data.builder->widget_set_size(w, vector2(DEBUG_FONT_SIZE * 0.2f, 1.0f), vekt::helper_size_type::absolute, vekt::helper_size_type::relative);
+				vekt::widget_gfx& gfx = _vekt_data.builder->widget_get_gfx(w);
+				gfx.flags			  = vekt::gfx_flags::gfx_is_rect;
+				gfx.color			  = COLOR_CONSOLE_BG;
 			}
 		}
 
@@ -442,6 +422,8 @@ namespace Game
 			pfd.buf_gui_idx.destroy();
 			pfd.buf_fullscreen_pass_view.destroy();
 		}
+
+		log::instance().remove_listener(TO_SIDC("debug_controller"));
 	}
 
 	void debug_controller::upload(buffer_queue& q, uint8 frame_index)
@@ -774,7 +756,7 @@ namespace Game
 		_gfx_data.atlases.erase(it);
 	}
 
-	void debug_controller::add_console_text(const string& text)
+	void debug_controller::add_console_text(const char* text, log_level level)
 	{
 		if (_vekt_data.console_texts.size() == MAX_CONSOLE_TEXT)
 		{
@@ -790,11 +772,23 @@ namespace Game
 
 		vekt::widget_gfx& gfx = _vekt_data.builder->widget_get_gfx(w);
 		gfx.flags			  = vekt::gfx_flags::gfx_is_text;
-		const color col		  = color::srgb_to_linear(color(89.0f / 255.0f, 180.0f / 255.0f, 108.0f / 255.0f, 1.0f));
 		gfx.color			  = COLOR_TEXT;
-		vekt::text_props& tp  = _vekt_data.builder->widget_get_text(w);
-		tp.text				  = _text_allocator.allocate(text.c_str());
-		tp.font				  = _vekt_data.font_debug;
+
+		switch (level)
+		{
+		case log_level::error:
+			gfx.color = COLOR_TEXT_ERR;
+			break;
+		case log_level::warning:
+			gfx.color = COLOR_TEXT_WARN;
+			break;
+		default:
+			gfx.color = COLOR_TEXT;
+		}
+
+		vekt::text_props& tp = _vekt_data.builder->widget_get_text(w);
+		tp.text				 = _text_allocator.allocate(text);
+		tp.font				 = _vekt_data.font_debug;
 		_vekt_data.builder->widget_update_text(w);
 		_vekt_data.builder->widget_add_child(_vekt_data.widget_console_bg, w);
 
@@ -823,7 +817,7 @@ namespace Game
 
 			if (ev.button == input_code::KeyReturn)
 			{
-				add_console_text(buffer);
+				add_console_text(buffer, log_level::trace);
 				if (_input_field.history.size() >= MAX_HISTORY)
 				{
 					const char* history = _input_field.history[0];
@@ -834,6 +828,8 @@ namespace Game
 				const char* history_element = _text_allocator.allocate(buffer);
 				_input_field.history.push_back(history_element);
 				_input_field.history_traversal = static_cast<int8>(_input_field.history.size());
+
+				debug_console::get()->parse_console_command(buffer);
 
 				buffer[0] = '\0';
 				update_console_input_field();

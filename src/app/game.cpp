@@ -7,6 +7,7 @@
 #include "gfx/common/render_data.hpp"
 #include "gfx/backend/backend.hpp"
 #include "io/log.hpp"
+#include "debug_console.hpp"
 
 namespace Game
 {
@@ -17,6 +18,7 @@ namespace Game
 		REGISTER_THREAD_MAIN();
 
 		time::init();
+		debug_console::init();
 
 		PUSH_MEMORY_CATEGORY("Gfx");
 		_main_window.create("Game", window_flags::wf_style_windowed | window_flags::wf_high_freq, vector2i16(0, 0), vector2ui16(1920, 1080));
@@ -39,6 +41,7 @@ namespace Game
 		join_render();
 
 		time::uninit();
+		debug_console::uninit();
 
 		PUSH_MEMORY_CATEGORY("Gfx");
 		_renderer.uninit();

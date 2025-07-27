@@ -2,6 +2,9 @@
 
 #pragma once
 
+#undef min
+#undef max
+
 #include <stdlib.h>
 #include <new>
 #include <limits>
@@ -20,9 +23,13 @@ namespace Game
 
 		[[nodiscard]] T* allocate(std::size_t n)
 		{
-			if (n > std::numeric_limits<std::size_t>::max() / sizeof(T)) throw std::bad_array_new_length();
+			if (n > std::numeric_limits<std::size_t>::max() / sizeof(T))
+				throw std::bad_array_new_length();
 
-			if (auto p = static_cast<T*>(std::malloc(n * sizeof(T)))) { return p; }
+			if (auto p = static_cast<T*>(std::malloc(n * sizeof(T))))
+			{
+				return p;
+			}
 
 			throw std::bad_alloc();
 		}

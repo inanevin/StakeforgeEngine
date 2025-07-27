@@ -32,6 +32,11 @@ namespace Game
 			return std::find_if(vec.begin(), vec.end(), pred);
 		}
 
+		template <typename T, class Predicate> inline uint32 erase_if(vector<T>& vec, Predicate pred)
+		{
+			return static_cast<uint32>(std::erase_if(vec, pred));
+		}
+
 		template <typename T> inline vector<T>::iterator remove(vector<T>& vec, T& value)
 		{
 			return vec.erase(std::remove(vec.begin(), vec.end(), value), vec.end());

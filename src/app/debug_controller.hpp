@@ -20,6 +20,7 @@ namespace vekt
 
 namespace Game
 {
+	enum class log_level;
 	class vector2ui;
 	class render_pass;
 	class bump_allocator;
@@ -47,9 +48,11 @@ namespace Game
 		}
 
 	private:
+		void on_log(log_level lvl, const char* msg);
+
 		void build_console();
 		void console_logic();
-		void add_console_text(const string& text);
+		void add_console_text(const char* text, log_level level);
 		void update_console_input_field();
 		void on_draw(const vekt::draw_buffer& buffer);
 		void on_atlas_created(vekt::atlas* atlas);

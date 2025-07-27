@@ -49,7 +49,7 @@ cbuffer MaterialCBV : material_ubo0
 }
 
 Texture2D _txt_render_target : material_texture0;
-SamplerState _smp_base : static_sampler_linear;
+SamplerState _smp_base : static_sampler_anisotropic;
 
 //------------------------------------------------------------------------------
 // Pixel Shader: just output the interpolated vertex color
@@ -59,7 +59,7 @@ float4 PSMain(VSOutput IN) : SV_TARGET
 	float2 uv = IN.uv;
 
     // --- Barrel distortion ---
-	const float distortionAmount = 0.0055f;
+	const float distortionAmount = 0.0045f;
 	const float baseAberration = 0.003; 
 	
 	float2 centeredUV = uv * 2.0f - 1.0f;
@@ -70,10 +70,10 @@ float4 PSMain(VSOutput IN) : SV_TARGET
 	float edgeFactor = saturate((r2 - 0.85));
     // 0.0 near center, 1.0 near corners — tweak the 0.2/0.8
 
-	float2 aberrationOffset = centeredUV * baseAberration * edgeFactor;
-	const float2 uvR = (centeredUV + aberrationOffset) * 0.5f + 0.5f;
+	float2 aberration_offset = centeredUV * baseAberration * edgeFactor;
+	const float2 uvR = (centeredUV + aberration_offset) * 0.5f + 0.5f;
 	const float2 uvG = centeredUV * 0.5f + 0.5f;
-	const float2 uvB = (centeredUV - aberrationOffset) * 0.5f + 0.5f;
+	const float2 uvB = (centeredUV - aberration_offset) * 0.5f + 0.5f;
 	float red = _txt_render_target.SampleLevel(_smp_base, uvR, 0).r;
 	float green = _txt_render_target.SampleLevel(_smp_base, uvG, 0).g;
 	float blue = _txt_render_target.SampleLevel(_smp_base, uvB, 0).b;

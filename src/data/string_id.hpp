@@ -8,9 +8,9 @@
 // Headers here.
 namespace Game
 {
-	typedef uint32 StringId;
-	typedef uint32 TypeId;
-	typedef uint64 Guid;
+	typedef uint32 string_id;
+	typedef uint32 type_id;
+	typedef uint64 guid;
 
 	// https://gist.github.com/hwei/1950649d523afd03285c
 	class FnvHash
@@ -83,7 +83,7 @@ namespace Game
 		}
 	};
 
-	constexpr StringId operator"" _hs(const char* str, std::size_t) noexcept
+	constexpr string_id operator"" _hs(const char* str, std::size_t) noexcept
 	{
 		return FnvHash(str);
 	}
