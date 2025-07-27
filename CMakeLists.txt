@@ -114,9 +114,8 @@ src/vendor/stb/*.h
 )
 
 if(WIN32)
-file(GLOB SHADERS
+file(GLOB_RECURSE SHADERS
 assets/engine/shaders/*.hlsl
-assets/engine/shaders/gui/*.hlsl
 )
 
 file(GLOB PLATFORM_SOURCES 

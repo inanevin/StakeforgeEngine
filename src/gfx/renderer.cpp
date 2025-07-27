@@ -13,6 +13,8 @@
 
 namespace Game
 {
+#define RT_FORMAT format::r8g8b8a8_srgb
+
 	void renderer::init(const window& main_window)
 	{
 		gfx_backend::s_instance = new gfx_backend();
@@ -40,6 +42,16 @@ namespace Game
 		_gfx_data.dummy_ubo		= backend->create_resource({.size = 4, .flags = resource_flags::rf_constant_buffer | resource_flags::rf_gpu_only});
 		_gfx_data.dummy_ssbo	= backend->create_resource({.size = 4, .flags = resource_flags::rf_storage_buffer | resource_flags::rf_gpu_only});
 
+		_shaders.swapchain.get_desc().attachments = {{.format = RT_FORMAT, .blend_attachment = gfx_util::get_blend_attachment_alpha_blending()}};
+		_shaders.swapchain.get_desc().inputs	  = gfx_util::get_input_layout(input_layout_type::gui_default);
+		_shaders.swapchain.get_desc().cull		  = cull_mode::back;
+		_shaders.swapchain.get_desc().front		  = front_face::cw;
+		_shaders.swapchain.get_desc().layout	  = _gfx_data.bind_layout_global;
+		_shaders.swapchain.get_desc().set_name("swapchain");
+		_shaders.swapchain.create_from_file_vertex_pixel("assets/engine/shaders/swapchain/swapchain.hlsl");
+
+		_debug_controller.init(&_texture_queue, _gfx_data.bind_layout_global, main_window.get_size());
+
 		for (uint32 i = 0; i < FRAMES_IN_FLIGHT; i++)
 		{
 			per_frame_data& pfd		= _pfd[i];
@@ -61,17 +73,21 @@ namespace Game
 			backend->bind_group_update_descriptor(pfd.bind_group_global, 0, pfd.buf_engine_global.get_hw_gpu());
 			gfx_util::update_dummy_bind_group(pfd.bind_group_global, _gfx_data.dummy_texture, _gfx_data.dummy_sampler, _gfx_data.dummy_ssbo, _gfx_data.dummy_ubo);
 
+			pfd.bind_group_swapchain = backend->create_empty_bind_group();
+			backend->bind_group_add_pointer(pfd.bind_group_swapchain, rpi_table_material, 3, false);
+			backend->bind_group_update_pointer(pfd.bind_group_swapchain, 0, {{.resource = _debug_controller.get_final_rt(i), .view = 0, .pointer_index = upi_material_texture0, .type = binding_type::texture}});
 			_frame_allocator[i].init(1024 * 1024, 4);
 		}
 
 		_buffer_queue.init();
 		_texture_queue.init();
-		_debug_controller.init(&_texture_queue, _gfx_data.bind_layout_global, main_window.get_size());
 		_reuse_barriers.reserve(256);
 	}
 
 	void renderer::uninit()
 	{
+		_shaders.swapchain.destroy();
+
 		_debug_controller.uninit();
 		_texture_queue.uninit();
 		_buffer_queue.uninit();
@@ -87,6 +103,7 @@ namespace Game
 		for (uint32 i = 0; i < FRAMES_IN_FLIGHT; i++)
 		{
 			per_frame_data& pfd = _pfd[i];
+			backend->destroy_bind_group(pfd.bind_group_swapchain);
 			backend->destroy_semaphore(pfd.sem_frame.semaphore);
 			backend->destroy_semaphore(pfd.sem_copy.semaphore);
 			backend->destroy_command_buffer(pfd.cmd_gfx);
@@ -178,8 +195,9 @@ namespace Game
 			backend->cmd_begin_render_pass_swapchain(pfd.cmd_gfx, {.color_attachments = attachment, .color_attachment_count = 1});
 			backend->cmd_set_scissors(pfd.cmd_gfx, {.width = static_cast<uint16>(size.x), .height = static_cast<uint16>(size.y)});
 			backend->cmd_set_viewport(pfd.cmd_gfx, {.width = static_cast<uint16>(size.x), .height = static_cast<uint16>(size.y)});
-			// backend->cmd_bind_pipeline(cmd_buffer, {.pipeline = _shaders.swapchain_gui.get_hw()});
-			// backend->cmd_draw_instanced(cmd_buffer, {.vertex_count_per_instance = 6, .instance_count = 1});
+			backend->cmd_bind_group(pfd.cmd_gfx, {.group = pfd.bind_group_swapchain});
+			backend->cmd_bind_pipeline(pfd.cmd_gfx, {.pipeline = _shaders.swapchain.get_hw()});
+			backend->cmd_draw_instanced(pfd.cmd_gfx, {.vertex_count_per_instance = 6, .instance_count = 1});
 			backend->cmd_end_render_pass(pfd.cmd_gfx, {});
 		}
 
@@ -230,6 +248,11 @@ namespace Game
 		});
 
 		_debug_controller.on_window_resize(size);
+
+		for (uint32 i = 0; i < FRAMES_IN_FLIGHT; i++)
+		{
+			backend->bind_group_update_pointer(_pfd[i].bind_group_swapchain, 0, {{.resource = _debug_controller.get_final_rt(i), .view = 0, .pointer_index = upi_material_texture0, .type = binding_type::texture}});
+		}
 	}
 
 	void renderer::reset_render_data(uint8 index)

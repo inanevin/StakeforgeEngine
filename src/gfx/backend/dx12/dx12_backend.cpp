@@ -1292,7 +1292,7 @@ namespace Game
 			NAME_DX12_OBJECT_CSTR(swp.textures[i], "Swapchain RTV");
 		}
 
-		return resource_id();
+		return desc.swapchain;
 	}
 
 	void dx12_backend::destroy_swapchain(resource_id id)

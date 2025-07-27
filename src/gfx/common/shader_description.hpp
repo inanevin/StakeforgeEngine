@@ -228,7 +228,8 @@ namespace Game
 
 		inline void set_name(const char* name)
 		{
-			strcpy(debug_name, name);
+			if (strlen(name) < 16)
+				strcpy(debug_name, name);
 		}
 	};
 

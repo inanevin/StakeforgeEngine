@@ -28,7 +28,7 @@ namespace Game
 	struct window_event;
 	struct barrier;
 
-#define MAX_GUI_DRAW_CALLS 1000
+#define MAX_GUI_DRAW_CALLS 32
 
 	class debug_controller
 	{
@@ -40,6 +40,11 @@ namespace Game
 		void upload(buffer_queue& q, uint8 frame_index);
 		void on_window_resize(const vector2ui16& size);
 		bool on_window_event(const window_event& ev);
+
+		inline resource_id get_final_rt(uint8 frame_index) const
+		{
+			return _pfd[frame_index].rt_fullscreen;
+		}
 
 	private:
 		void build_console();
@@ -55,25 +60,26 @@ namespace Game
 		struct gui_draw_call
 		{
 			vector4ui16 scissors	= vector4ui16::zero;
-			uint32		start_vtx	= 0;
-			uint32		start_idx	= 0;
-			uint32		index_count = 0;
+			uint16		start_vtx	= 0;
+			uint16		start_idx	= 0;
+			uint16		index_count = 0;
 			resource_id shader		= 0;
 			resource_id bind_group	= 0;
-			uint8		has_bg		= 0;
 		};
 
 		struct per_frame_data
 		{
-			gui_draw_call draw_calls[MAX_GUI_DRAW_CALLS];
-			buffer		  buf_gui_vtx				 = {};
-			buffer		  buf_gui_idx				 = {};
-			buffer		  buf_gui_pass_view			 = {};
-			resource_id	  bind_group_gui_render_pass = 0;
-			resource_id	  render_target				 = 0;
-			unsigned int  counter_vtx				 = 0;
-			unsigned int  counter_idx				 = 0;
-			uint16		  draw_call_count			 = 0;
+			buffer		 buf_gui_vtx				= {};
+			buffer		 buf_gui_idx				= {};
+			buffer		 buf_gui_pass_view			= {};
+			buffer		 buf_fullscreen_pass_view	= {};
+			resource_id	 bind_group_gui_render_pass = 0;
+			resource_id	 bind_group_fullscreen		= 0;
+			resource_id	 rt_console					= 0;
+			resource_id	 rt_fullscreen				= 0;
+			unsigned int counter_vtx				= 0;
+			unsigned int counter_idx				= 0;
+			uint16		 draw_call_count			= 0;
 
 			inline void reset()
 			{
@@ -89,6 +95,11 @@ namespace Game
 			float	  sdf_softness	= 0.02f;
 		};
 
+		struct fullscreen_pass_view
+		{
+			vector2 size = vector2::zero;
+		};
+
 		struct atlas_ref
 		{
 			vekt::atlas*   atlas			   = nullptr;
@@ -101,16 +112,17 @@ namespace Game
 
 		struct shaders
 		{
-			shader gui_default	 = {};
-			shader gui_text		 = {};
-			shader gui_sdf		 = {};
-			shader swapchain_gui = {};
+			shader gui_default					 = {};
+			shader gui_text						 = {};
+			shader gui_sdf						 = {};
+			shader debug_controller_console_draw = {};
 		};
 
 		struct gfx_data
 		{
 			vector<atlas_ref> atlases;
 			texture_queue*	  texture_queue = nullptr;
+			vector2ui16		  window_size	= vector2ui16::zero;
 			vector2ui16		  rt_size		= vector2ui16::zero;
 			uint64			  frame_counter = 0;
 			uint8			  frame_index	= 0;
@@ -144,5 +156,6 @@ namespace Game
 		vekt_data			  _vekt_data	  = {};
 		input_field			  _input_field	  = {};
 		per_frame_data		  _pfd[FRAMES_IN_FLIGHT];
+		gui_draw_call		  _gui_draw_calls[MAX_GUI_DRAW_CALLS];
 	};
 }

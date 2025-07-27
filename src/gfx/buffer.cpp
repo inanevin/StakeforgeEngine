@@ -36,7 +36,7 @@ namespace Game
 		_mapped = nullptr;
 	}
 
-	void buffer::buffer_data(size_t padding, void* data, size_t size)
+	void buffer::buffer_data(size_t padding, const void* data, size_t size)
 	{
 		GAME_MEMCPY(_mapped + padding, data, size);
 		_flags.set(buf_modified);

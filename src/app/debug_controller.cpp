@@ -30,8 +30,8 @@ namespace Game
 
 #define MAX_CONSOLE_TEXT   128
 #define MAX_INPUT_FIELD	   127
-#define COLOR_TEXT		   color::srgb_to_linear(color(89.0f / 255.0f, 180.0f / 255.0f, 108.0f / 255.0f, 1.0f)).to_vector()
-#define COLOR_TEXT_LIGHT   color::srgb_to_linear(color(119.0f / 255.0f, 210.0f / 255.0f, 138.0f / 255.0f, 1.0f)).to_vector()
+#define COLOR_TEXT		   color::srgb_to_linear(color(129.0f / 255.0f, 220.0f / 255.0f, 148.0f / 255.0f, 1.0f)).to_vector()
+#define COLOR_TEXT_DARK	   color::srgb_to_linear(color(119.0f / 255.0f, 210.0f / 255.0f, 138.0f / 255.0f, 1.0f)).to_vector()
 #define COLOR_CONSOLE_BG   color::srgb_to_linear(color(12.0f / 255.0f, 16.0f / 255.0f, 12.0f / 255.0f, 0.99f)).to_vector()
 #define COLOR_BORDER	   color::srgb_to_linear(color(89.0f / 255.0f, 180.0f / 255.0f, 108.0f / 255.0f, 1.0f)).to_vector()
 #define DEBUG_FONT_SIZE	   16
@@ -39,11 +39,11 @@ namespace Game
 #define CONSOLE_SPACING	   static_cast<float>(DEBUG_FONT_SIZE) * 0.5f
 #define MAX_HISTORY		   8
 #define RT_FORMAT		   format::r8g8b8a8_srgb
-
 	void debug_controller::init(texture_queue* texture_queue, resource_id global_bind_layout, const vector2ui16& screen_size)
 	{
 		_gfx_data.texture_queue = texture_queue;
 		_gfx_data.rt_size		= vector2ui16(screen_size.x, screen_size.y / 2);
+		_gfx_data.window_size	= vector2ui16(screen_size.x, screen_size.y);
 
 		gfx_backend* backend = gfx_backend::get();
 
@@ -61,7 +61,7 @@ namespace Game
 		_shaders.gui_text.get_desc().inputs		 = gfx_util::get_input_layout(input_layout_type::gui_default);
 		_shaders.gui_text.get_desc().cull		 = cull_mode::back;
 		_shaders.gui_text.get_desc().front		 = front_face::cw;
-		_shaders.gui_default.get_desc().layout	 = global_bind_layout;
+		_shaders.gui_text.get_desc().layout		 = global_bind_layout;
 		_shaders.gui_text.get_desc().set_name("gui_text");
 		_shaders.gui_text.create_from_file_vertex_pixel("assets/engine/shaders/gui/gui_text.hlsl");
 
@@ -70,28 +70,35 @@ namespace Game
 		_shaders.gui_sdf.get_desc().inputs		= gfx_util::get_input_layout(input_layout_type::gui_default);
 		_shaders.gui_sdf.get_desc().cull		= cull_mode::back;
 		_shaders.gui_sdf.get_desc().front		= front_face::cw;
-		_shaders.gui_default.get_desc().layout	= global_bind_layout;
+		_shaders.gui_sdf.get_desc().layout		= global_bind_layout;
 		_shaders.gui_sdf.get_desc().set_name("gui_sdf");
 		_shaders.gui_sdf.create_from_file_vertex_pixel("assets/engine/shaders/gui/gui_sdf.hlsl");
 
 		// gui swapchain
-		// _shaders.swapchain_gui.get_desc().attachments = {{.format = RT_FORMAT, .blend_attachment = gfx_util::get_blend_attachment_alpha_blending()}};
-		// _shaders.swapchain_gui.get_desc().inputs	  = {};
-		// _shaders.swapchain_gui.get_desc().cull		  = cull_mode::none;
-		// _shaders.swapchain_gui.get_desc().front		  = front_face::cw;
-		// _shaders.gui_default.get_desc().layout		  = global_bind_layout;
-		// _shaders.swapchain_gui.get_desc().set_name("swapchain_gui");
-		// _shaders.swapchain_gui.create_from_file_vertex_pixel("assets/engine/shaders/gui/gui_console_effects_swapchain.hlsl");
+		_shaders.debug_controller_console_draw.get_desc().attachments = {{.format = RT_FORMAT, .blend_attachment = gfx_util::get_blend_attachment_alpha_blending()}};
+		_shaders.debug_controller_console_draw.get_desc().inputs	  = {};
+		_shaders.debug_controller_console_draw.get_desc().cull		  = cull_mode::none;
+		_shaders.debug_controller_console_draw.get_desc().front		  = front_face::cw;
+		_shaders.debug_controller_console_draw.get_desc().layout	  = global_bind_layout;
+		_shaders.debug_controller_console_draw.get_desc().set_name("dbg_cont");
+		_shaders.debug_controller_console_draw.create_from_file_vertex_pixel("assets/engine/shaders/debug_controller/console_draw.hlsl");
 
 		for (uint32 i = 0; i < FRAMES_IN_FLIGHT; i++)
 		{
 			per_frame_data& pfd = _pfd[i];
 
-			pfd.render_target = backend->create_texture({
+			pfd.rt_console = backend->create_texture({
 				.texture_format = RT_FORMAT,
 				.size			= vector2ui16(screen_size.x, screen_size.y / 2),
 				.flags			= texture_flags::tf_sampled | texture_flags::tf_is_2d | texture_flags::tf_render_target,
 				.debug_name		= "console_rt",
+			});
+
+			pfd.rt_fullscreen = backend->create_texture({
+				.texture_format = RT_FORMAT,
+				.size			= vector2ui16(screen_size.x, screen_size.y),
+				.flags			= texture_flags::tf_sampled | texture_flags::tf_is_2d | texture_flags::tf_render_target,
+				.debug_name		= "debug_rt",
 			});
 
 			pfd.buf_gui_pass_view.create_hw({
@@ -100,12 +107,27 @@ namespace Game
 				.debug_name = "cbv_gui_pass",
 			});
 
+			pfd.buf_fullscreen_pass_view.create_hw({
+				.size		= sizeof(fullscreen_pass_view),
+				.flags		= resource_flags::rf_cpu_visible | resource_flags::rf_constant_buffer,
+				.debug_name = "cbv_fs_pass",
+			});
+
 			pfd.bind_group_gui_render_pass = backend->create_empty_bind_group();
 			backend->bind_group_add_pointer(pfd.bind_group_gui_render_pass, rpi_table_render_pass, 1, false);
 			backend->bind_group_update_pointer(pfd.bind_group_gui_render_pass,
 											   0,
 											   {
 												   {.resource = pfd.buf_gui_pass_view.get_hw_gpu(), .pointer_index = upi_render_pass_ubo0, .type = binding_type::ubo},
+											   });
+
+			pfd.bind_group_fullscreen = backend->create_empty_bind_group();
+			backend->bind_group_add_pointer(pfd.bind_group_fullscreen, rpi_table_material, 3, false);
+			backend->bind_group_update_pointer(pfd.bind_group_fullscreen,
+											   0,
+											   {
+												   {.resource = pfd.buf_fullscreen_pass_view.get_hw_gpu(), .pointer_index = upi_material_ubo0, .type = binding_type::ubo},
+												   {.resource = pfd.rt_console, .pointer_index = upi_material_texture0, .type = binding_type::texture},
 											   });
 
 			pfd.buf_gui_vtx.create_staging_hw(
@@ -222,15 +244,78 @@ namespace Game
 
 		// header
 		{
-			vekt::id w = _vekt_data.builder->allocate();
-			_vekt_data.builder->widget_add_child(_vekt_data.builder->get_root(), w);
+			vekt::id header = _vekt_data.builder->allocate();
+			_vekt_data.builder->widget_add_child(_vekt_data.builder->get_root(), header);
 
-			_vekt_data.builder->widget_set_pos(w, vector2(0.0f, 0.0f));
-			_vekt_data.builder->widget_set_size(w, vector2(1.0f, INPUT_FIELD_HEIGHT), vekt::helper_size_type::relative, vekt::helper_size_type::absolute);
+			_vekt_data.builder->widget_set_pos(header, vector2(0.0f, 0.0f));
+			_vekt_data.builder->widget_set_size(header, vector2(1.0f, INPUT_FIELD_HEIGHT), vekt::helper_size_type::relative, vekt::helper_size_type::absolute);
 
-			vekt::widget_gfx& gfx = _vekt_data.builder->widget_get_gfx(w);
+			vekt::pos_props& pos_props = _vekt_data.builder->widget_get_pos_props(header);
+			pos_props.flags			   = vekt::pos_flags::pf_child_pos_row;
+
+			vekt::size_props& props	 = _vekt_data.builder->widget_get_size_props(header);
+			props.child_margins.left = static_cast<float>(DEBUG_FONT_SIZE) * 0.5f;
+			props.spacing			 = CONSOLE_SPACING;
+
+			vekt::widget_gfx& gfx = _vekt_data.builder->widget_get_gfx(header);
 			gfx.flags			  = vekt::gfx_flags::gfx_is_rect;
-			gfx.color			  = COLOR_TEXT_LIGHT;
+			gfx.color			  = COLOR_TEXT_DARK;
+
+			{
+				vekt::id w = _vekt_data.builder->allocate();
+				_vekt_data.builder->widget_add_child(header, w);
+				_vekt_data.builder->widget_set_pos(w, vector2(0.0f, 0.5f), vekt::helper_pos_type::relative, vekt::helper_pos_type::relative, vekt::helper_anchor_type::start, vekt::helper_anchor_type::center);
+
+				vekt::widget_gfx& gfx = _vekt_data.builder->widget_get_gfx(w);
+				gfx.flags			  = vekt::gfx_flags::gfx_is_text;
+				gfx.color			  = COLOR_CONSOLE_BG;
+
+				vekt::text_props& tp = _vekt_data.builder->widget_get_text(w);
+				tp.font				 = _vekt_data.font_debug;
+				tp.text				 = _text_allocator.allocate("FPS: 60");
+				_vekt_data.builder->widget_update_text(w);
+			}
+
+			// border
+			// {
+			// 	vekt::id w = _vekt_data.builder->allocate();
+			// 	_vekt_data.builder->widget_add_child(_vekt_data.builder->get_root(), w);
+			// 	_vekt_data.builder->widget_set_pos(w, vector2(0.0f, 0.0f), vekt::helper_pos_type::relative, vekt::helper_pos_type::absolute);
+			// 	_vekt_data.builder->widget_set_size(w, vector2(DEBUG_FONT_SIZE * 0.05f, 1.0f), vekt::helper_size_type::absolute, vekt::helper_size_type::relative);
+			// 	vekt::widget_gfx& gfx = _vekt_data.builder->widget_get_gfx(w);
+			// 	gfx.flags			  = vekt::gfx_flags::gfx_is_rect;
+			// 	gfx.color			  = COLOR_CONSOLE_BG;
+			// }
+
+			{
+				vekt::id w = _vekt_data.builder->allocate();
+				_vekt_data.builder->widget_add_child(header, w);
+				_vekt_data.builder->widget_set_pos(w, vector2(0.0f, 0.5f), vekt::helper_pos_type::relative, vekt::helper_pos_type::relative, vekt::helper_anchor_type::start, vekt::helper_anchor_type::center);
+
+				vekt::widget_gfx& gfx = _vekt_data.builder->widget_get_gfx(w);
+				gfx.flags			  = vekt::gfx_flags::gfx_is_text;
+				gfx.color			  = COLOR_CONSOLE_BG;
+
+				vekt::text_props& tp = _vekt_data.builder->widget_get_text(w);
+				tp.font				 = _vekt_data.font_debug;
+				tp.text				 = _text_allocator.allocate("Main Thread: 1 ms");
+				_vekt_data.builder->widget_update_text(w);
+			}
+
+			{
+				vekt::id w = _vekt_data.builder->allocate();
+				_vekt_data.builder->widget_add_child(header, w);
+				_vekt_data.builder->widget_set_pos(w, vector2(0.0f, 0.5f), vekt::helper_pos_type::relative, vekt::helper_pos_type::relative, vekt::helper_anchor_type::start, vekt::helper_anchor_type::center);
+
+				vekt::widget_gfx& gfx = _vekt_data.builder->widget_get_gfx(w);
+				gfx.flags			  = vekt::gfx_flags::gfx_is_text;
+				gfx.color			  = COLOR_CONSOLE_BG;
+
+				vekt::text_props& tp = _vekt_data.builder->widget_get_text(w);
+				tp.font				 = _vekt_data.font_debug;
+				tp.text				 = _text_allocator.allocate("Render Thread: 1 ms");
+				_vekt_data.builder->widget_update_text(w);
+			}
 		}
 
 		// Console parent
@@ -339,33 +424,32 @@ namespace Game
 		_shaders.gui_default.destroy();
 		_shaders.gui_text.destroy();
 		_shaders.gui_sdf.destroy();
+		_shaders.debug_controller_console_draw.destroy();
 
 		for (uint32 i = 0; i < FRAMES_IN_FLIGHT; i++)
 		{
 			per_frame_data& pfd = _pfd[i];
-
-			backend->destroy_texture(pfd.render_target);
+			backend->destroy_texture(pfd.rt_console);
+			backend->destroy_texture(pfd.rt_fullscreen);
 			backend->destroy_bind_group(pfd.bind_group_gui_render_pass);
+			backend->destroy_bind_group(pfd.bind_group_fullscreen);
 			backend->unmap_resource(pfd.buf_gui_pass_view.get_hw_gpu());
+			backend->unmap_resource(pfd.buf_fullscreen_pass_view.get_hw_gpu());
 			backend->unmap_resource(pfd.buf_gui_vtx.get_hw_staging());
 			backend->unmap_resource(pfd.buf_gui_idx.get_hw_staging());
 			pfd.buf_gui_pass_view.destroy();
 			pfd.buf_gui_vtx.destroy();
 			pfd.buf_gui_idx.destroy();
+			pfd.buf_fullscreen_pass_view.destroy();
 		}
 	}
 
 	void debug_controller::upload(buffer_queue& q, uint8 frame_index)
 	{
-		per_frame_data& pfd = _pfd[frame_index];
-		pfd.reset();
 		_gfx_data.frame_index = frame_index;
 
-		_vekt_data.builder->build_begin(vector2(_gfx_data.rt_size.x, _gfx_data.rt_size.y));
-		console_logic();
-		_vekt_data.builder->build_end();
-		_vekt_data.builder->flush();
-
+		per_frame_data& pfd = _pfd[frame_index];
+		pfd.reset();
 		q.add_request({.buffer = &pfd.buf_gui_idx});
 		q.add_request({.buffer = &pfd.buf_gui_vtx});
 
@@ -374,15 +458,31 @@ namespace Game
 			.sdf_thickness = 0.5f,
 			.sdf_softness  = 0.02f,
 		};
-
 		pfd.buf_gui_pass_view.buffer_data(0, (void*)&view, sizeof(gui_pass_view));
+
+		const fullscreen_pass_view fs_view = {
+			.size = vector2(static_cast<float>(_gfx_data.rt_size.x), static_cast<float>(_gfx_data.rt_size.y)),
+		};
+		pfd.buf_fullscreen_pass_view.buffer_data(0, (void*)&fs_view, sizeof(fullscreen_pass_view));
+
+		_vekt_data.builder->build_begin(vector2(_gfx_data.rt_size.x, _gfx_data.rt_size.y));
+		console_logic();
+		_vekt_data.builder->build_end();
+		_vekt_data.builder->flush();
 	}
 
 	void debug_controller::collect_barriers(vector<barrier>& out_barriers)
 	{
 		per_frame_data& pfd = _pfd[_gfx_data.frame_index];
 		out_barriers.push_back({
-			.resource	= pfd.render_target,
+			.resource	= pfd.rt_console,
+			.flags		= barrier_flags::baf_is_texture,
+			.from_state = resource_state::ps_resource,
+			.to_state	= resource_state::render_target,
+		});
+
+		out_barriers.push_back({
+			.resource	= pfd.rt_fullscreen,
 			.flags		= barrier_flags::baf_is_texture,
 			.from_state = resource_state::ps_resource,
 			.to_state	= resource_state::render_target,
@@ -391,56 +491,89 @@ namespace Game
 
 	void debug_controller::render(resource_id cmd_buffer, uint8 frame_index, bump_allocator& alloc)
 	{
-		gfx_backend*	backend = gfx_backend::get();
-		per_frame_data& pfd		= _pfd[frame_index];
+		per_frame_data&	  pfd				= _pfd[frame_index];
+		const vector2ui16 rt_size			= _gfx_data.rt_size;
+		const resource_id rt_console		= pfd.rt_console;
+		const resource_id rt_fullscreen		= pfd.rt_fullscreen;
+		const resource_id gui_vertex		= pfd.buf_gui_vtx.get_hw_gpu();
+		const resource_id gui_index			= pfd.buf_gui_idx.get_hw_gpu();
+		const resource_id bg_rp				= pfd.bind_group_gui_render_pass;
+		const resource_id bg_fullscreen		= pfd.bind_group_fullscreen;
+		const resource_id shader_fullscreen = _shaders.debug_controller_console_draw.get_hw();
+		const uint16	  dc_count			= pfd.draw_call_count;
 
-		// render pass on RT
+		render_pass_color_attachment* attachment_console_rt = alloc.allocate<render_pass_color_attachment>(1);
+		attachment_console_rt->clear_color					= vector4(0.0f, 0.0f, 0.0f, 0.0f);
+		attachment_console_rt->load_op						= load_op::clear;
+		attachment_console_rt->store_op						= store_op::store;
+		attachment_console_rt->texture						= rt_console;
+
+		render_pass_color_attachment* attachment_fullscreen_rt = alloc.allocate<render_pass_color_attachment>(1);
+		attachment_fullscreen_rt->clear_color				   = vector4(0.0f, 0.0f, 0.0f, 0.0f);
+		attachment_fullscreen_rt->load_op					   = load_op::clear;
+		attachment_fullscreen_rt->store_op					   = store_op::store;
+		attachment_fullscreen_rt->texture					   = rt_fullscreen;
+
+		gfx_backend* backend = gfx_backend::get();
+		backend->cmd_bind_group(cmd_buffer, {.group = bg_rp});
+		backend->cmd_set_viewport(cmd_buffer, {.width = static_cast<uint16>(rt_size.x), .height = static_cast<uint16>(rt_size.y)});
+
+		backend->cmd_begin_render_pass(cmd_buffer, {.color_attachments = attachment_console_rt, .color_attachment_count = 1});
+		backend->cmd_bind_vertex_buffers(cmd_buffer, {.buffer = gui_vertex, .vertex_size = sizeof(vekt::vertex)});
+		backend->cmd_bind_index_buffers(cmd_buffer, {.buffer = gui_index, .bit_depth = 16});
+
+		int32 last_pipeline = -1, last_bind_group = -1;
+
+		for (uint16 i = 0; i < dc_count; i++)
 		{
-			render_pass_color_attachment* attachment = alloc.allocate<render_pass_color_attachment>(1);
-			attachment->clear_color					 = vector4(0.7f, 0.7f, 0.7f, 1.0f);
-			attachment->load_op						 = load_op::clear;
-			attachment->store_op					 = store_op::store;
-			attachment->texture						 = pfd.render_target;
+			gui_draw_call& dc = _gui_draw_calls[i];
 
-			backend->cmd_begin_render_pass(cmd_buffer, {.color_attachments = attachment, .color_attachment_count = 1});
-			backend->cmd_set_viewport(cmd_buffer, {.width = static_cast<uint16>(_gfx_data.rt_size.x), .height = static_cast<uint16>(_gfx_data.rt_size.y)});
-			backend->cmd_bind_vertex_buffers(cmd_buffer, {.buffer = pfd.buf_gui_vtx.get_hw_gpu(), .vertex_size = sizeof(vekt::vertex)});
-			backend->cmd_bind_index_buffers(cmd_buffer, {.buffer = pfd.buf_gui_idx.get_hw_gpu(), .bit_depth = 16});
-			backend->cmd_bind_group(cmd_buffer, {.group = pfd.bind_group_gui_render_pass});
+			backend->cmd_set_scissors(cmd_buffer, {.x = dc.scissors.x, .y = dc.scissors.y, .width = dc.scissors.z, .height = dc.scissors.w});
 
-			int32 last_pipeline = -1, last_bind_group = -1;
-
-			for (uint16 i = 0; i < pfd.draw_call_count; i++)
+			if (last_pipeline == -1 || last_pipeline != dc.shader)
 			{
-				gui_draw_call& dc = pfd.draw_calls[i];
-
-				backend->cmd_set_scissors(cmd_buffer, {.x = dc.scissors.x, .y = dc.scissors.y, .width = dc.scissors.z, .height = dc.scissors.w});
-
-				if (last_pipeline == -1 || last_pipeline != dc.shader)
-				{
-					backend->cmd_bind_pipeline(cmd_buffer, {.pipeline = dc.shader});
-					last_pipeline = static_cast<int32>(dc.shader);
-				}
-
-				if (dc.has_bg == 1 && (last_bind_group == -1 || last_bind_group != dc.bind_group))
-				{
-					backend->cmd_bind_group(cmd_buffer, {.group = dc.bind_group});
-					last_bind_group = static_cast<int32>(dc.bind_group);
-				}
-				backend->cmd_draw_indexed_instanced(cmd_buffer, {.index_count_per_instance = dc.index_count, .instance_count = 1, .start_index_location = dc.start_idx, .base_vertex_location = dc.start_vtx, .start_instance_location = 0});
+				backend->cmd_bind_pipeline(cmd_buffer, {.pipeline = dc.shader});
+				last_pipeline = static_cast<int32>(dc.shader);
 			}
 
-			backend->cmd_end_render_pass(cmd_buffer, {});
-
-			barrier br_rt = {
-				.resource	= pfd.render_target,
-				.flags		= barrier_flags::baf_is_texture,
-				.from_state = resource_state::render_target,
-				.to_state	= resource_state::ps_resource,
-			};
-
-			backend->cmd_barrier(cmd_buffer, {.barriers = &br_rt, .barrier_count = 1});
+			if (CHECK_BIT(dc.bind_group, 15) && (last_bind_group == -1 || last_bind_group != dc.bind_group))
+			{
+				const resource_id bg = UNSET_BIT(dc.bind_group, 15);
+				backend->cmd_bind_group(cmd_buffer, {.group = bg});
+				last_bind_group = static_cast<int32>(dc.bind_group);
+			}
+			backend->cmd_draw_indexed_instanced(cmd_buffer, {.index_count_per_instance = dc.index_count, .instance_count = 1, .start_index_location = dc.start_idx, .base_vertex_location = dc.start_vtx, .start_instance_location = 0});
 		}
+
+		backend->cmd_end_render_pass(cmd_buffer, {});
+
+		const barrier br_rt = {
+			.resource	= rt_console,
+			.flags		= barrier_flags::baf_is_texture,
+			.from_state = resource_state::render_target,
+			.to_state	= resource_state::ps_resource,
+		};
+
+		backend->cmd_barrier(cmd_buffer, {.barriers = &br_rt, .barrier_count = 1});
+
+		backend->cmd_begin_render_pass(cmd_buffer, {.color_attachments = attachment_fullscreen_rt, .color_attachment_count = 1});
+		backend->cmd_set_scissors(cmd_buffer, {.width = static_cast<uint16>(rt_size.x), .height = static_cast<uint16>(rt_size.y)});
+		backend->cmd_set_viewport(cmd_buffer, {.width = static_cast<uint16>(rt_size.x), .height = static_cast<uint16>(rt_size.y)});
+
+		// fullscreen draw
+		backend->cmd_bind_group(cmd_buffer, {.group = bg_fullscreen});
+		backend->cmd_bind_pipeline(cmd_buffer, {.pipeline = shader_fullscreen});
+		backend->cmd_draw_instanced(cmd_buffer, {.vertex_count_per_instance = 6, .instance_count = 1, .start_vertex_location = 0, .start_instance_location = 0});
+
+		backend->cmd_end_render_pass(cmd_buffer, {});
+
+		const barrier br_rt_fs = {
+			.resource	= rt_fullscreen,
+			.flags		= barrier_flags::baf_is_texture,
+			.from_state = resource_state::render_target,
+			.to_state	= resource_state::ps_resource,
+		};
+		backend->cmd_barrier(cmd_buffer, {.barriers = &br_rt_fs, .barrier_count = 1});
 	}
 
 	void debug_controller::console_logic()
@@ -477,63 +610,75 @@ namespace Game
 	void debug_controller::update_console_input_field()
 	{
 		_vekt_data.builder->widget_update_text(_vekt_data.widget_input_text);
+		// const vector2 corrected_size = _vekt_data.builder->get_text_size({.text = "AtgyC", .font = _vekt_data.font_debug});
+		// _vekt_data.builder->widget_get_size_props(_vekt_data.widget_input_text).size.y = corrected_size.y;
 		_input_field.text_size = strlen(_input_field.text);
 		_input_field.caret_pos = math::min(_input_field.caret_pos, _input_field.text_size);
 	}
 
 	void debug_controller::on_draw(const vekt::draw_buffer& buffer)
 	{
-		gfx_backend*	backend = gfx_backend::get();
-		per_frame_data& pfd		= _pfd[_gfx_data.frame_index];
+		gfx_backend* backend = gfx_backend::get();
 
-		pfd.buf_gui_vtx.buffer_data(sizeof(vekt::vertex) * static_cast<size_t>(pfd.counter_vtx), buffer.vertex_start, static_cast<size_t>(buffer.vertex_count) * sizeof(vekt::vertex));
-		pfd.buf_gui_idx.buffer_data(sizeof(vekt::index) * static_cast<size_t>(pfd.counter_idx), buffer.index_start, static_cast<size_t>(buffer.index_count) * sizeof(vekt::index));
+		const vekt::font*	  font			   = buffer.used_font;
+		const vekt::atlas*	  atlas			   = font ? font->_atlas : nullptr;
+		const vekt::font_type font_type		   = font ? font->type : vekt::font_type::normal;
+		const vekt::vertex*	  buffer_vtx_start = buffer.vertex_start;
+		const vekt::index*	  buffer_idx_start = buffer.index_start;
+		const vector4		  clip			   = buffer.clip;
+		const uint32		  buffer_idx_count = buffer.index_count;
+		const uint32		  buffer_vtx_count = buffer.vertex_count;
 
-		gui_draw_call& dc = pfd.draw_calls[pfd.draw_call_count];
+		per_frame_data& pfd			= _pfd[_gfx_data.frame_index];
+		const uint32	vtx_counter = pfd.counter_vtx;
+		const uint32	idx_counter = pfd.counter_idx;
+		const uint32	dc_count	= pfd.draw_call_count;
+		pfd.draw_call_count++;
+		pfd.counter_vtx += buffer_vtx_count;
+		pfd.counter_idx += buffer_idx_count;
+		pfd.buf_gui_vtx.buffer_data(sizeof(vekt::vertex) * static_cast<size_t>(vtx_counter), buffer_vtx_start, static_cast<size_t>(buffer_vtx_count) * sizeof(vekt::vertex));
+		pfd.buf_gui_idx.buffer_data(sizeof(vekt::index) * static_cast<size_t>(idx_counter), buffer_idx_start, static_cast<size_t>(buffer_idx_count) * sizeof(vekt::index));
+		GAME_ASSERT(pfd.draw_call_count < MAX_GUI_DRAW_CALLS);
+
+		gui_draw_call& dc = _gui_draw_calls[dc_count];
 		dc				  = {};
-		dc.start_idx	  = static_cast<uint32>(pfd.counter_idx);
-		dc.start_vtx	  = static_cast<uint32>(pfd.counter_vtx);
-		dc.index_count	  = static_cast<uint32>(buffer.index_count);
+		dc.start_idx	  = idx_counter;
+		dc.start_vtx	  = vtx_counter;
+		dc.index_count	  = static_cast<uint32>(buffer_idx_count);
 
-		if (buffer.clip.y < 0.0f)
+		if (clip.y < 0.0f)
 		{
 			dc.scissors.y = 0;
-			dc.scissors.w = static_cast<uint16>(math::max(0.0f, buffer.clip.w + buffer.clip.y));
+			dc.scissors.w = static_cast<uint16>(math::max(0.0f, clip.w + clip.y));
 		}
 		else
 		{
-			dc.scissors.y = static_cast<uint16>(buffer.clip.y);
-			dc.scissors.w = static_cast<uint16>(buffer.clip.w);
+			dc.scissors.y = static_cast<uint16>(clip.y);
+			dc.scissors.w = static_cast<uint16>(clip.w);
 		}
 
-		if (buffer.clip.x < 0.0f)
+		if (clip.x < 0.0f)
 		{
 			dc.scissors.x = 0;
-			dc.scissors.z = math::min((uint16)0, static_cast<uint16>(buffer.clip.x + buffer.clip.z));
+			dc.scissors.z = math::min((uint16)0, static_cast<uint16>(clip.x + clip.z));
 		}
 		else
 		{
-			dc.scissors.x = static_cast<uint16>(buffer.clip.x);
-			dc.scissors.z = static_cast<uint16>(buffer.clip.z);
+			dc.scissors.x = static_cast<uint16>(clip.x);
+			dc.scissors.z = static_cast<uint16>(clip.z);
 		}
 
-		if (buffer.used_font)
+		if (font)
 		{
-			dc.shader = buffer.used_font->type == vekt::font_type::sdf ? _shaders.gui_sdf.get_hw() : _shaders.gui_text.get_hw();
-			auto it	  = vector_util::find_if(_gfx_data.atlases, [&](const atlas_ref& ref) -> bool { return ref.atlas == buffer.used_font->_atlas; });
+			dc.shader = font_type == vekt::font_type::sdf ? _shaders.gui_sdf.get_hw() : _shaders.gui_text.get_hw();
+			auto it	  = vector_util::find_if(_gfx_data.atlases, [&](const atlas_ref& ref) -> bool { return ref.atlas == atlas; });
 			GAME_ASSERT(it != _gfx_data.atlases.end());
-			dc.bind_group = it->bind_group;
-			dc.has_bg	  = 1;
+			dc.bind_group = SET_BIT(it->bind_group, 15);
 		}
 		else
 		{
 			dc.shader = _shaders.gui_default.get_hw();
-			dc.has_bg = 0;
 		}
-
-		pfd.draw_call_count++;
-		pfd.counter_vtx += buffer.vertex_count;
-		pfd.counter_idx += buffer.index_count;
 	}
 
 	void debug_controller::on_atlas_created(vekt::atlas* atlas)
@@ -761,27 +906,35 @@ namespace Game
 
 	void debug_controller::on_window_resize(const vector2ui16& size)
 	{
-		gfx_backend* backend = gfx_backend::get();
-		_gfx_data.rt_size	 = vector2ui16(size.x, size.y / 2);
+		gfx_backend* backend  = gfx_backend::get();
+		_gfx_data.rt_size	  = vector2ui16(size.x, size.y / 2);
+		_gfx_data.window_size = vector2ui16(size.x, size.y);
 
 		for (uint32 i = 0; i < FRAMES_IN_FLIGHT; i++)
 		{
 			per_frame_data& pfd = _pfd[i];
-			backend->destroy_texture(pfd.render_target);
+			backend->destroy_texture(pfd.rt_console);
+			backend->destroy_texture(pfd.rt_fullscreen);
 
-			pfd.render_target = backend->create_texture({
+			pfd.rt_console = backend->create_texture({
 				.texture_format = RT_FORMAT,
 				.size			= vector2ui16(size.x, size.y / 2),
 				.flags			= texture_flags::tf_sampled | texture_flags::tf_is_2d | texture_flags::tf_render_target,
 				.debug_name		= "console_rt",
 			});
-			// backend->bind_group_update_pointer(pfd.bind_group_swapchain,
-			//								   1,
-			//								   {{
-			//									   .resource = pfd.render_target,
-			//									   .view	 = 0,
-			//									   .type	 = binding_type::texture,
-			//								   }});
+
+			pfd.rt_fullscreen = backend->create_texture({
+				.texture_format = RT_FORMAT,
+				.size			= vector2ui16(size.x, size.y),
+				.flags			= texture_flags::tf_sampled | texture_flags::tf_is_2d | texture_flags::tf_render_target,
+				.debug_name		= "debug_rt",
+			});
+
+			backend->bind_group_update_pointer(pfd.bind_group_fullscreen,
+											   0,
+											   {
+												   {.resource = pfd.rt_console, .pointer_index = upi_material_texture0, .type = binding_type::texture},
+											   });
 		}
 	}
 }

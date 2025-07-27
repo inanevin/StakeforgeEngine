@@ -285,8 +285,8 @@ namespace Game
 	{
 		static constexpr uint8 TID = 18;
 
-		barrier* barriers	   = nullptr;
-		uint16	 barrier_count = 0;
+		const barrier* barriers		 = nullptr;
+		uint16		   barrier_count = 0;
 	};
 
 	struct command_bind_layout

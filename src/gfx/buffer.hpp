@@ -16,7 +16,7 @@ namespace Game
 		void create_staging_hw(const resource_desc& staging, const resource_desc& hw);
 		void create_hw(const resource_desc& desc);
 		void destroy();
-		void buffer_data(size_t padding, void* data, size_t size);
+		void buffer_data(size_t padding, const void* data, size_t size);
 		bool copy(resource_id cmd_buffer);
 
 		inline resource_id get_hw_staging() const
