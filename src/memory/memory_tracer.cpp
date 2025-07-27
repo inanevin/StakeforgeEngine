@@ -32,6 +32,7 @@ namespace Game
 			if (!buffer)
 				return;
 			const int written = snprintf(buffer, bufferSize, " %d\n", n);
+
 			if (written > 0 && static_cast<size_t>(written) < bufferSize)
 			{
 				WriteConsole(GetStdHandle(STD_OUTPUT_HANDLE), buffer, static_cast<DWORD>(written), NULL, NULL);

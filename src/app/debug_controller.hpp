@@ -62,8 +62,15 @@ namespace Game
 		void on_atlas_created(vekt::atlas* atlas);
 		void on_atlas_updated(vekt::atlas* atlas);
 		void on_atlas_destroyed(vekt::atlas* atlas);
+		void set_console_visible(bool visible);
 
 	private:
+		enum class console_state
+		{
+			invisible,
+			visible,
+		};
+
 		struct key_event
 		{
 			input_code button;
@@ -149,6 +156,7 @@ namespace Game
 			int32		   widget_console_bg		 = -1;
 			int32		   widget_input_field		 = -1;
 			int32		   widget_input_text		 = {};
+			int32		   widget_border			 = {};
 			int32		   widget_fps				 = 0;
 			int32		   widget_main_thread		 = 0;
 			int32		   widget_render_thread		 = 0;
@@ -176,5 +184,6 @@ namespace Game
 		per_frame_data											 _pfd[FRAMES_IN_FLIGHT];
 		gui_draw_call											 _gui_draw_calls[MAX_GUI_DRAW_CALLS];
 		moodycamel::ReaderWriterQueue<key_event, MAX_KEY_EVENTS> _key_events;
+		console_state											 _console_state = console_state::invisible;
 	};
 }

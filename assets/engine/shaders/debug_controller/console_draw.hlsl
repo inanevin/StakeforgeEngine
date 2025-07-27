@@ -74,10 +74,11 @@ float4 PSMain(VSOutput IN) : SV_TARGET
 	const float2 uvR = (centeredUV + aberration_offset) * 0.5f + 0.5f;
 	const float2 uvG = centeredUV * 0.5f + 0.5f;
 	const float2 uvB = (centeredUV - aberration_offset) * 0.5f + 0.5f;
-	float red = _txt_render_target.SampleLevel(_smp_base, uvR, 0).r;
+	float4 sample_red = _txt_render_target.SampleLevel(_smp_base, uvR, 0);
+	float red = sample_red.r;
 	float green = _txt_render_target.SampleLevel(_smp_base, uvG, 0).g;
 	float blue = _txt_render_target.SampleLevel(_smp_base, uvB, 0).b;
-	float4 color = float4(red, green, blue, 1.0f);
+	float4 color = float4(red, green, blue, sample_red.a);
 	
 	float falloff = dot(centeredUV, centeredUV); // r^2 falloff
 	float shading = saturate(1.0 - falloff * 0.15); // tweak 0.75 for how fast it darkens

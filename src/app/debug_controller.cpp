@@ -82,7 +82,7 @@ namespace Game
 		_shaders.gui_sdf.get_desc().set_name("gui_sdf");
 		_shaders.gui_sdf.create_from_file_vertex_pixel("assets/engine/shaders/gui/gui_sdf.hlsl");
 
-		// gui swapchain
+		// console draw
 		_shaders.debug_controller_console_draw.get_desc().attachments = {{.format = RT_FORMAT, .blend_attachment = gfx_util::get_blend_attachment_alpha_blending()}};
 		_shaders.debug_controller_console_draw.get_desc().inputs	  = {};
 		_shaders.debug_controller_console_draw.get_desc().cull		  = cull_mode::none;
@@ -197,11 +197,29 @@ namespace Game
 
 	void debug_controller::flush_key_events()
 	{
-
 		key_event ev = {};
 
 		while (_key_events.try_dequeue(ev))
 		{
+			if (ev.button == input_code::KeyTilde)
+			{
+				if (_console_state == console_state::visible)
+				{
+					_console_state = console_state::invisible;
+					set_console_visible(false);
+					while (_key_events.pop())
+						continue;
+					return;
+				}
+				else if (_console_state == console_state::invisible)
+				{
+					_console_state = console_state::visible;
+					set_console_visible(true);
+
+					continue;
+				}
+			}
+
 			_input_field.text_size = static_cast<int8>(strlen(_input_field.text));
 			char* buffer		   = const_cast<char*>(_input_field.text);
 
@@ -527,9 +545,10 @@ namespace Game
 			_vekt_data.builder->widget_add_child(_vekt_data.builder->get_root(), w);
 			_vekt_data.builder->widget_set_pos(w, vector2(0.0f, 0.0f), vekt::helper_pos_type::relative, vekt::helper_pos_type::absolute);
 			_vekt_data.builder->widget_set_size(w, vector2(1.0f, DEBUG_FONT_SIZE * 0.05f), vekt::helper_size_type::relative, vekt::helper_size_type::absolute);
-			vekt::widget_gfx& gfx = _vekt_data.builder->widget_get_gfx(w);
-			gfx.flags			  = vekt::gfx_flags::gfx_is_rect;
-			gfx.color			  = COLOR_BORDER;
+			vekt::widget_gfx& gfx	 = _vekt_data.builder->widget_get_gfx(w);
+			gfx.flags				 = vekt::gfx_flags::gfx_is_rect;
+			gfx.color				 = COLOR_BORDER;
+			_vekt_data.widget_border = w;
 		}
 
 		// Input Field
@@ -586,6 +605,8 @@ namespace Game
 			_vekt_data.widget_input_text = w;
 			_vekt_data.builder->widget_update_text(w);
 		}
+
+		set_console_visible(false);
 	}
 
 	void debug_controller::uninit()
@@ -762,37 +783,7 @@ namespace Game
 
 	void debug_controller::console_logic()
 	{
-		vekt::pos_props&  console_bg_pos_props	= _vekt_data.builder->widget_get_pos_props(_vekt_data.widget_console_bg);
-		vekt::size_props& console_bg_size_props = _vekt_data.builder->widget_get_size_props(_vekt_data.widget_console_bg);
-		const vector2&	  console_bg_size		= _vekt_data.builder->widget_get_size(_vekt_data.widget_console_bg);
-		const vector2	  pos_text				= _vekt_data.builder->widget_get_pos(_vekt_data.widget_input_text);
-		const vector2	  size_text				= _vekt_data.builder->widget_get_size(_vekt_data.widget_input_text);
-		const vector2	  pos_field				= _vekt_data.builder->widget_get_pos(_vekt_data.widget_input_field);
-		const float		  total_element_size	= _vekt_data.console_total_text_size_y;
-		console_bg_pos_props.scroll_offset		= -math::max(total_element_size - (console_bg_size.y - console_bg_size_props.child_margins.top - console_bg_size_props.child_margins.bottom), 0.0f);
-
-		vekt::widget_gfx gfx = {};
-
-		const float size_per_char = _input_field.text_size == 0 ? 0 : (size_text.x / static_cast<float>(_input_field.text_size));
-
-		const vector2					pos	  = vector2(pos_text.x + (size_per_char * static_cast<float>(_input_field.caret_pos)), pos_field.y + INPUT_FIELD_HEIGHT * 0.25f);
-		const vekt::builder::rect_props props = {
-			.gfx			 = gfx,
-			.min			 = pos,
-			.max			 = vector2(pos.x + INPUT_FIELD_HEIGHT * 0.25f, pos.y + INPUT_FIELD_HEIGHT * 0.5f),
-			.use_hovered	 = false,
-			.use_pressed	 = false,
-			.color_start	 = COLOR_TEXT,
-			.color_end		 = {},
-			.color_direction = vekt::direction::horizontal,
-			.widget_id		 = 0,
-			.multi_color	 = false,
-		};
-
-		_vekt_data.builder->add_filled_rect(props);
-
 		_gfx_data.frame_counter++;
-
 		if (_gfx_data.frame_counter % 120 == 0)
 		{
 			const vekt::text_props& fps_props	  = _vekt_data.builder->widget_get_text(_vekt_data.widget_fps);
@@ -824,6 +815,38 @@ namespace Game
 			}
 #endif
 		}
+
+		if (_console_state == console_state::invisible)
+			return;
+
+		vekt::pos_props&  console_bg_pos_props	= _vekt_data.builder->widget_get_pos_props(_vekt_data.widget_console_bg);
+		vekt::size_props& console_bg_size_props = _vekt_data.builder->widget_get_size_props(_vekt_data.widget_console_bg);
+		const vector2&	  console_bg_size		= _vekt_data.builder->widget_get_size(_vekt_data.widget_console_bg);
+		const vector2	  pos_text				= _vekt_data.builder->widget_get_pos(_vekt_data.widget_input_text);
+		const vector2	  size_text				= _vekt_data.builder->widget_get_size(_vekt_data.widget_input_text);
+		const vector2	  pos_field				= _vekt_data.builder->widget_get_pos(_vekt_data.widget_input_field);
+		const float		  total_element_size	= _vekt_data.console_total_text_size_y;
+		console_bg_pos_props.scroll_offset		= -math::max(total_element_size - (console_bg_size.y - console_bg_size_props.child_margins.top - console_bg_size_props.child_margins.bottom), 0.0f);
+
+		vekt::widget_gfx gfx = {};
+
+		const float size_per_char = _input_field.text_size == 0 ? 0 : (size_text.x / static_cast<float>(_input_field.text_size));
+
+		const vector2					pos	  = vector2(pos_text.x + (size_per_char * static_cast<float>(_input_field.caret_pos)), pos_field.y + INPUT_FIELD_HEIGHT * 0.25f);
+		const vekt::builder::rect_props props = {
+			.gfx			 = gfx,
+			.min			 = pos,
+			.max			 = vector2(pos.x + INPUT_FIELD_HEIGHT * 0.25f, pos.y + INPUT_FIELD_HEIGHT * 0.5f),
+			.use_hovered	 = false,
+			.use_pressed	 = false,
+			.color_start	 = COLOR_TEXT,
+			.color_end		 = {},
+			.color_direction = vekt::direction::horizontal,
+			.widget_id		 = 0,
+			.multi_color	 = false,
+		};
+
+		_vekt_data.builder->add_filled_rect(props);
 	}
 
 	void debug_controller::update_console_input_field()
@@ -994,6 +1017,13 @@ namespace Game
 		_gfx_data.atlases.erase(it);
 	}
 
+	void debug_controller::set_console_visible(bool visible)
+	{
+		_vekt_data.builder->widget_set_visible(_vekt_data.widget_console_bg, visible);
+		_vekt_data.builder->widget_set_visible(_vekt_data.widget_input_field, visible);
+		_vekt_data.builder->widget_set_visible(_vekt_data.widget_border, visible);
+	}
+
 	void debug_controller::add_console_text(const char* text, log_level level)
 	{
 		if (level == log_level::trace)
@@ -1042,6 +1072,9 @@ namespace Game
 	{
 		if (ev.type == window_event_type::key && ev.sub_type != window_event_sub_type::release)
 		{
+			if (_console_state == console_state::invisible && ev.button != input_code::KeyTilde)
+				return false;
+
 			const key_event ke = {.button = ev.button};
 			_key_events.try_enqueue(ke);
 			return true;
