@@ -26,7 +26,7 @@ namespace Game
 		void uninit();
 		void wait_backend();
 		void populate_render_data(uint8 index);
-		void render(uint8 index, const vector2ui16& size);
+		void render(uint8 index, const vector2ui16& size, int64& out_time_before_presnet, int64& out_time_after_present);
 		bool on_window_event(const window_event& ev);
 		void on_window_resize(const vector2ui16& size);
 		void reset_render_data(uint8 index);

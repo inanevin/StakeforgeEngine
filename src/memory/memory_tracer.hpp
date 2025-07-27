@@ -27,6 +27,7 @@ namespace Game
 	};
 
 	typedef phmap::flat_hash_map<void*, memory_track, phmap::priv::hash_default_hash<void*>, phmap::priv::hash_default_eq<void*>, malloc_allocator_map<void*>> alloc_map;
+	template <typename T> using vector_malloc = std::vector<T, malloc_allocator_stl<T>>;
 
 	struct memory_category
 	{
@@ -50,6 +51,16 @@ namespace Game
 		void push_category(const char* name);
 		void pop_category();
 
+		mutex& get_category_mtx()
+		{
+			return _category_mtx;
+		}
+
+		const vector_malloc<memory_category>& get_categories() const
+		{
+			return _categories;
+		}
+
 	protected:
 		void destroy();
 
@@ -64,8 +75,6 @@ namespace Game
 		void check_leaks();
 
 	private:
-		template <typename T> using vector_malloc = std::vector<T, malloc_allocator_stl<T>>;
-
 		mutex						   _category_mtx;
 		vector_malloc<memory_category> _categories;
 		vector_malloc<uint8>		   _category_ids;

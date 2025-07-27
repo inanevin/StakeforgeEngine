@@ -44,6 +44,17 @@ namespace Game
 		static std::thread::id _thread_id_main;
 	};
 
+#define REGISTER_THREAD_MAIN()	 thread_info::register_thread_main(std::this_thread::get_id())
+#define REGISTER_THREAD_RENDER() thread_info::register_thread_render(std::this_thread::get_id())
+#define VERIFY_THREAD_MAIN()	 GAME_ASSERT(thread_info::get_thread_id_main() == std::this_thread::get_id())
+#define VERIFY_THREAD_RENDER()	 GAME_ASSERT(thread_info::get_thread_id_render() == std::this_thread::get_id())
+#else
+#define REGISTER_THREAD_MAIN()
+#define REGISTER_THREAD_RENDER()
+#define VERIFY_THREAD_MAIN()
+#define VERIFY_THREAD_RENDER()
+#endif
+
 	class frame_info
 	{
 	public:
@@ -57,6 +68,11 @@ namespace Game
 			return s_render_thread_time_milli.load();
 		}
 
+		static double get_present_time_milli()
+		{
+			return s_present_time_milli.load();
+		}
+
 		static uint32 get_fps()
 		{
 			return s_fps.load();
@@ -67,18 +83,7 @@ namespace Game
 
 		static atomic<double> s_main_thread_time_milli;
 		static atomic<double> s_render_thread_time_milli;
+		static atomic<double> s_present_time_milli;
 		static atomic<uint32> s_fps;
 	};
-
-#define REGISTER_THREAD_MAIN()	 thread_info::register_thread_main(std::this_thread::get_id())
-#define REGISTER_THREAD_RENDER() thread_info::register_thread_render(std::this_thread::get_id())
-#define VERIFY_THREAD_MAIN()	 GAME_ASSERT(thread_info::get_thread_id_main() == std::this_thread::get_id())
-#define VERIFY_THREAD_RENDER()	 GAME_ASSERT(thread_info::get_thread_id_render() == std::this_thread::get_id())
-#else
-#define REGISTER_THREAD_MAIN()
-#define REGISTER_RENDER_THREAD()
-#define VERIFY_THREAD_MAIN()
-#define VERIFY_THREAD_RENDER()
-#endif
-
 }

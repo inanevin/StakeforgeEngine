@@ -157,10 +157,11 @@ namespace Game
 		vector<view_desc> views				   = {
 			   {},
 		   };
-		uint8 mip_levels	 = 1;
-		uint8 array_length	 = 1;
-		uint8 samples		 = 1;
-		char  debug_name[16] = {"Texture"};
+		uint8 mip_levels	  = 1;
+		uint8 array_length	  = 1;
+		uint8 samples		  = 1;
+		float clear_values[4] = {0.0f, 0.0f, 0.0f, 1.0f};
+		char  debug_name[16]  = {"Texture"};
 	};
 
 	struct sampler_desc

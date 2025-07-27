@@ -945,11 +945,28 @@ namespace Game
 		resource_desc.Format			  = color_format;
 		resource_desc.Dimension			  = desc.flags.is_set(texture_flags::tf_is_1d) ? D3D12_RESOURCE_DIMENSION_TEXTURE1D : (desc.flags.is_set(texture_flags::tf_is_3d) ? D3D12_RESOURCE_DIMENSION_TEXTURE3D : D3D12_RESOURCE_DIMENSION_TEXTURE2D);
 
+		D3D12_CLEAR_VALUE  clear_value	   = {};
+		D3D12_CLEAR_VALUE* clear_value_ptr = nullptr;
+
 		if (desc.flags.is_set(texture_flags::tf_depth_texture) || desc.flags.is_set(texture_flags::tf_stencil_texture))
+		{
+			clear_value.Format				 = depth_format;
+			clear_value.DepthStencil.Depth	 = desc.clear_values[0];
+			clear_value.DepthStencil.Stencil = desc.clear_values[1];
+			clear_value_ptr					 = &clear_value;
 			resource_desc.Flags |= D3D12_RESOURCE_FLAG_ALLOW_DEPTH_STENCIL;
+		}
 
 		if (desc.flags.is_set(texture_flags::tf_render_target))
+		{
 			resource_desc.Flags |= D3D12_RESOURCE_FLAG_ALLOW_RENDER_TARGET;
+			clear_value.Format	 = color_format;
+			clear_value.Color[0] = desc.clear_values[0];
+			clear_value.Color[1] = desc.clear_values[1];
+			clear_value.Color[2] = desc.clear_values[2];
+			clear_value.Color[3] = desc.clear_values[3];
+			clear_value_ptr		 = &clear_value;
+		}
 
 		if (desc.samples == 1 && !desc.flags.is_set(texture_flags::tf_sampled) && !desc.flags.is_set(texture_flags::tf_sampled_outside_fragment) && (desc.flags.is_set(texture_flags::tf_depth_texture) || desc.flags.is_set(texture_flags::tf_stencil_texture)))
 			resource_desc.Flags |= D3D12_RESOURCE_FLAG_DENY_SHADER_RESOURCE;
@@ -962,7 +979,7 @@ namespace Game
 
 		const D3D12_RESOURCE_ALLOCATION_INFO& allocation_info = _device->GetResourceAllocationInfo(0, 1, &resource_desc);
 
-		throw_if_failed(_allocator->CreateResource(&allocation_desc, &resource_desc, state, NULL, &txt.ptr, IID_NULL, NULL));
+		throw_if_failed(_allocator->CreateResource(&allocation_desc, &resource_desc, state, clear_value_ptr, &txt.ptr, IID_NULL, NULL));
 		NAME_DX12_OBJECT_CSTR(txt.ptr->GetResource(), desc.debug_name);
 
 		auto create_srv = [&](DXGI_FORMAT format, bool createForCubemap, uint32 baseArrayLayer, uint32 layerCount, uint32 baseMipLevel, uint32 mipLevels, const descriptor_handle& targetDescriptor) {

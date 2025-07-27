@@ -69,6 +69,7 @@ namespace Game
 			{
 				memory_category& cat = _categories[_current_active_category - 1];
 				cat.total_size -= it->second.size;
+				GAME_ASSERT(cat.total_size >= 0);
 			}
 
 			return;

@@ -19,6 +19,7 @@
 #include "platform/process.hpp"
 #include "input/input_mappings.hpp"
 #include "debug_console.hpp"
+#include "memory/memory_tracer.hpp"
 
 #define VEKT_STRING_CSTR
 #define VEKT_VEC4 Game::vector4
@@ -42,6 +43,8 @@ namespace Game
 #define CONSOLE_SPACING	   static_cast<float>(DEBUG_FONT_SIZE) * 0.5f
 #define MAX_HISTORY		   8
 #define RT_FORMAT		   format::r8g8b8a8_srgb
+
+	static constexpr float B_TO_MB = 1024.0f * 1024.0f;
 
 	void debug_controller::init(texture_queue* texture_queue, resource_id global_bind_layout, const vector2ui16& screen_size)
 	{
@@ -96,6 +99,7 @@ namespace Game
 				.texture_format = RT_FORMAT,
 				.size			= vector2ui16(screen_size.x, screen_size.y / 2),
 				.flags			= texture_flags::tf_sampled | texture_flags::tf_is_2d | texture_flags::tf_render_target,
+				.clear_values	= {0.0f, 0.0f, 0.0f, 0.0f},
 				.debug_name		= "console_rt",
 			});
 
@@ -103,6 +107,7 @@ namespace Game
 				.texture_format = RT_FORMAT,
 				.size			= vector2ui16(screen_size.x, screen_size.y),
 				.flags			= texture_flags::tf_sampled | texture_flags::tf_is_2d | texture_flags::tf_render_target,
+				.clear_values	= {0.0f, 0.0f, 0.0f, 0.0f},
 				.debug_name		= "debug_rt",
 			});
 
@@ -137,24 +142,24 @@ namespace Game
 
 			pfd.buf_gui_vtx.create_staging_hw(
 				{
-					.size		= sizeof(vekt::vertex) * 10000,
+					.size		= sizeof(vekt::vertex) * 14000,
 					.flags		= resource_flags::rf_vertex_buffer | resource_flags::rf_cpu_visible,
 					.debug_name = "gui_vertex_stg",
 				},
 				{
-					.size		= sizeof(vekt::vertex) * 10000,
+					.size		= sizeof(vekt::vertex) * 14000,
 					.flags		= resource_flags::rf_vertex_buffer | resource_flags::rf_gpu_only,
 					.debug_name = "gui_vertex_gpu",
 				});
 
 			pfd.buf_gui_idx.create_staging_hw(
 				{
-					.size		= sizeof(vekt::index) * 12000,
+					.size		= sizeof(vekt::index) * 24000,
 					.flags		= resource_flags::rf_index_buffer | resource_flags::rf_cpu_visible,
 					.debug_name = "gui_index_stg",
 				},
 				{
-					.size		= sizeof(vekt::index) * 12000,
+					.size		= sizeof(vekt::index) * 24000,
 					.flags		= resource_flags::rf_index_buffer | resource_flags::rf_gpu_only,
 					.debug_name = "gui_index_gpu",
 				});
@@ -395,6 +400,90 @@ namespace Game
 				_vekt_data.builder->widget_update_text(w);
 
 				_vekt_data.widget_render_thread = w;
+			}
+
+			// border
+			{
+				vekt::id w = _vekt_data.builder->allocate();
+				_vekt_data.builder->widget_add_child(header, w);
+				_vekt_data.builder->widget_set_pos(w, vector2(0.0f, 0.5f), vekt::helper_pos_type::relative, vekt::helper_pos_type::relative, vekt::helper_anchor_type::start, vekt::helper_anchor_type::center);
+				_vekt_data.builder->widget_set_size(w, vector2(DEBUG_FONT_SIZE * 0.2f, 1.0f), vekt::helper_size_type::absolute, vekt::helper_size_type::relative);
+				vekt::widget_gfx& gfx = _vekt_data.builder->widget_get_gfx(w);
+				gfx.flags			  = vekt::gfx_flags::gfx_is_rect;
+				gfx.color			  = COLOR_CONSOLE_BG;
+			}
+
+			{
+				vekt::id w = _vekt_data.builder->allocate();
+				_vekt_data.builder->widget_add_child(header, w);
+				_vekt_data.builder->widget_set_pos(w, vector2(0.0f, 0.5f), vekt::helper_pos_type::relative, vekt::helper_pos_type::relative, vekt::helper_anchor_type::start, vekt::helper_anchor_type::center);
+
+				vekt::widget_gfx& gfx = _vekt_data.builder->widget_get_gfx(w);
+				gfx.flags			  = vekt::gfx_flags::gfx_is_text;
+				gfx.color			  = COLOR_CONSOLE_BG;
+
+				vekt::text_props& tp = _vekt_data.builder->widget_get_text(w);
+				tp.font				 = _vekt_data.font_debug;
+				tp.text				 = _text_allocator.allocate("Present (ms): 0.000000 ");
+				_vekt_data.builder->widget_update_text(w);
+
+				_vekt_data.widget_present_time = w;
+			}
+
+			// border
+			{
+				vekt::id w = _vekt_data.builder->allocate();
+				_vekt_data.builder->widget_add_child(header, w);
+				_vekt_data.builder->widget_set_pos(w, vector2(0.0f, 0.5f), vekt::helper_pos_type::relative, vekt::helper_pos_type::relative, vekt::helper_anchor_type::start, vekt::helper_anchor_type::center);
+				_vekt_data.builder->widget_set_size(w, vector2(DEBUG_FONT_SIZE * 0.2f, 1.0f), vekt::helper_size_type::absolute, vekt::helper_size_type::relative);
+				vekt::widget_gfx& gfx = _vekt_data.builder->widget_get_gfx(w);
+				gfx.flags			  = vekt::gfx_flags::gfx_is_rect;
+				gfx.color			  = COLOR_CONSOLE_BG;
+			}
+
+			{
+				vekt::id w = _vekt_data.builder->allocate();
+				_vekt_data.builder->widget_add_child(header, w);
+				_vekt_data.builder->widget_set_pos(w, vector2(0.0f, 0.5f), vekt::helper_pos_type::relative, vekt::helper_pos_type::relative, vekt::helper_anchor_type::start, vekt::helper_anchor_type::center);
+
+				vekt::widget_gfx& gfx = _vekt_data.builder->widget_get_gfx(w);
+				gfx.flags			  = vekt::gfx_flags::gfx_is_text;
+				gfx.color			  = COLOR_CONSOLE_BG;
+
+				vekt::text_props& tp = _vekt_data.builder->widget_get_text(w);
+				tp.font				 = _vekt_data.font_debug;
+				tp.text				 = _text_allocator.allocate("Glob Memory (mb): 0.00000");
+				_vekt_data.builder->widget_update_text(w);
+
+				_vekt_data.widget_global_mem = w;
+			}
+
+			// border
+			{
+				vekt::id w = _vekt_data.builder->allocate();
+				_vekt_data.builder->widget_add_child(header, w);
+				_vekt_data.builder->widget_set_pos(w, vector2(0.0f, 0.5f), vekt::helper_pos_type::relative, vekt::helper_pos_type::relative, vekt::helper_anchor_type::start, vekt::helper_anchor_type::center);
+				_vekt_data.builder->widget_set_size(w, vector2(DEBUG_FONT_SIZE * 0.2f, 1.0f), vekt::helper_size_type::absolute, vekt::helper_size_type::relative);
+				vekt::widget_gfx& gfx = _vekt_data.builder->widget_get_gfx(w);
+				gfx.flags			  = vekt::gfx_flags::gfx_is_rect;
+				gfx.color			  = COLOR_CONSOLE_BG;
+			}
+
+			{
+				vekt::id w = _vekt_data.builder->allocate();
+				_vekt_data.builder->widget_add_child(header, w);
+				_vekt_data.builder->widget_set_pos(w, vector2(0.0f, 0.5f), vekt::helper_pos_type::relative, vekt::helper_pos_type::relative, vekt::helper_anchor_type::start, vekt::helper_anchor_type::center);
+
+				vekt::widget_gfx& gfx = _vekt_data.builder->widget_get_gfx(w);
+				gfx.flags			  = vekt::gfx_flags::gfx_is_text;
+				gfx.color			  = COLOR_CONSOLE_BG;
+
+				vekt::text_props& tp = _vekt_data.builder->widget_get_text(w);
+				tp.font				 = _vekt_data.font_debug;
+				tp.text				 = _text_allocator.allocate("Gfx Memory (mb): 0.00000");
+				_vekt_data.builder->widget_update_text(w);
+
+				_vekt_data.widget_gfx_mem = w;
 			}
 
 			// border
@@ -706,30 +795,40 @@ namespace Game
 
 		if (_gfx_data.frame_counter % 120 == 0)
 		{
-			vekt::text_props& fps_props	   = _vekt_data.builder->widget_get_text(_vekt_data.widget_fps);
-			vekt::text_props& update_props = _vekt_data.builder->widget_get_text(_vekt_data.widget_main_thread);
-			vekt::text_props& render_props = _vekt_data.builder->widget_get_text(_vekt_data.widget_render_thread);
+			const vekt::text_props& fps_props	  = _vekt_data.builder->widget_get_text(_vekt_data.widget_fps);
+			const vekt::text_props& update_props  = _vekt_data.builder->widget_get_text(_vekt_data.widget_main_thread);
+			const vekt::text_props& render_props  = _vekt_data.builder->widget_get_text(_vekt_data.widget_render_thread);
+			const vekt::text_props& present_props = _vekt_data.builder->widget_get_text(_vekt_data.widget_present_time);
+			string_util::append_float(static_cast<float>(frame_info::get_fps()), (char*)fps_props.text + 5, 4, 1, true);
+			string_util::append_float(static_cast<float>(frame_info::get_main_thread_time_milli()), (char*)update_props.text + 18, 7, 4, true);
+			string_util::append_float(static_cast<float>(frame_info::get_render_thread_time_milli()), (char*)render_props.text + 20, 7, 4, true);
+			string_util::append_float(static_cast<float>(frame_info::get_present_time_milli()), (char*)present_props.text + 14, 7, 4, true);
 
-			char terminator = '\0';
+#ifdef ENABLE_MEMORY_TRACER
+			memory_tracer& tracer = memory_tracer::get();
+			LOCK_GUARD(tracer.get_category_mtx());
 
-			const string text_fps	 = string_util::from_uint(frame_info::get_fps(), 4);
-			const string text_update = string_util::from_float(static_cast<float>(frame_info::get_main_thread_time_milli()), 5);
-			const string text_render = string_util::from_float(static_cast<float>(frame_info::get_render_thread_time_milli()), 5);
+			const vekt::text_props& glob_mem_props = _vekt_data.builder->widget_get_text(_vekt_data.widget_global_mem);
+			const vekt::text_props& gfx_mem_props  = _vekt_data.builder->widget_get_text(_vekt_data.widget_gfx_mem);
 
-			strncpy((char*)fps_props.text + 5, (char*)text_fps.c_str(), text_fps.size());
-			strncpy((char*)update_props.text + 18, (char*)text_update.c_str(), text_update.size());
-			strncpy((char*)render_props.text + 20, (char*)text_render.c_str(), text_render.size());
-			strcpy((char*)fps_props.text + 5 + text_fps.size(), &terminator);
-			strcpy((char*)update_props.text + 18 + text_update.size(), &terminator);
-			strcpy((char*)render_props.text + 20 + text_render.size(), &terminator);
+			for (const memory_category& cat : tracer.get_categories())
+			{
+				if (TO_SIDC(cat.name) == TO_SIDC("General"))
+				{
+					string_util::append_float(static_cast<float>(cat.total_size) / B_TO_MB, (char*)glob_mem_props.text + 18, 6, 4, true);
+				}
+				else if (TO_SIDC(cat.name) == TO_SIDC("Gfx"))
+				{
+					string_util::append_float(static_cast<float>(cat.total_size) / B_TO_MB, (char*)gfx_mem_props.text + 17, 6, 4, true);
+				}
+			}
+#endif
 		}
 	}
 
 	void debug_controller::update_console_input_field()
 	{
 		_vekt_data.builder->widget_update_text(_vekt_data.widget_input_text);
-		// const vector2 corrected_size = _vekt_data.builder->get_text_size({.text = "AtgyC", .font = _vekt_data.font_debug});
-		// _vekt_data.builder->widget_get_size_props(_vekt_data.widget_input_text).size.y = corrected_size.y;
 		_input_field.text_size = strlen(_input_field.text);
 		_input_field.caret_pos = math::min(_input_field.caret_pos, _input_field.text_size);
 	}
@@ -865,9 +964,12 @@ namespace Game
 		const int32 index  = std::distance(it, _gfx_data.atlases.begin());
 		uint8*		pixels = ref.buffer.pixels;
 		_gfx_data.texture_queue->subscribe_flush_callback([index, this, pixels]() {
+			PUSH_MEMORY_CATEGORY("Gfx");
+
 			atlas_ref& ref = _gfx_data.atlases[index];
 			ref.res_alive  = false;
 			delete[] pixels;
+			POP_MEMORY_CATEGORY();
 		});
 	}
 
@@ -944,10 +1046,13 @@ namespace Game
 			_key_events.try_enqueue(ke);
 			return true;
 		}
+
+		return false;
 	}
 
 	void debug_controller::on_window_resize(const vector2ui16& size)
 	{
+		PUSH_MEMORY_CATEGORY("Gfx");
 		gfx_backend* backend  = gfx_backend::get();
 		_gfx_data.rt_size	  = vector2ui16(size.x, size.y / 2);
 		_gfx_data.window_size = vector2ui16(size.x, size.y);
@@ -962,6 +1067,7 @@ namespace Game
 				.texture_format = RT_FORMAT,
 				.size			= vector2ui16(size.x, size.y / 2),
 				.flags			= texture_flags::tf_sampled | texture_flags::tf_is_2d | texture_flags::tf_render_target,
+				.clear_values	= {0.0f, 0.0f, 0.0f, 0.0f},
 				.debug_name		= "console_rt",
 			});
 
@@ -969,6 +1075,7 @@ namespace Game
 				.texture_format = RT_FORMAT,
 				.size			= vector2ui16(size.x, size.y),
 				.flags			= texture_flags::tf_sampled | texture_flags::tf_is_2d | texture_flags::tf_render_target,
+				.clear_values	= {0.0f, 0.0f, 0.0f, 0.0f},
 				.debug_name		= "debug_rt",
 			});
 
@@ -978,5 +1085,7 @@ namespace Game
 												   {.resource = pfd.rt_console, .pointer_index = upi_material_texture0, .type = binding_type::texture},
 											   });
 		}
+
+		POP_MEMORY_CATEGORY();
 	}
 }

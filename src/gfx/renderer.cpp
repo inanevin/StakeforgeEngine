@@ -10,6 +10,7 @@
 #include "memory/memory_tracer.hpp"
 #include "io/log.hpp"
 #include "common/system_info.hpp"
+#include "platform/time.hpp"
 
 namespace Game
 {
@@ -141,7 +142,7 @@ namespace Game
 		reset_render_data(index);
 	}
 
-	void renderer::render(uint8 index, const vector2ui16& size)
+	void renderer::render(uint8 index, const vector2ui16& size, int64& out_time_before_presnet, int64& out_time_after_present)
 	{
 		gfx_backend*	  backend	= gfx_backend::get();
 		render_data&	  read_data = _render_data[index];
@@ -240,9 +241,11 @@ namespace Game
 			backend->queue_wait(queue_gfx, &sem_copy, 1, &next_copy_value);
 
 		backend->submit_commands(queue_gfx, &cmd_list, 1);
-		backend->present(&swapchain, 1);
 
+		out_time_before_presnet = time::get_cpu_microseconds();
+		backend->present(&swapchain, 1);
 		backend->queue_signal(queue_gfx, &sem_frame, 1, &next_frame_value);
+		out_time_after_present = time::get_cpu_microseconds();
 	}
 
 	bool renderer::on_window_event(const window_event& ev)

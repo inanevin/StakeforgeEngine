@@ -11,5 +11,6 @@ namespace Game
 
 	atomic<double> frame_info::s_main_thread_time_milli	  = 0;
 	atomic<double> frame_info::s_render_thread_time_milli = 0;
+	atomic<double> frame_info::s_present_time_milli		  = 0;
 	atomic<uint32> frame_info::s_fps					  = 0;
 }

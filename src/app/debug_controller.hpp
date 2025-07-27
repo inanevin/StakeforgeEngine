@@ -152,6 +152,9 @@ namespace Game
 			int32		   widget_fps				 = 0;
 			int32		   widget_main_thread		 = 0;
 			int32		   widget_render_thread		 = 0;
+			int32		   widget_present_time		 = 0;
+			int32		   widget_global_mem		 = 0;
+			int32		   widget_gfx_mem			 = 0;
 			float		   console_total_text_size_y = 0.0f;
 		};
 

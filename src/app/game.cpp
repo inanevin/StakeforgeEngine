@@ -165,10 +165,15 @@ namespace Game
 			const int64 delta_micro	 = current_time - previous_time;
 			previous_time			 = current_time;
 
-			frame_info::s_render_thread_time_milli.store(static_cast<double>(delta_micro) * 0.001);
-			frame_info::s_fps.store(1.0f / static_cast<float>(delta_micro * 1e-6));
+			int64 time_before_present = 0;
+			int64 time_after_present  = 0;
+			_renderer.render(index, screen_size, time_before_present, time_after_present);
 
-			_renderer.render(index, screen_size);
+			const int64 present_time = time_after_present - time_before_present;
+			frame_info::s_present_time_milli.store(static_cast<double>(present_time) * 0.001);
+
+			frame_info::s_render_thread_time_milli.store(static_cast<double>(delta_micro - present_time) * 0.001);
+			frame_info::s_fps.store(1.0f / static_cast<float>(delta_micro * 1e-6));
 		}
 	}
 

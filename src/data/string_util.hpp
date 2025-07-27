@@ -17,6 +17,7 @@ namespace Game
 		static string		  remove_all_except_first(const string& str, const string& delimiter);
 		static string		  fix_number(const string& str);
 		static string		  from_float(float val, uint32 decimals);
+		static void			  append_float(float value, char* target_bufffer, uint32 significant_digits, uint32 decimals, bool null_term);
 		static string		  replace_all(const string& str, const string& to_replace, const string& replacement);
 		static string		  get_until_first_of(const string& str, const string& find);
 		static string		  to_upper(const string& str);

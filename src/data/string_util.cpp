@@ -1,7 +1,8 @@
 // Copyright (c) 2025 Inan Evin
 
 #include "string_util.hpp"
-
+#include "memory/memory.hpp"
+#include "io/assert.hpp"
 #include <charconv>
 #include <codecvt>
 #include <locale>
@@ -223,9 +224,29 @@ namespace Game
 
 	string string_util::from_float(float val, uint32 decimals)
 	{
-		char buffer[32]; // Adjust size if needed.
+		char buffer[32];
 		auto [ptr, ec] = std::to_chars(buffer, buffer + sizeof(buffer), val, std::chars_format::fixed, decimals);
-		return (ec == std::errc()) ? std::string(buffer, ptr) : ""; // Handle errors (optional).
+		return (ec == std::errc()) ? std::string(buffer, ptr) : "";
+	}
+
+	void string_util::append_float(float value, char* target_buffer, uint32 max_chars, uint32 decimals, bool null_term)
+	{
+		GAME_ASSERT(decimals < max_chars);
+		GAME_ASSERT(max_chars < 16);
+		int	 written = 0;
+		char float_buf[16];
+
+		for (int precision = decimals; precision >= 0; --precision)
+		{
+			written = snprintf(float_buf, sizeof(float_buf), "%.*f", precision, value);
+			if (written <= static_cast<int>(max_chars))
+				break;
+		}
+
+		GAME_MEMCPY(target_buffer, float_buf, written);
+
+		if (null_term)
+			target_buffer[written] = '\0';
 	}
 
 	string string_util::get_until_first_of(const string& str, const string& find)
