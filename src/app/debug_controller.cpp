@@ -218,7 +218,7 @@ namespace Game
 
 			vekt::widget_gfx& gfx = _vekt_data.builder->widget_get_gfx(header);
 			gfx.flags			  = vekt::gfx_flags::gfx_is_rect;
-			gfx.color			  = COLOR_TEXT_DARK;
+			gfx.color			  = COLOR_TEXT;
 
 			{
 				vekt::id w = _vekt_data.builder->allocate();
@@ -314,7 +314,7 @@ namespace Game
 
 			vekt::size_props& props	   = _vekt_data.builder->widget_get_size_props(w);
 			props.child_margins.left   = CONSOLE_SPACING;
-			props.child_margins.top	   = CONSOLE_SPACING * 2;
+			props.child_margins.top	   = CONSOLE_SPACING;
 			props.child_margins.bottom = CONSOLE_SPACING;
 			props.spacing			   = CONSOLE_SPACING;
 
@@ -560,13 +560,14 @@ namespace Game
 
 	void debug_controller::console_logic()
 	{
-		vekt::pos_props& console_bg_pos_props = _vekt_data.builder->widget_get_pos_props(_vekt_data.widget_console_bg);
-		const vector2&	 console_bg_size	  = _vekt_data.builder->widget_get_size(_vekt_data.widget_console_bg);
-		const vector2	 pos_text			  = _vekt_data.builder->widget_get_pos(_vekt_data.widget_input_text);
-		const vector2	 size_text			  = _vekt_data.builder->widget_get_size(_vekt_data.widget_input_text);
-		const vector2	 pos_field			  = _vekt_data.builder->widget_get_pos(_vekt_data.widget_input_field);
-		const float		 total_element_size	  = _vekt_data.console_total_text_size_y;
-		console_bg_pos_props.scroll_offset	  = -(math::max(total_element_size - console_bg_size.y, 0.0f) + CONSOLE_SPACING * 2);
+		vekt::pos_props&  console_bg_pos_props	= _vekt_data.builder->widget_get_pos_props(_vekt_data.widget_console_bg);
+		vekt::size_props& console_bg_size_props = _vekt_data.builder->widget_get_size_props(_vekt_data.widget_console_bg);
+		const vector2&	  console_bg_size		= _vekt_data.builder->widget_get_size(_vekt_data.widget_console_bg);
+		const vector2	  pos_text				= _vekt_data.builder->widget_get_pos(_vekt_data.widget_input_text);
+		const vector2	  size_text				= _vekt_data.builder->widget_get_size(_vekt_data.widget_input_text);
+		const vector2	  pos_field				= _vekt_data.builder->widget_get_pos(_vekt_data.widget_input_field);
+		const float		  total_element_size	= _vekt_data.console_total_text_size_y;
+		console_bg_pos_props.scroll_offset		= -math::max(total_element_size - (console_bg_size.y - console_bg_size_props.child_margins.top - console_bg_size_props.child_margins.bottom), 0.0f);
 
 		vekt::widget_gfx gfx = {};
 
@@ -758,10 +759,14 @@ namespace Game
 
 	void debug_controller::add_console_text(const char* text, log_level level)
 	{
+		if (level == log_level::trace)
+			return;
+
 		if (_vekt_data.console_texts.size() == MAX_CONSOLE_TEXT)
 		{
 			vekt::id		  t	 = _vekt_data.console_texts[0];
 			vekt::text_props& tp = _vekt_data.builder->widget_get_text(t);
+			_vekt_data.console_total_text_size_y -= _vekt_data.builder->widget_get_size_props(t).size.y + CONSOLE_SPACING;
 			_text_allocator.deallocate((char*)tp.text);
 			_vekt_data.builder->deallocate(t);
 			_vekt_data.console_texts.erase(_vekt_data.console_texts.begin());
@@ -817,7 +822,7 @@ namespace Game
 
 			if (ev.button == input_code::KeyReturn)
 			{
-				add_console_text(buffer, log_level::trace);
+				add_console_text(buffer, log_level::info);
 				if (_input_field.history.size() >= MAX_HISTORY)
 				{
 					const char* history = _input_field.history[0];
