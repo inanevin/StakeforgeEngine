@@ -60,6 +60,7 @@ namespace Game
 			const int64 current_time = time::get_cpu_microseconds();
 			const int64 delta_micro	 = current_time - previous_time;
 			previous_time			 = current_time;
+			frame_info::s_main_thread_time_milli.store(static_cast<double>(delta_micro) * 0.001);
 
 			process::pump_os_messages();
 
@@ -153,10 +154,20 @@ namespace Game
 		const vector2ui16& screen_size = _main_window.get_size();
 		REGISTER_THREAD_RENDER();
 
+		int64 previous_time = time::get_cpu_microseconds();
+
 		while (_render_joined.load(std::memory_order_acquire) == 0)
 		{
 			_frame_available_semaphore.acquire();
 			const uint8 index = _current_render_frame_index.load(std::memory_order_acquire);
+
+			const int64 current_time = time::get_cpu_microseconds();
+			const int64 delta_micro	 = current_time - previous_time;
+			previous_time			 = current_time;
+
+			frame_info::s_render_thread_time_milli.store(static_cast<double>(delta_micro) * 0.001);
+			frame_info::s_fps.store(1.0f / static_cast<float>(delta_micro * 1e-6));
+
 			_renderer.render(index, screen_size);
 		}
 	}

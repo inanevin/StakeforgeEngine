@@ -190,9 +190,113 @@ namespace Game
 		add_console_text(msg, lvl);
 	}
 
-	void debug_controller::build_console()
+	void debug_controller::flush_key_events()
 	{
 
+		key_event ev = {};
+
+		while (_key_events.try_dequeue(ev))
+		{
+			_input_field.text_size = static_cast<int8>(strlen(_input_field.text));
+			char* buffer		   = const_cast<char*>(_input_field.text);
+
+			if (ev.button == input_code::KeyBackspace)
+			{
+				if (_input_field.text_size != 0)
+				{
+					buffer[_input_field.text_size - 1] = '\0';
+					update_console_input_field();
+				}
+
+				_input_field.caret_pos = math::max(0, _input_field.caret_pos - 1);
+				continue;
+			}
+
+			if (ev.button == input_code::KeyReturn)
+			{
+				add_console_text(buffer, log_level::info);
+				if (_input_field.history.size() >= MAX_HISTORY)
+				{
+					const char* history = _input_field.history[0];
+					_text_allocator.deallocate((char*)history);
+					_input_field.history.erase(_input_field.history.begin());
+				}
+
+				const char* history_element = _text_allocator.allocate(buffer);
+				_input_field.history.push_back(history_element);
+				_input_field.history_traversal = static_cast<int8>(_input_field.history.size());
+
+				debug_console::get()->parse_console_command(buffer);
+
+				buffer[0] = '\0';
+				update_console_input_field();
+
+				continue;
+			}
+
+			if (ev.button == input_code::KeyUp)
+			{
+				if (_input_field.history.empty())
+					continue;
+
+				_input_field.history_traversal = math::max(_input_field.history_traversal - 1, 0);
+
+				const char* history = _input_field.history[_input_field.history_traversal];
+				strcpy(buffer, history);
+				update_console_input_field();
+				_input_field.caret_pos = _input_field.text_size;
+
+				continue;
+				continue;
+			}
+
+			if (ev.button == input_code::KeyDown)
+			{
+				if (_input_field.history.empty())
+					continue;
+
+				_input_field.history_traversal = math::min((int8)(_input_field.history_traversal + 1), static_cast<int8>(_input_field.history.size() - 1));
+
+				const char* history = _input_field.history[_input_field.history_traversal];
+				strcpy(buffer, history);
+				update_console_input_field();
+				_input_field.caret_pos = _input_field.text_size;
+
+				continue;
+			}
+
+			if (ev.button == input_code::KeyLeft)
+			{
+				_input_field.caret_pos = math::max(0, _input_field.caret_pos - 1);
+				continue;
+			}
+
+			if (ev.button == input_code::KeyRight)
+			{
+				_input_field.caret_pos = math::min(static_cast<int8>(_input_field.text_size), static_cast<int8>(_input_field.caret_pos + 1));
+				continue;
+			}
+
+			if (_input_field.text_size >= MAX_INPUT_FIELD)
+				continue;
+
+			const char c = process::get_character_from_key(static_cast<uint32>(ev.button));
+			for (int i = _input_field.text_size; i > _input_field.caret_pos; --i)
+			{
+				buffer[i] = buffer[i - 1];
+			}
+
+			buffer[_input_field.caret_pos]	   = c;
+			buffer[_input_field.text_size + 1] = '\0';
+
+			_input_field.caret_pos++;
+			_input_field.text_size++;
+			update_console_input_field();
+		}
+	}
+
+	void debug_controller::build_console()
+	{
 		_input_field.text = _text_allocator.allocate(MAX_INPUT_FIELD);
 
 		// vekt root
@@ -231,33 +335,10 @@ namespace Game
 
 				vekt::text_props& tp = _vekt_data.builder->widget_get_text(w);
 				tp.font				 = _vekt_data.font_debug;
-				tp.text				 = _text_allocator.allocate("FPS: 60");
+				tp.text				 = _text_allocator.allocate("FPS: 1000");
 				_vekt_data.builder->widget_update_text(w);
-			}
 
-			// border
-			{
-				vekt::id w = _vekt_data.builder->allocate();
-				_vekt_data.builder->widget_add_child(header, w);
-				_vekt_data.builder->widget_set_pos(w, vector2(0.0f, 0.5f), vekt::helper_pos_type::relative, vekt::helper_pos_type::relative, vekt::helper_anchor_type::start, vekt::helper_anchor_type::center);
-				_vekt_data.builder->widget_set_size(w, vector2(DEBUG_FONT_SIZE * 0.2f, 1.0f), vekt::helper_size_type::absolute, vekt::helper_size_type::relative);
-				vekt::widget_gfx& gfx = _vekt_data.builder->widget_get_gfx(w);
-				gfx.flags			  = vekt::gfx_flags::gfx_is_rect;
-				gfx.color			  = COLOR_CONSOLE_BG;
-			}
-			{
-				vekt::id w = _vekt_data.builder->allocate();
-				_vekt_data.builder->widget_add_child(header, w);
-				_vekt_data.builder->widget_set_pos(w, vector2(0.0f, 0.5f), vekt::helper_pos_type::relative, vekt::helper_pos_type::relative, vekt::helper_anchor_type::start, vekt::helper_anchor_type::center);
-
-				vekt::widget_gfx& gfx = _vekt_data.builder->widget_get_gfx(w);
-				gfx.flags			  = vekt::gfx_flags::gfx_is_text;
-				gfx.color			  = COLOR_CONSOLE_BG;
-
-				vekt::text_props& tp = _vekt_data.builder->widget_get_text(w);
-				tp.font				 = _vekt_data.font_debug;
-				tp.text				 = _text_allocator.allocate("Main Thread: 1 ms");
-				_vekt_data.builder->widget_update_text(w);
+				_vekt_data.widget_fps = w;
 			}
 
 			// border
@@ -282,8 +363,38 @@ namespace Game
 
 				vekt::text_props& tp = _vekt_data.builder->widget_get_text(w);
 				tp.font				 = _vekt_data.font_debug;
-				tp.text				 = _text_allocator.allocate("Render Thread: 1 ms");
+				tp.text				 = _text_allocator.allocate("Main Thread (ms): 0.000000 ");
 				_vekt_data.builder->widget_update_text(w);
+
+				_vekt_data.widget_main_thread = w;
+			}
+
+			// border
+			{
+				vekt::id w = _vekt_data.builder->allocate();
+				_vekt_data.builder->widget_add_child(header, w);
+				_vekt_data.builder->widget_set_pos(w, vector2(0.0f, 0.5f), vekt::helper_pos_type::relative, vekt::helper_pos_type::relative, vekt::helper_anchor_type::start, vekt::helper_anchor_type::center);
+				_vekt_data.builder->widget_set_size(w, vector2(DEBUG_FONT_SIZE * 0.2f, 1.0f), vekt::helper_size_type::absolute, vekt::helper_size_type::relative);
+				vekt::widget_gfx& gfx = _vekt_data.builder->widget_get_gfx(w);
+				gfx.flags			  = vekt::gfx_flags::gfx_is_rect;
+				gfx.color			  = COLOR_CONSOLE_BG;
+			}
+
+			{
+				vekt::id w = _vekt_data.builder->allocate();
+				_vekt_data.builder->widget_add_child(header, w);
+				_vekt_data.builder->widget_set_pos(w, vector2(0.0f, 0.5f), vekt::helper_pos_type::relative, vekt::helper_pos_type::relative, vekt::helper_anchor_type::start, vekt::helper_anchor_type::center);
+
+				vekt::widget_gfx& gfx = _vekt_data.builder->widget_get_gfx(w);
+				gfx.flags			  = vekt::gfx_flags::gfx_is_text;
+				gfx.color			  = COLOR_CONSOLE_BG;
+
+				vekt::text_props& tp = _vekt_data.builder->widget_get_text(w);
+				tp.font				 = _vekt_data.font_debug;
+				tp.text				 = _text_allocator.allocate("Render Thread (ms): 0.000000 ");
+				_vekt_data.builder->widget_update_text(w);
+
+				_vekt_data.widget_render_thread = w;
 			}
 
 			// border
@@ -447,6 +558,8 @@ namespace Game
 		};
 		pfd.buf_fullscreen_pass_view.buffer_data(0, (void*)&fs_view, sizeof(fullscreen_pass_view));
 
+		flush_key_events();
+
 		_vekt_data.builder->build_begin(vector2(_gfx_data.rt_size.x, _gfx_data.rt_size.y));
 		console_logic();
 		_vekt_data.builder->build_end();
@@ -588,6 +701,28 @@ namespace Game
 		};
 
 		_vekt_data.builder->add_filled_rect(props);
+
+		_gfx_data.frame_counter++;
+
+		if (_gfx_data.frame_counter % 120 == 0)
+		{
+			vekt::text_props& fps_props	   = _vekt_data.builder->widget_get_text(_vekt_data.widget_fps);
+			vekt::text_props& update_props = _vekt_data.builder->widget_get_text(_vekt_data.widget_main_thread);
+			vekt::text_props& render_props = _vekt_data.builder->widget_get_text(_vekt_data.widget_render_thread);
+
+			char terminator = '\0';
+
+			const string text_fps	 = string_util::from_uint(frame_info::get_fps(), 4);
+			const string text_update = string_util::from_float(static_cast<float>(frame_info::get_main_thread_time_milli()), 5);
+			const string text_render = string_util::from_float(static_cast<float>(frame_info::get_render_thread_time_milli()), 5);
+
+			strncpy((char*)fps_props.text + 5, (char*)text_fps.c_str(), text_fps.size());
+			strncpy((char*)update_props.text + 18, (char*)text_update.c_str(), text_update.size());
+			strncpy((char*)render_props.text + 20, (char*)text_render.c_str(), text_render.size());
+			strcpy((char*)fps_props.text + 5 + text_fps.size(), &terminator);
+			strcpy((char*)update_props.text + 18 + text_update.size(), &terminator);
+			strcpy((char*)render_props.text + 20 + text_render.size(), &terminator);
+		}
 	}
 
 	void debug_controller::update_console_input_field()
@@ -805,104 +940,10 @@ namespace Game
 	{
 		if (ev.type == window_event_type::key && ev.sub_type != window_event_sub_type::release)
 		{
-			_input_field.text_size = static_cast<int8>(strlen(_input_field.text));
-			char* buffer		   = const_cast<char*>(_input_field.text);
-
-			if (ev.button == input_code::KeyBackspace)
-			{
-				if (_input_field.text_size != 0)
-				{
-					buffer[_input_field.text_size - 1] = '\0';
-					update_console_input_field();
-				}
-
-				_input_field.caret_pos = math::max(0, _input_field.caret_pos - 1);
-				return true;
-			}
-
-			if (ev.button == input_code::KeyReturn)
-			{
-				add_console_text(buffer, log_level::info);
-				if (_input_field.history.size() >= MAX_HISTORY)
-				{
-					const char* history = _input_field.history[0];
-					_text_allocator.deallocate((char*)history);
-					_input_field.history.erase(_input_field.history.begin());
-				}
-
-				const char* history_element = _text_allocator.allocate(buffer);
-				_input_field.history.push_back(history_element);
-				_input_field.history_traversal = static_cast<int8>(_input_field.history.size());
-
-				debug_console::get()->parse_console_command(buffer);
-
-				buffer[0] = '\0';
-				update_console_input_field();
-
-				return true;
-			}
-
-			if (ev.button == input_code::KeyUp)
-			{
-				if (_input_field.history.empty())
-					return true;
-
-				_input_field.history_traversal = math::max(_input_field.history_traversal - 1, 0);
-
-				const char* history = _input_field.history[_input_field.history_traversal];
-				strcpy(buffer, history);
-				update_console_input_field();
-				_input_field.caret_pos = _input_field.text_size;
-
-				return true;
-			}
-
-			if (ev.button == input_code::KeyDown)
-			{
-				if (_input_field.history.empty())
-					return true;
-
-				_input_field.history_traversal = math::min((int8)(_input_field.history_traversal + 1), static_cast<int8>(_input_field.history.size() - 1));
-
-				const char* history = _input_field.history[_input_field.history_traversal];
-				strcpy(buffer, history);
-				update_console_input_field();
-				_input_field.caret_pos = _input_field.text_size;
-
-				return true;
-			}
-
-			if (ev.button == input_code::KeyLeft)
-			{
-				_input_field.caret_pos = math::max(0, _input_field.caret_pos - 1);
-				return true;
-			}
-
-			if (ev.button == input_code::KeyRight)
-			{
-				_input_field.caret_pos = math::min(static_cast<int8>(_input_field.text_size), static_cast<int8>(_input_field.caret_pos + 1));
-				return true;
-			}
-
-			if (_input_field.text_size >= MAX_INPUT_FIELD)
-				return true;
-
-			const char c = process::get_character_from_key(static_cast<uint32>(ev.button));
-			for (int i = _input_field.text_size; i > _input_field.caret_pos; --i)
-			{
-				buffer[i] = buffer[i - 1];
-			}
-
-			buffer[_input_field.caret_pos]	   = c;
-			buffer[_input_field.text_size + 1] = '\0';
-
-			_input_field.caret_pos++;
-			_input_field.text_size++;
-			update_console_input_field();
+			const key_event ke = {.button = ev.button};
+			_key_events.try_enqueue(ke);
 			return true;
 		}
-
-		return false;
 	}
 
 	void debug_controller::on_window_resize(const vector2ui16& size)

@@ -111,6 +111,7 @@ src/gui/*.hpp
 src/app/*.hpp
 src/resources/*.hpp
 src/vendor/stb/*.h
+src/vendor/moodycamel/*.h
 )
 
 if(WIN32)

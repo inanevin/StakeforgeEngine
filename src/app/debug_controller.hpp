@@ -9,6 +9,7 @@
 #include "gfx/common/gfx_common.hpp"
 #include "memory/text_allocator.hpp"
 #include "data/string.hpp"
+#include "vendor/moodycamel/readerwriterqueue.h"
 
 namespace vekt
 {
@@ -28,8 +29,10 @@ namespace Game
 	class texture_queue;
 	struct window_event;
 	struct barrier;
+	enum class input_code;
 
 #define MAX_GUI_DRAW_CALLS 32
+#define MAX_KEY_EVENTS	   64
 
 	class debug_controller
 	{
@@ -50,6 +53,7 @@ namespace Game
 	private:
 		void on_log(log_level lvl, const char* msg);
 
+		void flush_key_events();
 		void build_console();
 		void console_logic();
 		void add_console_text(const char* text, log_level level);
@@ -60,6 +64,11 @@ namespace Game
 		void on_atlas_destroyed(vekt::atlas* atlas);
 
 	private:
+		struct key_event
+		{
+			input_code button;
+		};
+
 		struct gui_draw_call
 		{
 			vector4ui16 scissors	= vector4ui16::zero;
@@ -140,6 +149,9 @@ namespace Game
 			int32		   widget_console_bg		 = -1;
 			int32		   widget_input_field		 = -1;
 			int32		   widget_input_text		 = {};
+			int32		   widget_fps				 = 0;
+			int32		   widget_main_thread		 = 0;
+			int32		   widget_render_thread		 = 0;
 			float		   console_total_text_size_y = 0.0f;
 		};
 
@@ -153,12 +165,13 @@ namespace Game
 		};
 
 	private:
-		text_allocator<10000> _text_allocator = {};
-		shaders				  _shaders		  = {};
-		gfx_data			  _gfx_data		  = {};
-		vekt_data			  _vekt_data	  = {};
-		input_field			  _input_field	  = {};
-		per_frame_data		  _pfd[FRAMES_IN_FLIGHT];
-		gui_draw_call		  _gui_draw_calls[MAX_GUI_DRAW_CALLS];
+		text_allocator<10000>									 _text_allocator = {};
+		shaders													 _shaders		 = {};
+		gfx_data												 _gfx_data		 = {};
+		vekt_data												 _vekt_data		 = {};
+		input_field												 _input_field	 = {};
+		per_frame_data											 _pfd[FRAMES_IN_FLIGHT];
+		gui_draw_call											 _gui_draw_calls[MAX_GUI_DRAW_CALLS];
+		moodycamel::ReaderWriterQueue<key_event, MAX_KEY_EVENTS> _key_events;
 	};
 }

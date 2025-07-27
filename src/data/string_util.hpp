@@ -29,6 +29,7 @@ namespace Game
 		static float		  to_float(const string& str, uint32& out_decimals);
 		static int			  to_int(const string& str);
 		static uint64		  to_big_int(const string& str);
+		static string		  from_uint(uint32 val, uint8 max_digits);
 	};
 
 }

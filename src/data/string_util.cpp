@@ -86,7 +86,10 @@ namespace Game
 	string string_util::encode_utf8(wchar_t ch)
 	{
 		string utf8;
-		if (ch < 0x80) { utf8.push_back(static_cast<char>(ch)); }
+		if (ch < 0x80)
+		{
+			utf8.push_back(static_cast<char>(ch));
+		}
 		else if (ch < 0x800)
 		{
 			utf8.push_back(static_cast<char>(0xC0 | (ch >> 6)));
@@ -110,7 +113,8 @@ namespace Game
 
 	string string_util::replace_all(const string& str, const string& to_replace, const string& replacement)
 	{
-		if (to_replace.empty()) return str;
+		if (to_replace.empty())
+			return str;
 
 		string fin		 = str;
 		size_t start_pos = 0;
@@ -127,7 +131,8 @@ namespace Game
 		{
 			const string fin = string_util::replace_all(str, ",", ".");
 			std::size_t	 pos = fin.find('.');
-			if (pos != std::string::npos) outDecimals = static_cast<uint32>(fin.length() - pos - 1);
+			if (pos != std::string::npos)
+				outDecimals = static_cast<uint32>(fin.length() - pos - 1);
 
 			return std::stof(fin);
 		}
@@ -164,6 +169,13 @@ namespace Game
 		}
 	}
 
+	string string_util::from_uint(uint32 val, uint8 max_digits)
+	{
+		string str = std::to_string(val);
+		str		   = str.substr(0, max_digits);
+		return str;
+	}
+
 	string string_util::remove_all_except_first(const string& str, const string& delimiter)
 	{
 		string		result = str;
@@ -198,10 +210,12 @@ namespace Game
 			const int sz	  = static_cast<int>(copy.length());
 
 			// If nothing exists after dot, insert 0.
-			if (dot_pos == sz - 1) copy.insert(dot + 1, "0");
+			if (dot_pos == sz - 1)
+				copy.insert(dot + 1, "0");
 
 			// If nothing exists before dot insert 0.
-			if (dot_pos == 0) copy.insert(0, "0");
+			if (dot_pos == 0)
+				copy.insert(0, "0");
 		}
 
 		return copy;
@@ -218,7 +232,8 @@ namespace Game
 	{
 		const size_t pos = str.find_first_of(find);
 
-		if (pos == string::npos) return "";
+		if (pos == string::npos)
+			return "";
 
 		return str.substr(0, str.find_first_of(str));
 	}
@@ -260,7 +275,10 @@ namespace Game
 		std::string result;
 		for (char c : str)
 		{
-			if (!std::isspace(static_cast<unsigned char>(c))) { result.push_back(c); }
+			if (!std::isspace(static_cast<unsigned char>(c)))
+			{
+				result.push_back(c);
+			}
 		}
 		return result;
 	}

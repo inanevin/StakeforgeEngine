@@ -2,6 +2,7 @@
 
 #pragma once
 #include "size_definitions.hpp"
+#include "data/atomic.hpp"
 
 #ifdef GAME_DEBUG
 #include <thread>
@@ -41,6 +42,32 @@ namespace Game
 	private:
 		static std::thread::id _thread_id_render;
 		static std::thread::id _thread_id_main;
+	};
+
+	class frame_info
+	{
+	public:
+		static double get_main_thread_time_milli()
+		{
+			return s_main_thread_time_milli.load();
+		}
+
+		static double get_render_thread_time_milli()
+		{
+			return s_render_thread_time_milli.load();
+		}
+
+		static uint32 get_fps()
+		{
+			return s_fps.load();
+		}
+
+	private:
+		friend class game_app;
+
+		static atomic<double> s_main_thread_time_milli;
+		static atomic<double> s_render_thread_time_milli;
+		static atomic<uint32> s_fps;
 	};
 
 #define REGISTER_THREAD_MAIN()	 thread_info::register_thread_main(std::this_thread::get_id())
