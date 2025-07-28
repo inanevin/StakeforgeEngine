@@ -199,10 +199,17 @@ namespace Game
 
 	void debug_controller::flush_key_events()
 	{
-		key_event ev = {};
+		input_event ev = {};
 
-		while (_key_events.try_dequeue(ev))
+		while (_input_events.try_dequeue(ev))
 		{
+
+			if (ev.wheel != 0)
+			{
+				_input_field.scroll_amt += ev.wheel * 50;
+				continue;
+			}
+
 			const input_code button = static_cast<input_code>(ev.button);
 
 			if (button == input_code::KeyAngleBracket)
@@ -211,7 +218,7 @@ namespace Game
 				{
 					_console_state = console_state::invisible;
 					set_console_visible(false);
-					while (_key_events.pop())
+					while (_input_events.pop())
 						continue;
 					return;
 				}
@@ -1045,6 +1052,7 @@ namespace Game
 			return;
 
 		_input_field.scroll_amt = 0.0f;
+
 		if (_vekt_data.console_texts.size() == MAX_CONSOLE_TEXT)
 		{
 			vekt::id		  t	 = _vekt_data.console_texts[0];
@@ -1088,11 +1096,18 @@ namespace Game
 	{
 		if (ev.type == window_event_type::key && ev.sub_type != window_event_sub_type::release)
 		{
-			if (_console_state == console_state::invisible && ev.button != input_code::KeyAngleBracket)
+			if (_console_state == console_state::invisible && static_cast<input_code>(ev.button) != input_code::KeyAngleBracket)
 				return false;
 
-			const key_event ke = {.button = static_cast<uint8>(ev.button)};
-			_key_events.try_enqueue(ke);
+			const input_event ke = {.button = static_cast<uint16>(ev.button)};
+			_input_events.try_enqueue(ke);
+			return true;
+		}
+
+		if (ev.type == window_event_type::wheel)
+		{
+			const input_event ke = {.wheel = ev.value.y};
+			_input_events.try_enqueue(ke);
 			return true;
 		}
 

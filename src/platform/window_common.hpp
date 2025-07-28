@@ -7,8 +7,6 @@
 
 namespace Game
 {
-	enum class input_code;
-
 	struct monitor_info
 	{
 		vector2i16	position   = vector2i16::zero;
@@ -52,7 +50,7 @@ namespace Game
 	struct window_event
 	{
 		vector2i16			  value = vector2i16::zero;
-		input_code			  button;
+		uint16				  button;
 		window_event_type	  type	   = window_event_type::key;
 		window_event_sub_type sub_type = window_event_sub_type::press;
 		bitmask<uint8>		  flags	   = 0;

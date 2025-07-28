@@ -29,7 +29,6 @@ namespace Game
 	class texture_queue;
 	struct window_event;
 	struct barrier;
-	enum class input_code;
 
 #define MAX_GUI_DRAW_CALLS 32
 #define MAX_KEY_EVENTS	   64
@@ -71,9 +70,10 @@ namespace Game
 			visible,
 		};
 
-		struct key_event
+		struct input_event
 		{
-			input_code button;
+			uint16 button = 0;
+			int16  wheel  = 0;
 		};
 
 		struct gui_draw_call
@@ -170,20 +170,21 @@ namespace Game
 		{
 			vector<const char*> history			  = {};
 			const char*			text			  = nullptr;
+			int16				scroll_amt		  = 0;
 			int8				history_traversal = 0;
 			int8				caret_pos		  = 0;
 			int8				text_size		  = 0;
 		};
 
 	private:
-		text_allocator<10000>									 _text_allocator = {};
-		shaders													 _shaders		 = {};
-		gfx_data												 _gfx_data		 = {};
-		vekt_data												 _vekt_data		 = {};
-		input_field												 _input_field	 = {};
-		per_frame_data											 _pfd[FRAMES_IN_FLIGHT];
-		gui_draw_call											 _gui_draw_calls[MAX_GUI_DRAW_CALLS];
-		moodycamel::ReaderWriterQueue<key_event, MAX_KEY_EVENTS> _key_events;
-		console_state											 _console_state = console_state::invisible;
+		text_allocator<10000>									   _text_allocator = {};
+		shaders													   _shaders		   = {};
+		gfx_data												   _gfx_data	   = {};
+		vekt_data												   _vekt_data	   = {};
+		input_field												   _input_field	   = {};
+		per_frame_data											   _pfd[FRAMES_IN_FLIGHT];
+		gui_draw_call											   _gui_draw_calls[MAX_GUI_DRAW_CALLS];
+		moodycamel::ReaderWriterQueue<input_event, MAX_KEY_EVENTS> _input_events;
+		console_state											   _console_state = console_state::invisible;
 	};
 }

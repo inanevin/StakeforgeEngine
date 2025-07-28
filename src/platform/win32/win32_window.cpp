@@ -138,7 +138,7 @@ namespace Game
 
 				const window_event ev = {
 					.value	  = vector2i16(static_cast<int32>(scanCode), 0),
-					.button	  = static_cast<input_code>(key),
+					.button	  = static_cast<uint16>(key),
 					.type	  = window_event_type::key,
 					.sub_type = is_release ? window_event_sub_type::release : (is_repeat ? window_event_sub_type::repeat : window_event_sub_type::press),
 					.flags	  = wef_high_freq,
@@ -167,37 +167,37 @@ namespace Game
 
 				if (mouse_flags & RI_MOUSE_LEFT_BUTTON_DOWN)
 				{
-					ev.button	= input_code::Mouse0;
+					ev.button	= static_cast<uint16>(input_code::Mouse0);
 					ev.sub_type = window_event_sub_type::press;
 					ev_exists	= true;
 				}
 				if (mouse_flags & RI_MOUSE_LEFT_BUTTON_UP)
 				{
-					ev.button	= input_code::Mouse0;
+					ev.button	= static_cast<uint16>(input_code::Mouse0);
 					ev.sub_type = window_event_sub_type::release;
 					ev_exists	= true;
 				}
 				if (mouse_flags & RI_MOUSE_RIGHT_BUTTON_DOWN)
 				{
-					ev.button	= input_code::Mouse1;
+					ev.button	= static_cast<uint16>(input_code::Mouse1);
 					ev.sub_type = window_event_sub_type::press;
 					ev_exists	= true;
 				}
 				if (mouse_flags & RI_MOUSE_RIGHT_BUTTON_UP)
 				{
-					ev.button	= input_code::Mouse1;
+					ev.button	= static_cast<uint16>(input_code::Mouse1);
 					ev.sub_type = window_event_sub_type::release;
 					ev_exists	= true;
 				}
 				if (mouse_flags & RI_MOUSE_MIDDLE_BUTTON_DOWN)
 				{
-					ev.button	= input_code::Mouse2;
+					ev.button	= static_cast<uint16>(input_code::Mouse2);
 					ev.sub_type = window_event_sub_type::press;
 					ev_exists	= true;
 				}
 				if (mouse_flags & RI_MOUSE_MIDDLE_BUTTON_UP)
 				{
-					ev.button	= input_code::Mouse2;
+					ev.button	= static_cast<uint16>(input_code::Mouse2);
 					ev.sub_type = window_event_sub_type::release;
 					ev_exists	= true;
 				}
@@ -251,7 +251,7 @@ namespace Game
 			const window_event ev = {
 
 				.value	  = vector2i16(scanCode, 0),
-				.button	  = static_cast<input_code>(key),
+				.button	  = static_cast<uint16>(key),
 				.type	  = window_event_type::key,
 				.sub_type = is_repeat ? window_event_sub_type::repeat : window_event_sub_type::press,
 			};
@@ -277,7 +277,7 @@ namespace Game
 
 			const window_event ev = {
 
-				.value = vector2i16(scanCode, 0), .button = static_cast<input_code>(key), .type = window_event_type::key, .sub_type = window_event_sub_type::release};
+				.value = vector2i16(scanCode, 0), .button = static_cast<uint16>(key), .type = window_event_type::key, .sub_type = window_event_sub_type::release};
 
 			wnd->add_event(ev);
 
@@ -333,7 +333,7 @@ namespace Game
 			const window_event ev = {
 
 				.value	  = vector2i16(x, y),
-				.button	  = input_code::Mouse0,
+				.button	  = static_cast<uint16>(input_code::Mouse0),
 				.type	  = window_event_type::mouse,
 				.sub_type = window_event_sub_type::press,
 			};
@@ -350,7 +350,7 @@ namespace Game
 			const window_event ev = {
 
 				.value	  = vector2i16(x, y),
-				.button	  = input_code::Mouse0,
+				.button	  = static_cast<uint16>(input_code::Mouse0),
 				.type	  = window_event_type::mouse,
 				.sub_type = window_event_sub_type::repeat,
 			};
@@ -369,7 +369,7 @@ namespace Game
 			const window_event ev = {
 
 				.value	  = vector2i16(x, y),
-				.button	  = input_code::Mouse1,
+				.button	  = static_cast<uint16>(input_code::Mouse1),
 				.type	  = window_event_type::mouse,
 				.sub_type = window_event_sub_type::press,
 			};
@@ -386,7 +386,7 @@ namespace Game
 			const window_event ev = {
 
 				.value	  = vector2i16(x, y),
-				.button	  = input_code::Mouse1,
+				.button	  = static_cast<uint16>(input_code::Mouse1),
 				.type	  = window_event_type::mouse,
 				.sub_type = window_event_sub_type::repeat,
 			};
@@ -406,7 +406,7 @@ namespace Game
 			const window_event ev = {
 
 				.value	  = vector2i16(x, y),
-				.button	  = input_code::Mouse2,
+				.button	  = static_cast<uint16>(input_code::Mouse2),
 				.type	  = window_event_type::mouse,
 				.sub_type = window_event_sub_type::press,
 			};
@@ -425,7 +425,7 @@ namespace Game
 			const window_event ev = {
 
 				.value	  = vector2i16(x, y),
-				.button	  = input_code::Mouse0,
+				.button	  = static_cast<uint16>(input_code::Mouse0),
 				.type	  = window_event_type::mouse,
 				.sub_type = window_event_sub_type::release,
 			};
@@ -445,7 +445,7 @@ namespace Game
 			const window_event ev = {
 
 				.value	  = vector2i16(x, y),
-				.button	  = input_code::Mouse1,
+				.button	  = static_cast<uint16>(input_code::Mouse1),
 				.type	  = window_event_type::mouse,
 				.sub_type = window_event_sub_type::release,
 			};
@@ -465,7 +465,7 @@ namespace Game
 			const window_event ev = {
 
 				.value	  = vector2i16(x, y),
-				.button	  = input_code::Mouse2,
+				.button	  = static_cast<uint16>(input_code::Mouse2),
 				.type	  = window_event_type::mouse,
 				.sub_type = window_event_sub_type::release,
 			};

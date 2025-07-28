@@ -45,7 +45,7 @@ namespace Game
 #define GAME_GAMEPAD_RIGHT_TRIGGER 5
 #define GAME_GAMEPAD_LAST		   GAME_GAMEPAD_RIGHT_TRIGGER
 
-#define GAME_KEY_UNKNOWN -1
+#define GAME_KEY_UNKNOWN UINT16_MAX - 1
 #define GAME_KEY_A		 0x41
 #define GAME_KEY_B		 0x42
 #define GAME_KEY_C		 0x43
@@ -304,7 +304,7 @@ namespace Game
 
 #endif
 
-	enum class input_code
+	enum class input_code : unsigned short
 	{
 		KeyUnknown		  = GAME_KEY_UNKNOWN,
 		KeyA			  = GAME_KEY_A,
