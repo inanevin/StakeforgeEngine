@@ -15,6 +15,7 @@ namespace Game
 
 	void game_app::init()
 	{
+		SET_INIT(true);
 		REGISTER_THREAD_MAIN();
 
 		time::init();
@@ -34,6 +35,8 @@ namespace Game
 
 		_render_joined.store(1);
 		kick_off_render();
+
+		SET_INIT(false);
 	}
 
 	void game_app::uninit()

@@ -5,8 +5,9 @@
 namespace Game
 {
 #ifdef GAME_DEBUG
-	std::thread::id thread_info::_thread_id_render;
-	std::thread::id thread_info::_thread_id_main;
+	std::thread::id thread_info::s_thread_id_render;
+	std::thread::id thread_info::s_thread_id_main;
+	bool			thread_info::s_is_init;
 #endif
 
 	atomic<double> frame_info::s_main_thread_time_milli	  = 0;

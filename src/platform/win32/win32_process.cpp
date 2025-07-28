@@ -68,6 +68,12 @@ namespace Game
 		if (!GetKeyboardState(keyboard_states))
 			return 0;
 
+		SHORT shiftState = GetAsyncKeyState(VK_SHIFT);
+		if ((shiftState & 0x8000) != 0) // High bit set = key is down
+		{
+			keyboard_states[VK_SHIFT] |= 0x80;
+		}
+
 		UINT  scan_code = MapVirtualKeyEx(key, MAPVK_VK_TO_VSC, GetKeyboardLayout(0));
 		WCHAR buffer[4] = {};
 		int	  result	= ToUnicodeEx(key, scan_code, keyboard_states, buffer, ARRAYSIZE(buffer), 0, GetKeyboardLayout(0));
@@ -76,5 +82,47 @@ namespace Game
 			return static_cast<char>(buffer[0]); // Return ASCII character
 		else
 			return '\0'; // Non-printable or failed
+	}
+
+	uint16 Game::process::get_character_mask_from_key(uint32 keycode, char ch)
+	{
+		uint16 mask = 0;
+
+		if (ch == L' ')
+			mask |= whitespace;
+		else
+		{
+			if (IsCharAlphaNumericA(ch))
+			{
+				if (keycode >= '0' && keycode <= '9')
+					mask |= number;
+				else if ((keycode >= '0' && keycode <= '9') || (keycode >= VK_NUMPAD0 && keycode <= VK_NUMPAD9))
+				{
+					mask |= number;
+				}
+				else
+					mask |= letter;
+			}
+			else if (iswctype(ch, _PUNCT))
+			{
+				mask |= symbol;
+
+				if (ch == '-' || ch == '+' || ch == '*' || ch == '/')
+					mask |= op;
+
+				if (ch == L'-' || ch == L'+')
+					mask |= sign;
+			}
+			else
+				mask |= control;
+		}
+
+		if (ch == L'.' || ch == L',')
+			mask |= separator;
+
+		if (mask & (letter | number | whitespace | separator | symbol))
+			mask |= printable;
+
+		return mask;
 	}
 } // namespace SFG

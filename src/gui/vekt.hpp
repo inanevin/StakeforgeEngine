@@ -2955,8 +2955,8 @@ namespace vekt
 			const glyph& ch		   = text.font->glyph_info[character];
 			max_y_offset		   = math::max(max_y_offset, -ch.y_offset);
 		}
-
-		pen.y += max_y_offset * text.scale;
+		// pen.y += 10;
+		pen.y += (max_y_offset * text.scale);
 
 		unsigned long previous_char = 0;
 		for (c = (uint8_t*)cstr; *c; c++)

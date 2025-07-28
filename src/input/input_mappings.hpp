@@ -90,12 +90,13 @@ namespace Game
 #define GAME_KEY_TAB	   VK_TAB
 #define GAME_KEY_SPACE	   VK_SPACE
 
-#define GAME_KEY_MINUS	  VK_OEM_MINUS
-#define GAME_KEY_TILDE	  VK_OEM_3 // 41 // ?
-#define GAME_KEY_COMMA	  VK_OEM_COMMA
-#define GAME_KEY_PERIOD	  VK_OEM_PERIOD
-#define GAME_KEY_SLASH	  VK_DIVIDE
-#define GAME_KEY_CAPSLOCK VK_CAPITAL
+#define GAME_KEY_MINUS		   VK_OEM_MINUS
+#define GAME_KEY_TILDE		   VK_OEM_3 // 41 // ?
+#define GAME_KEY_ANGLE_BRACKET VK_OEM_102
+#define GAME_KEY_COMMA		   VK_OEM_COMMA
+#define GAME_KEY_PERIOD		   VK_OEM_PERIOD
+#define GAME_KEY_SLASH		   VK_DIVIDE
+#define GAME_KEY_CAPSLOCK	   VK_CAPITAL
 
 #define GAME_KEY_F1	 VK_F1
 #define GAME_KEY_F2	 VK_F2
@@ -235,12 +236,13 @@ namespace Game
 #define GAME_KEY_TAB	   0x30
 #define GAME_KEY_SPACE	   0x31
 
-#define GAME_KEY_MINUS	  0x1B // '-'
-#define GAME_KEY_TILDE	  0x32 // '`'
-#define GAME_KEY_COMMA	  0x2B // ','
-#define GAME_KEY_PERIOD	  0x2F // '.'
-#define GAME_KEY_SLASH	  0x2C // '/'
-#define GAME_KEY_CAPSLOCK 0x39
+#define GAME_KEY_MINUS		   0x1B	 // '-'
+#define GAME_KEY_TILDE		   0x32	 // '`'
+#define GAME_KEY_ANGLE_BRACKET 0x102 // '`'
+#define GAME_KEY_COMMA		   0x2B	 // ','
+#define GAME_KEY_PERIOD		   0x2F	 // '.'
+#define GAME_KEY_SLASH		   0x2C	 // '/'
+#define GAME_KEY_CAPSLOCK	   0x39
 
 #define GAME_KEY_F1	 0x7A
 #define GAME_KEY_F2	 0x78
@@ -348,6 +350,7 @@ namespace Game
 		KeySpace		  = GAME_KEY_SPACE,
 		KeyMinus		  = GAME_KEY_MINUS,
 		KeyTilde		  = GAME_KEY_TILDE,
+		KeyAngleBracket	  = GAME_KEY_ANGLE_BRACKET,
 		KeyComma		  = GAME_KEY_COMMA,
 		KeyPeriod		  = GAME_KEY_PERIOD,
 		KeySlash		  = GAME_KEY_SLASH,

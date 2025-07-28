@@ -112,6 +112,7 @@ src/app/*.hpp
 src/resources/*.hpp
 src/vendor/stb/*.h
 src/vendor/moodycamel/*.h
+src/vendor/nhlohmann/*.hpp
 )
 
 if(WIN32)

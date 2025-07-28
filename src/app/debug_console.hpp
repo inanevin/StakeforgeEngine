@@ -1,6 +1,7 @@
 // Copyright (c) 2025 Inan Evin
 #pragma once
 #include "common/size_definitions.hpp"
+#include "common/system_info.hpp"
 #include "data/string_id.hpp"
 #include "data/hash_map.hpp"
 #include "data/string.hpp"
@@ -192,6 +193,8 @@ namespace Game
 
 		template <typename... TArgs> void register_console_function(const char* name, typename console_function<TArgs...>::function_type cb)
 		{
+			VERIFY_INIT();
+
 			const string_id sid = TO_SIDC(name);
 
 			if (_console_entries.contains(sid))
@@ -205,6 +208,8 @@ namespace Game
 
 		template <typename T> void register_console_variable(const char* name, T initial_value, typename console_variable<T>::callback_function cb = nullptr)
 		{
+			VERIFY_INIT();
+
 			const uint32 sid = TO_SIDC(name);
 			if (_console_entries.find(sid) != _console_entries.end())
 			{

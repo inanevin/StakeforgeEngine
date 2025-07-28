@@ -193,7 +193,7 @@ namespace Game
 			.min_lod	= 0.0f,
 			.max_lod	= 1.0f,
 			.lod_bias	= 0.0f,
-			.flags		= sampler_flags::saf_min_nearest | sampler_flags::saf_mag_nearest | sampler_flags::saf_address_mode_clamp | sampler_flags::saf_mip_linear | sampler_flags::saf_border_transparent,
+			.flags		= sampler_flags::saf_min_linear | sampler_flags::saf_mag_linear | sampler_flags::saf_address_mode_clamp | sampler_flags::saf_mip_linear | sampler_flags::saf_border_white,
 		};
 	}
 

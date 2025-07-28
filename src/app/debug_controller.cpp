@@ -30,24 +30,26 @@
 namespace Game
 {
 
-#define MAX_CONSOLE_TEXT   128
-#define MAX_INPUT_FIELD	   127
-#define COLOR_TEXT		   color::srgb_to_linear(color(129.0f / 255.0f, 220.0f / 255.0f, 148.0f / 255.0f, 1.0f)).to_vector()
-#define COLOR_TEXT_WARN	   color::srgb_to_linear(color(240.0f / 255.0f, 220.0f / 255.0f, 148.0f / 255.0f, 1.0f)).to_vector()
-#define COLOR_TEXT_ERR	   color::srgb_to_linear(color(250.0f / 255.0f, 120.0f / 255.0f, 88.0f / 255.0f, 1.0f)).to_vector()
-#define COLOR_TEXT_DARK	   color::srgb_to_linear(color(119.0f / 255.0f, 210.0f / 255.0f, 138.0f / 255.0f, 1.0f)).to_vector()
-#define COLOR_CONSOLE_BG   color::srgb_to_linear(color(12.0f / 255.0f, 16.0f / 255.0f, 12.0f / 255.0f, 0.99f)).to_vector()
-#define COLOR_BORDER	   color::srgb_to_linear(color(89.0f / 255.0f, 180.0f / 255.0f, 108.0f / 255.0f, 1.0f)).to_vector()
-#define DEBUG_FONT_SIZE	   16
-#define INPUT_FIELD_HEIGHT static_cast<float>(DEBUG_FONT_SIZE) * 1.5f
-#define CONSOLE_SPACING	   static_cast<float>(DEBUG_FONT_SIZE) * 0.5f
-#define MAX_HISTORY		   8
-#define RT_FORMAT		   format::r8g8b8a8_srgb
+#define MAX_CONSOLE_TEXT		128
+#define MAX_INPUT_FIELD			127
+#define COLOR_TEXT				color::srgb_to_linear(color(129.0f / 255.0f, 220.0f / 255.0f, 148.0f / 255.0f, 1.0f)).to_vector()
+#define COLOR_TEXT_WARN			color::srgb_to_linear(color(240.0f / 255.0f, 220.0f / 255.0f, 148.0f / 255.0f, 1.0f)).to_vector()
+#define COLOR_TEXT_ERR			color::srgb_to_linear(color(250.0f / 255.0f, 120.0f / 255.0f, 88.0f / 255.0f, 1.0f)).to_vector()
+#define COLOR_TEXT_DARK			color::srgb_to_linear(color(119.0f / 255.0f, 210.0f / 255.0f, 138.0f / 255.0f, 1.0f)).to_vector()
+#define COLOR_CONSOLE_BG		color::srgb_to_linear(color(12.0f / 255.0f, 16.0f / 255.0f, 12.0f / 255.0f, 0.99f)).to_vector()
+#define COLOR_CONSOLE_BG_OPAQUE color::srgb_to_linear(color(12.0f / 255.0f, 16.0f / 255.0f, 12.0f / 255.0f, 1.0f)).to_vector()
+#define COLOR_BORDER			color::srgb_to_linear(color(89.0f / 255.0f, 180.0f / 255.0f, 108.0f / 255.0f, 1.0f)).to_vector()
+#define DEBUG_FONT_SIZE			16
+#define INPUT_FIELD_HEIGHT		static_cast<float>(DEBUG_FONT_SIZE) * 1.5f
+#define CONSOLE_SPACING			static_cast<float>(DEBUG_FONT_SIZE) * 0.5f
+#define MAX_HISTORY				8
+#define RT_FORMAT				format::r8g8b8a8_srgb
 
 	static constexpr float B_TO_MB = 1024.0f * 1024.0f;
 
 	void debug_controller::init(texture_queue* texture_queue, resource_id global_bind_layout, const vector2ui16& screen_size)
 	{
+
 		_gfx_data.texture_queue = texture_queue;
 		_gfx_data.rt_size		= vector2ui16(screen_size.x, screen_size.y / 2);
 		_gfx_data.window_size	= vector2ui16(screen_size.x, screen_size.y);
@@ -201,7 +203,9 @@ namespace Game
 
 		while (_key_events.try_dequeue(ev))
 		{
-			if (ev.button == input_code::KeyTilde)
+			const input_code button = static_cast<input_code>(ev.button);
+
+			if (button == input_code::KeyAngleBracket)
 			{
 				if (_console_state == console_state::visible)
 				{
@@ -223,41 +227,46 @@ namespace Game
 			_input_field.text_size = static_cast<int8>(strlen(_input_field.text));
 			char* buffer		   = const_cast<char*>(_input_field.text);
 
-			if (ev.button == input_code::KeyBackspace)
+			if (button == input_code::KeyBackspace)
 			{
 				if (_input_field.text_size != 0)
 				{
+					for (int i = _input_field.caret_pos; i < _input_field.text_size - 1; i++)
+						buffer[i] = buffer[i + 1];
+
 					buffer[_input_field.text_size - 1] = '\0';
 					update_console_input_field();
 				}
 
-				_input_field.caret_pos = math::max(0, _input_field.caret_pos - 1);
 				continue;
 			}
 
-			if (ev.button == input_code::KeyReturn)
+			if (button == input_code::KeyReturn)
 			{
-				add_console_text(buffer, log_level::info);
-				if (_input_field.history.size() >= MAX_HISTORY)
+				if (_input_field.text_size > 0)
 				{
-					const char* history = _input_field.history[0];
-					_text_allocator.deallocate((char*)history);
-					_input_field.history.erase(_input_field.history.begin());
+					add_console_text(buffer, log_level::info);
+					if (_input_field.history.size() >= MAX_HISTORY)
+					{
+						const char* history = _input_field.history[0];
+						_text_allocator.deallocate((char*)history);
+						_input_field.history.erase(_input_field.history.begin());
+					}
+
+					const char* history_element = _text_allocator.allocate(buffer);
+					_input_field.history.push_back(history_element);
+					_input_field.history_traversal = static_cast<int8>(_input_field.history.size());
+
+					debug_console::get()->parse_console_command(buffer);
+
+					buffer[0] = '\0';
+					update_console_input_field();
 				}
 
-				const char* history_element = _text_allocator.allocate(buffer);
-				_input_field.history.push_back(history_element);
-				_input_field.history_traversal = static_cast<int8>(_input_field.history.size());
-
-				debug_console::get()->parse_console_command(buffer);
-
-				buffer[0] = '\0';
-				update_console_input_field();
-
 				continue;
 			}
 
-			if (ev.button == input_code::KeyUp)
+			if (button == input_code::KeyUp)
 			{
 				if (_input_field.history.empty())
 					continue;
@@ -273,7 +282,7 @@ namespace Game
 				continue;
 			}
 
-			if (ev.button == input_code::KeyDown)
+			if (button == input_code::KeyDown)
 			{
 				if (_input_field.history.empty())
 					continue;
@@ -288,13 +297,13 @@ namespace Game
 				continue;
 			}
 
-			if (ev.button == input_code::KeyLeft)
+			if (button == input_code::KeyLeft)
 			{
 				_input_field.caret_pos = math::max(0, _input_field.caret_pos - 1);
 				continue;
 			}
 
-			if (ev.button == input_code::KeyRight)
+			if (button == input_code::KeyRight)
 			{
 				_input_field.caret_pos = math::min(static_cast<int8>(_input_field.text_size), static_cast<int8>(_input_field.caret_pos + 1));
 				continue;
@@ -303,7 +312,12 @@ namespace Game
 			if (_input_field.text_size >= MAX_INPUT_FIELD)
 				continue;
 
-			const char c = process::get_character_from_key(static_cast<uint32>(ev.button));
+			const char	 c	  = process::get_character_from_key(static_cast<uint32>(ev.button));
+			const uint16 mask = process::get_character_mask_from_key(static_cast<uint32>(ev.button), c);
+
+			if (!(mask & character_mask::printable))
+				continue;
+
 			for (int i = _input_field.text_size; i > _input_field.caret_pos; --i)
 			{
 				buffer[i] = buffer[i - 1];
@@ -354,7 +368,7 @@ namespace Game
 
 				vekt::widget_gfx& gfx = _vekt_data.builder->widget_get_gfx(w);
 				gfx.flags			  = vekt::gfx_flags::gfx_is_text;
-				gfx.color			  = COLOR_CONSOLE_BG;
+				gfx.color			  = COLOR_CONSOLE_BG_OPAQUE;
 
 				vekt::text_props& tp = _vekt_data.builder->widget_get_text(w);
 				tp.font				 = _vekt_data.font_debug;
@@ -382,7 +396,7 @@ namespace Game
 
 				vekt::widget_gfx& gfx = _vekt_data.builder->widget_get_gfx(w);
 				gfx.flags			  = vekt::gfx_flags::gfx_is_text;
-				gfx.color			  = COLOR_CONSOLE_BG;
+				gfx.color			  = COLOR_CONSOLE_BG_OPAQUE;
 
 				vekt::text_props& tp = _vekt_data.builder->widget_get_text(w);
 				tp.font				 = _vekt_data.font_debug;
@@ -410,7 +424,7 @@ namespace Game
 
 				vekt::widget_gfx& gfx = _vekt_data.builder->widget_get_gfx(w);
 				gfx.flags			  = vekt::gfx_flags::gfx_is_text;
-				gfx.color			  = COLOR_CONSOLE_BG;
+				gfx.color			  = COLOR_CONSOLE_BG_OPAQUE;
 
 				vekt::text_props& tp = _vekt_data.builder->widget_get_text(w);
 				tp.font				 = _vekt_data.font_debug;
@@ -438,7 +452,7 @@ namespace Game
 
 				vekt::widget_gfx& gfx = _vekt_data.builder->widget_get_gfx(w);
 				gfx.flags			  = vekt::gfx_flags::gfx_is_text;
-				gfx.color			  = COLOR_CONSOLE_BG;
+				gfx.color			  = COLOR_CONSOLE_BG_OPAQUE;
 
 				vekt::text_props& tp = _vekt_data.builder->widget_get_text(w);
 				tp.font				 = _vekt_data.font_debug;
@@ -466,7 +480,7 @@ namespace Game
 
 				vekt::widget_gfx& gfx = _vekt_data.builder->widget_get_gfx(w);
 				gfx.flags			  = vekt::gfx_flags::gfx_is_text;
-				gfx.color			  = COLOR_CONSOLE_BG;
+				gfx.color			  = COLOR_CONSOLE_BG_OPAQUE;
 
 				vekt::text_props& tp = _vekt_data.builder->widget_get_text(w);
 				tp.font				 = _vekt_data.font_debug;
@@ -494,7 +508,7 @@ namespace Game
 
 				vekt::widget_gfx& gfx = _vekt_data.builder->widget_get_gfx(w);
 				gfx.flags			  = vekt::gfx_flags::gfx_is_text;
-				gfx.color			  = COLOR_CONSOLE_BG;
+				gfx.color			  = COLOR_CONSOLE_BG_OPAQUE;
 
 				vekt::text_props& tp = _vekt_data.builder->widget_get_text(w);
 				tp.font				 = _vekt_data.font_debug;
@@ -605,7 +619,6 @@ namespace Game
 			_vekt_data.widget_input_text = w;
 			_vekt_data.builder->widget_update_text(w);
 		}
-
 		set_console_visible(false);
 	}
 
@@ -826,7 +839,9 @@ namespace Game
 		const vector2	  size_text				= _vekt_data.builder->widget_get_size(_vekt_data.widget_input_text);
 		const vector2	  pos_field				= _vekt_data.builder->widget_get_pos(_vekt_data.widget_input_field);
 		const float		  total_element_size	= _vekt_data.console_total_text_size_y;
-		console_bg_pos_props.scroll_offset		= -math::max(total_element_size - (console_bg_size.y - console_bg_size_props.child_margins.top - console_bg_size_props.child_margins.bottom), 0.0f);
+		const float		  diff					= total_element_size - (console_bg_size.y - console_bg_size_props.child_margins.top - console_bg_size_props.child_margins.bottom);
+		_input_field.scroll_amt					= math::clamp(_input_field.scroll_amt, (int16)0, static_cast<int16>(diff));
+		console_bg_pos_props.scroll_offset		= -math::max(diff - _input_field.scroll_amt, 0.0f);
 
 		vekt::widget_gfx gfx = {};
 
@@ -1029,6 +1044,7 @@ namespace Game
 		if (level == log_level::trace)
 			return;
 
+		_input_field.scroll_amt = 0.0f;
 		if (_vekt_data.console_texts.size() == MAX_CONSOLE_TEXT)
 		{
 			vekt::id		  t	 = _vekt_data.console_texts[0];
@@ -1072,10 +1088,10 @@ namespace Game
 	{
 		if (ev.type == window_event_type::key && ev.sub_type != window_event_sub_type::release)
 		{
-			if (_console_state == console_state::invisible && ev.button != input_code::KeyTilde)
+			if (_console_state == console_state::invisible && ev.button != input_code::KeyAngleBracket)
 				return false;
 
-			const key_event ke = {.button = ev.button};
+			const key_event ke = {.button = static_cast<uint8>(ev.button)};
 			_key_events.try_enqueue(ke);
 			return true;
 		}
