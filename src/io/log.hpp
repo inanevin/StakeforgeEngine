@@ -9,6 +9,7 @@
 #define GAME_INFO(...)	Game::log::instance().log_msg(Game::log_level::info, __VA_ARGS__)
 #define GAME_TRACE(...) Game::log::instance().log_msg(Game::log_level::trace, __VA_ARGS__)
 #define GAME_FATAL(...) Game::log::instance().log_msg(Game::log_level::error, __VA_ARGS__)
+#define GAME_PROG(...)	Game::log::instance().log_msg(Game::log_level::progress, __VA_ARGS__)
 
 #else
 
@@ -17,6 +18,7 @@
 #define GAME_INFO(...)	Game::log::instance().log_msg(Game::log_level::info, __VA_ARGS__)
 #define GAME_TRACE(...) Game::log::instance().log_msg(Game::log_level::trace, __VA_ARGS__)
 #define GAME_FATAL(...) Game::log::instance().log_msg(Game::log_level::error, __VA_ARGS__)
+#define GAME_PROG(...)	Game::log::instance().log_msg(Game::log_level::progress, __VA_ARGS__)
 
 #endif
 
@@ -36,6 +38,7 @@ namespace Game
 		error,
 		trace,
 		warning,
+		progress,
 	};
 
 	class log

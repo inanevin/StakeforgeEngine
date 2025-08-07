@@ -20,6 +20,10 @@
 #include "input/input_mappings.hpp"
 #include "debug_console.hpp"
 #include "memory/memory_tracer.hpp"
+#include "data/ostream.hpp"
+#include "data/istream.hpp"
+#include "serialization/serialization.hpp"
+#include "io/file_system.hpp"
 
 #define VEKT_STRING_CSTR
 #define VEKT_VEC4 Game::vector4
@@ -34,6 +38,7 @@ namespace Game
 #define MAX_INPUT_FIELD			127
 #define COLOR_TEXT				color::srgb_to_linear(color(129.0f / 255.0f, 220.0f / 255.0f, 148.0f / 255.0f, 1.0f)).to_vector()
 #define COLOR_TEXT_WARN			color::srgb_to_linear(color(240.0f / 255.0f, 220.0f / 255.0f, 148.0f / 255.0f, 1.0f)).to_vector()
+#define COLOR_TEXT_PROGRESS		color::srgb_to_linear(color(148.0f / 255.0f, 170.0f / 255.0f, 240.0f / 255.0f, 1.0f)).to_vector()
 #define COLOR_TEXT_ERR			color::srgb_to_linear(color(250.0f / 255.0f, 120.0f / 255.0f, 88.0f / 255.0f, 1.0f)).to_vector()
 #define COLOR_TEXT_DARK			color::srgb_to_linear(color(119.0f / 255.0f, 210.0f / 255.0f, 138.0f / 255.0f, 1.0f)).to_vector()
 #define COLOR_CONSOLE_BG		color::srgb_to_linear(color(12.0f / 255.0f, 16.0f / 255.0f, 12.0f / 255.0f, 0.99f)).to_vector()
@@ -44,300 +49,9 @@ namespace Game
 #define CONSOLE_SPACING			static_cast<float>(DEBUG_FONT_SIZE) * 0.5f
 #define MAX_HISTORY				8
 #define RT_FORMAT				format::r8g8b8a8_srgb
+#define HISTORY_PATH			"console_history.stk"
 
 	static constexpr float B_TO_MB = 1024.0f * 1024.0f;
-
-	void debug_controller::init(texture_queue* texture_queue, resource_id global_bind_layout, const vector2ui16& screen_size)
-	{
-
-		_gfx_data.texture_queue = texture_queue;
-		_gfx_data.rt_size		= vector2ui16(screen_size.x, screen_size.y / 2);
-		_gfx_data.window_size	= vector2ui16(screen_size.x, screen_size.y);
-		log::instance().add_listener(TO_SIDC("debug_controller"), std::bind(&debug_controller::on_log, this, std::placeholders::_1, std::placeholders::_2));
-
-		gfx_backend* backend = gfx_backend::get();
-
-		// gui default
-		_shaders.gui_default.get_desc().attachments = {{.format = RT_FORMAT, .blend_attachment = gfx_util::get_blend_attachment_alpha_blending()}};
-		_shaders.gui_default.get_desc().inputs		= gfx_util::get_input_layout(input_layout_type::gui_default);
-		_shaders.gui_default.get_desc().cull		= cull_mode::back;
-		_shaders.gui_default.get_desc().front		= front_face::cw;
-		_shaders.gui_default.get_desc().layout		= global_bind_layout;
-		_shaders.gui_default.get_desc().set_name("gui_default");
-		_shaders.gui_default.create_from_file_vertex_pixel("assets/engine/shaders/gui/gui_default.hlsl");
-
-		// gui text
-		_shaders.gui_text.get_desc().attachments = {{.format = RT_FORMAT, .blend_attachment = gfx_util::get_blend_attachment_alpha_blending()}};
-		_shaders.gui_text.get_desc().inputs		 = gfx_util::get_input_layout(input_layout_type::gui_default);
-		_shaders.gui_text.get_desc().cull		 = cull_mode::back;
-		_shaders.gui_text.get_desc().front		 = front_face::cw;
-		_shaders.gui_text.get_desc().layout		 = global_bind_layout;
-		_shaders.gui_text.get_desc().set_name("gui_text");
-		_shaders.gui_text.create_from_file_vertex_pixel("assets/engine/shaders/gui/gui_text.hlsl");
-
-		// gui sdf
-		_shaders.gui_sdf.get_desc().attachments = {{.format = RT_FORMAT, .blend_attachment = gfx_util::get_blend_attachment_alpha_blending()}};
-		_shaders.gui_sdf.get_desc().inputs		= gfx_util::get_input_layout(input_layout_type::gui_default);
-		_shaders.gui_sdf.get_desc().cull		= cull_mode::back;
-		_shaders.gui_sdf.get_desc().front		= front_face::cw;
-		_shaders.gui_sdf.get_desc().layout		= global_bind_layout;
-		_shaders.gui_sdf.get_desc().set_name("gui_sdf");
-		_shaders.gui_sdf.create_from_file_vertex_pixel("assets/engine/shaders/gui/gui_sdf.hlsl");
-
-		// console draw
-		_shaders.debug_controller_console_draw.get_desc().attachments = {{.format = RT_FORMAT, .blend_attachment = gfx_util::get_blend_attachment_alpha_blending()}};
-		_shaders.debug_controller_console_draw.get_desc().inputs	  = {};
-		_shaders.debug_controller_console_draw.get_desc().cull		  = cull_mode::none;
-		_shaders.debug_controller_console_draw.get_desc().front		  = front_face::cw;
-		_shaders.debug_controller_console_draw.get_desc().layout	  = global_bind_layout;
-		_shaders.debug_controller_console_draw.get_desc().set_name("dbg_cont");
-		_shaders.debug_controller_console_draw.create_from_file_vertex_pixel("assets/engine/shaders/debug_controller/console_draw.hlsl");
-
-		for (uint32 i = 0; i < FRAMES_IN_FLIGHT; i++)
-		{
-			per_frame_data& pfd = _pfd[i];
-
-			pfd.rt_console = backend->create_texture({
-				.texture_format = RT_FORMAT,
-				.size			= vector2ui16(screen_size.x, screen_size.y / 2),
-				.flags			= texture_flags::tf_sampled | texture_flags::tf_is_2d | texture_flags::tf_render_target,
-				.clear_values	= {0.0f, 0.0f, 0.0f, 0.0f},
-				.debug_name		= "console_rt",
-			});
-
-			pfd.rt_fullscreen = backend->create_texture({
-				.texture_format = RT_FORMAT,
-				.size			= vector2ui16(screen_size.x, screen_size.y),
-				.flags			= texture_flags::tf_sampled | texture_flags::tf_is_2d | texture_flags::tf_render_target,
-				.clear_values	= {0.0f, 0.0f, 0.0f, 0.0f},
-				.debug_name		= "debug_rt",
-			});
-
-			pfd.buf_gui_pass_view.create_hw({
-				.size		= sizeof(gui_pass_view),
-				.flags		= resource_flags::rf_cpu_visible | resource_flags::rf_constant_buffer,
-				.debug_name = "cbv_gui_pass",
-			});
-
-			pfd.buf_fullscreen_pass_view.create_hw({
-				.size		= sizeof(fullscreen_pass_view),
-				.flags		= resource_flags::rf_cpu_visible | resource_flags::rf_constant_buffer,
-				.debug_name = "cbv_fs_pass",
-			});
-
-			pfd.bind_group_gui_render_pass = backend->create_empty_bind_group();
-			backend->bind_group_add_pointer(pfd.bind_group_gui_render_pass, rpi_table_render_pass, 1, false);
-			backend->bind_group_update_pointer(pfd.bind_group_gui_render_pass,
-											   0,
-											   {
-												   {.resource = pfd.buf_gui_pass_view.get_hw_gpu(), .pointer_index = upi_render_pass_ubo0, .type = binding_type::ubo},
-											   });
-
-			pfd.bind_group_fullscreen = backend->create_empty_bind_group();
-			backend->bind_group_add_pointer(pfd.bind_group_fullscreen, rpi_table_material, 3, false);
-			backend->bind_group_update_pointer(pfd.bind_group_fullscreen,
-											   0,
-											   {
-												   {.resource = pfd.buf_fullscreen_pass_view.get_hw_gpu(), .pointer_index = upi_material_ubo0, .type = binding_type::ubo},
-												   {.resource = pfd.rt_console, .pointer_index = upi_material_texture0, .type = binding_type::texture},
-											   });
-
-			pfd.buf_gui_vtx.create_staging_hw(
-				{
-					.size		= sizeof(vekt::vertex) * 14000,
-					.flags		= resource_flags::rf_vertex_buffer | resource_flags::rf_cpu_visible,
-					.debug_name = "gui_vertex_stg",
-				},
-				{
-					.size		= sizeof(vekt::vertex) * 14000,
-					.flags		= resource_flags::rf_vertex_buffer | resource_flags::rf_gpu_only,
-					.debug_name = "gui_vertex_gpu",
-				});
-
-			pfd.buf_gui_idx.create_staging_hw(
-				{
-					.size		= sizeof(vekt::index) * 24000,
-					.flags		= resource_flags::rf_index_buffer | resource_flags::rf_cpu_visible,
-					.debug_name = "gui_index_stg",
-				},
-				{
-					.size		= sizeof(vekt::index) * 24000,
-					.flags		= resource_flags::rf_index_buffer | resource_flags::rf_gpu_only,
-					.debug_name = "gui_index_gpu",
-				});
-		}
-
-		_vekt_data.builder = new vekt::builder();
-		_vekt_data.builder->init({
-			.vertex_buffer_sz			 = 1024 * 1024 * 10,
-			.index_buffer_sz			 = 1024 * 1024 * 20,
-			.text_cache_vertex_buffer_sz = 1024 * 1024 * 10,
-			.text_cache_index_buffer_sz	 = 1024 * 1024 * 20,
-			.buffer_count				 = 5,
-		});
-
-		_vekt_data.builder->set_on_draw([this](const vekt::draw_buffer& buffer) { on_draw(buffer); });
-		vekt::font_manager& font_manager = vekt::font_manager::get();
-
-		font_manager.init();
-		font_manager.set_atlas_created_callback(std::bind(&debug_controller::on_atlas_created, this, std::placeholders::_1));
-		font_manager.set_atlas_updated_callback(std::bind(&debug_controller::on_atlas_updated, this, std::placeholders::_1));
-		font_manager.set_atlas_destroyed_callback(std::bind(&debug_controller::on_atlas_destroyed, this, std::placeholders::_1));
-		_vekt_data.font_debug = font_manager.load_font("assets/engine/fonts/VT323-Regular.ttf", DEBUG_FONT_SIZE);
-		_vekt_data.font_icon  = font_manager.load_font("assets/engine/fonts/icons.ttf", 12, 32, 128, vekt::font_type::sdf);
-
-		_vekt_data.console_texts.reserve(MAX_CONSOLE_TEXT);
-		_input_field.history.reserve(MAX_CONSOLE_TEXT);
-
-		build_console();
-	}
-
-	void debug_controller::on_log(log_level lvl, const char* msg)
-	{
-		add_console_text(msg, lvl);
-	}
-
-	void debug_controller::flush_key_events()
-	{
-		input_event ev = {};
-
-		while (_input_events.try_dequeue(ev))
-		{
-
-			if (ev.wheel != 0)
-			{
-				_input_field.scroll_amt += ev.wheel * 50;
-				continue;
-			}
-
-			const input_code button = static_cast<input_code>(ev.button);
-
-			if (button == input_code::KeyAngleBracket)
-			{
-				if (_console_state == console_state::visible)
-				{
-					_console_state = console_state::invisible;
-					set_console_visible(false);
-					while (_input_events.pop())
-						continue;
-					return;
-				}
-				else if (_console_state == console_state::invisible)
-				{
-					_console_state = console_state::visible;
-					set_console_visible(true);
-
-					continue;
-				}
-			}
-
-			_input_field.text_size = static_cast<int8>(strlen(_input_field.text));
-			char* buffer		   = const_cast<char*>(_input_field.text);
-
-			if (button == input_code::KeyBackspace)
-			{
-				if (_input_field.text_size != 0)
-				{
-					for (int i = _input_field.caret_pos; i < _input_field.text_size - 1; i++)
-						buffer[i] = buffer[i + 1];
-
-					buffer[_input_field.text_size - 1] = '\0';
-					update_console_input_field();
-				}
-
-				continue;
-			}
-
-			if (button == input_code::KeyReturn)
-			{
-				if (_input_field.text_size > 0)
-				{
-					add_console_text(buffer, log_level::info);
-					if (_input_field.history.size() >= MAX_HISTORY)
-					{
-						const char* history = _input_field.history[0];
-						_text_allocator.deallocate((char*)history);
-						_input_field.history.erase(_input_field.history.begin());
-					}
-
-					const char* history_element = _text_allocator.allocate(buffer);
-					_input_field.history.push_back(history_element);
-					_input_field.history_traversal = static_cast<int8>(_input_field.history.size());
-
-					debug_console::get()->parse_console_command(buffer);
-
-					buffer[0] = '\0';
-					update_console_input_field();
-				}
-
-				continue;
-			}
-
-			if (button == input_code::KeyUp)
-			{
-				if (_input_field.history.empty())
-					continue;
-
-				_input_field.history_traversal = math::max(_input_field.history_traversal - 1, 0);
-
-				const char* history = _input_field.history[_input_field.history_traversal];
-				strcpy(buffer, history);
-				update_console_input_field();
-				_input_field.caret_pos = _input_field.text_size;
-
-				continue;
-				continue;
-			}
-
-			if (button == input_code::KeyDown)
-			{
-				if (_input_field.history.empty())
-					continue;
-
-				_input_field.history_traversal = math::min((int8)(_input_field.history_traversal + 1), static_cast<int8>(_input_field.history.size() - 1));
-
-				const char* history = _input_field.history[_input_field.history_traversal];
-				strcpy(buffer, history);
-				update_console_input_field();
-				_input_field.caret_pos = _input_field.text_size;
-
-				continue;
-			}
-
-			if (button == input_code::KeyLeft)
-			{
-				_input_field.caret_pos = math::max(0, _input_field.caret_pos - 1);
-				continue;
-			}
-
-			if (button == input_code::KeyRight)
-			{
-				_input_field.caret_pos = math::min(static_cast<int8>(_input_field.text_size), static_cast<int8>(_input_field.caret_pos + 1));
-				continue;
-			}
-
-			if (_input_field.text_size >= MAX_INPUT_FIELD)
-				continue;
-
-			const char	 c	  = process::get_character_from_key(static_cast<uint32>(ev.button));
-			const uint16 mask = process::get_character_mask_from_key(static_cast<uint32>(ev.button), c);
-
-			if (!(mask & character_mask::printable))
-				continue;
-
-			for (int i = _input_field.text_size; i > _input_field.caret_pos; --i)
-			{
-				buffer[i] = buffer[i - 1];
-			}
-
-			buffer[_input_field.caret_pos]	   = c;
-			buffer[_input_field.text_size + 1] = '\0';
-
-			_input_field.caret_pos++;
-			_input_field.text_size++;
-			update_console_input_field();
-		}
-	}
 
 	void debug_controller::build_console()
 	{
@@ -629,8 +343,194 @@ namespace Game
 		set_console_visible(false);
 	}
 
+	void debug_controller::init(texture_queue* texture_queue, resource_id global_bind_layout, const vector2ui16& screen_size)
+	{
+
+		_gfx_data.texture_queue = texture_queue;
+		_gfx_data.rt_size		= vector2ui16(screen_size.x, screen_size.y / 2);
+		_gfx_data.window_size	= vector2ui16(screen_size.x, screen_size.y);
+		log::instance().add_listener(TO_SIDC("debug_controller"), std::bind(&debug_controller::on_log, this, std::placeholders::_1, std::placeholders::_2));
+
+		gfx_backend* backend = gfx_backend::get();
+
+		// gui default
+		_shaders.gui_default.get_desc().attachments = {{.format = RT_FORMAT, .blend_attachment = gfx_util::get_blend_attachment_alpha_blending()}};
+		_shaders.gui_default.get_desc().inputs		= gfx_util::get_input_layout(input_layout_type::gui_default);
+		_shaders.gui_default.get_desc().cull		= cull_mode::back;
+		_shaders.gui_default.get_desc().front		= front_face::cw;
+		_shaders.gui_default.get_desc().layout		= global_bind_layout;
+		_shaders.gui_default.get_desc().set_name("gui_default");
+		_shaders.gui_default.create_from_file_vertex_pixel("assets/engine/shaders/gui/gui_default.hlsl");
+
+		// gui text
+		_shaders.gui_text.get_desc().attachments = {{.format = RT_FORMAT, .blend_attachment = gfx_util::get_blend_attachment_alpha_blending()}};
+		_shaders.gui_text.get_desc().inputs		 = gfx_util::get_input_layout(input_layout_type::gui_default);
+		_shaders.gui_text.get_desc().cull		 = cull_mode::back;
+		_shaders.gui_text.get_desc().front		 = front_face::cw;
+		_shaders.gui_text.get_desc().layout		 = global_bind_layout;
+		_shaders.gui_text.get_desc().set_name("gui_text");
+		_shaders.gui_text.create_from_file_vertex_pixel("assets/engine/shaders/gui/gui_text.hlsl");
+
+		// gui sdf
+		_shaders.gui_sdf.get_desc().attachments = {{.format = RT_FORMAT, .blend_attachment = gfx_util::get_blend_attachment_alpha_blending()}};
+		_shaders.gui_sdf.get_desc().inputs		= gfx_util::get_input_layout(input_layout_type::gui_default);
+		_shaders.gui_sdf.get_desc().cull		= cull_mode::back;
+		_shaders.gui_sdf.get_desc().front		= front_face::cw;
+		_shaders.gui_sdf.get_desc().layout		= global_bind_layout;
+		_shaders.gui_sdf.get_desc().set_name("gui_sdf");
+		_shaders.gui_sdf.create_from_file_vertex_pixel("assets/engine/shaders/gui/gui_sdf.hlsl");
+
+		// console draw
+		_shaders.debug_controller_console_draw.get_desc().attachments = {{.format = RT_FORMAT, .blend_attachment = gfx_util::get_blend_attachment_alpha_blending()}};
+		_shaders.debug_controller_console_draw.get_desc().inputs	  = {};
+		_shaders.debug_controller_console_draw.get_desc().cull		  = cull_mode::none;
+		_shaders.debug_controller_console_draw.get_desc().front		  = front_face::cw;
+		_shaders.debug_controller_console_draw.get_desc().layout	  = global_bind_layout;
+		_shaders.debug_controller_console_draw.get_desc().set_name("dbg_cont");
+		_shaders.debug_controller_console_draw.create_from_file_vertex_pixel("assets/engine/shaders/debug_controller/console_draw.hlsl");
+
+		for (uint32 i = 0; i < FRAMES_IN_FLIGHT; i++)
+		{
+			per_frame_data& pfd = _pfd[i];
+
+			pfd.rt_console = backend->create_texture({
+				.texture_format = RT_FORMAT,
+				.size			= vector2ui16(screen_size.x, screen_size.y / 2),
+				.flags			= texture_flags::tf_sampled | texture_flags::tf_is_2d | texture_flags::tf_render_target,
+				.clear_values	= {0.0f, 0.0f, 0.0f, 0.0f},
+				.debug_name		= "console_rt",
+			});
+
+			pfd.rt_fullscreen = backend->create_texture({
+				.texture_format = RT_FORMAT,
+				.size			= vector2ui16(screen_size.x, screen_size.y),
+				.flags			= texture_flags::tf_sampled | texture_flags::tf_is_2d | texture_flags::tf_render_target,
+				.clear_values	= {0.0f, 0.0f, 0.0f, 0.0f},
+				.debug_name		= "debug_rt",
+			});
+
+			pfd.buf_gui_pass_view.create_hw({
+				.size		= sizeof(gui_pass_view),
+				.flags		= resource_flags::rf_cpu_visible | resource_flags::rf_constant_buffer,
+				.debug_name = "cbv_gui_pass",
+			});
+
+			pfd.buf_fullscreen_pass_view.create_hw({
+				.size		= sizeof(fullscreen_pass_view),
+				.flags		= resource_flags::rf_cpu_visible | resource_flags::rf_constant_buffer,
+				.debug_name = "cbv_fs_pass",
+			});
+
+			pfd.bind_group_gui_render_pass = backend->create_empty_bind_group();
+			backend->bind_group_add_pointer(pfd.bind_group_gui_render_pass, rpi_table_render_pass, 1, false);
+			backend->bind_group_update_pointer(pfd.bind_group_gui_render_pass,
+											   0,
+											   {
+												   {.resource = pfd.buf_gui_pass_view.get_hw_gpu(), .pointer_index = upi_render_pass_ubo0, .type = binding_type::ubo},
+											   });
+
+			pfd.bind_group_fullscreen = backend->create_empty_bind_group();
+			backend->bind_group_add_pointer(pfd.bind_group_fullscreen, rpi_table_material, 3, false);
+			backend->bind_group_update_pointer(pfd.bind_group_fullscreen,
+											   0,
+											   {
+												   {.resource = pfd.buf_fullscreen_pass_view.get_hw_gpu(), .pointer_index = upi_material_ubo0, .type = binding_type::ubo},
+												   {.resource = pfd.rt_console, .pointer_index = upi_material_texture0, .type = binding_type::texture},
+											   });
+
+			pfd.buf_gui_vtx.create_staging_hw(
+				{
+					.size		= sizeof(vekt::vertex) * 14000,
+					.flags		= resource_flags::rf_vertex_buffer | resource_flags::rf_cpu_visible,
+					.debug_name = "gui_vertex_stg",
+				},
+				{
+					.size		= sizeof(vekt::vertex) * 14000,
+					.flags		= resource_flags::rf_vertex_buffer | resource_flags::rf_gpu_only,
+					.debug_name = "gui_vertex_gpu",
+				});
+
+			pfd.buf_gui_idx.create_staging_hw(
+				{
+					.size		= sizeof(vekt::index) * 24000,
+					.flags		= resource_flags::rf_index_buffer | resource_flags::rf_cpu_visible,
+					.debug_name = "gui_index_stg",
+				},
+				{
+					.size		= sizeof(vekt::index) * 24000,
+					.flags		= resource_flags::rf_index_buffer | resource_flags::rf_gpu_only,
+					.debug_name = "gui_index_gpu",
+				});
+		}
+
+		_vekt_data.builder = new vekt::builder();
+		_vekt_data.builder->init({
+			.vertex_buffer_sz			 = 1024 * 1024 * 10,
+			.index_buffer_sz			 = 1024 * 1024 * 20,
+			.text_cache_vertex_buffer_sz = 1024 * 1024 * 10,
+			.text_cache_index_buffer_sz	 = 1024 * 1024 * 20,
+			.buffer_count				 = 5,
+		});
+
+		_vekt_data.builder->set_on_draw([this](const vekt::draw_buffer& buffer) { on_draw(buffer); });
+		vekt::font_manager& font_manager = vekt::font_manager::get();
+
+		font_manager.init();
+		font_manager.set_atlas_created_callback(std::bind(&debug_controller::on_atlas_created, this, std::placeholders::_1));
+		font_manager.set_atlas_updated_callback(std::bind(&debug_controller::on_atlas_updated, this, std::placeholders::_1));
+		font_manager.set_atlas_destroyed_callback(std::bind(&debug_controller::on_atlas_destroyed, this, std::placeholders::_1));
+		_vekt_data.font_debug = font_manager.load_font("assets/engine/fonts/VT323-Regular.ttf", DEBUG_FONT_SIZE);
+		_vekt_data.font_icon  = font_manager.load_font("assets/engine/fonts/icons.ttf", 12, 32, 128, vekt::font_type::sdf);
+
+		_vekt_data.console_texts.reserve(MAX_CONSOLE_TEXT);
+		_input_field.history.reserve(MAX_CONSOLE_TEXT);
+
+		build_console();
+
+		// load history
+		if (file_system::exists(HISTORY_PATH))
+		{
+			istream in	 = serialization::load_from_file(HISTORY_PATH);
+			uint8	size = 0;
+			in >> _console_state;
+			in >> size;
+
+			set_console_visible(_console_state == console_state::visible);
+
+			for (uint8 i = 0; i < size; i++)
+			{
+				uint8 len = 0;
+				in >> len;
+
+				const char* history = _text_allocator.allocate(static_cast<size_t>(len));
+				in.read_to_raw((uint8*)history, static_cast<size_t>(len));
+				_input_field.history.push_back(history);
+			}
+
+			in.destroy();
+		}
+	}
+
 	void debug_controller::uninit()
 	{
+		// save history
+		{
+			const uint8 history_sz = static_cast<uint8>(_input_field.history.size());
+			ostream		out;
+			out << _console_state;
+			out << history_sz;
+
+			for (const char* el : _input_field.history)
+			{
+				const uint8 len = static_cast<uint8>(strlen(el));
+				out << len;
+				out.write_raw((uint8*)el, static_cast<size_t>(len));
+			}
+
+			serialization::save_to_file(HISTORY_PATH, out);
+			out.destroy();
+		}
+
 		vekt::font_manager::get().unload_font(_vekt_data.font_debug);
 		vekt::font_manager::get().unload_font(_vekt_data.font_icon);
 		vekt::font_manager::get().uninit();
@@ -801,83 +701,6 @@ namespace Game
 		backend->cmd_barrier(cmd_buffer, {.barriers = &br_rt_fs, .barrier_count = 1});
 	}
 
-	void debug_controller::console_logic()
-	{
-		_gfx_data.frame_counter++;
-		if (_gfx_data.frame_counter % 120 == 0)
-		{
-			const vekt::text_props& fps_props	  = _vekt_data.builder->widget_get_text(_vekt_data.widget_fps);
-			const vekt::text_props& update_props  = _vekt_data.builder->widget_get_text(_vekt_data.widget_main_thread);
-			const vekt::text_props& render_props  = _vekt_data.builder->widget_get_text(_vekt_data.widget_render_thread);
-			const vekt::text_props& present_props = _vekt_data.builder->widget_get_text(_vekt_data.widget_present_time);
-			string_util::append_float(static_cast<float>(frame_info::get_fps()), (char*)fps_props.text + 5, 4, 1, true);
-			string_util::append_float(static_cast<float>(frame_info::get_main_thread_time_milli()), (char*)update_props.text + 18, 7, 4, true);
-			string_util::append_float(static_cast<float>(frame_info::get_render_thread_time_milli()), (char*)render_props.text + 20, 7, 4, true);
-			string_util::append_float(static_cast<float>(frame_info::get_present_time_milli()), (char*)present_props.text + 14, 7, 4, true);
-
-#ifdef ENABLE_MEMORY_TRACER
-			memory_tracer& tracer = memory_tracer::get();
-			LOCK_GUARD(tracer.get_category_mtx());
-
-			const vekt::text_props& glob_mem_props = _vekt_data.builder->widget_get_text(_vekt_data.widget_global_mem);
-			const vekt::text_props& gfx_mem_props  = _vekt_data.builder->widget_get_text(_vekt_data.widget_gfx_mem);
-
-			for (const memory_category& cat : tracer.get_categories())
-			{
-				if (TO_SIDC(cat.name) == TO_SIDC("General"))
-				{
-					string_util::append_float(static_cast<float>(cat.total_size) / B_TO_MB, (char*)glob_mem_props.text + 18, 6, 4, true);
-				}
-				else if (TO_SIDC(cat.name) == TO_SIDC("Gfx"))
-				{
-					string_util::append_float(static_cast<float>(cat.total_size) / B_TO_MB, (char*)gfx_mem_props.text + 17, 6, 4, true);
-				}
-			}
-#endif
-		}
-
-		if (_console_state == console_state::invisible)
-			return;
-
-		vekt::pos_props&  console_bg_pos_props	= _vekt_data.builder->widget_get_pos_props(_vekt_data.widget_console_bg);
-		vekt::size_props& console_bg_size_props = _vekt_data.builder->widget_get_size_props(_vekt_data.widget_console_bg);
-		const vector2&	  console_bg_size		= _vekt_data.builder->widget_get_size(_vekt_data.widget_console_bg);
-		const vector2	  pos_text				= _vekt_data.builder->widget_get_pos(_vekt_data.widget_input_text);
-		const vector2	  size_text				= _vekt_data.builder->widget_get_size(_vekt_data.widget_input_text);
-		const vector2	  pos_field				= _vekt_data.builder->widget_get_pos(_vekt_data.widget_input_field);
-		const float		  total_element_size	= _vekt_data.console_total_text_size_y;
-		const float		  diff					= total_element_size - (console_bg_size.y - console_bg_size_props.child_margins.top - console_bg_size_props.child_margins.bottom);
-		_input_field.scroll_amt					= math::clamp(_input_field.scroll_amt, (int16)0, static_cast<int16>(diff));
-		console_bg_pos_props.scroll_offset		= -math::max(diff - _input_field.scroll_amt, 0.0f);
-
-		vekt::widget_gfx gfx = {};
-
-		const float size_per_char = _input_field.text_size == 0 ? 0 : (size_text.x / static_cast<float>(_input_field.text_size));
-
-		const vector2					pos	  = vector2(pos_text.x + (size_per_char * static_cast<float>(_input_field.caret_pos)), pos_field.y + INPUT_FIELD_HEIGHT * 0.25f);
-		const vekt::builder::rect_props props = {
-			.gfx			 = gfx,
-			.min			 = pos,
-			.max			 = vector2(pos.x + INPUT_FIELD_HEIGHT * 0.25f, pos.y + INPUT_FIELD_HEIGHT * 0.5f),
-			.use_hovered	 = false,
-			.use_pressed	 = false,
-			.color_start	 = COLOR_TEXT,
-			.color_end		 = {},
-			.color_direction = vekt::direction::horizontal,
-			.widget_id		 = 0,
-			.multi_color	 = false,
-		};
-
-		_vekt_data.builder->add_filled_rect(props);
-	}
-
-	void debug_controller::update_console_input_field()
-	{
-		_vekt_data.builder->widget_update_text(_vekt_data.widget_input_text);
-		_input_field.text_size = strlen(_input_field.text);
-		_input_field.caret_pos = math::min(_input_field.caret_pos, _input_field.text_size);
-	}
-
 	void debug_controller::on_draw(const vekt::draw_buffer& buffer)
 	{
 		gfx_backend* backend = gfx_backend::get();
@@ -1046,6 +869,88 @@ namespace Game
 		_vekt_data.builder->widget_set_visible(_vekt_data.widget_border, visible);
 	}
 
+	void debug_controller::console_logic()
+	{
+		_gfx_data.frame_counter++;
+		if (_gfx_data.frame_counter % 120 == 0)
+		{
+			const vekt::text_props& fps_props	  = _vekt_data.builder->widget_get_text(_vekt_data.widget_fps);
+			const vekt::text_props& update_props  = _vekt_data.builder->widget_get_text(_vekt_data.widget_main_thread);
+			const vekt::text_props& render_props  = _vekt_data.builder->widget_get_text(_vekt_data.widget_render_thread);
+			const vekt::text_props& present_props = _vekt_data.builder->widget_get_text(_vekt_data.widget_present_time);
+			string_util::append_float(static_cast<float>(frame_info::get_fps()), (char*)fps_props.text + 5, 4, 1, true);
+			string_util::append_float(static_cast<float>(frame_info::get_main_thread_time_milli()), (char*)update_props.text + 18, 7, 4, true);
+			string_util::append_float(static_cast<float>(frame_info::get_render_thread_time_milli()), (char*)render_props.text + 20, 7, 4, true);
+			string_util::append_float(static_cast<float>(frame_info::get_present_time_milli()), (char*)present_props.text + 14, 7, 4, true);
+
+#ifdef ENABLE_MEMORY_TRACER
+			memory_tracer& tracer = memory_tracer::get();
+			LOCK_GUARD(tracer.get_category_mtx());
+
+			const vekt::text_props& glob_mem_props = _vekt_data.builder->widget_get_text(_vekt_data.widget_global_mem);
+			const vekt::text_props& gfx_mem_props  = _vekt_data.builder->widget_get_text(_vekt_data.widget_gfx_mem);
+
+			for (const memory_category& cat : tracer.get_categories())
+			{
+				if (TO_SIDC(cat.name) == TO_SIDC("General"))
+				{
+					string_util::append_float(static_cast<float>(cat.total_size) / B_TO_MB, (char*)glob_mem_props.text + 18, 6, 4, true);
+				}
+				else if (TO_SIDC(cat.name) == TO_SIDC("Gfx"))
+				{
+					string_util::append_float(static_cast<float>(cat.total_size) / B_TO_MB, (char*)gfx_mem_props.text + 17, 6, 4, true);
+				}
+			}
+#endif
+		}
+
+		if (_console_state == console_state::invisible)
+			return;
+
+		vekt::pos_props&  console_bg_pos_props	= _vekt_data.builder->widget_get_pos_props(_vekt_data.widget_console_bg);
+		vekt::size_props& console_bg_size_props = _vekt_data.builder->widget_get_size_props(_vekt_data.widget_console_bg);
+		const vector2&	  console_bg_size		= _vekt_data.builder->widget_get_size(_vekt_data.widget_console_bg);
+		const vector2	  pos_text				= _vekt_data.builder->widget_get_pos(_vekt_data.widget_input_text);
+		const vector2	  size_text				= _vekt_data.builder->widget_get_size(_vekt_data.widget_input_text);
+		const vector2	  pos_field				= _vekt_data.builder->widget_get_pos(_vekt_data.widget_input_field);
+		const float		  total_element_size	= _vekt_data.console_total_text_size_y;
+		const float		  diff					= total_element_size - (console_bg_size.y - console_bg_size_props.child_margins.top - console_bg_size_props.child_margins.bottom);
+		_input_field.scroll_amt					= math::clamp(_input_field.scroll_amt, (int16)0, static_cast<int16>(diff));
+		console_bg_pos_props.scroll_offset		= -math::max(diff - _input_field.scroll_amt, 0.0f);
+
+		vekt::widget_gfx gfx = {};
+
+		const float size_per_char = _input_field.text_size == 0 ? 0 : (size_text.x / static_cast<float>(_input_field.text_size));
+
+		const vector2					pos	  = vector2(pos_text.x + (size_per_char * static_cast<float>(_input_field.caret_pos)), pos_field.y + INPUT_FIELD_HEIGHT * 0.25f);
+		const vekt::builder::rect_props props = {
+			.gfx			 = gfx,
+			.min			 = pos,
+			.max			 = vector2(pos.x + INPUT_FIELD_HEIGHT * 0.25f, pos.y + INPUT_FIELD_HEIGHT * 0.5f),
+			.use_hovered	 = false,
+			.use_pressed	 = false,
+			.color_start	 = COLOR_TEXT,
+			.color_end		 = {},
+			.color_direction = vekt::direction::horizontal,
+			.widget_id		 = 0,
+			.multi_color	 = false,
+		};
+
+		_vekt_data.builder->add_filled_rect(props);
+	}
+
+	void debug_controller::update_console_input_field()
+	{
+		_vekt_data.builder->widget_update_text(_vekt_data.widget_input_text);
+		_input_field.text_size = strlen(_input_field.text);
+		_input_field.caret_pos = math::min(_input_field.caret_pos, _input_field.text_size);
+	}
+
+	void debug_controller::on_log(log_level lvl, const char* msg)
+	{
+		add_console_text(msg, lvl);
+	}
+
 	void debug_controller::add_console_text(const char* text, log_level level)
 	{
 		if (level == log_level::trace)
@@ -1078,6 +983,9 @@ namespace Game
 		case log_level::warning:
 			gfx.color = COLOR_TEXT_WARN;
 			break;
+		case log_level::progress:
+			gfx.color = COLOR_TEXT_PROGRESS;
+			break;
 		default:
 			gfx.color = COLOR_TEXT;
 		}
@@ -1090,6 +998,148 @@ namespace Game
 
 		_vekt_data.console_texts.push_back(w);
 		_vekt_data.console_total_text_size_y += _vekt_data.builder->widget_get_size_props(w).size.y + CONSOLE_SPACING;
+	}
+
+	void debug_controller::flush_key_events()
+	{
+		input_event ev = {};
+
+		while (_input_events.try_dequeue(ev))
+		{
+
+			if (ev.wheel != 0)
+			{
+				_input_field.scroll_amt += ev.wheel * 50;
+				continue;
+			}
+
+			const input_code button = static_cast<input_code>(ev.button);
+
+			if (button == input_code::KeyAngleBracket)
+			{
+				if (_console_state == console_state::visible)
+				{
+					_console_state = console_state::invisible;
+					set_console_visible(false);
+					while (_input_events.pop())
+						continue;
+					return;
+				}
+				else if (_console_state == console_state::invisible)
+				{
+					_console_state = console_state::visible;
+					set_console_visible(true);
+
+					continue;
+				}
+			}
+
+			_input_field.text_size = static_cast<int8>(strlen(_input_field.text));
+			char* buffer		   = const_cast<char*>(_input_field.text);
+
+			if (button == input_code::KeyBackspace)
+			{
+				if (_input_field.text_size != 0)
+				{
+					for (int i = _input_field.caret_pos; i < _input_field.text_size - 1; i++)
+						buffer[i] = buffer[i + 1];
+
+					buffer[_input_field.text_size - 1] = '\0';
+					update_console_input_field();
+				}
+
+				continue;
+			}
+
+			if (button == input_code::KeyReturn)
+			{
+				if (_input_field.text_size > 0)
+				{
+					add_console_text(buffer, log_level::info);
+					if (_input_field.history.size() >= MAX_HISTORY)
+					{
+						const char* history = _input_field.history[0];
+						_text_allocator.deallocate((char*)history);
+						_input_field.history.erase(_input_field.history.begin());
+					}
+
+					const char* history_element = _text_allocator.allocate(buffer);
+					_input_field.history.push_back(history_element);
+					_input_field.history_traversal = static_cast<int8>(_input_field.history.size());
+
+					debug_console::get()->parse_console_command(buffer);
+
+					buffer[0] = '\0';
+					update_console_input_field();
+				}
+
+				continue;
+			}
+
+			if (button == input_code::KeyUp)
+			{
+				if (_input_field.history.empty())
+					continue;
+
+				_input_field.history_traversal = math::max(_input_field.history_traversal - 1, 0);
+
+				const char* history = _input_field.history[_input_field.history_traversal];
+				strcpy(buffer, history);
+				update_console_input_field();
+				_input_field.caret_pos = _input_field.text_size;
+
+				continue;
+				continue;
+			}
+
+			if (button == input_code::KeyDown)
+			{
+				if (_input_field.history.empty())
+					continue;
+
+				_input_field.history_traversal = math::min((int8)(_input_field.history_traversal + 1), static_cast<int8>(_input_field.history.size() - 1));
+
+				const char* history = _input_field.history[_input_field.history_traversal];
+				strcpy(buffer, history);
+				update_console_input_field();
+				_input_field.caret_pos = _input_field.text_size;
+
+				continue;
+			}
+
+			if (button == input_code::KeyLeft)
+			{
+				_input_field.caret_pos = math::max(0, _input_field.caret_pos - 1);
+				continue;
+			}
+
+			if (button == input_code::KeyRight)
+			{
+				_input_field.caret_pos = math::min(static_cast<int8>(_input_field.text_size), static_cast<int8>(_input_field.caret_pos + 1));
+				continue;
+			}
+
+			if (_input_field.text_size >= MAX_INPUT_FIELD)
+				continue;
+
+			const char	 c	  = process::get_character_from_key(static_cast<uint32>(ev.button));
+			const uint16 mask = process::get_character_mask_from_key(static_cast<uint32>(ev.button), c);
+
+			if (!(mask & character_mask::printable))
+				continue;
+
+			for (int i = _input_field.text_size; i > _input_field.caret_pos; --i)
+			{
+				buffer[i] = buffer[i - 1];
+			}
+
+			buffer[_input_field.caret_pos]	   = c;
+			buffer[_input_field.text_size + 1] = '\0';
+
+			_input_field.caret_pos++;
+			_input_field.text_size++;
+			update_console_input_field();
+		}
 	}
 
 	bool debug_controller::on_window_event(const window_event& ev)

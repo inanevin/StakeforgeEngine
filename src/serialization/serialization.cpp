@@ -12,9 +12,9 @@
 
 namespace Game
 {
-	bool Serialization::write_to_file(string_view fileInput, const char* targetFilePath)
+	bool serialization::write_to_file(string_view fileInput, const char* target_file)
 	{
-		std::ofstream outFile(targetFilePath);
+		std::ofstream outFile(target_file);
 
 		if (outFile.is_open())
 		{
@@ -23,16 +23,17 @@ namespace Game
 		}
 		else
 		{
-			GAME_ERR("Failed writing to file! {0}", targetFilePath);
+			GAME_ERR("Failed writing to file! {0}", target_file);
 			return false;
 		}
 
 		return true;
 	}
 
-	bool Serialization::save_to_file(const char* path, ostream& stream)
+	bool serialization::save_to_file(const char* path, ostream& stream)
 	{
-		if (file_system::exists(path)) file_system::delete_file(path);
+		if (file_system::exists(path))
+			file_system::delete_file(path);
 
 		std::ofstream wf(path, std::ios::out | std::ios::binary);
 
@@ -56,7 +57,7 @@ namespace Game
 		return true;
 	}
 
-	istream Serialization::load_from_file(const char* path)
+	istream serialization::load_from_file(const char* path)
 	{
 		if (!file_system::exists(path))
 		{

@@ -72,12 +72,17 @@ namespace Game
 				if (ext_filter.empty())
 				{
 					string path = entry.path().string().c_str();
-					outData.push_back(fix_path(path));
+					fix_path(path);
+					outData.push_back(path);
 				}
 				else
 				{
 					string fullpath = entry.path().string().c_str();
-					if (get_file_extension(fullpath).compare(ext_filter)) { outData.push_back(fix_path(fullpath)); }
+					if (get_file_extension(fullpath).compare(ext_filter))
+					{
+						fix_path(fullpath);
+						outData.push_back(fullpath);
+					}
 				}
 			}
 		}
@@ -88,7 +93,9 @@ namespace Game
 		out_data.clear();
 		for (const auto& entry : std::filesystem::directory_iterator(path))
 		{
-			out_data.push_back(fix_path(entry.path().string().c_str()));
+			string path = entry.path().string();
+			fix_path(path);
+			out_data.push_back(path);
 		}
 	}
 
@@ -130,7 +137,8 @@ namespace Game
 
 		while (end != 0)
 		{
-			if (cstr[end] == '/') break;
+			if (cstr[end] == '/')
+				break;
 
 			end--;
 		}
@@ -149,17 +157,23 @@ namespace Game
 	string file_system::remove_extensions_from_path(const string& fileName)
 	{
 		const size_t last_index = fileName.find_last_of(".");
-		return fix_path(fileName.substr(0, last_index));
+		string		 path		= fileName.substr(0, last_index);
+		fix_path(path);
+		return path;
 	}
 
 	string file_system::get_filename_and_extension_from_path(const string& fileName)
 	{
-		return fix_path(fileName.substr(fileName.find_last_of("/\\") + 1));
+		string path = fileName.substr(fileName.find_last_of("/\\") + 1);
+		fix_path(path);
+		return path;
 	}
 
 	string file_system::get_file_extension(const string& file)
 	{
-		return fix_path(file.substr(file.find_last_of(".") + 1));
+		string path = file.substr(file.find_last_of(".") + 1);
+		fix_path(path);
+		return path;
 	}
 
 	string file_system::get_filename_from_path(const string& file)
@@ -167,15 +181,18 @@ namespace Game
 		return remove_extensions_from_path(get_filename_and_extension_from_path(file));
 	}
 
-	string file_system::get_last_folder_from_path(const string& path)
+	string file_system::get_last_folder_from_path(const char* path)
 	{
-		string		 fixed_path = fix_path(path);
+		string fixed_path = path;
+		fix_path(fixed_path);
 		const size_t last_slash = fixed_path.find_last_of("/\\");
 
-		if (last_slash == fixed_path.size() || last_slash == fixed_path.size() - 1) fixed_path = fixed_path.substr(0, last_slash);
+		if (last_slash == fixed_path.size() || last_slash == fixed_path.size() - 1)
+			fixed_path = fixed_path.substr(0, last_slash);
 
 		const size_t actualLast = fixed_path.find_last_of("/\\");
-		if (actualLast != string::npos) fixed_path = fixed_path.substr(actualLast + 1, fixed_path.size());
+		if (actualLast != string::npos)
+			fixed_path = fixed_path.substr(actualLast + 1, fixed_path.size());
 		return fixed_path;
 	}
 
@@ -238,12 +255,10 @@ namespace Game
 		return "";
 	}
 
-	string file_system::fix_path(const string& str)
+	void file_system::fix_path(string& str)
 	{
-		string result = string_util::replace_all(str, "\\", "/");
-		result		  = string_util::replace_all(result, "\\\\", "/");
-		// result = UtilStr::ReplaceAll(result, "\\", "/");
-		return result;
+		string_util::replace_all(str, "\\\\", "/");
+		string_util::replace_all(str, "\\", "/");
 	}
 
 	namespace
@@ -290,7 +305,10 @@ namespace Game
 				string		 final_path		= corrected_path + " (Copy)";
 
 				size_t inster_before_ext = final_path.length();
-				if (!is_dir) { final_path += "." + file_system::get_file_extension(path); }
+				if (!is_dir)
+				{
+					final_path += "." + file_system::get_file_extension(path);
+				}
 
 				while (file_system::exists(final_path.c_str()))
 				{
@@ -310,9 +328,15 @@ namespace Game
 					SFGCopyDirectory(path, destination);
 					return final_path;
 				}
-				else { GAME_ERR("Unsupported file type! {0}", path); }
+				else
+				{
+					GAME_ERR("Unsupported file type! {0}", path);
+				}
 			}
-			else { GAME_ERR("Path doesn't exist! {0}", path); }
+			else
+			{
+				GAME_ERR("Path doesn't exist! {0}", path);
+			}
 		}
 		catch (std::filesystem::filesystem_error&)
 		{
@@ -395,13 +419,17 @@ namespace Game
 			// Ensure the source directory exists
 
 			std::filesystem::path source(directory);
-			if (!std::filesystem::exists(source)) { throw std::runtime_error("Source directory does not exist or is not a directory."); }
+			if (!std::filesystem::exists(source))
+			{
+				throw std::runtime_error("Source directory does not exist or is not a directory.");
+			}
 
 			// Create the destination path
 			std::filesystem::path destination = std::filesystem::path(targetParentFolder) / source.filename();
 
 			// Check if the destination already exists
-			if (std::filesystem::exists(destination)) std::filesystem::remove_all(destination);
+			if (std::filesystem::exists(destination))
+				std::filesystem::remove_all(destination);
 
 			// Recursively copy the directory and its contents
 			std::filesystem::create_directories(destination); // Create the target folder

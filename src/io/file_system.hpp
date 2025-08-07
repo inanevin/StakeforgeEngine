@@ -25,11 +25,11 @@ namespace Game
 		static string get_filename_and_extension_from_path(const string& filename);
 		static string get_file_extension(const string& file);
 		static string get_filename_from_path(const string& file);
-		static string get_last_folder_from_path(const string& path);
+		static string get_last_folder_from_path(const char* path);
 		static string read_file_as_string(const string& file_path);
 		static string get_running_directory();
 		static string get_user_directory();
-		static string fix_path(const string& str);
+		static void	  fix_path(string& str);
 		static string duplicate(const char* path);
 		static string get_relative(const char* src, const char* target);
 		static string get_system_time_str();

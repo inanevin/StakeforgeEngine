@@ -9,9 +9,13 @@
 #include "io/log.hpp"
 #include "debug_console.hpp"
 
+#include "resources/scene_context.hpp"
+
 namespace Game
 {
 #define GAME_DT 1.0f / 60.0f
+
+	scene_context _context;
 
 	void game_app::init()
 	{
@@ -35,6 +39,8 @@ namespace Game
 
 		_render_joined.store(1);
 		kick_off_render();
+
+		_context.init();
 
 		SET_INIT(false);
 	}

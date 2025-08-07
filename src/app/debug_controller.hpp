@@ -64,9 +64,9 @@ namespace Game
 		void set_console_visible(bool visible);
 
 	private:
-		enum class console_state
+		enum class console_state : uint8
 		{
-			invisible,
+			invisible = 0,
 			visible,
 		};
 

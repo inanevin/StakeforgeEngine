@@ -9,7 +9,7 @@ namespace Game
 	class ostream;
 	class istream;
 
-	class Serialization
+	class serialization
 	{
 	public:
 		static bool	   write_to_file(string_view fileInput, const char* targetFilePath);

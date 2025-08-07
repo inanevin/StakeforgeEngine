@@ -29,6 +29,8 @@ namespace Game
 			color = 6;
 		else if (level == log_level::error)
 			color = 4;
+		else if (level == log_level::progress)
+			color = 8;
 
 		hConsole = GetStdHandle(STD_OUTPUT_HANDLE);
 		SetConsoleTextAttribute(hConsole, color);
@@ -63,6 +65,8 @@ namespace Game
 			return "Trace";
 		case log_level::warning:
 			return "Warn";
+		case log_level::progress:
+			return "Progress";
 		default:
 			return "";
 		}

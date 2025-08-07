@@ -19,6 +19,7 @@ _build
 _[Bb]uild
 _[Bb]in
 _[Aa]ssets
+[Oo]bj
 *.DS_Store
 
 # Build results

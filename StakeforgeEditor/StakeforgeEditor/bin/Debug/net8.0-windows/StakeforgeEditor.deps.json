@@ -1,0 +1,23 @@
+{
+  "runtimeTarget": {
+    "name": ".NETCoreApp,Version=v8.0",
+    "signature": ""
+  },
+  "compilationOptions": {},
+  "targets": {
+    ".NETCoreApp,Version=v8.0": {
+      "StakeforgeEditor/1.0.0": {
+        "runtime": {
+          "StakeforgeEditor.dll": {}
+        }
+      }
+    }
+  },
+  "libraries": {
+    "StakeforgeEditor/1.0.0": {
+      "type": "project",
+      "serviceable": false,
+      "sha512": ""
+    }
+  }
+}

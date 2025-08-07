@@ -19,6 +19,7 @@ namespace Game
 			static_assert(sizeof(T) == 0, "cVarConvert not implemented for this type");
 			return false;
 		}
+
 		template <> bool cvar_convert<int>(const string& str, int& out)
 		{
 			try
@@ -67,9 +68,16 @@ namespace Game
 				return false;
 			}
 		}
+
 		template <> bool cvar_convert<string>(const string& str, string& out)
 		{
 			out = str;
+			return true;
+		}
+
+		template <> bool cvar_convert<const char*>(const string& str, const char*& out)
+		{
+			out = str.c_str();
 			return true;
 		}
 
@@ -122,11 +130,7 @@ namespace Game
 				GAME_ERR("console_variable::execute() -> no argument provided for the console variable");
 				return;
 			}
-			if (args.find(",") != string::npos)
-			{
-				GAME_ERR("console_variable::execute() -> arguments with multiple variables are not accepted for console variables!");
-				return;
-			}
+
 			T value;
 
 			if (!detail::cvar_convert<T>(args, value))
@@ -167,7 +171,7 @@ namespace Game
 			}
 
 			vector<string> tokens;
-			string_util::split(args, ",");
+			string_util::split(tokens, args, ",");
 
 			std::tuple<TArgs...> parsed_args;
 			if (!detail::parse_args(tokens, parsed_args))
@@ -233,7 +237,7 @@ namespace Game
 			return static_cast<console_variable<T>*>(_console_entries[sid])->GetValue();
 		}
 
-		void parse_console_command(const string& cmd);
+		void parse_console_command(const char* cmd);
 
 	private:
 		friend class game_app;

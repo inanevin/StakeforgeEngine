@@ -1,0 +1,52 @@
+﻿<UserControl x:Class="StakeforgeEditor.Main.TopBar"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+             xmlns:local="clr-namespace:StakeforgeEditor.Main"
+             mc:Ignorable="d" 
+             d:DesignHeight="48" d:DesignWidth="800">
+    <Grid>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="*"/>
+            <ColumnDefinition Width="*"/>
+        </Grid.ColumnDefinitions>
+
+        <Border Grid.Row="0"
+        Background="{StaticResource brush_background3}"   Grid.ColumnSpan="2">
+
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="*"/>
+                </Grid.ColumnDefinitions>
+
+
+                <StackPanel  Grid.Column="0"  Orientation="Horizontal" VerticalAlignment="Stretch">
+                    <Label Margin=" 4, 0, 4, 0" VerticalAlignment="Center" Style="{StaticResource style_label_icon}" FontSize="{StaticResource height_item_big}" Content="{StaticResource str_icon_stake}" Foreground="{StaticResource brush_accent_purple_light}"/>
+                    <Border Margin="0,0, 4, 0" Background="{StaticResource brush_background0}" Width="{StaticResource thickness_border}" Height="Auto"/>
+                    <Button Margin="0,0, 4, 0" Content="{StaticResource str_icon_burger}" Style="{StaticResource style_button_icon}"/>
+                    <Button Margin="0,0, 4, 0"  Content="{StaticResource str_icon_play}"  Foreground="{StaticResource brush_accent_green}" Style="{StaticResource style_button_icon}"/>
+                    <Button Content="{StaticResource str_icon_pause}" Foreground="{StaticResource brush_accent_primary}" Style="{StaticResource style_button_icon}"/>
+                </StackPanel>
+
+
+                <Grid x:Name="LastColumn" Grid.Column="1">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                    </Grid.RowDefinitions>
+
+                    <StackPanel Grid.Row="0" Orientation="Horizontal" HorizontalAlignment="Right">
+                        <Button x:Name="Minimize" Content="{StaticResource str_icon_minimize}" Style="{StaticResource style_button_window}" Click="OnClickMinimize"/>
+                        <Button Content="{StaticResource str_icon_maximize}" Style="{StaticResource style_button_window}" Click="OnClickMaximize"/>
+                        <Button Content="{StaticResource str_icon_close}" Style="{StaticResource style_button_window_close}" Click="OnClickClose"/>
+                    </StackPanel>
+
+                    <Border Grid.Row="1" Background="Transparent"/>
+                </Grid>
+            </Grid>
+        </Border>
+
+    </Grid>
+</UserControl>

@@ -1,0 +1,26 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net8.0-windows</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <UseWPF>true</UseWPF>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <None Remove="Resources\Fonts\editor_icons.ttf" />
+    <None Remove="Resources\Fonts\icons.ttf" />
+    <None Remove="resources\fonts\sfg.ttf" />
+    <None Remove="Resources\Fonts\VT323-Regular.ttf" />
+    <None Remove="Resources\Fonts\vt323_regular.ttf" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Resource Include="resources\fonts\sfg.ttf" />
+    <Resource Include="Resources\Fonts\vt323_regular.ttf">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Resource>
+  </ItemGroup>
+
+</Project>

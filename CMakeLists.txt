@@ -112,7 +112,6 @@ src/app/*.hpp
 src/resources/*.hpp
 src/vendor/stb/*.h
 src/vendor/moodycamel/*.h
-src/vendor/nhlohmann/*.hpp
 )
 
 if(WIN32)
@@ -164,6 +163,7 @@ target_include_directories(${PROJECT_NAME} PRIVATE ${PROJECT_SOURCE_DIR}/deps/ph
 
 # ------------- DEPS -------------
 add_subdirectory(deps/lz4-1.9.4)
+add_subdirectory(deps/glaze-5.5.4)
 
 if(WIN32)
 
@@ -180,9 +180,11 @@ endif()
 
 target_link_libraries(${PROJECT_NAME} 
 PUBLIC lz4
+PUBLIC glaze_glaze
 )
 
 set_target_properties(lz4 PROPERTIES FOLDER "Dependencies")
+set_target_properties(glaze_glaze PROPERTIES FOLDER "Dependencies")
 
 add_custom_command(
 TARGET ${PROJECT_NAME}
