@@ -1,4 +1,5 @@
-﻿using System;
+﻿using StakeforgeEditor.Panels;
+using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
@@ -43,7 +44,15 @@ namespace StakeforgeEditor.Main
 		public void Kill()
 		{
 			DockContainer? parent = Common.ObjectUtil.FindParent<DockContainer>(this);
-			Debug.Assert(parent != null);
+
+			if(parent == null)
+			{
+				SubWindow? sub = Common.ObjectUtil.FindParent<SubWindow>(this);
+				Debug.Assert(sub != null);
+				sub.CloseWindow();
+				return;
+			}
+
 			RootGrid.Children.Clear();
 			parent.UninitContainer(this);
 		}
@@ -51,7 +60,14 @@ namespace StakeforgeEditor.Main
 		public bool CanKill()
 		{
 			DockContainer? parent = Common.ObjectUtil.FindParent<DockContainer>(this);
-			return parent != null;
+
+			if(parent == null)
+			{
+				MainWindow? main = Common.ObjectUtil.FindParent<MainWindow>(this);
+				return main == null;
+			}
+
+			return true;
 		}
 
 		public void UninitContainer(DockContainer container)

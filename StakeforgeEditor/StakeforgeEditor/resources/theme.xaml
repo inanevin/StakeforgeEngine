@@ -18,6 +18,7 @@
     <Color x:Key="color_accent_primary2">#0B7772</Color>
     <Color x:Key="color_accent_secondary">#F00020</Color>
     <Color x:Key="color_accent_green">#00CC88</Color>
+    <Color x:Key="color_accent_warn">#FFE95B</Color>
 
     <Color x:Key="color_accent_purple">#5B0048</Color>
     <Color x:Key="color_accent_purple_light">#970077</Color>
@@ -41,6 +42,7 @@
     <SolidColorBrush x:Key="brush_accent_primary_light" Color="{StaticResource color_accent_primary_light}"/>
     <SolidColorBrush x:Key="brush_accent_secondary" Color="{StaticResource color_accent_secondary}"/>
     <SolidColorBrush x:Key="brush_accent_green" Color="{StaticResource color_accent_green}"/>
+    <SolidColorBrush x:Key="brush_accent_warn" Color="{StaticResource color_accent_warn}"/>
     <SolidColorBrush x:Key="brush_accent_purple" Color="{StaticResource color_accent_purple}"/>
     <SolidColorBrush x:Key="brush_accent_purple_light" Color="{StaticResource color_accent_purple_light}"/>
     <SolidColorBrush x:Key="brush_accent_purple_light_transparent" Color="{StaticResource color_accent_purple_light_transparent}"/>
@@ -51,16 +53,24 @@
     <FontFamily x:Key="font_icons">fonts/sfg.ttf#StakeforgeEditorIcons</FontFamily>
 
     <!-- Dimensions -->
-    <sys:Double x:Key="height_item_base">26</sys:Double>
-    <sys:Double x:Key="height_item_base_small">18</sys:Double>
-    <sys:Double x:Key="height_item_big">32</sys:Double>
-    <sys:Double x:Key="thickness_border">2</sys:Double>
+    <sys:Double x:Key="height_item_base">24</sys:Double>
+    <sys:Double x:Key="width_item_base">156</sys:Double>
+    <sys:Double x:Key="height_item_base_small">16</sys:Double>
+    <sys:Double x:Key="height_item_base_big">28</sys:Double>
+    <GridLength x:Key="height_item_base_big_grid">28</GridLength>
+    <sys:Double x:Key="size_border_thickness">2</sys:Double>
     <GridLength x:Key="height_top_bar">48</GridLength>
-    <GridLength x:Key="height_top_bar_sub">26</GridLength>
+    <GridLength x:Key="height_top_bar_sub">22</GridLength>
+    <sys:Double x:Key="height_scroll">10</sys:Double>
 
-    <Thickness x:Key="margin_horizontal">14,0,14,0</Thickness>
-    <Thickness x:Key="spacing_left">8,0,0,0</Thickness>
+    <Thickness x:Key="indent_left">8,0,0,0</Thickness>
+    <Thickness x:Key="indent_horizontal">8,0,8,0</Thickness>
+    <Thickness x:Key="indent_horizontal_vertical">8,2,8,2</Thickness>
+    <Thickness x:Key="spacing_left">4,0,0,0</Thickness>
     <Thickness x:Key="context_border">2,2,2,2</Thickness>
+    <Thickness x:Key="thickness_border">2,2,2,2</Thickness>
+
+    <CornerRadius x:Key="rounding_default">2</CornerRadius>
 
     <sys:Double x:Key="size_icon_font">16</sys:Double>
     <sys:Double x:Key="size_icon_font_small">12</sys:Double>
@@ -80,8 +90,12 @@
     <sys:String x:Key="str_icon_dd_arrow_up">&#x47;</sys:String>
     <sys:String x:Key="str_icon_dd_arrow_down">&#x48;</sys:String>
     <sys:String x:Key="str_icon_dotted_rect">&#x21;</sys:String>
-    <sys:String x:Key="str_icon_dotted_add">&#x77;</sys:String>
     <sys:String x:Key="str_icon_add">&#x78;</sys:String>
+    <sys:String x:Key="str_icon_settings">&#x22;</sys:String>
+    <sys:String x:Key="str_icon_filter">&#x23;</sys:String>
+    <sys:String x:Key="str_icon_console">&#x24;</sys:String>
+    <sys:String x:Key="str_icon_search">&#x25;</sys:String>
+    <sys:String x:Key="str_icon_circle">&#x26;</sys:String>
 
     <LinearGradientBrush x:Key="gradient_title_bar_0" StartPoint="0,0.5" EndPoint="1,0.5">
         <GradientStop Color="{StaticResource color_background3}" Offset="0.0"/>

@@ -23,11 +23,11 @@
 
 
                 <StackPanel  Grid.Column="0"  Orientation="Horizontal" VerticalAlignment="Stretch">
-                    <Label Margin=" 4, 0, 4, 0" VerticalAlignment="Center" Style="{StaticResource style_label_icon}" FontSize="{StaticResource height_item_big}" Content="{StaticResource str_icon_stake}" Foreground="{StaticResource brush_accent_purple_light}"/>
-                    <Border Margin="0,0, 4, 0" Background="{StaticResource brush_background0}" Width="{StaticResource thickness_border}" Height="Auto"/>
-                    <Button Margin="0,0, 4, 0" Content="{StaticResource str_icon_burger}" Style="{StaticResource style_button_icon}"/>
-                    <Button Margin="0,0, 4, 0"  Content="{StaticResource str_icon_play}"  Foreground="{StaticResource brush_accent_green}" Style="{StaticResource style_button_icon}"/>
-                    <Button Content="{StaticResource str_icon_pause}" Foreground="{StaticResource brush_accent_primary}" Style="{StaticResource style_button_icon}"/>
+                    <Label Margin=" 4, 0, 4, 0" VerticalAlignment="Center" Style="{StaticResource style_label_icon}" FontSize="{StaticResource height_item_base_big}" Content="{StaticResource str_icon_stake}" Foreground="{StaticResource brush_accent_purple_light}"/>
+                    <Border  Background="{StaticResource brush_background0}" Width="{StaticResource size_border_thickness}" Height="Auto"/>
+                    <Button Margin="{StaticResource spacing_left}" Content="{StaticResource str_icon_burger}" Style="{StaticResource style_button_icon}"/>
+                    <Button Margin="{StaticResource spacing_left}" Content="{StaticResource str_icon_play}"  Foreground="{StaticResource brush_accent_green}" Style="{StaticResource style_button_icon}"/>
+                    <Button Margin="{StaticResource spacing_left}" Content="{StaticResource str_icon_pause}" Foreground="{StaticResource brush_accent_primary}" Style="{StaticResource style_button_icon}"/>
                 </StackPanel>
 
 

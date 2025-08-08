@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Net.Http;
 using System.Text;
@@ -53,11 +54,19 @@ namespace StakeforgeEditor
 
 		void OnClickMaximize(object sender, RoutedEventArgs e)
 		{
-			
+
 		}
 
 		void OnClickClose(object sender, RoutedEventArgs e)
 		{
+			CloseWindow();
+		}
+
+		public void CloseWindow()
+		{
+			MainWindow? mw = Application.Current.MainWindow as MainWindow;
+			Debug.Assert(mw != null);
+			mw.RemoveSubwindow(this);
 			this.Close();
 		}
 
@@ -120,7 +129,7 @@ namespace StakeforgeEditor
 						else if (mouse.Y <= _barHeight && mouse.X <= relativePos.X)
 						{
 							handled = true;
-							return (IntPtr)Common.WinAPI.HTCAPTION; 
+							return (IntPtr)Common.WinAPI.HTCAPTION;
 						}
 
 						return (IntPtr)Common.WinAPI.HTCLIENT;

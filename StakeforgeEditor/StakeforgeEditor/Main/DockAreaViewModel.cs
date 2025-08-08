@@ -1,4 +1,5 @@
 ﻿using StakeforgeEditor.Commands;
+using StakeforgeEditor.Panels;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
@@ -58,7 +59,6 @@ namespace StakeforgeEditor.Main
 		}
 
 
-
 		public DockAreaViewModel()
 		{
 			RemovePanelCommand = new RelayCommand(RemovePanel);
@@ -94,16 +94,17 @@ namespace StakeforgeEditor.Main
 			switch (panelType)
 			{
 				case Common.PanelType.Resources:
-					AddPanel(new ResourcesViewModel());
+					AddPanel(StakeforgeEditor.Panels.Panels.Instance.ResourcesViewModel);
 					break;
 				case Common.PanelType.Properties:
 					break;
 				case Common.PanelType.Entities:
-					AddPanel(new HierarchyViewModel());
+					AddPanel(StakeforgeEditor.Panels.Panels.Instance.EntitiesViewModel);
 					break;
 				case Common.PanelType.World:
 					break;
 				case Common.PanelType.Console:
+					AddPanel(StakeforgeEditor.Panels.Panels.Instance.ConsoleViewModel);
 					break;
 				default:
 					break;

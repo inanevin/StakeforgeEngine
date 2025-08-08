@@ -1,4 +1,5 @@
 ﻿using StakeforgeEditor.Common;
+using StakeforgeEditor.Panels;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
@@ -83,9 +84,25 @@ namespace StakeforgeEditor.Main
 				_previewLoopingAnimations.Add(loopingStoryboard);
 			}
 
+			DragDropHandler.Instance.RegisterDockArea(this);
 		}
 
-		private void RemovePanel(PanelViewModel model)
+		~DockArea()
+		{
+			DragDropHandler.Instance.UnregisterDockArea(this);
+		}
+
+		public void OnPanelDragDropStarted()
+		{
+			DragHandler.IsHitTestVisible = true;
+		}
+
+		public void OnPanelDragDropEnded()
+		{
+			DragHandler.IsHitTestVisible = false;
+		}
+
+		public void RemovePanel(PanelViewModel model)
 		{
 			DockAreaViewModel? viewModel = this.DataContext as DockAreaViewModel;
 			Debug.Assert(viewModel != null);
@@ -172,7 +189,6 @@ namespace StakeforgeEditor.Main
 			e.Handled = true;
 		}
 
-
 		private void Content_DragEnter(object sender, DragEventArgs e)
 		{
 			if (DragDropHandler.Instance.CurrentDragDrop != DragDropType.Panel)
@@ -188,7 +204,6 @@ namespace StakeforgeEditor.Main
 			ChangePreviewState(Common.Direction.None);
 			AnimatePreviews();
 		}
-
 
 		private void Content_DragLeave(object sender, DragEventArgs e)
 		{
@@ -299,8 +314,6 @@ namespace StakeforgeEditor.Main
 			ChangePreviewState(Common.Direction.None);
 
 		}
-
-
 
 		private void AnimatePreviews()
 		{

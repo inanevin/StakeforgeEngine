@@ -6,7 +6,7 @@ using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace StakeforgeEditor.Main
+namespace StakeforgeEditor.Panels
 {
 	public abstract class PanelViewModel : INotifyPropertyChanged
 	{

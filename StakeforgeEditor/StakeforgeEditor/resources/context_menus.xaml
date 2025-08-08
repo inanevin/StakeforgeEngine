@@ -1,31 +1,34 @@
 ﻿<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
-                   xmlns:main="clr-namespace:StakeforgeEditor.Main"
+                    xmlns:main="clr-namespace:StakeforgeEditor.Main"
+                    xmlns:widgets="clr-namespace:StakeforgeEditor.Widgets"
                     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
 
 
-    <DropShadowEffect x:Key="MyDropShadowEffect" BlurRadius="4" Opacity="0.8" ShadowDepth="1"/>
+    <DropShadowEffect x:Key="fx_drop_shadow_default" BlurRadius="4" Opacity="0.8" ShadowDepth="1"/>
 
-    <Style x:Key="style_context_menu_item" TargetType="{x:Type MenuItem}">
+    <Style x:Key="style_context_menu_item" TargetType="{x:Type widgets:MenuItemDefault}" BasedOn="{StaticResource {x:Type MenuItem}}">
         <Setter Property="Background" Value="{StaticResource brush_background0}"/>
         <Setter Property="Foreground" Value="{StaticResource brush_text_primary}"/>
         <Setter Property="FontFamily" Value="{StaticResource font_default}"/>
         <Setter Property="FontSize" Value="{StaticResource size_default_font}"/>
         <Setter Property="Template">
             <Setter.Value>
-                <ControlTemplate TargetType="{x:Type MenuItem}">
+                <ControlTemplate TargetType="{x:Type widgets:MenuItemDefault}">
                     <Grid>
                         <Border Name="Border"
-                            Background="{TemplateBinding Background}"
-                                BorderBrush="{StaticResource brush_background_light0}"
-                            BorderThickness="0, 0, 0, 1">
+                            Height="{StaticResource height_item_base}"
+                            Background="{TemplateBinding Background}" MinWidth="100" 
+                            >
                             <Grid>
                                 <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto"/>
                                     <ColumnDefinition Width="*"/>
                                     <ColumnDefinition Width="Auto"/>
                                 </Grid.ColumnDefinitions>
 
-                                <ContentPresenter Grid.Column="0"
-                                              Margin="10,3"
+                                <Label Grid.Column="0" Width="{StaticResource height_item_base}" Foreground="{TemplateBinding HeaderIconColor}" Content="{TemplateBinding HeaderIcon}" Style="{StaticResource style_label_icon_small}"/>
+
+                                <ContentPresenter Grid.Column="1"
                                               ContentSource="Header"
                                               RecognizesAccessKey="True"
                                               VerticalAlignment="Center"/>
@@ -49,7 +52,7 @@
                             <Border BorderThickness="1"
                                 BorderBrush="{StaticResource brush_background_light0}"
                                 Background="{StaticResource brush_background0}"
-                                Effect="{StaticResource MyDropShadowEffect}">
+                                Effect="{StaticResource fx_drop_shadow_default}">
                                 <StackPanel IsItemsHost="True" KeyboardNavigation.DirectionalNavigation="Cycle"/>
                             </Border>
                         </Popup>
@@ -92,16 +95,9 @@
             </Setter.Value>
         </Setter>
         <Style.Resources>
-            <Style TargetType="{x:Type MenuItem}" BasedOn="{StaticResource style_context_menu_item}"/>
+            <Style TargetType="{x:Type widgets:MenuItemDefault}" BasedOn="{StaticResource style_context_menu_item}"/>
         </Style.Resources>
     </Style>
 
-    <ContextMenu x:Key="context_menu_dock_tab" Style="{StaticResource style_context_menu}">
-        <MenuItem Header="World" Command="{Binding DataContext.AddPanelCommand}" CommandParameter="World"/>
-        <MenuItem Header="Entities" Command="{Binding DataContext.AddPanelCommand, RelativeSource={RelativeSource AncestorType={x:Type main:DockArea}}}" CommandParameter="Entities"/>
-        <MenuItem Header="Resources" Command="{Binding DataContext.AddPanelCommand, RelativeSource={RelativeSource AncestorType={x:Type main:DockArea}}}" CommandParameter="Resources"/>
-        <MenuItem Header="Console" Command="{Binding DataContext.AddPanelCommand, RelativeSource={RelativeSource AncestorType={x:Type main:DockArea}}}" CommandParameter="Console"/>
-        <MenuItem Header="Properties" Command="{Binding DataContext.AddPanelCommand, RelativeSource={RelativeSource AncestorType={x:Type main:DockArea}}}" CommandParameter="Properties"/>
-    </ContextMenu>
 
 </ResourceDictionary>

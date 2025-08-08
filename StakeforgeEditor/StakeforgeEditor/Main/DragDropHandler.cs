@@ -1,4 +1,5 @@
 ﻿using StakeforgeEditor.Common;
+using StakeforgeEditor.Panels;
 using System.Diagnostics;
 using System.Windows;
 using System.Windows.Controls;
@@ -34,6 +35,7 @@ namespace StakeforgeEditor.Main
 		private DragDropPanelData _panelData;
 		private static DragDropHandler? _instance = null;
 		private Point _cursorPos;
+		private List<DockArea> _dockAreas = new List<DockArea>();
 		public static DragDropHandler Instance
 		{
 			get
@@ -47,8 +49,21 @@ namespace StakeforgeEditor.Main
 		public DragDropType CurrentDragDrop { get; private set; }
 		public DragDropPanelData CurrentPanelData { get => _panelData; set => _panelData = value; }
 
+		public void RegisterDockArea(DockArea area)
+		{
+			_dockAreas.Add(area);
+		}
+
+		public void UnregisterDockArea(DockArea area)
+		{
+			_dockAreas.Remove(area);
+		}
 		public void BeginDragPanel(DockArea sender, TabItem tabItem, PanelViewModel viewModel)
 		{
+
+			foreach (DockArea da in _dockAreas)
+				da.OnPanelDragDropStarted();
+
 			CurrentDragDrop = DragDropType.Panel;
 			_panelData.senderDockArea = sender;
 			_panelData.tabItem = tabItem;
@@ -77,11 +92,13 @@ namespace StakeforgeEditor.Main
 
 			DragDropEffects result = DragDrop.DoDragDrop(_panelData.tabItem, _panelData, DragDropEffects.Move);
 
+			foreach (DockArea da in _dockAreas)
+				da.OnPanelDragDropEnded();
+
 			if (result == DragDropEffects.None)
 			{
 				DockAreaViewModel? dvm = CurrentPanelData.senderDockArea!.DataContext as DockAreaViewModel;
-				Debug.Assert(dvm != null);
-				dvm.RemovePanel(CurrentPanelData.panelViewModel!);
+				CurrentPanelData.senderDockArea!.RemovePanel(CurrentPanelData.panelViewModel!);
 
 				MainWindow? mw = Application.Current.MainWindow as MainWindow;
 				Debug.Assert(mw != null);

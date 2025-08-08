@@ -4,12 +4,12 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace StakeforgeEditor.Main
+namespace StakeforgeEditor.Panels
 {
-	public class HierarchyViewModel : PanelViewModel
+	public class EntitiesViewModel : PanelViewModel
 	{
 		public object? SelectedObject { get; set; }
-		public HierarchyViewModel() { Title = "Hierarchy"; }
+		public EntitiesViewModel() { Title = "Hierarchy"; }
 
 	}
 }

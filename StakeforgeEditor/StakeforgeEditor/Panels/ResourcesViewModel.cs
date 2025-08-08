@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace StakeforgeEditor.Main
+namespace StakeforgeEditor.Panels
 {
 	public class ResourcesViewModel : PanelViewModel
 	{

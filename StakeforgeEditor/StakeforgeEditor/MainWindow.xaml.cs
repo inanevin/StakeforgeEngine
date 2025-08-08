@@ -33,10 +33,9 @@ namespace StakeforgeEditor
 			DockArea area0 = new DockArea();
 			DockAreaViewModel area0VM = new DockAreaViewModel();
 			area0.DataContext = area0VM;
-			area0VM.AddPanel(new ResourcesViewModel());
-			area0VM.AddPanel(new HierarchyViewModel());
-			area0VM.AddPanel(new ResourcesViewModel());
-			area0VM.AddPanel(new HierarchyViewModel());
+			area0VM.AddPanel(Panels.Panels.Instance.ConsoleViewModel);
+			area0VM.AddPanel(Panels.Panels.Instance.ResourcesViewModel);
+			area0VM.AddPanel(Panels.Panels.Instance.EntitiesViewModel);
 
 			DockContainer container = new DockContainer();
 			container.InitArea(area0);
@@ -51,6 +50,11 @@ namespace StakeforgeEditor
 			sw.SetSize(width, height);
 			_subWindows.Add(sw);
 			return sw;
+		}
+
+		public void RemoveSubwindow(SubWindow sw)
+		{
+			_subWindows.Remove(sw);
 		}
 
 		private void OnLoaded(object sender, RoutedEventArgs e)

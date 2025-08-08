@@ -4,6 +4,7 @@
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
              xmlns:local="clr-namespace:StakeforgeEditor.Main"
+             xmlns:widgets="clr-namespace:StakeforgeEditor.Widgets"
              mc:Ignorable="d" 
              d:DesignHeight="900" d:DesignWidth="1600">
 
@@ -13,10 +14,29 @@
 
 
     <UserControl.Resources>
+        
+        
         <Style x:Key="style_tab_reorderable" TargetType="TabItem" BasedOn="{StaticResource style_tab_default}">
             <EventSetter Event="PreviewMouseLeftButtonDown" Handler="TabItem_PreviewMouseLeftButtonDown"/>
             <EventSetter Event="PreviewMouseMove" Handler="TabItem_PreviewMouseMove"/>
             <EventSetter Event="Drop" Handler="TabItem_Drop"/>
+        </Style>
+
+        <!-- headers-only TabControl -->
+        <Style x:Key="style_tab_control_header_only" TargetType="TabControl" BasedOn="{StaticResource {x:Type TabControl}}">
+            <Setter Property="Margin" Value="0,2,0,2"></Setter>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="TabControl">
+                        <Grid>
+                            <TabPanel x:Name="HeaderPanel"
+                                  IsItemsHost="True"
+                                  KeyboardNavigation.TabIndex="1"
+                                  Margin="0"/>
+                        </Grid>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
         </Style>
     </UserControl.Resources>
 
@@ -32,13 +52,13 @@
             <ColumnDefinition Width="*"/>
         </Grid.ColumnDefinitions>
 
-        <DockPanel Grid.Row="0" Grid.Column="0" LastChildFill="False">
+        <DockPanel Grid.Row="0" Grid.Column="0" LastChildFill="False" Height="Auto">
 
             <Button Content="{StaticResource str_icon_add}"
                     VerticalContentAlignment="Center"
                     HorizontalContentAlignment="Center"
                     VerticalAlignment="Center"
-                    Style="{StaticResource style_button_icon}"
+                    Style="{StaticResource style_button_icon_small}"
                     Foreground="{StaticResource brush_text_muted}"
                     DockPanel.Dock="Right"
                     Margin="4,0,0,0"
@@ -46,29 +66,27 @@
             >
                 <Button.ContextMenu>
                     <ContextMenu Style="{StaticResource style_context_menu}">
-                        <MenuItem Header="World" Command="{Binding AddPanelCommand}" CommandParameter="World"/>
-                        <MenuItem Header="Entities" Command="{Binding AddPanelCommand}"  CommandParameter="Entities"/>
-                        <MenuItem Header="Resources" Command="{Binding AddPanelCommand}"  CommandParameter="Resources"/>
-                        <MenuItem Header="Console" Command="{Binding AddPanelCommand}" CommandParameter="Console"/>
-                        <MenuItem Header="Properties"  Command="{Binding AddPanelCommand}"  CommandParameter="Properties"/>
+                        <widgets:MenuItemDefault Header="World" Command="{Binding AddPanelCommand}" CommandParameter="World"/>
+                        <widgets:MenuItemDefault Header="Entities" Command="{Binding AddPanelCommand}"  CommandParameter="Entities"/>
+                        <widgets:MenuItemDefault Header="Resources" Command="{Binding AddPanelCommand}"  CommandParameter="Resources"/>
+                        <widgets:MenuItemDefault Header="Console" Command="{Binding AddPanelCommand}" CommandParameter="Console"/>
+                        <widgets:MenuItemDefault Header="Properties"  Command="{Binding AddPanelCommand}"  CommandParameter="Properties"/>
                     </ContextMenu>
                 </Button.ContextMenu>
 
             </Button>
 
-
-            <TabControl x:Name="TabRow" Grid.Row="0" Grid.Column="0"
-            ItemContainerStyle="{StaticResource style_tab_reorderable}"
-            BorderThickness ="0,0,0,0"
-                    Margin="-2,0,0,0"
-            Background="{StaticResource brush_background1}"
-            ItemsSource="{Binding Panels}"
-            SelectedItem="{Binding SelectedPanel}">
+            <TabControl x:Name="TabRow" Grid.Row="0" Grid.Column="0" 
+                        VerticalAlignment="Center" VerticalContentAlignment="Center"
+                        Style="{StaticResource style_tab_control_header_only}"
+                        ItemContainerStyle="{StaticResource style_tab_reorderable}"
+                        ItemsSource="{Binding Panels}"
+                        SelectedItem="{Binding SelectedPanel}">
 
                 <TabControl.ItemTemplate>
                     <DataTemplate>
                         <StackPanel Orientation="Horizontal" VerticalAlignment="Stretch">
-                            <Border x:Name="SelectedBorder" Visibility="{Binding IsSelected, Converter={StaticResource bool_to_vis_converter}}" Width="{StaticResource thickness_border}"  Background="{StaticResource gradient_blue_vertical}">
+                            <Border x:Name="SelectedBorder" Visibility="{Binding IsSelected, Converter={StaticResource bool_to_vis_converter}}" Width="{StaticResource size_border_thickness}"  Background="{StaticResource gradient_blue_vertical}">
                                 <Border.Style>
                                     <Style TargetType="Border">
                                         <Style.Triggers>
@@ -77,9 +95,9 @@
                                                     <BeginStoryboard>
                                                         <Storyboard>
                                                             <DoubleAnimation Storyboard.TargetProperty="Height"
-                                                 From="0"
-                                                 To="{StaticResource height_item_base_small}"
-                                                 Duration="0:0:0.25"/>
+                                                            From="0"
+                                                            To="{StaticResource height_item_base_small}"
+                                                            Duration="0:0:0.25"/>
                                                         </Storyboard>
                                                     </BeginStoryboard>
                                                 </DataTrigger.EnterActions>
@@ -89,19 +107,17 @@
                                 </Border.Style>
 
                             </Border>
-                            <Label 
-                    Margin="{StaticResource spacing_left}"
-                    VerticalAlignment="Center"
-                    Content="{Binding Title}" Style="{StaticResource style_label_default}" />
+                            <TextBlock Margin="{StaticResource indent_horizontal}" VerticalAlignment="Center" Text="{Binding Title}"/>
+                         
                             <Button 
-                    Visibility="{Binding DataContext.EnableClosingTabs, RelativeSource={RelativeSource AncestorType={x:Type local:DockArea}}, Converter={StaticResource bool_to_vis_converter}}"
-                    Margin="4, 2, 0, 0"
-                    Command="{Binding DataContext.RemovePanelCommand, RelativeSource={RelativeSource AncestorType={x:Type local:DockArea}}}"
-                    CommandParameter="{Binding}"
-                    VerticalAlignment="Center"
-                    Style="{StaticResource style_button_icon_small}"
-                    Foreground="{Binding RelativeSource={RelativeSource AncestorType=TabItem}, Path=Foreground}"
-                    Content="{StaticResource str_icon_close}"/>
+                            Visibility="{Binding DataContext.EnableClosingTabs, RelativeSource={RelativeSource AncestorType={x:Type local:DockArea}}, Converter={StaticResource bool_to_vis_converter}}"
+                            Margin="4, 2, 0, 0"
+                            Command="{Binding DataContext.RemovePanelCommand, RelativeSource={RelativeSource AncestorType={x:Type local:DockArea}}}"
+                            CommandParameter="{Binding}"
+                            VerticalAlignment="Center"
+                            Style="{StaticResource style_button_icon_small}"
+                            Foreground="{Binding RelativeSource={RelativeSource AncestorType=TabItem}, Path=Foreground}"
+                            Content="{StaticResource str_icon_close}"/>
                         </StackPanel>
                     </DataTemplate>
                 </TabControl.ItemTemplate>
@@ -111,11 +127,6 @@
         </DockPanel>
 
         <Grid   x:Name="ContentGrid"
-                AllowDrop="True"
-                Drop="Content_Drop"
-                DragEnter="Content_DragEnter"
-                DragLeave="Content_DragLeave"
-                DragOver="Content_DragOver"
                 Grid.Row="1" Grid.Column="0" >
 
             <ContentPresenter  Content="{Binding SelectedPanel}" />
@@ -234,6 +245,12 @@
        Visibility="Hidden"
        IsHitTestVisible="False" />
 
-    </Grid>
+        <Border x:Name="DragHandler" IsHitTestVisible="False" Grid.Row="1" Grid.RowSpan="1" Background="Transparent" Drop="Content_Drop" AllowDrop="True"
+             DragEnter="Content_DragEnter"
+             DragLeave="Content_DragLeave"
+             DragOver="Content_DragOver">
+        </Border>
+        
+        </Grid>
 
 </UserControl>

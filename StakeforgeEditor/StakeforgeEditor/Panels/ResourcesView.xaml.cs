@@ -13,14 +13,14 @@ using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
 
-namespace StakeforgeEditor.Main
+namespace StakeforgeEditor.Panels
 {
 	/// <summary>
-	/// Interaction logic for HierarchyView.xaml
+	/// Interaction logic for ResourcesView.xaml
 	/// </summary>
-	public partial class HierarchyView : UserControl
+	public partial class ResourcesView : UserControl
 	{
-		public HierarchyView()
+		public ResourcesView()
 		{
 			InitializeComponent();
 		}

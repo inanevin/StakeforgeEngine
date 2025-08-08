@@ -14,11 +14,15 @@
                 <ResourceDictionary Source="/resources/data_templates.xaml"/>
                 <ResourceDictionary Source="/resources/tabs.xaml"/>
                 <ResourceDictionary Source="/resources/context_menus.xaml"/>
+                <ResourceDictionary Source="/resources/input_fields.xaml"/>
+                <ResourceDictionary Source="/resources/scroll_bars.xaml"/>
             </ResourceDictionary.MergedDictionaries>
 
             <converters:BooleanToVisibilityConverter x:Key="bool_to_vis_converter"/>
             <converters:PercentageConverter x:Key="percentage_converter"/>
             <converters:DockOverlayStateToVisibilityConverter x:Key="dock_overlay_to_visibility"/>
+            <converters:LogLevelToBrush x:Key="log_level_to_brush"/>
+            <converters:LogMaskToIconConverter x:Key="log_mask_to_icon"/>
 
         </ResourceDictionary>
     </Application.Resources>
