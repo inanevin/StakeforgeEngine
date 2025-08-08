@@ -20,7 +20,10 @@ namespace Game
 
 			LARGE_INTEGER frequency;
 
-			if (!QueryPerformanceFrequency(&frequency)) { GAME_ERR("[time] -> QueryPerformanceFrequency failed!"); }
+			if (!QueryPerformanceFrequency(&frequency))
+			{
+				SFG_ERR("[time] -> QueryPerformanceFrequency failed!");
+			}
 
 			s_frequency = frequency.QuadPart;
 		}
@@ -67,7 +70,8 @@ namespace Game
 
 	void time::throttle(int64 microseconds)
 	{
-		if (microseconds < 0) return;
+		if (microseconds < 0)
+			return;
 
 		int64		now	   = get_cpu_microseconds();
 		const int64 target = now + microseconds;
@@ -77,7 +81,10 @@ namespace Game
 		{
 			now = get_cpu_microseconds();
 
-			if (now >= target) { break; }
+			if (now >= target)
+			{
+				break;
+			}
 
 			int64 diff = target - now;
 
@@ -86,7 +93,10 @@ namespace Game
 				uint32 ms = static_cast<uint32>((double)(diff - 2000) / 1000.0);
 				go_to_sleep(ms);
 			}
-			else { go_to_sleep(0); }
+			else
+			{
+				go_to_sleep(0);
+			}
 		}
 	}
 

@@ -8,20 +8,20 @@ namespace Game
 	void bump_allocator::init(size_t sz, size_t alignment)
 	{
 
-		GAME_ASSERT(sz != 0);
+		SFG_ASSERT(sz != 0);
 		_size = sz;
-		_raw  = GAME_ALIGNED_MALLOC(alignment, sz);
+		_raw  = SFG_ALIGNED_MALLOC(alignment, sz);
 	}
 
 	void bump_allocator::uninit()
 	{
-		GAME_ALIGNED_FREE(_raw);
+		SFG_ALIGNED_FREE(_raw);
 		_raw = nullptr;
 	}
 
 	void* bump_allocator::allocate(size_t size, size_t alignment)
 	{
-		GAME_ASSERT(_head + size < _size);
+		SFG_ASSERT(_head + size < _size);
 
 		void*  current_ptr = (void*)((uint8*)_raw + _head);
 		size_t space	   = _size - _head;

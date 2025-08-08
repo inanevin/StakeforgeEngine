@@ -36,7 +36,7 @@ namespace Game
 	{
 		if (FAILED(hr))
 		{
-			GAME_FATAL("DX12 Exception! {0}", hr);
+			SFG_FATAL("DX12 Exception! {0}", hr);
 			DBG_BRK;
 			throw HrException(hr);
 		}

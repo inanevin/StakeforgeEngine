@@ -25,7 +25,7 @@ namespace Game
 	Microsoft::WRL::ComPtr<IDxcLibrary> dx12_backend::s_idxcLib;
 
 #define DX12_THROW(exception, ...)                                                                                                                                                                                                                                 \
-	GAME_FATAL(__VA_ARGS__);                                                                                                                                                                                                                                       \
+	SFG_FATAL(__VA_ARGS__);                                                                                                                                                                                                                                        \
 	throw exception;
 
 #ifdef _DEBUG
@@ -534,7 +534,7 @@ namespace Game
 						if (SUCCEEDED(D3D12CreateDevice(adapter.Get(), D3D_FEATURE_LEVEL_11_0, _uuidof(ID3D12Device), nullptr)))
 						{
 							char* buf = string_util::wchar_to_char(desc.Description);
-							GAME_TRACE("DX12 -> Selected hardware adapter {0}, dedicated video memory {1} mb", buf, desc.DedicatedVideoMemory * 0.000001);
+							SFG_TRACE("DX12 -> Selected hardware adapter {0}, dedicated video memory {1} mb", buf, desc.DedicatedVideoMemory * 0.000001);
 							delete[] buf;
 							break;
 						}
@@ -548,7 +548,7 @@ namespace Game
 
 			if (adapter.Get() == nullptr)
 			{
-				GAME_FATAL("DX12 -> Failed finding a suitable device!");
+				SFG_FATAL("DX12 -> Failed finding a suitable device!");
 				return;
 			}
 
@@ -561,7 +561,7 @@ namespace Game
 			{
 				if (severity == D3D12_MESSAGE_SEVERITY_MESSAGE)
 				{
-					GAME_TRACE("DX12 -> {0}", pDesc);
+					SFG_TRACE("DX12 -> {0}", pDesc);
 				}
 				else if (severity == D3D12_MESSAGE_SEVERITY_INFO)
 				{
@@ -569,7 +569,7 @@ namespace Game
 				}
 				else
 				{
-					GAME_ERR("Backend -> {0}", pDesc);
+					SFG_ERR("Backend -> {0}", pDesc);
 				}
 			}
 		}
@@ -583,7 +583,7 @@ namespace Game
 	{
 		UINT dxgiFactoryFlags = 0;
 
-#ifdef GAME_DEBUG
+#ifdef SFG_DEBUG
 		ComPtr<ID3D12Debug> debugController;
 		if (SUCCEEDED(D3D12GetDebugInterface(IID_PPV_ARGS(&debugController))))
 		{
@@ -594,7 +594,7 @@ namespace Game
 		}
 		else
 		{
-			GAME_ERR("DX12 -> Failed enabling debug layers!");
+			SFG_ERR("DX12 -> Failed enabling debug layers!");
 		}
 #endif
 
@@ -637,7 +637,7 @@ namespace Game
 			HRESULT hr = DxcCreateInstance(CLSID_DxcLibrary, IID_PPV_ARGS(&s_idxcLib));
 			if (FAILED(hr))
 			{
-				GAME_FATAL("DX12 -> Failed to create DXC library!");
+				SFG_FATAL("DX12 -> Failed to create DXC library!");
 			}
 		}
 
@@ -710,7 +710,7 @@ namespace Game
 		_heap_gpu_buffer.uninit();
 		_heap_gpu_sampler.uninit();
 
-#ifdef GAME_DEBUG
+#ifdef SFG_DEBUG
 		ID3D12InfoQueue1* infoQueue = nullptr;
 		if (SUCCEEDED(_device->QueryInterface<ID3D12InfoQueue1>(&infoQueue)))
 		{
@@ -1099,7 +1099,7 @@ namespace Game
 			}
 			else if (desc.flags.is_set(texture_flags::tf_is_3d))
 			{
-				GAME_ASSERT(false, "Can't create a depth Texture 3D!");
+				SFG_ASSERT(false, "Can't create a depth Texture 3D!");
 			}
 
 			_device->CreateDepthStencilView(txt.ptr->GetResource(), &depthStencilDesc, {targetDescriptor.cpu});
@@ -1371,7 +1371,7 @@ namespace Game
 
 		auto compile = [&](const wchar_t* target_profile, const wchar_t* target_entry, span<uint8>& out, bool root_sig) -> bool {
 			vector<LPCWSTR> arguments = {L"-T", target_profile, L"-E", target_entry, DXC_ARG_WARNINGS_ARE_ERRORS, L"-HV 2021", L"-I", include_path};
-#ifdef GAME_DEBUG
+#ifdef SFG_DEBUG
 			arguments.push_back(DXC_ARG_DEBUG);
 			arguments.push_back(DXC_ARG_PREFER_FLOW_CONTROL);
 			arguments.push_back(DXC_ARG_SKIP_OPTIMIZATIONS);
@@ -1410,7 +1410,7 @@ namespace Game
 
 			if (errors && errors->GetStringLength() > 0)
 			{
-				GAME_ERR("DX12 -> {0}", (char*)errors->GetStringPointer());
+				SFG_ERR("DX12 -> {0}", (char*)errors->GetStringPointer());
 				return false;
 			}
 
@@ -1425,7 +1425,7 @@ namespace Game
 					hr = result->GetErrorBuffer(&errorsBlob);
 					if (SUCCEEDED(hr) && errorsBlob)
 					{
-						GAME_FATAL("DX12 -> Shader compilation failed:{0}", (const char*)errorsBlob->GetBufferPointer());
+						SFG_FATAL("DX12 -> Shader compilation failed:{0}", (const char*)errorsBlob->GetBufferPointer());
 						return false;
 					}
 				}
@@ -1440,7 +1440,7 @@ namespace Game
 				{
 					out_signature_data.size = root_sig_blob->GetBufferSize();
 					out_signature_data.data = new uint8[out_signature_data.size];
-					GAME_MEMCPY(out_signature_data.data, root_sig_blob->GetBufferPointer(), out_signature_data.size);
+					SFG_MEMCPY(out_signature_data.data, root_sig_blob->GetBufferPointer(), out_signature_data.size);
 				}
 			}
 			ComPtr<IDxcBlob> code;
@@ -1451,11 +1451,11 @@ namespace Game
 				const SIZE_T sz = code->GetBufferSize();
 				out.size		= code->GetBufferSize();
 				out.data		= new uint8[sz];
-				GAME_MEMCPY(out.data, code->GetBufferPointer(), out.size);
+				SFG_MEMCPY(out.data, code->GetBufferPointer(), out.size);
 			}
 			else
 			{
-				GAME_FATAL("DX12 -> Failed compiling IDXC blob!");
+				SFG_FATAL("DX12 -> Failed compiling IDXC blob!");
 				return false;
 			}
 
@@ -1511,7 +1511,7 @@ namespace Game
 
 		vector<LPCWSTR> arguments = {L"-T", L"cs_6_0", L"-E", entry_point, DXC_ARG_WARNINGS_ARE_ERRORS, L"-HV 2021", L"-I", include_path};
 
-#ifdef GAME_DEBUG
+#ifdef SFG_DEBUG
 		arguments.push_back(DXC_ARG_DEBUG);
 		arguments.push_back(DXC_ARG_PREFER_FLOW_CONTROL);
 		arguments.push_back(DXC_ARG_SKIP_OPTIMIZATIONS);
@@ -1548,7 +1548,7 @@ namespace Game
 		result->GetOutput(DXC_OUT_ERRORS, IID_PPV_ARGS(errors.GetAddressOf()), nullptr);
 		if (errors && errors->GetStringLength() > 0)
 		{
-			GAME_ERR("DX12 -> {0}", (char*)errors->GetStringPointer());
+			SFG_ERR("DX12 -> {0}", (char*)errors->GetStringPointer());
 			return false;
 		}
 
@@ -1563,7 +1563,7 @@ namespace Game
 				hr = result->GetErrorBuffer(&errorsBlob);
 				if (SUCCEEDED(hr) && errorsBlob)
 				{
-					GAME_FATAL("DX12 -> Shader compilation failed:{0}", (const char*)errorsBlob->GetBufferPointer());
+					SFG_FATAL("DX12 -> Shader compilation failed:{0}", (const char*)errorsBlob->GetBufferPointer());
 					return false;
 				}
 			}
@@ -1578,7 +1578,7 @@ namespace Game
 			{
 				out_layout.size = root_sig_blob->GetBufferSize();
 				out_layout.data = new uint8[out_layout.size];
-				GAME_MEMCPY(out_layout.data, root_sig_blob->GetBufferPointer(), out_layout.size);
+				SFG_MEMCPY(out_layout.data, root_sig_blob->GetBufferPointer(), out_layout.size);
 			}
 		}
 		ComPtr<IDxcBlob> code;
@@ -1589,11 +1589,11 @@ namespace Game
 			const SIZE_T sz = code->GetBufferSize();
 			out.size		= code->GetBufferSize();
 			out.data		= new uint8[sz];
-			GAME_MEMCPY(out.data, code->GetBufferPointer(), out.size);
+			SFG_MEMCPY(out.data, code->GetBufferPointer(), out.size);
 		}
 		else
 		{
-			GAME_FATAL("DX12 -> Failed compiling IDXC blob!");
+			SFG_FATAL("DX12 -> Failed compiling IDXC blob!");
 			return false;
 		}
 
@@ -1717,7 +1717,7 @@ namespace Game
 			}
 			else
 			{
-				GAME_ASSERT(false);
+				SFG_ASSERT(false);
 			}
 		}
 
@@ -1753,7 +1753,7 @@ namespace Game
 		gbinding.binding_type	  = type;
 
 		const binding_type tp = static_cast<binding_type>(type);
-		GAME_ASSERT(tp != binding_type::pointer && tp != binding_type::sampler);
+		SFG_ASSERT(tp != binding_type::pointer && tp != binding_type::sampler);
 	}
 
 	void dx12_backend::bind_group_add_constant(resource_id group, uint8 root_param_index, uint8* data, uint8 count)
@@ -1825,7 +1825,7 @@ namespace Game
 			if (p.type == binding_type::texture)
 			{
 				const texture& txt = _textures.get(p.resource);
-				GAME_ASSERT(txt.srv_count > p.view);
+				SFG_ASSERT(txt.srv_count > p.view);
 				const descriptor_handle& dh = _descriptors.get(txt.srvs[p.view]);
 				_reuse_src_descriptors_buffer.push_back({dh.cpu});
 				_reuse_dest_descriptors_buffer.push_back({binding_dh.cpu + p.pointer_index * _heap_gpu_buffer.get_descriptor_size()});
@@ -1846,7 +1846,7 @@ namespace Game
 			}
 			else
 			{
-				GAME_ASSERT(false);
+				SFG_ASSERT(false);
 			}
 		}
 
@@ -1971,7 +1971,7 @@ namespace Game
 		else if (tp == binding_type::uav)
 			param.InitAsUnorderedAccessView(binding, set, D3D12_ROOT_DESCRIPTOR_FLAG_NONE, visibility);
 		else
-			GAME_ASSERT(false);
+			SFG_ASSERT(false);
 	}
 
 	void dx12_backend::bind_layout_add_pointer(resource_id layout, const vector<bind_layout_pointer_param>& pointer_params, uint8 vis)
@@ -2050,7 +2050,7 @@ namespace Game
 		if (FAILED(res) && error)
 		{
 			const char* error_msg = static_cast<const char*>(error->GetBufferPointer());
-			GAME_ERR("{0}", error_msg);
+			SFG_ERR("{0}", error_msg);
 			throw_if_failed(res);
 		}
 
@@ -2099,7 +2099,7 @@ namespace Game
 			}
 			catch (HrException e)
 			{
-				GAME_ERR("Error while waiting for fence! {0}", e.what());
+				SFG_ERR("Error while waiting for fence! {0}", e.what());
 			}
 		}
 	}
@@ -2367,7 +2367,7 @@ namespace Game
 		{
 			for (uint32 i = 0; i < height; ++i)
 			{
-				GAME_MEMCPY(dst, src, width * _bpp);
+				SFG_MEMCPY(dst, src, width * _bpp);
 				dst += row_pitch;
 				src += width * _bpp;
 			}

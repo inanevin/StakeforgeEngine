@@ -13,7 +13,7 @@
 
 namespace Game
 {
-#define GAME_DT 1.0f / 60.0f
+#define SFG_DT 1.0f / 60.0f
 
 	scene_context _context;
 
@@ -60,7 +60,7 @@ namespace Game
 
 	void game_app::tick()
 	{
-		const int64 FIXED_INTERVAL_US = (int64)1000000 / (int64)GAME_DT;
+		const int64 FIXED_INTERVAL_US = (int64)1000000 / (int64)SFG_DT;
 		int64		previous_time	  = time::get_cpu_microseconds();
 		int64		accumulator		  = FIXED_INTERVAL_US;
 
@@ -107,7 +107,7 @@ namespace Game
 			while (accumulator > FIXED_INTERVAL_US && ticks < MAX_TICKS)
 			{
 				accumulator -= FIXED_INTERVAL_US;
-				tick_game_state(GAME_DT);
+				tick_game_state(SFG_DT);
 				ticks++;
 			}
 

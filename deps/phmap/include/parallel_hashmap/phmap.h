@@ -1,7 +1,7 @@
 #if !defined(phmap_h_guard_)
 #define phmap_h_guard_
 
-#ifdef GAME_COMPILER_MSVC
+#ifdef SFG_COMPILER_MSVC
 #pragma warning(push)
 #pragma warning(disable : 26495)
 #else
@@ -619,13 +619,16 @@ namespace phmap
 				// --------------------------------------------------------------------------
 				static size_t GetNumProbes(const Container& c, const typename Container::key_type& key)
 				{
-					if (!c.bucket_count()) return {};
+					if (!c.bucket_count())
+						return {};
 					size_t num_probes = 0;
 					size_t bucket	  = c.bucket(key);
 					for (auto it = c.begin(bucket), e = c.end(bucket);; ++it, ++num_probes)
 					{
-						if (it == e) return num_probes;
-						if (c.key_eq()(key, GetKey<Container>(*it, 0))) return num_probes;
+						if (it == e)
+							return num_probes;
+						if (c.key_eq()(key, GetKey<Container>(*it, 0)))
+							return num_probes;
 					}
 				}
 			};
@@ -1314,13 +1317,20 @@ namespace phmap
 				// compared to destruction of the elements of the container. So we pick the
 				// largest bucket_count() threshold for which iteration is still fast and
 				// past that we simply deallocate the array.
-				if (empty()) return;
-				if (capacity_ > 127) { destroy_slots(); }
+				if (empty())
+					return;
+				if (capacity_ > 127)
+				{
+					destroy_slots();
+				}
 				else if (capacity_)
 				{
 					for (size_t i = 0; i != capacity_; ++i)
 					{
-						if (IsFull(ctrl_[i])) { PolicyTraits::destroy(&alloc_ref(), slots_ + i); }
+						if (IsFull(ctrl_[i]))
+						{
+							PolicyTraits::destroy(&alloc_ref(), slots_ + i);
+						}
 					}
 					size_ = 0;
 					reset_ctrl(capacity_);
@@ -1427,7 +1437,8 @@ namespace phmap
 
 			insert_return_type insert(node_type&& node)
 			{
-				if (!node) return {end(), false, node_type()};
+				if (!node)
+					return {end(), false, node_type()};
 				const auto& elem = PolicyTraits::element(CommonAccess::GetSlot(node));
 				auto		res	 = PolicyTraits::apply(InsertSlot<false>{*this, std::move(*CommonAccess::GetSlot(node))}, elem);
 				if (res.second)
@@ -1435,12 +1446,16 @@ namespace phmap
 					CommonAccess::Reset(&node);
 					return {res.first, true, node_type()};
 				}
-				else { return {res.first, false, std::move(node)}; }
+				else
+				{
+					return {res.first, false, std::move(node)};
+				}
 			}
 
 			insert_return_type insert(node_type&& node, size_t hashval)
 			{
-				if (!node) return {end(), false, node_type()};
+				if (!node)
+					return {end(), false, node_type()};
 				const auto& elem = PolicyTraits::element(CommonAccess::GetSlot(node));
 				auto		res	 = PolicyTraits::apply(InsertSlotWithHash<false>{*this, std::move(*CommonAccess::GetSlot(node)), hashval}, elem);
 				if (res.second)
@@ -1448,7 +1463,10 @@ namespace phmap
 					CommonAccess::Reset(&node);
 					return {res.first, true, node_type()};
 				}
-				else { return {res.first, false, std::move(node)}; }
+				else
+				{
+					return {res.first, false, std::move(node)};
+				}
 			}
 
 			iterator insert(const_iterator, node_type&& node)
@@ -1554,14 +1572,20 @@ namespace phmap
 			template <class K = key_type, class F> iterator lazy_emplace(const key_arg<K>& key, F&& f)
 			{
 				auto res = find_or_prepare_insert(key);
-				if (res.second) { lazy_emplace_at(res.first, std::forward<F>(f)); }
+				if (res.second)
+				{
+					lazy_emplace_at(res.first, std::forward<F>(f));
+				}
 				return iterator_at(res.first);
 			}
 
 			template <class K = key_type, class F> iterator lazy_emplace_with_hash(const key_arg<K>& key, size_t hashval, F&& f)
 			{
 				auto res = find_or_prepare_insert(key, hashval);
-				if (res.second) { lazy_emplace_at(res.first, std::forward<F>(f)); }
+				if (res.second)
+				{
+					lazy_emplace_at(res.first, std::forward<F>(f));
+				}
 				return iterator_at(res.first);
 			}
 
@@ -1593,7 +1617,8 @@ namespace phmap
 			template <class K = key_type> size_type erase(const key_arg<K>& key)
 			{
 				auto it = find(key);
-				if (it == end()) return 0;
+				if (it == end())
+					return 0;
 				_erase(it);
 				return 1;
 			}
@@ -1652,7 +1677,10 @@ namespace phmap
 				assert(this != &src);
 				for (auto it = src.begin(), e = src.end(); it != e; ++it)
 				{
-					if (PolicyTraits::apply(InsertSlot<false>{*this, std::move(*it.slot_)}, PolicyTraits::element(it.slot_)).second) { src.erase_meta_only(it); }
+					if (PolicyTraits::apply(InsertSlot<false>{*this, std::move(*it.slot_)}, PolicyTraits::element(it.slot_)).second)
+					{
+						src.erase_meta_only(it);
+					}
 				}
 			}
 
@@ -1684,7 +1712,10 @@ namespace phmap
 				std::swap(hash_ref(), that.hash_ref());
 				std::swap(eq_ref(), that.eq_ref());
 				std::swap(infoz_, that.infoz_);
-				if (AllocTraits::propagate_on_container_swap::value) { std::swap(alloc_ref(), that.alloc_ref()); }
+				if (AllocTraits::propagate_on_container_swap::value)
+				{
+					std::swap(alloc_ref(), that.alloc_ref());
+				}
 				else
 				{
 					// If the allocators do not compare equal it is officially undefined
@@ -1700,7 +1731,8 @@ namespace phmap
 
 			void rehash(size_t n)
 			{
-				if (n == 0 && capacity_ == 0) return;
+				if (n == 0 && capacity_ == 0)
+					return;
 				if (n == 0 && size_ == 0)
 				{
 					destroy_slots();
@@ -1711,7 +1743,10 @@ namespace phmap
 				// power-of-2-minus-1, so bitor is good enough.
 				auto m = NormalizeCapacity((std::max)(n, size()));
 				// n == 0 unconditionally rehashes as per the standard.
-				if (n == 0 || m > capacity_) { resize(m); }
+				if (n == 0 || m > capacity_)
+				{
+					resize(m);
+				}
 			}
 
 			void reserve(size_t n)
@@ -1809,13 +1844,15 @@ namespace phmap
 			template <class K = key_type> std::pair<iterator, iterator> equal_range(const key_arg<K>& key)
 			{
 				auto it = find(key);
-				if (it != end()) return {it, std::next(it)};
+				if (it != end())
+					return {it, std::next(it)};
 				return {it, it};
 			}
 			template <class K = key_type> std::pair<const_iterator, const_iterator> equal_range(const key_arg<K>& key) const
 			{
 				auto it = find(key);
-				if (it != end()) return {it, std::next(it)};
+				if (it != end())
+					return {it, std::next(it)};
 				return {it, it};
 			}
 
@@ -1851,12 +1888,15 @@ namespace phmap
 
 			friend bool operator==(const raw_hash_set& a, const raw_hash_set& b)
 			{
-				if (a.size() != b.size()) return false;
+				if (a.size() != b.size())
+					return false;
 				const raw_hash_set* outer = &a;
 				const raw_hash_set* inner = &b;
-				if (outer->capacity() > inner->capacity()) std::swap(outer, inner);
+				if (outer->capacity() > inner->capacity())
+					std::swap(outer, inner);
 				for (const value_type& elem : *outer)
-					if (!inner->has_element(elem)) return false;
+					if (!inner->has_element(elem))
+						return false;
 				return true;
 			}
 
@@ -1887,9 +1927,11 @@ namespace phmap
 					for (int i : g.Match((h2_t)H2(hashval)))
 					{
 						offset = seq.offset((size_t)i);
-						if (PHMAP_PREDICT_TRUE(PolicyTraits::apply(EqualElement<K>{key, eq_ref()}, PolicyTraits::element(slots_ + offset)))) return true;
+						if (PHMAP_PREDICT_TRUE(PolicyTraits::apply(EqualElement<K>{key, eq_ref()}, PolicyTraits::element(slots_ + offset))))
+							return true;
 					}
-					if (PHMAP_PREDICT_TRUE(g.MatchEmpty())) return false;
+					if (PHMAP_PREDICT_TRUE(g.MatchEmpty()))
+						return false;
 					seq.next();
 				}
 			}
@@ -1925,7 +1967,10 @@ namespace phmap
 			template <class K, class... Args> std::pair<iterator, bool> emplace_decomposable(const K& key, size_t hashval, Args&&... args)
 			{
 				auto res = find_or_prepare_insert(key, hashval);
-				if (res.second) { emplace_at(res.first, std::forward<Args>(args)...); }
+				if (res.second)
+				{
+					emplace_at(res.first, std::forward<Args>(args)...);
+				}
 				return {iterator_at(res.first), res.second};
 			}
 
@@ -1953,8 +1998,14 @@ namespace phmap
 				template <class K, class... Args> std::pair<iterator, bool> operator()(const K& key, Args&&...) &&
 				{
 					auto res = s.find_or_prepare_insert(key);
-					if (res.second) { PolicyTraits::transfer(&s.alloc_ref(), s.slots_ + res.first, &slot); }
-					else if (do_destroy) { PolicyTraits::destroy(&s.alloc_ref(), &slot); }
+					if (res.second)
+					{
+						PolicyTraits::transfer(&s.alloc_ref(), s.slots_ + res.first, &slot);
+					}
+					else if (do_destroy)
+					{
+						PolicyTraits::destroy(&s.alloc_ref(), &slot);
+					}
 					return {s.iterator_at(res.first), res.second};
 				}
 				raw_hash_set& s;
@@ -1967,8 +2018,14 @@ namespace phmap
 				template <class K, class... Args> std::pair<iterator, bool> operator()(const K& key, Args&&...) &&
 				{
 					auto res = s.find_or_prepare_insert(key, hashval);
-					if (res.second) { PolicyTraits::transfer(&s.alloc_ref(), s.slots_ + res.first, &slot); }
-					else if (do_destroy) { PolicyTraits::destroy(&s.alloc_ref(), &slot); }
+					if (res.second)
+					{
+						PolicyTraits::transfer(&s.alloc_ref(), s.slots_ + res.first, &slot);
+					}
+					else if (do_destroy)
+					{
+						PolicyTraits::destroy(&s.alloc_ref(), &slot);
+					}
 					return {s.iterator_at(res.first), res.second};
 				}
 				raw_hash_set& s;
@@ -2003,7 +2060,10 @@ namespace phmap
 			void initialize_slots(size_t new_capacity)
 			{
 				assert(new_capacity);
-				if (std::is_same<SlotAlloc, std::allocator<slot_type>>::value && slots_ == nullptr) { infoz_ = Sample(); }
+				if (std::is_same<SlotAlloc, std::allocator<slot_type>>::value && slots_ == nullptr)
+				{
+					infoz_ = Sample();
+				}
 
 				auto  layout = MakeLayout(new_capacity);
 				char* mem	 = static_cast<char*>(Allocate<Layout::Alignment()>(&alloc_ref(), layout.AllocSize()));
@@ -2016,10 +2076,14 @@ namespace phmap
 
 			void destroy_slots()
 			{
-				if (!capacity_) return;
+				if (!capacity_)
+					return;
 				for (size_t i = 0; i != capacity_; ++i)
 				{
-					if (IsFull(ctrl_[i])) { PolicyTraits::destroy(&alloc_ref(), slots_ + i); }
+					if (IsFull(ctrl_[i]))
+					{
+						PolicyTraits::destroy(&alloc_ref(), slots_ + i);
+					}
 				}
 				auto layout = MakeLayout(capacity_);
 				// Unpoison before returning the memory to the allocator.
@@ -2085,7 +2149,8 @@ namespace phmap
 				slot_type*																   slot = reinterpret_cast<slot_type*>(&raw);
 				for (size_t i = 0; i != capacity_; ++i)
 				{
-					if (!IsDeleted(ctrl_[i])) continue;
+					if (!IsDeleted(ctrl_[i]))
+						continue;
 					size_t hashval = PolicyTraits::apply(HashElement{hash_ref()}, PolicyTraits::element(slots_ + i));
 					auto   target  = find_first_non_full(hashval);
 					size_t new_i   = target.offset;
@@ -2127,7 +2192,10 @@ namespace phmap
 
 			void rehash_and_grow_if_necessary()
 			{
-				if (capacity_ == 0) { resize(1); }
+				if (capacity_ == 0)
+				{
+					resize(1);
+				}
 				else if (size() <= CapacityToGrowth(capacity()) / 2)
 				{
 					// Squash DELETED without growing if there is enough capacity.
@@ -2148,9 +2216,11 @@ namespace phmap
 					Group g{ctrl_ + seq.offset()};
 					for (int i : g.Match((h2_t)H2(hashval)))
 					{
-						if (PHMAP_PREDICT_TRUE(PolicyTraits::element(slots_ + seq.offset((size_t)i)) == elem)) return true;
+						if (PHMAP_PREDICT_TRUE(PolicyTraits::element(slots_ + seq.offset((size_t)i)) == elem))
+							return true;
 					}
-					if (PHMAP_PREDICT_TRUE(g.MatchEmpty())) return false;
+					if (PHMAP_PREDICT_TRUE(g.MatchEmpty()))
+						return false;
 					seq.next();
 					assert(seq.getindex() < capacity_ && "full table!");
 				}
@@ -2184,7 +2254,10 @@ namespace phmap
 				{
 					Group g{ctrl_ + seq.offset()};
 					auto  mask = g.MatchEmptyOrDeleted();
-					if (mask) { return {seq.offset((size_t)mask.LowestBitSet()), seq.getindex()}; }
+					if (mask)
+					{
+						return {seq.offset((size_t)mask.LowestBitSet()), seq.getindex()};
+					}
 					assert(seq.getindex() < capacity_ && "full table!");
 					seq.next();
 				}
@@ -2213,9 +2286,11 @@ namespace phmap
 					Group g{ctrl_ + seq.offset()};
 					for (int i : g.Match((h2_t)H2(hashval)))
 					{
-						if (PHMAP_PREDICT_TRUE(PolicyTraits::apply(EqualElement<K>{key, eq_ref()}, PolicyTraits::element(slots_ + seq.offset((size_t)i))))) return {seq.offset((size_t)i), false};
+						if (PHMAP_PREDICT_TRUE(PolicyTraits::apply(EqualElement<K>{key, eq_ref()}, PolicyTraits::element(slots_ + seq.offset((size_t)i)))))
+							return {seq.offset((size_t)i), false};
 					}
-					if (PHMAP_PREDICT_TRUE(g.MatchEmpty())) break;
+					if (PHMAP_PREDICT_TRUE(g.MatchEmpty()))
+						break;
 					seq.next();
 				}
 				return {prepare_insert(hashval), true};
@@ -2292,8 +2367,14 @@ namespace phmap
 			{
 				assert(i < capacity_);
 
-				if (IsFull(h)) { SanitizerUnpoisonObject(slots_ + i); }
-				else { SanitizerPoisonObject(slots_ + i); }
+				if (IsFull(h))
+				{
+					SanitizerUnpoisonObject(slots_ + i);
+				}
+				else
+				{
+					SanitizerPoisonObject(slots_ + i);
+				}
 
 				ctrl_[i]																		 = h;
 				ctrl_[((i - Group::kWidth) & capacity_) + 1 + ((Group::kWidth - 1) & capacity_)] = h;
@@ -2467,14 +2548,16 @@ namespace phmap
 			template <class K = key_type, class P = Policy> MappedReference<P> at(const key_arg<K>& key)
 			{
 				auto it = this->find(key);
-				if (it == this->end()) phmap::base_internal::ThrowStdOutOfRange("phmap at(): lookup non-existent key");
+				if (it == this->end())
+					phmap::base_internal::ThrowStdOutOfRange("phmap at(): lookup non-existent key");
 				return Policy::value(&*it);
 			}
 
 			template <class K = key_type, class P = Policy> MappedConstReference<P> at(const key_arg<K>& key) const
 			{
 				auto it = this->find(key);
-				if (it == this->end()) phmap::base_internal::ThrowStdOutOfRange("phmap at(): lookup non-existent key");
+				if (it == this->end())
+					phmap::base_internal::ThrowStdOutOfRange("phmap at(): lookup non-existent key");
 				return Policy::value(&*it);
 			}
 
@@ -2502,7 +2585,8 @@ namespace phmap
 			template <class K = key_type, class... Args> std::pair<iterator, bool> try_emplace_impl(K&& k, Args&&... args)
 			{
 				auto res = this->find_or_prepare_insert(k);
-				if (res.second) this->emplace_at(res.first, std::piecewise_construct, std::forward_as_tuple(std::forward<K>(k)), std::forward_as_tuple(std::forward<Args>(args)...));
+				if (res.second)
+					this->emplace_at(res.first, std::piecewise_construct, std::forward_as_tuple(std::forward<K>(k)), std::forward_as_tuple(std::forward<Args>(args)...));
 				return {this->iterator_at(res.first), res.second};
 			}
 		};
@@ -2680,7 +2764,8 @@ namespace phmap
 			private:
 				iterator(Inner* inner, Inner* inner_end, const EmbeddedIterator& it) : inner_(inner), inner_end_(inner_end), it_(it)
 				{ // for begin() and end()
-					if (inner) it_end_ = inner->set_.end();
+					if (inner)
+						it_end_ = inner->set_.end();
 				}
 
 				void skip_empty()
@@ -3067,7 +3152,8 @@ namespace phmap
 
 			insert_return_type insert(node_type&& node)
 			{
-				if (!node) return {end(), false, node_type()};
+				if (!node)
+					return {end(), false, node_type()};
 				auto&  key	   = node.key();
 				size_t hashval = this->hash(key);
 				Inner& inner   = sets_[subidx(hashval)];
@@ -3223,7 +3309,8 @@ namespace phmap
 
 			iterator make_iterator(Inner* inner, const EmbeddedIterator it)
 			{
-				if (it == inner->set_.end()) return iterator();
+				if (it == inner->set_.end())
+					return iterator();
 				return iterator(inner, &sets_[0] + num_tables, it);
 			}
 
@@ -3292,7 +3379,8 @@ namespace phmap
 #endif
 				L	 m;
 				auto ptr = this->template find_ptr<K, L>(key, this->hash(key), m);
-				if (ptr == nullptr) return false;
+				if (ptr == nullptr)
+					return false;
 				std::forward<F>(f)(*ptr);
 				return true;
 			}
@@ -3314,7 +3402,8 @@ namespace phmap
 #endif
 				L	 m;
 				auto it = this->template find<K, L>(key, this->hash(key), m);
-				if (it == this->end()) return false;
+				if (it == this->end())
+					return false;
 				if (std::forward<F>(f)(const_cast<value_type&>(*it)))
 				{
 					this->erase(it);
@@ -3387,7 +3476,8 @@ namespace phmap
 				auto&						   set	   = inner.set_;
 				typename Lockable::UpgradeLock m(inner);
 				auto						   it = set.find(key, hashval);
-				if (it == set.end()) return 0;
+				if (it == set.end())
+					return 0;
 
 				typename Lockable::UpgradeToUnique unique(m);
 				set._erase(it);
@@ -3575,14 +3665,16 @@ namespace phmap
 			template <class K = key_type> std::pair<iterator, iterator> equal_range(const key_arg<K>& key)
 			{
 				auto it = find(key);
-				if (it != end()) return {it, std::next(it)};
+				if (it != end())
+					return {it, std::next(it)};
 				return {it, it};
 			}
 
 			template <class K = key_type> std::pair<const_iterator, const_iterator> equal_range(const key_arg<K>& key) const
 			{
 				auto it = find(key);
-				if (it != end()) return {it, std::next(it)};
+				if (it != end())
+					return {it, std::next(it)};
 				return {it, it};
 			}
 
@@ -3929,14 +4021,16 @@ namespace phmap
 			template <class K = key_type, class P = Policy> MappedReference<P> at(const key_arg<K>& key)
 			{
 				auto it = this->find(key);
-				if (it == this->end()) phmap::base_internal::ThrowStdOutOfRange("phmap at(): lookup non-existent key");
+				if (it == this->end())
+					phmap::base_internal::ThrowStdOutOfRange("phmap at(): lookup non-existent key");
 				return Policy::value(&*it);
 			}
 
 			template <class K = key_type, class P = Policy> MappedConstReference<P> at(const key_arg<K>& key) const
 			{
 				auto it = this->find(key);
-				if (it == this->end()) phmap::base_internal::ThrowStdOutOfRange("phmap at(): lookup non-existent key");
+				if (it == this->end())
+					phmap::base_internal::ThrowStdOutOfRange("phmap at(): lookup non-existent key");
 				return Policy::value(&*it);
 			}
 
@@ -4013,7 +4107,8 @@ namespace phmap
 				typename Lockable::UniqueLock m;
 				auto						  res	= this->find_or_prepare_insert(k, m);
 				typename Base::Inner*		  inner = std::get<0>(res);
-				if (std::get<2>(res)) inner->set_.emplace_at(std::get<1>(res), std::piecewise_construct, std::forward_as_tuple(std::forward<K>(k)), std::forward_as_tuple(std::forward<Args>(args)...));
+				if (std::get<2>(res))
+					inner->set_.emplace_at(std::get<1>(res), std::piecewise_construct, std::forward_as_tuple(std::forward<K>(k)), std::forward_as_tuple(std::forward<Args>(args)...));
 				return {this->iterator_at(inner, inner->set_.iterator_at(std::get<1>(res))), std::get<2>(res)};
 			}
 
@@ -4022,7 +4117,8 @@ namespace phmap
 				typename Lockable::UniqueLock m;
 				auto						  res	= this->find_or_prepare_insert_with_hash(hashval, k, m);
 				typename Base::Inner*		  inner = std::get<0>(res);
-				if (std::get<2>(res)) inner->set_.emplace_at(std::get<1>(res), std::piecewise_construct, std::forward_as_tuple(std::forward<K>(k)), std::forward_as_tuple(std::forward<Args>(args)...));
+				if (std::get<2>(res))
+					inner->set_.emplace_at(std::get<1>(res), std::piecewise_construct, std::forward_as_tuple(std::forward<K>(k)), std::forward_as_tuple(std::forward<Args>(args)...));
 				return {this->iterator_at(inner, inner->set_.iterator_at(std::get<1>(res))), std::get<2>(res)};
 			}
 		};
@@ -4227,7 +4323,8 @@ namespace phmap
 
 			static size_t space_used(const slot_type* slot)
 			{
-				if (slot == nullptr) return Policy::element_space_used(nullptr);
+				if (slot == nullptr)
+					return Policy::element_space_used(nullptr);
 				return Policy::element_space_used(*slot);
 			}
 
@@ -4460,10 +4557,12 @@ namespace phmap
 						priv::Group g{set.ctrl_ + seq.offset()};
 						for (int i : g.Match(priv::H2(hashval)))
 						{
-							if (Traits::apply(typename Set::template EqualElement<typename Set::key_type>{key, set.eq_ref()}, Traits::element(set.slots_ + seq.offset((size_t)i)))) return num_probes;
+							if (Traits::apply(typename Set::template EqualElement<typename Set::key_type>{key, set.eq_ref()}, Traits::element(set.slots_ + seq.offset((size_t)i))))
+								return num_probes;
 							++num_probes;
 						}
-						if (g.MatchEmpty()) return num_probes;
+						if (g.MatchEmpty())
+							return num_probes;
 						seq.next();
 						++num_probes;
 					}
@@ -4472,17 +4571,24 @@ namespace phmap
 				static size_t AllocatedByteSize(const Set& c)
 				{
 					size_t capacity = c.capacity_;
-					if (capacity == 0) return 0;
+					if (capacity == 0)
+						return 0;
 					auto   layout = Set::MakeLayout(capacity);
 					size_t m	  = layout.AllocSize();
 
 					size_t per_slot = Traits::space_used(static_cast<const Slot*>(nullptr));
-					if (per_slot != ~size_t{}) { m += per_slot * c.size(); }
+					if (per_slot != ~size_t{})
+					{
+						m += per_slot * c.size();
+					}
 					else
 					{
 						for (size_t i = 0; i != capacity; ++i)
 						{
-							if (priv::IsFull(c.ctrl_[i])) { m += Traits::space_used(c.slots_ + i); }
+							if (priv::IsFull(c.ctrl_[i]))
+							{
+								m += Traits::space_used(c.slots_ + i);
+							}
 						}
 					}
 					return m;
@@ -4491,11 +4597,15 @@ namespace phmap
 				static size_t LowerBoundAllocatedByteSize(size_t size)
 				{
 					size_t capacity = GrowthToLowerboundCapacity(size);
-					if (capacity == 0) return 0;
+					if (capacity == 0)
+						return 0;
 					auto   layout	= Set::MakeLayout(NormalizeCapacity(capacity));
 					size_t m		= layout.AllocSize();
 					size_t per_slot = Traits::space_used(static_cast<const Slot*>(nullptr));
-					if (per_slot != ~size_t{}) { m += per_slot * size; }
+					if (per_slot != ~size_t{})
+					{
+						m += per_slot * size;
+					}
 					return m;
 				}
 			};
@@ -5012,7 +5122,7 @@ namespace phmap
 #pragma warning(pop)
 #endif
 
-#ifdef GAME_COMPILER_MSVC
+#ifdef SFG_COMPILER_MSVC
 #pragma warning(pop)
 #else
 #pragma GCC diagnostic pop

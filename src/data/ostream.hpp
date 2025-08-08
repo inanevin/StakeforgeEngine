@@ -68,13 +68,14 @@ namespace Game
 
 		template <typename T> void write(T& t)
 		{
-			if (_data == nullptr) create(sizeof(T));
+			if (_data == nullptr)
+				create(sizeof(T));
 
 			uint8* ptr	= (uint8*)&t;
 			size_t size = sizeof(T);
 
 			check_grow(size);
-			GAME_MEMCPY(&_data[_current_size], ptr, size);
+			SFG_MEMCPY(&_data[_current_size], ptr, size);
 			_current_size += size;
 		}
 
@@ -106,7 +107,8 @@ namespace Game
 		if constexpr (std::is_arithmetic_v<T>)
 		{
 			auto copy = const_cast<typename std::remove_const<T>::type&>(val);
-			if (endianness::should_swap()) endianness::swap_endian(copy);
+			if (endianness::should_swap())
+				endianness::swap_endian(copy);
 			stream.write<T>(copy);
 		}
 		else if constexpr (std::is_same_v<T, string> || std::is_same_v<T, const string>)
@@ -120,7 +122,10 @@ namespace Game
 			const uint8 u8 = static_cast<uint8>(val);
 			stream << u8;
 		}
-		else if constexpr (is_vector_v<T>) { serialize_vector(stream, val); }
+		else if constexpr (is_vector_v<T>)
+		{
+			serialize_vector(stream, val);
+		}
 		else if constexpr (is_hashmap_v<T>)
 		{
 			using KeyType	= typename T::key_type;
@@ -132,7 +137,10 @@ namespace Game
 			// Handle custom classes or structs
 			val.serialize(stream);
 		}
-		else { GAME_ASSERT(false, ""); }
+		else
+		{
+			SFG_ASSERT(false, "");
+		}
 
 		return stream;
 	}

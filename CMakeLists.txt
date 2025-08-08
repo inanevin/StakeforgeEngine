@@ -29,7 +29,7 @@
 
 cmake_minimum_required (VERSION 4.0)
 
-project (Game)
+project (Stakeforge)
 
 set(CMAKE_CONFIGURATION_TYPES "Debug;Release;Profile;" CACHE STRING "" FORCE)
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
@@ -37,30 +37,31 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
 # ------------- COMPILE DEFINITIONS -------------
 
 add_compile_definitions($<$<CONFIG:Debug>:_ITERATOR_DEBUG_LEVEL=1>)
-add_compile_definitions($<$<CONFIG:Debug>:GAME_DEBUG>)
+add_compile_definitions($<$<CONFIG:Debug>:SFG_DEBUG>)
 
 add_compile_definitions($<$<CONFIG:Profile>:_ITERATOR_DEBUG_LEVEL=0>)
-add_compile_definitions($<$<CONFIG:Profile>:GAME_DEBUG>)
+add_compile_definitions($<$<CONFIG:Profile>:SFG_DEBUG>)
 
 add_compile_definitions($<$<CONFIG:Release>:_ITERATOR_DEBUG_LEVEL=0>)
 
-add_definitions(-DGAME_CONFIGURATION="$<CONFIGURATION>")
+add_definitions(-DSFG_CONFIGURATION="$<CONFIGURATION>")
 
 if (WIN32)
-    add_compile_definitions(GAME_PLATFORM_WINDOWS=1)
+    add_compile_definitions(SFG_PLATFORM_WINDOWS=1)
 endif()
 if(APPLE)
-    add_compile_definitions(GAME_PLATFORM_OSX=1)
+    add_compile_definitions(SFG_PLATFORM_OSX=1)
 endif()
 
 if (CMAKE_CXX_COMPILER_ID MATCHES "Clang")
-    add_compile_definitions(GAME_COMPILER_CLANG=1)
+    add_compile_definitions(SFG_COMPILER_CLANG=1)
 elseif (CMAKE_CXX_COMPILER_ID MATCHES "GNU")
-    add_compile_definitions(GAME_COMPILER_GNU=1)
+    add_compile_definitions(SFG_COMPILER_
+    NU=1)
 elseif (CMAKE_CXX_COMPILER_ID MATCHES "MSVC")
-    add_compile_definitions(GAME_COMPILER_MSVC=1)
+    add_compile_definitions(SFG_COMPILER_MSVC=1)
 else()
-    add_compile_definitions(GAME_COMPILER_UNKOWN=1)
+    add_compile_definitions(SFG_COMPILER_UNKOWN=1)
 endif()
 
 

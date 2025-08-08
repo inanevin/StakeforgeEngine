@@ -4,7 +4,7 @@
 #include "data/vector_util.hpp"
 #include "data/string.hpp"
 
-#ifdef GAME_PLATFORM_WINDOWS
+#ifdef SFG_PLATFORM_WINDOWS
 #define WIN32_LEAN_AND_MEAN
 #include <Windows.h>
 #endif
@@ -17,7 +17,7 @@ namespace Game
 
 		const string msgStr = "[" + string(get_level(level)) + "] " + msg + "\n";
 
-#ifdef GAME_PLATFORM_WINDOWS
+#ifdef SFG_PLATFORM_WINDOWS
 		HANDLE hConsole;
 		int	   color = 15;
 

@@ -7,13 +7,13 @@
 #include <filesystem>
 #include <fstream>
 
-#ifdef GAME_PLATFORM_OSX
+#ifdef SFG_PLATFORM_OSX
 #include <unistd.h>
 #include <sys/types.h>
 #include <pwd.h>
 #endif
 
-#ifdef GAME_PLATFORM_WINDOWS
+#ifdef SFG_PLATFORM_WINDOWS
 #include <shlobj.h>
 #endif
 
@@ -39,7 +39,7 @@ namespace Game
 				bool success = std::filesystem::create_directory(current_path.c_str());
 				if (!success)
 				{
-					GAME_ERR("Could not create directory: {0}", current_path);
+					SFG_ERR("Could not create directory: {0}", current_path);
 					return false;
 				}
 			}
@@ -55,7 +55,7 @@ namespace Game
 		}
 		catch (const std::exception& err)
 		{
-			GAME_ERR("Could not delete directory: {0}, {1}", path, err.what());
+			SFG_ERR("Could not delete directory: {0}, {1}", path, err.what());
 			return false;
 		}
 
@@ -108,7 +108,7 @@ namespace Game
 	{
 		if (std::rename(old_path, new_path) != 0)
 		{
-			GAME_ERR("Failed to rename directory! Old Name: {0}, New Name: {1}", old_path, new_path);
+			SFG_ERR("Failed to rename directory! Old Name: {0}, New Name: {1}", old_path, new_path);
 			return false;
 		}
 
@@ -209,7 +209,7 @@ namespace Game
 		std::ifstream file(filePath, std::ios::binary);
 		if (!file)
 		{
-			GAME_ERR("[Font] -> Could not open file! {0}", filePath);
+			SFG_ERR("[Font] -> Could not open file! {0}", filePath);
 			return;
 		}
 
@@ -239,7 +239,7 @@ namespace Game
 
 	string file_system::get_user_directory()
 	{
-#ifdef GAME_PLATFORM_WINDOWS
+#ifdef SFG_PLATFORM_WINDOWS
 		char path[MAX_PATH];
 		if (SUCCEEDED(SHGetFolderPath(NULL, CSIDL_APPDATA, NULL, 0, path)))
 		{
@@ -247,7 +247,7 @@ namespace Game
 			return pp;
 		}
 		return std::string();
-#elif defined GAME_PLATFORM_OSX
+#elif defined SFG_PLATFORM_OSX
 		struct passwd* pw	= getpwuid(getuid());
 		string		   path = string(pw->pw_dir);
 		return path + "/Library/Application Support/";
@@ -271,7 +271,7 @@ namespace Game
 			}
 			catch (std::filesystem::filesystem_error& e)
 			{
-				GAME_ERR("Error duplicating file! {0}", e.what());
+				SFG_ERR("Error duplicating file! {0}", e.what());
 			}
 		}
 
@@ -289,7 +289,7 @@ namespace Game
 			}
 			catch (std::filesystem::filesystem_error& e)
 			{
-				GAME_ERR("Error duplicating directory! {0}", e.what());
+				SFG_ERR("Error duplicating directory! {0}", e.what());
 			}
 		}
 	} // namespace
@@ -330,17 +330,17 @@ namespace Game
 				}
 				else
 				{
-					GAME_ERR("Unsupported file type! {0}", path);
+					SFG_ERR("Unsupported file type! {0}", path);
 				}
 			}
 			else
 			{
-				GAME_ERR("Path doesn't exist! {0}", path);
+				SFG_ERR("Path doesn't exist! {0}", path);
 			}
 		}
 		catch (std::filesystem::filesystem_error&)
 		{
-			GAME_ERR("Exception processing path! {0}", path);
+			SFG_ERR("Exception processing path! {0}", path);
 		}
 
 		return "";
@@ -361,7 +361,7 @@ namespace Game
 			// Create the directory if it doesn't exist
 			if (!std::filesystem::exists(target_dir))
 			{
-				GAME_ERR("Target directory does not exist! {0}", target_dir);
+				SFG_ERR("Target directory does not exist! {0}", target_dir);
 				return;
 			}
 
@@ -374,7 +374,7 @@ namespace Game
 		}
 		catch (const std::filesystem::filesystem_error& e)
 		{
-			GAME_ERR("::perform_move error {0}", e.what());
+			SFG_ERR("::perform_move error {0}", e.what());
 		}
 	}
 
@@ -447,7 +447,7 @@ namespace Game
 		}
 		catch (const std::exception& ex)
 		{
-			GAME_ERR("Error while copying directory {0}", ex.what());
+			SFG_ERR("Error while copying directory {0}", ex.what());
 		}
 	}
 
@@ -461,20 +461,20 @@ namespace Game
 			// Ensure source file exists
 			if (!std::filesystem::exists(src_file) || !std::filesystem::is_regular_file(src_file))
 			{
-				GAME_ERR("Error: Source file does not exist or is not a valid file. {0} {1}", file, targetParentFolder);
+				SFG_ERR("Error: Source file does not exist or is not a valid file. {0} {1}", file, targetParentFolder);
 				return;
 			}
 
 			// Ensure target directory exists
 			if (!std::filesystem::exists(dest_dir))
 			{
-				GAME_ERR("Error: Target directory does not exist. {0} {1}", file, targetParentFolder);
+				SFG_ERR("Error: Target directory does not exist. {0} {1}", file, targetParentFolder);
 				return;
 			}
 
 			if (!std::filesystem::is_directory(dest_dir))
 			{
-				GAME_ERR("Error: Target path is not a directory. {0} {1}", file, targetParentFolder);
+				SFG_ERR("Error: Target path is not a directory. {0} {1}", file, targetParentFolder);
 				return;
 			}
 
@@ -486,7 +486,7 @@ namespace Game
 		}
 		catch (const std::filesystem::filesystem_error& e)
 		{
-			GAME_ERR("Filesystem error : {0} { 1 }", file, targetParentFolder);
+			SFG_ERR("Filesystem error : {0} { 1 }", file, targetParentFolder);
 		}
 	}
 

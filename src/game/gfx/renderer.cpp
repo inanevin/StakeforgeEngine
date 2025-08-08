@@ -137,9 +137,9 @@ namespace Game
 			.on_log =
 				[](vekt::log_verbosity verb, const char* log...) {
 					if (verb == vekt::log_verbosity::error)
-						GAME_ERR(log);
+						SFG_ERR(log);
 					else
-						GAME_TRACE(log);
+						SFG_TRACE(log);
 				},
 			.atlas_width  = 1024,
 			.atlas_height = 1024,

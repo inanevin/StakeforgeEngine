@@ -177,7 +177,7 @@ namespace Game
 
 				const resource_id id = head;
 				head++;
-				GAME_ASSERT(head < N);
+				SFG_ASSERT(head < N);
 				return id;
 			}
 
@@ -189,19 +189,19 @@ namespace Game
 
 			T& get(resource_id id)
 			{
-				GAME_ASSERT(id < N);
+				SFG_ASSERT(id < N);
 				return resources[id];
 			}
 
 			const T& get(resource_id id) const
 			{
-				GAME_ASSERT(id < N);
+				SFG_ASSERT(id < N);
 				return resources[id];
 			}
 
 			inline void verify_uninit()
 			{
-				GAME_ASSERT(static_cast<resource_id>(free_list.size()) == head);
+				SFG_ASSERT(static_cast<resource_id>(free_list.size()) == head);
 			}
 		};
 

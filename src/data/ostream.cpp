@@ -23,7 +23,8 @@ namespace Game
 
 	void ostream::write_raw_endian_safe(const uint8* ptr, size_t size)
 	{
-		if (_data == nullptr) create(size);
+		if (_data == nullptr)
+			create(size);
 
 		check_grow(size);
 
@@ -35,23 +36,24 @@ namespace Game
 			vector<uint8> v2;
 			v2.resize(v.size());
 			std::reverse_copy(v.begin(), v.end(), v2.begin());
-			GAME_MEMCPY(&_data[_current_size], v2.data(), size);
+			SFG_MEMCPY(&_data[_current_size], v2.data(), size);
 
 			v.clear();
 			v2.clear();
 		}
 		else
-			GAME_MEMCPY(&_data[_current_size], ptr, size);
+			SFG_MEMCPY(&_data[_current_size], ptr, size);
 
 		_current_size += size;
 	}
 
 	void ostream::write_raw(const uint8* ptr, size_t size)
 	{
-		if (_data == nullptr) create(size);
+		if (_data == nullptr)
+			create(size);
 
 		check_grow(size);
-		GAME_MEMCPY(&_data[_current_size], ptr, size);
+		SFG_MEMCPY(&_data[_current_size], ptr, size);
 		_current_size += size;
 	}
 
@@ -61,7 +63,7 @@ namespace Game
 		{
 			_total_size	   = static_cast<size_t>((static_cast<float>(_current_size + sz) * 2.0f));
 			uint8* newData = new uint8[_total_size];
-			GAME_MEMCPY(newData, _data, _current_size);
+			SFG_MEMCPY(newData, _data, _current_size);
 			delete[] _data;
 			_data = newData;
 		}

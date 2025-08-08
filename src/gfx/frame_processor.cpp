@@ -14,14 +14,14 @@ namespace Game
 	{
 		_processor_memory_size = ALIGN_UP(processor_memory_size, 8);
 		_processor_aux_size	   = ALIGN_UP(aux_size, 8);
-		_raw				   = reinterpret_cast<uint8*>(GAME_ALIGNED_MALLOC(8, processor_memory_size + aux_size));
+		_raw				   = reinterpret_cast<uint8*>(SFG_ALIGNED_MALLOC(8, processor_memory_size + aux_size));
 		_head_processor		   = 0;
 		_head_aux			   = _processor_memory_size;
 	}
 
 	void frame_processor::uninit()
 	{
-		GAME_ALIGNED_FREE(_raw);
+		SFG_ALIGNED_FREE(_raw);
 	}
 
 	void frame_processor::reset()

@@ -11,7 +11,8 @@ namespace Game
 		const size_t unaligned = size;
 		_data				   = new uint8[size];
 
-		if (data != nullptr) GAME_MEMCPY(_data, data, unaligned);
+		if (data != nullptr)
+			SFG_MEMCPY(_data, data, unaligned);
 
 		_index = 0;
 		_size  = size;
@@ -19,7 +20,8 @@ namespace Game
 
 	void istream::destroy()
 	{
-		if (_data == nullptr) return;
+		if (_data == nullptr)
+			return;
 
 		delete[] _data;
 		_index = 0;
@@ -44,20 +46,20 @@ namespace Game
 			v2.resize(v.size());
 			std::reverse_copy(v.begin(), v.end(), v2.begin());
 
-			GAME_MEMCPY(ptr, v2.data(), size);
+			SFG_MEMCPY(ptr, v2.data(), size);
 
 			v.clear();
 			v2.clear();
 		}
 		else
-			GAME_MEMCPY(ptr, &_data[_index], size);
+			SFG_MEMCPY(ptr, &_data[_index], size);
 
 		_index += size;
 	}
 
 	void istream::read_to_raw(uint8* ptr, size_t size)
 	{
-		GAME_MEMCPY(ptr, &_data[_index], size);
+		SFG_MEMCPY(ptr, &_data[_index], size);
 		_index += size;
 	}
 

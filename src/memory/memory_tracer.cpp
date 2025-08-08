@@ -70,7 +70,7 @@ namespace Game
 			{
 				memory_category& cat = _categories[_current_active_category - 1];
 				cat.total_size -= it->second.size;
-				GAME_ASSERT(cat.total_size >= 0);
+				SFG_ASSERT(cat.total_size >= 0);
 			}
 
 			return;
@@ -94,7 +94,7 @@ namespace Game
 		cat.name			= reinterpret_cast<const char*>(malloc(sz));
 
 		if (cat.name)
-			GAME_MEMCPY((void*)cat.name, (void*)name, sz);
+			SFG_MEMCPY((void*)cat.name, (void*)name, sz);
 		cat.id = ++s_category_counter;
 		_category_ids.push_back(s_category_counter);
 		_current_active_category = s_category_counter;

@@ -20,7 +20,7 @@ namespace Game
 			auto			it		= _console_entries.find(sid);
 			if (it == _console_entries.end())
 			{
-				GAME_ERR("debug_console::parse_console_command() -> command seems to be a variable, but it can't be found!");
+				SFG_ERR("debug_console::parse_console_command() -> command seems to be a variable, but it can't be found!");
 				return;
 			}
 			const string args = str.substr(eq + 1, str.size() - eq - 1);
@@ -33,7 +33,7 @@ namespace Game
 
 		if (bracket0 == string::npos || bracket1 == string::npos)
 		{
-			GAME_ERR("debug_console::parse_console_command() -> command is not a variable, and can't be recognize as a function because of missing bracket(s)");
+			SFG_ERR("debug_console::parse_console_command() -> command is not a variable, and can't be recognize as a function because of missing bracket(s)");
 			return;
 		}
 
@@ -43,7 +43,7 @@ namespace Game
 		auto			it	= _console_entries.find(sid);
 		if (it == _console_entries.end())
 		{
-			GAME_ERR("debug_console::parse_console_command() -> command seems to be a function, but can't be found!");
+			SFG_ERR("debug_console::parse_console_command() -> command seems to be a function, but can't be found!");
 			return;
 		}
 

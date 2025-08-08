@@ -123,7 +123,7 @@ namespace Game
 
 	void renderer::wait_backend()
 	{
-		GAME_INFO("renderer::wait_backend()");
+		SFG_INFO("renderer::wait_backend()");
 
 		gfx_backend* backend = gfx_backend::get();
 

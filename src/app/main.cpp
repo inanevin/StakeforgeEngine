@@ -12,7 +12,7 @@ int WINAPI WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, _
 
 	if (AllocConsole() == FALSE)
 	{
-		GAME_ERR("Failed allocating console!");
+		SFG_ERR("Failed allocating console!");
 	}
 	SetProcessDpiAwarenessContext(DPI_AWARENESS_CONTEXT_PER_MONITOR_AWARE_V2);
 	SetProcessPriorityBoost(GetCurrentProcess(), FALSE);
@@ -24,7 +24,7 @@ int WINAPI WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, _
 	if (!SetPriorityClass(GetCurrentProcess(), REALTIME_PRIORITY_CLASS))
 	{
 		dwError = GetLastError();
-		GAME_ERR("Failed setting process priority: {0}", dwError);
+		SFG_ERR("Failed setting process priority: {0}", dwError);
 	}
 
 	PUSH_MEMORY_CATEGORY("General");

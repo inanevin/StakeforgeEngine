@@ -2,7 +2,7 @@
 
 #pragma once
 
-#ifdef GAME_COMPILER_MSVC
+#ifdef SFG_COMPILER_MSVC
 #pragma warning(push)
 #pragma warning(disable : 28251)
 #pragma warning(disable : 6001)
@@ -50,7 +50,7 @@ namespace Game
 
 }
 
-#ifdef GAME_COMPILER_MSVC
+#ifdef SFG_COMPILER_MSVC
 #pragma warning(pop)
 #else
 #pragma GCC diagnostic pop

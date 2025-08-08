@@ -2,23 +2,23 @@
 
 #pragma once
 
-#ifdef GAME_DEBUG
+#ifdef SFG_DEBUG
 
-#define GAME_ERR(...)	Game::log::instance().log_msg(Game::log_level::error, __VA_ARGS__)
-#define GAME_WARN(...)	Game::log::instance().log_msg(Game::log_level::warning, __VA_ARGS__)
-#define GAME_INFO(...)	Game::log::instance().log_msg(Game::log_level::info, __VA_ARGS__)
-#define GAME_TRACE(...) Game::log::instance().log_msg(Game::log_level::trace, __VA_ARGS__)
-#define GAME_FATAL(...) Game::log::instance().log_msg(Game::log_level::error, __VA_ARGS__)
-#define GAME_PROG(...)	Game::log::instance().log_msg(Game::log_level::progress, __VA_ARGS__)
+#define SFG_ERR(...)   Game::log::instance().log_msg(Game::log_level::error, __VA_ARGS__)
+#define SFG_WARN(...)  Game::log::instance().log_msg(Game::log_level::warning, __VA_ARGS__)
+#define SFG_INFO(...)  Game::log::instance().log_msg(Game::log_level::info, __VA_ARGS__)
+#define SFG_TRACE(...) Game::log::instance().log_msg(Game::log_level::trace, __VA_ARGS__)
+#define SFG_FATAL(...) Game::log::instance().log_msg(Game::log_level::error, __VA_ARGS__)
+#define SFG_PROG(...)  Game::log::instance().log_msg(Game::log_level::progress, __VA_ARGS__)
 
 #else
 
-#define GAME_ERR(...)	Game::log::instance().log_msg(Game::log_level::error, __VA_ARGS__)
-#define GAME_WARN(...)	Game::log::instance().log_msg(Game::log_level::warning, __VA_ARGS__)
-#define GAME_INFO(...)	Game::log::instance().log_msg(Game::log_level::info, __VA_ARGS__)
-#define GAME_TRACE(...) Game::log::instance().log_msg(Game::log_level::trace, __VA_ARGS__)
-#define GAME_FATAL(...) Game::log::instance().log_msg(Game::log_level::error, __VA_ARGS__)
-#define GAME_PROG(...)	Game::log::instance().log_msg(Game::log_level::progress, __VA_ARGS__)
+#define SFG_ERR(...)   Game::log::instance().log_msg(Game::log_level::error, __VA_ARGS__)
+#define SFG_WARN(...)  Game::log::instance().log_msg(Game::log_level::warning, __VA_ARGS__)
+#define SFG_INFO(...)  Game::log::instance().log_msg(Game::log_level::info, __VA_ARGS__)
+#define SFG_TRACE(...) Game::log::instance().log_msg(Game::log_level::trace, __VA_ARGS__)
+#define SFG_FATAL(...) Game::log::instance().log_msg(Game::log_level::error, __VA_ARGS__)
+#define SFG_PROG(...)  Game::log::instance().log_msg(Game::log_level::progress, __VA_ARGS__)
 
 #endif
 

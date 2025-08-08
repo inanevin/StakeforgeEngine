@@ -24,7 +24,7 @@ namespace Game
 	public:
 		text_allocator() : _head(0)
 		{
-			GAME_MEMSET(_raw, 0, CAPACITY);
+			SFG_MEMSET(_raw, 0, CAPACITY);
 			_free_list.reserve(CAPACITY);
 		}
 
@@ -46,7 +46,7 @@ namespace Game
 				}
 			}
 
-			GAME_ASSERT(_head + len + 1 < CAPACITY);
+			SFG_ASSERT(_head + len + 1 < CAPACITY);
 
 			char* allocated = &_raw[_head];
 			_head += len + 1;
@@ -79,7 +79,7 @@ namespace Game
 				}
 			}
 
-			GAME_ASSERT(_head + len + 1 < CAPACITY);
+			SFG_ASSERT(_head + len + 1 < CAPACITY);
 
 			char* allocated = &_raw[_head];
 			std::strcpy(allocated, text);

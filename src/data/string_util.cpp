@@ -11,7 +11,7 @@
 #include <cstring>
 #include <algorithm>
 
-#ifdef GAME_COMPILER_MSVC
+#ifdef SFG_COMPILER_MSVC
 #pragma warning(push)
 #pragma warning(disable : 4996)
 #pragma warning(disable : 4333)
@@ -49,7 +49,7 @@ namespace Game
 
 	const wchar_t* string_util::char_to_wchar(const char* ch)
 	{
-#ifdef GAME_PLATFORM_WINDOWS
+#ifdef SFG_PLATFORM_WINDOWS
 		std::wstring_convert<std::codecvt_utf8<wchar_t>> converter;
 		std::wstring									 wide_str = converter.from_bytes(ch);
 
@@ -59,7 +59,7 @@ namespace Game
 		return wide_copy;
 #endif
 
-#ifdef GAME_PLATFORM_OSX
+#ifdef SFG_PLATFORM_OSX
 		// Convert the input char string to a wchar_t string on Apple platform
 		size_t	 length	   = strlen(ch);
 		wchar_t* wide_copy = new wchar_t[length + 1];
@@ -107,7 +107,7 @@ namespace Game
 		}
 		catch (const std::exception& e)
 		{
-			// GAME_ERR("Exception: to_float() string: {0} - decimals: {1} - {2}", str, outDecimals, e.what());
+			// SFG_ERR("Exception: to_float() string: {0} - decimals: {1} - {2}", str, outDecimals, e.what());
 			return 0.0f;
 		}
 	}
@@ -120,7 +120,7 @@ namespace Game
 		}
 		catch (const std::exception& e)
 		{
-			// GAME_ERR("Exception: to_int() string: {0} - {1}", str, e.what());
+			// SFG_ERR("Exception: to_int() string: {0} - {1}", str, e.what());
 			return 0;
 		}
 	}
@@ -133,7 +133,7 @@ namespace Game
 		}
 		catch (const std::exception& e)
 		{
-			// GAME_ERR("Exception: to_int() string: {0} - {1}", str, e.what());
+			// SFG_ERR("Exception: to_int() string: {0} - {1}", str, e.what());
 			return 0;
 		}
 	}
@@ -160,8 +160,8 @@ namespace Game
 
 	void string_util::append_float(float value, char* target_buffer, uint32 max_chars, uint32 decimals, bool null_term)
 	{
-		GAME_ASSERT(decimals < max_chars);
-		GAME_ASSERT(max_chars < 16);
+		SFG_ASSERT(decimals < max_chars);
+		SFG_ASSERT(max_chars < 16);
 		int	 written = 0;
 		char float_buf[16];
 
@@ -172,7 +172,7 @@ namespace Game
 				break;
 		}
 
-		GAME_MEMCPY(target_buffer, float_buf, written);
+		SFG_MEMCPY(target_buffer, float_buf, written);
 
 		if (null_term)
 			target_buffer[written] = '\0';
@@ -219,7 +219,7 @@ namespace Game
 
 }
 
-#ifdef GAME_COMPILER_MSVC
+#ifdef SFG_COMPILER_MSVC
 #pragma warning(pop)
 #else
 #pragma GCC diagnostic pop

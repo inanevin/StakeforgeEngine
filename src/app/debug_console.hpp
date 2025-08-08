@@ -127,7 +127,7 @@ namespace Game
 		{
 			if (args.empty())
 			{
-				GAME_ERR("console_variable::execute() -> no argument provided for the console variable");
+				SFG_ERR("console_variable::execute() -> no argument provided for the console variable");
 				return;
 			}
 
@@ -135,7 +135,7 @@ namespace Game
 
 			if (!detail::cvar_convert<T>(args, value))
 			{
-				GAME_ERR("console_variable::execute() -> failed to convert input to target type!");
+				SFG_ERR("console_variable::execute() -> failed to convert input to target type!");
 				return;
 			}
 
@@ -176,7 +176,7 @@ namespace Game
 			std::tuple<TArgs...> parsed_args;
 			if (!detail::parse_args(tokens, parsed_args))
 			{
-				GAME_ERR("console_funcion::execute() -> argument count mismatch or conversion failed!");
+				SFG_ERR("console_funcion::execute() -> argument count mismatch or conversion failed!");
 				return;
 			}
 
@@ -203,7 +203,7 @@ namespace Game
 
 			if (_console_entries.contains(sid))
 			{
-				GAME_ERR("debug_console::register_console_function() -> Console function {0} already exists.", name);
+				SFG_ERR("debug_console::register_console_function() -> Console function {0} already exists.", name);
 				return;
 			}
 
@@ -217,7 +217,7 @@ namespace Game
 			const uint32 sid = TO_SIDC(name);
 			if (_console_entries.find(sid) != _console_entries.end())
 			{
-				GAME_ERR("debug_console::register_console_variable() -> Console variable {0} already exists.", name);
+				SFG_ERR("debug_console::register_console_variable() -> Console variable {0} already exists.", name);
 				return;
 			}
 
@@ -230,7 +230,7 @@ namespace Game
 			const uint32 sid = TO_SIDC(name);
 			if (_console_entries.find(sid) == _console_entries.end())
 			{
-				GAME_ERR("debug_console::get_console_variable() -> Console variable {0} doesn't exist.", name);
+				SFG_ERR("debug_console::get_console_variable() -> Console variable {0} doesn't exist.", name);
 				return;
 			}
 

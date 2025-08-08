@@ -4,7 +4,7 @@
 
 #include "common/size_definitions.hpp"
 
-#ifdef GAME_PLATFORM_OSX
+#ifdef SFG_PLATFORM_OSX
 #include <mach/mach_time.h>
 #endif
 
@@ -25,11 +25,11 @@ namespace Game
 		static void	  YieldThread();
 
 	private:
-#ifdef GAME_PLATFORM_OSX
+#ifdef SFG_PLATFORM_OSX
 		static mach_timebase_info_data_t s_timebaseInfo;
 #endif
 
-#ifdef GAME_PLATFORM_WINDOWS
+#ifdef SFG_PLATFORM_WINDOWS
 		static int64 s_frequency;
 #endif
 	};

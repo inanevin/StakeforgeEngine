@@ -58,7 +58,7 @@ namespace Game
 
 		template <typename T> void read(T& t)
 		{
-			GAME_MEMCPY(reinterpret_cast<uint8*>(&t), &_data[_index], sizeof(T));
+			SFG_MEMCPY(reinterpret_cast<uint8*>(&t), &_data[_index], sizeof(T));
 			_index += sizeof(T);
 		}
 
@@ -108,17 +108,20 @@ namespace Game
 		if constexpr (std::is_arithmetic_v<T>)
 		{
 			stream.read(val);
-			if (endianness::should_swap()) { endianness::swap_endian(val); }
+			if (endianness::should_swap())
+			{
+				endianness::swap_endian(val);
+			}
 		}
 		else if constexpr (std::is_same_v<T, string> || std::is_same_v<T, std::string>)
 		{
 			uint32 sz = 0;
 			stream >> sz;
-			void* d = GAME_MALLOC(sz);
+			void* d = SFG_MALLOC(sz);
 			stream.read_to_raw_endian_safe(d, static_cast<size_t>(sz));
 			string s((char*)d, sz);
 			val = s;
-			GAME_FREE(d);
+			SFG_FREE(d);
 		}
 		else if constexpr (std::is_enum_v<T>)
 		{
@@ -126,7 +129,10 @@ namespace Game
 			stream >> u8;
 			val = static_cast<T>(u8);
 		}
-		else if constexpr (is_vector_v<T>) { deserialize_vector(stream, val); }
+		else if constexpr (is_vector_v<T>)
+		{
+			deserialize_vector(stream, val);
+		}
 		else if constexpr (is_hashmap_v<T>)
 		{
 			using KeyType	= typename T::key_type;
@@ -138,7 +144,10 @@ namespace Game
 			// Handle custom classes or structs
 			val.deserialize(stream);
 		}
-		else { GAME_ASSERT(false, ""); }
+		else
+		{
+			SFG_ASSERT(false, "");
+		}
 
 		return stream;
 	}

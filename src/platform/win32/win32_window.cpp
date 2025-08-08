@@ -497,7 +497,7 @@ namespace Game
 
 			if (!RegisterClassA(&wc))
 			{
-				GAME_ERR("Failed registering window class!");
+				SFG_ERR("Failed registering window class!");
 				return false;
 			}
 		}

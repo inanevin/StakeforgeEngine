@@ -5,7 +5,7 @@
 #include "data/hash_map.hpp"
 #include "memory/malloc_allocator_map.hpp"
 
-#ifdef GAME_PLATFORM_WINDOWS
+#ifdef SFG_PLATFORM_WINDOWS
 struct HWND__;
 #endif
 namespace Game
@@ -65,7 +65,7 @@ namespace Game
 			return _monitor_info;
 		}
 
-#ifdef GAME_PLATFORM_WINDOWS
+#ifdef SFG_PLATFORM_WINDOWS
 		static __int64 wnd_proc(HWND__* hwnd, unsigned int msg, unsigned __int64 wParam, __int64 lParam);
 #endif
 

@@ -8,14 +8,14 @@ namespace Game
 {
 	texture::~texture()
 	{
-		GAME_ASSERT(_cpu.empty(), "");
+		SFG_ASSERT(_cpu.empty(), "");
 	}
 
 	// void texture::copy(LinaGX::CommandStream* cmd)
 	//{
 	//	if (_cpu.empty())
 	//	{
-	//		GAME_ERR("Trying to copy a texture with empty buffers!");
+	//		SFG_ERR("Trying to copy a texture with empty buffers!");
 	//		return;
 	//	}
 	//
@@ -48,13 +48,13 @@ namespace Game
 		//
 		// const size_t				data_size = static_cast<size_t>(width * height * bpp);
 		// const LinaGX::TextureBuffer b		  = {
-		//			.pixels		   = reinterpret_cast<uint8*>(GAME_MALLOC(data_size)),
+		//			.pixels		   = reinterpret_cast<uint8*>(SFG_MALLOC(data_size)),
 		//			.width		   = width,
 		//			.height		   = height,
 		//			.bytesPerPixel = bpp,
 		//};
 		//
-		// if (b.pixels) GAME_MEMCPY(b.pixels, data, data_size);
+		// if (b.pixels) SFG_MEMCPY(b.pixels, data, data_size);
 		//_cpu.push_back(b);
 	}
 
@@ -68,7 +68,7 @@ namespace Game
 	{
 		// if (_cpu.empty())
 		//{
-		//	GAME_ERR("Failed creating hw_default as no cpu data is available!");
+		//	SFG_ERR("Failed creating hw_default as no cpu data is available!");
 		//	return;
 		// }
 		//
@@ -87,7 +87,7 @@ namespace Game
 	{
 		// for (LinaGX::TextureBuffer& b : _cpu)
 		//{
-		//	GAME_FREE(b.pixels);
+		//	SFG_FREE(b.pixels);
 		// }
 		//
 		//_cpu.resize(0);
@@ -97,7 +97,7 @@ namespace Game
 	{
 		// if (_cpu.empty())
 		//{
-		//	GAME_ERR("Can't generate mipmaps as cpu data is empty!");
+		//	SFG_ERR("Can't generate mipmaps as cpu data is empty!");
 		//	return;
 		// }
 		//

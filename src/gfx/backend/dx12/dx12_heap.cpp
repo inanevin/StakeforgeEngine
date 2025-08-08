@@ -29,7 +29,7 @@ namespace Game
 		}
 		catch (HrException e)
 		{
-			GAME_ERR("Exception when creating a descriptor heap! {0}", e.what());
+			SFG_ERR("Exception when creating a descriptor heap! {0}", e.what());
 		}
 
 		_heap->SetName(L"Descriptor Heap");
@@ -89,8 +89,8 @@ namespace Game
 		}
 		else
 		{
-			GAME_ASSERT(false);
-			GAME_ERR("DX12Backend -> Ran out of descriptor heap handles, need to increase heap size.");
+			SFG_ASSERT(false);
+			SFG_ERR("DX12Backend -> Ran out of descriptor heap handles, need to increase heap size.");
 		}
 
 		return {

@@ -535,7 +535,7 @@ namespace Game
 		vekt::font_manager::get().unload_font(_vekt_data.font_icon);
 		vekt::font_manager::get().uninit();
 
-		GAME_ASSERT(_gfx_data.atlases.empty());
+		SFG_ASSERT(_gfx_data.atlases.empty());
 
 		_vekt_data.builder->uninit();
 		delete _vekt_data.builder;
@@ -723,7 +723,7 @@ namespace Game
 		pfd.counter_idx += buffer_idx_count;
 		pfd.buf_gui_vtx.buffer_data(sizeof(vekt::vertex) * static_cast<size_t>(vtx_counter), buffer_vtx_start, static_cast<size_t>(buffer_vtx_count) * sizeof(vekt::vertex));
 		pfd.buf_gui_idx.buffer_data(sizeof(vekt::index) * static_cast<size_t>(idx_counter), buffer_idx_start, static_cast<size_t>(buffer_idx_count) * sizeof(vekt::index));
-		GAME_ASSERT(pfd.draw_call_count < MAX_GUI_DRAW_CALLS);
+		SFG_ASSERT(pfd.draw_call_count < MAX_GUI_DRAW_CALLS);
 
 		gui_draw_call& dc = _gui_draw_calls[dc_count];
 		dc				  = {};
@@ -757,7 +757,7 @@ namespace Game
 		{
 			dc.shader = font_type == vekt::font_type::sdf ? _shaders.gui_sdf.get_hw() : _shaders.gui_text.get_hw();
 			auto it	  = vector_util::find_if(_gfx_data.atlases, [&](const atlas_ref& ref) -> bool { return ref.atlas == atlas; });
-			GAME_ASSERT(it != _gfx_data.atlases.end());
+			SFG_ASSERT(it != _gfx_data.atlases.end());
 			dc.bind_group = SET_BIT(it->bind_group, 15);
 		}
 		else
@@ -806,7 +806,7 @@ namespace Game
 		gfx_backend* backend = gfx_backend::get();
 
 		auto it = vector_util::find_if(_gfx_data.atlases, [atlas](const atlas_ref& ref) -> bool { return ref.atlas == atlas; });
-		GAME_ASSERT(it != _gfx_data.atlases.end());
+		SFG_ASSERT(it != _gfx_data.atlases.end());
 		atlas_ref& ref = *it;
 
 		const unsigned char* data		  = atlas->get_data();
@@ -846,7 +846,7 @@ namespace Game
 		VERIFY_THREAD_MAIN();
 
 		auto it = vector_util::find_if(_gfx_data.atlases, [atlas](const atlas_ref& ref) -> bool { return ref.atlas == atlas; });
-		GAME_ASSERT(it != _gfx_data.atlases.end());
+		SFG_ASSERT(it != _gfx_data.atlases.end());
 		atlas_ref&	 ref	 = *it;
 		gfx_backend* backend = gfx_backend::get();
 

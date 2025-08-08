@@ -84,7 +84,7 @@ namespace Game
 		{
 			const size_t raw_size	   = sizeof(T) * count;
 			const size_t required_size = (raw_size + 8 - 1) & ~(8 - 1);
-			GAME_ASSERT(_head_aux + required_size < _processor_memory_size + _processor_aux_size);
+			SFG_ASSERT(_head_aux + required_size < _processor_memory_size + _processor_aux_size);
 			uint8* ptr = _raw + _head_aux;
 			_head_aux += required_size;
 			return reinterpret_cast<T*>(ptr);
@@ -92,11 +92,11 @@ namespace Game
 
 		template <typename T, typename... Args> T* emplace_aux(T firstValue, Args&&... remainingValues)
 		{
-			GAME_ASSERT(_head_aux + sizeof(T) < _processor_memory_size + _processor_aux_size);
+			SFG_ASSERT(_head_aux + sizeof(T) < _processor_memory_size + _processor_aux_size);
 			const size_t aligned = ALIGN_UP(_head_aux, alignof(T));
 			uint8*		 ptr	 = _raw + aligned;
 
-			GAME_MEMCPY(ptr, &firstValue, sizeof(T));
+			SFG_MEMCPY(ptr, &firstValue, sizeof(T));
 			_head_aux = aligned + sizeof(T);
 
 			if constexpr (sizeof...(remainingValues) > 0)
@@ -111,7 +111,7 @@ namespace Game
 		template <typename T> T* add_event(uint8 flags)
 		{
 			const size_t required_sz = sizeof(T);
-			GAME_ASSERT(_head_processor + required_sz < _processor_memory_size);
+			SFG_ASSERT(_head_processor + required_sz < _processor_memory_size);
 
 			uint8* ptr = _raw + _head_processor;
 			_head_processor += required_sz;

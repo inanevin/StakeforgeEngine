@@ -2,7 +2,7 @@
 #if !defined(phmap_base_h_guard_)
 #define phmap_base_h_guard_
 
-#ifdef GAME_COMPILER_MSVC
+#ifdef SFG_COMPILER_MSVC
 #pragma warning(push)
 #pragma warning(disable : 26495)
 #else
@@ -1750,8 +1750,14 @@ namespace phmap
 
 			template <typename U> void assign(U&& u)
 			{
-				if (this->engaged_) { this->data_ = std::forward<U>(u); }
-				else { construct(std::forward<U>(u)); }
+				if (this->engaged_)
+				{
+					this->data_ = std::forward<U>(u);
+				}
+				else
+				{
+					construct(std::forward<U>(u));
+				}
 			}
 		};
 
@@ -1793,25 +1799,43 @@ namespace phmap
 
 			optional_data(const optional_data& rhs) : optional_data_base<T>()
 			{
-				if (rhs.engaged_) { this->construct(rhs.data_); }
+				if (rhs.engaged_)
+				{
+					this->construct(rhs.data_);
+				}
 			}
 
 			optional_data(optional_data&& rhs) noexcept(phmap::default_allocator_is_nothrow::value || std::is_nothrow_move_constructible<T>::value) : optional_data_base<T>()
 			{
-				if (rhs.engaged_) { this->construct(std::move(rhs.data_)); }
+				if (rhs.engaged_)
+				{
+					this->construct(std::move(rhs.data_));
+				}
 			}
 
 			optional_data& operator=(const optional_data& rhs)
 			{
-				if (rhs.engaged_) { this->assign(rhs.data_); }
-				else { this->destruct(); }
+				if (rhs.engaged_)
+				{
+					this->assign(rhs.data_);
+				}
+				else
+				{
+					this->destruct();
+				}
 				return *this;
 			}
 
 			optional_data& operator=(optional_data&& rhs) noexcept(std::is_nothrow_move_assignable<T>::value && std::is_nothrow_move_constructible<T>::value)
 			{
-				if (rhs.engaged_) { this->assign(std::move(rhs.data_)); }
-				else { this->destruct(); }
+				if (rhs.engaged_)
+				{
+					this->assign(std::move(rhs.data_));
+				}
+				else
+				{
+					this->destruct();
+				}
 				return *this;
 			}
 		};
@@ -1942,8 +1966,14 @@ namespace phmap
 			size_t operator()(const phmap::optional<T>& opt) const
 			{
 				phmap::type_traits_internal::AssertHashEnabled<phmap::remove_const_t<T>>();
-				if (opt) { return std::hash<phmap::remove_const_t<T>>()(*opt); }
-				else { return static_cast<size_t>(0x297814aaad196e6dULL); }
+				if (opt)
+				{
+					return std::hash<phmap::remove_const_t<T>>()(*opt);
+				}
+				else
+				{
+					return static_cast<size_t>(0x297814aaad196e6dULL);
+				}
 			}
 		};
 
@@ -2025,7 +2055,10 @@ namespace phmap
 									bool>::type = false>
 		optional(const optional<U>& rhs)
 		{
-			if (rhs) { this->construct(*rhs); }
+			if (rhs)
+			{
+				this->construct(*rhs);
+			}
 		}
 
 		// Converting copy constructor (explicit)
@@ -2035,7 +2068,10 @@ namespace phmap
 					  bool>::type = false>
 		explicit optional(const optional<U>& rhs)
 		{
-			if (rhs) { this->construct(*rhs); }
+			if (rhs)
+			{
+				this->construct(*rhs);
+			}
 		}
 
 		// Converting move constructor (implicit)
@@ -2044,7 +2080,10 @@ namespace phmap
 										  bool>::type = false>
 		optional(optional<U>&& rhs)
 		{
-			if (rhs) { this->construct(std::move(*rhs)); }
+			if (rhs)
+			{
+				this->construct(std::move(*rhs));
+			}
 		}
 
 		// Converting move constructor (explicit)
@@ -2054,7 +2093,10 @@ namespace phmap
 					  bool>::type = false>
 		explicit optional(optional<U>&& rhs)
 		{
-			if (rhs) { this->construct(std::move(*rhs)); }
+			if (rhs)
+			{
+				this->construct(std::move(*rhs));
+			}
 		}
 
 		// Destructor. Trivial if `T` is trivially destructible.
@@ -2097,8 +2139,14 @@ namespace phmap
 					  phmap::conjunction<phmap::negation<std::is_same<T, U>>, std::is_constructible<T, const U&>, std::is_assignable<T&, const U&>, phmap::negation<optional_internal::is_constructible_convertible_assignable_from_optional<T, U>>>::value>::type>
 		optional& operator=(const optional<U>& rhs)
 		{
-			if (rhs) { this->assign(*rhs); }
-			else { this->destruct(); }
+			if (rhs)
+			{
+				this->assign(*rhs);
+			}
+			else
+			{
+				this->destruct();
+			}
 			return *this;
 		}
 
@@ -2107,8 +2155,14 @@ namespace phmap
 					  phmap::conjunction<phmap::negation<std::is_same<T, U>>, std::is_constructible<T, U>, std::is_assignable<T&, U>, phmap::negation<optional_internal::is_constructible_convertible_assignable_from_optional<T, U>>>::value>::type>
 		optional& operator=(optional<U>&& rhs)
 		{
-			if (rhs) { this->assign(std::move(*rhs)); }
-			else { this->destruct(); }
+			if (rhs)
+			{
+				this->assign(std::move(*rhs));
+			}
+			else
+			{
+				this->destruct();
+			}
 			return *this;
 		}
 
@@ -2264,12 +2318,12 @@ namespace phmap
 #pragma warning(push)
 #pragma warning(disable : 4702)
 #endif // _MSC_VER
-		// optional::value()
-		//
-		// Returns a reference to an `optional`s underlying value. The constness
-		// and lvalue/rvalue-ness of the `optional` is preserved to the view of
-		// the `T` sub-object. Throws `phmap::bad_optional_access` when the `optional`
-		// is empty.
+	   // optional::value()
+	   //
+	   // Returns a reference to an `optional`s underlying value. The constness
+	   // and lvalue/rvalue-ness of the `optional` is preserved to the view of
+	   // the `T` sub-object. Throws `phmap::bad_optional_access` when the `optional`
+	   // is empty.
 		constexpr const T& value() const&
 		{
 			return static_cast<bool>(*this) ? reference() : (optional_internal::throw_bad_optional_access(), reference());
@@ -4539,29 +4593,53 @@ namespace phmap
 			template <class Allocator, class... Args> static void construct(Allocator* alloc, slot_type* slot, Args&&... args)
 			{
 				emplace(slot);
-				if (kMutableKeys::value) { phmap::allocator_traits<Allocator>::construct(*alloc, &slot->mutable_value, std::forward<Args>(args)...); }
-				else { phmap::allocator_traits<Allocator>::construct(*alloc, &slot->value, std::forward<Args>(args)...); }
+				if (kMutableKeys::value)
+				{
+					phmap::allocator_traits<Allocator>::construct(*alloc, &slot->mutable_value, std::forward<Args>(args)...);
+				}
+				else
+				{
+					phmap::allocator_traits<Allocator>::construct(*alloc, &slot->value, std::forward<Args>(args)...);
+				}
 			}
 
 			// Construct this slot by moving from another slot.
 			template <class Allocator> static void construct(Allocator* alloc, slot_type* slot, slot_type* other)
 			{
 				emplace(slot);
-				if (kMutableKeys::value) { phmap::allocator_traits<Allocator>::construct(*alloc, &slot->mutable_value, std::move(other->mutable_value)); }
-				else { phmap::allocator_traits<Allocator>::construct(*alloc, &slot->value, std::move(other->value)); }
+				if (kMutableKeys::value)
+				{
+					phmap::allocator_traits<Allocator>::construct(*alloc, &slot->mutable_value, std::move(other->mutable_value));
+				}
+				else
+				{
+					phmap::allocator_traits<Allocator>::construct(*alloc, &slot->value, std::move(other->value));
+				}
 			}
 
 			template <class Allocator> static void destroy(Allocator* alloc, slot_type* slot)
 			{
-				if (kMutableKeys::value) { phmap::allocator_traits<Allocator>::destroy(*alloc, &slot->mutable_value); }
-				else { phmap::allocator_traits<Allocator>::destroy(*alloc, &slot->value); }
+				if (kMutableKeys::value)
+				{
+					phmap::allocator_traits<Allocator>::destroy(*alloc, &slot->mutable_value);
+				}
+				else
+				{
+					phmap::allocator_traits<Allocator>::destroy(*alloc, &slot->value);
+				}
 			}
 
 			template <class Allocator> static void transfer(Allocator* alloc, slot_type* new_slot, slot_type* old_slot)
 			{
 				emplace(new_slot);
-				if (kMutableKeys::value) { phmap::allocator_traits<Allocator>::construct(*alloc, &new_slot->mutable_value, std::move(old_slot->mutable_value)); }
-				else { phmap::allocator_traits<Allocator>::construct(*alloc, &new_slot->value, std::move(old_slot->value)); }
+				if (kMutableKeys::value)
+				{
+					phmap::allocator_traits<Allocator>::construct(*alloc, &new_slot->mutable_value, std::move(old_slot->mutable_value));
+				}
+				else
+				{
+					phmap::allocator_traits<Allocator>::construct(*alloc, &new_slot->value, std::move(old_slot->value));
+				}
 				destroy(alloc, old_slot);
 			}
 
@@ -4584,7 +4662,10 @@ namespace phmap
 
 			template <class Allocator> static void move(Allocator* alloc, slot_type* src, slot_type* dest)
 			{
-				if (kMutableKeys::value) { dest->mutable_value = std::move(src->mutable_value); }
+				if (kMutableKeys::value)
+				{
+					dest->mutable_value = std::move(src->mutable_value);
+				}
 				else
 				{
 					phmap::allocator_traits<Allocator>::destroy(*alloc, &dest->value);
@@ -4752,7 +4833,8 @@ namespace phmap
 
 			~WriteLock()
 			{
-				if (locked_) m_->unlock();
+				if (locked_)
+					m_->unlock();
 			}
 
 			void lock()
@@ -4775,7 +4857,8 @@ namespace phmap
 
 			bool try_lock()
 			{
-				if (locked_) return true;
+				if (locked_)
+					return true;
 				locked_ = m_->try_lock();
 				return locked_;
 			}
@@ -4845,7 +4928,8 @@ namespace phmap
 
 			~ReadLock()
 			{
-				if (locked_) m_->unlock_shared();
+				if (locked_)
+					m_->unlock_shared();
 			}
 
 			void lock()
@@ -4868,7 +4952,8 @@ namespace phmap
 
 			bool try_lock()
 			{
-				if (locked_) return true;
+				if (locked_)
+					return true;
 				locked_ = m_->try_lock_shared();
 				return locked_;
 			}
@@ -5112,7 +5197,7 @@ namespace phmap
 
 #endif // phmap_base_h_guard_
 
-#ifdef GAME_COMPILER_MSVC
+#ifdef SFG_COMPILER_MSVC
 #pragma warning(pop)
 #else
 #pragma GCC diagnostic pop

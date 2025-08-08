@@ -20,7 +20,7 @@ namespace Game
 		bump_allocator(const bump_allocator& other)			   = delete;
 		~bump_allocator()
 		{
-			GAME_ASSERT(_raw == nullptr);
+			SFG_ASSERT(_raw == nullptr);
 		}
 
 		void* allocate(size_t size, size_t alignment = 1);
@@ -47,9 +47,9 @@ namespace Game
 			uint8* initial_head = (uint8*)_raw + _head;
 
 			uint8* current_head = initial_head;
-			GAME_MEMCPY(current_head, &firstValue, sizeof(T));
+			SFG_MEMCPY(current_head, &firstValue, sizeof(T));
 			_head += sizeof(T);
-			GAME_ASSERT(_head < _size);
+			SFG_ASSERT(_head < _size);
 
 			if constexpr (sizeof...(remainingValues) > 0)
 			{

@@ -2,7 +2,7 @@
 
 #pragma once
 
-#ifdef GAME_PLATFORM_OSX
+#ifdef SFG_PLATFORM_OSX
 #include <stddef.h>
 #endif
 

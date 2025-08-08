@@ -4,7 +4,7 @@
 
 namespace Game
 {
-#ifdef GAME_DEBUG
+#ifdef SFG_DEBUG
 	std::thread::id thread_info::s_thread_id_render;
 	std::thread::id thread_info::s_thread_id_main;
 	bool			thread_info::s_is_init;

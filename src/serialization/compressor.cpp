@@ -41,7 +41,10 @@ namespace Game
 		char* data		   = (char*)stream.get_raw();
 		int	  bytesWritten = LZ4_compress_default(data, dest, size, compressBound);
 
-		if (bytesWritten == 0) { GAME_ERR("[compressor] -> LZ4 compression failed!"); }
+		if (bytesWritten == 0)
+		{
+			SFG_ERR("[compressor] -> LZ4 compression failed!");
+		}
 
 		compressedStream.shrink(static_cast<size_t>(bytesWritten));
 		return compressedStream;

@@ -17,13 +17,15 @@ namespace Game
 
 	color color_utils::from_hex(const string& hex)
 	{
-		if (hex.size() != 7) return color::black;
+		if (hex.size() != 7)
+			return color::black;
 
-		if (hex[0] != '#') return color::black;
+		if (hex[0] != '#')
+			return color::black;
 
 		uint32 r, g, b;
 
-#ifdef GAME_PLATFORM_WINDOWS
+#ifdef SFG_PLATFORM_WINDOWS
 		sscanf_s(hex.c_str(), "#%02x%02x%02x", &r, &g, &b);
 #else
 		const int ret = std::sscanf(hex.c_str(), "#%02x%02x%02x", &r, &g, &b);
@@ -61,16 +63,28 @@ namespace Game
 		float delta	 = maxVal - minVal;
 
 		// Hue calculation
-		if (delta == 0) { hsv.x = 0; }
+		if (delta == 0)
+		{
+			hsv.x = 0;
+		}
 		else if (maxVal == col.x)
 		{
 			float integ = 0.0f;
 			hsv.x		= 60 * math::modf(((col.y - col.z) / delta), &integ);
 		}
-		else if (maxVal == col.y) { hsv.x = 60 * (((col.z - col.x) / delta) + 2); }
-		else if (maxVal == col.z) { hsv.x = 60 * (((col.x - col.y) / delta) + 4); }
+		else if (maxVal == col.y)
+		{
+			hsv.x = 60 * (((col.z - col.x) / delta) + 2);
+		}
+		else if (maxVal == col.z)
+		{
+			hsv.x = 60 * (((col.x - col.y) / delta) + 4);
+		}
 
-		if (hsv.x < 0) { hsv.x += 360; }
+		if (hsv.x < 0)
+		{
+			hsv.x += 360;
+		}
 
 		// Saturation calculation
 		hsv.y = (maxVal == 0) ? 0 : (delta / maxVal);
@@ -139,8 +153,14 @@ namespace Game
 	color color_utils::srgb_to_linear(const color& col)
 	{
 		auto convert = [](float value) {
-			if (value <= 0.04045f) { return value / 12.92f; }
-			else { return math::pow((value + 0.055f) / 1.055f, 2.4f); }
+			if (value <= 0.04045f)
+			{
+				return value / 12.92f;
+			}
+			else
+			{
+				return math::pow((value + 0.055f) / 1.055f, 2.4f);
+			}
 		};
 
 		return color(convert(col.x), convert(col.y), convert(col.z), convert(col.w));
@@ -149,8 +169,14 @@ namespace Game
 	color color_utils::linear_to_srgb(const color& col)
 	{
 		auto convert = [](float value) {
-			if (value <= 0.0031308f) { return value * 12.92f; }
-			else { return 1.055f * math::pow(value, 1.0f / 2.4f) - 0.055f; }
+			if (value <= 0.0031308f)
+			{
+				return value * 12.92f;
+			}
+			else
+			{
+				return 1.055f * math::pow(value, 1.0f / 2.4f) - 0.055f;
+			}
 		};
 
 		return color(convert(col.x), convert(col.y), convert(col.z), convert(col.w));

@@ -23,7 +23,7 @@ namespace Game
 		}
 		else
 		{
-			GAME_ERR("Failed writing to file! {0}", target_file);
+			SFG_ERR("Failed writing to file! {0}", target_file);
 			return false;
 		}
 
@@ -39,7 +39,7 @@ namespace Game
 
 		if (!wf)
 		{
-			GAME_ERR("[Serialization] -> Could not open file for writing! {0}", path);
+			SFG_ERR("[Serialization] -> Could not open file for writing! {0}", path);
 			return false;
 		}
 
@@ -50,7 +50,7 @@ namespace Game
 
 		if (!wf.good())
 		{
-			GAME_ERR("[Serialization] -> Error occured while writing the file! {0}", path);
+			SFG_ERR("[Serialization] -> Error occured while writing the file! {0}", path);
 			return false;
 		}
 
@@ -61,7 +61,7 @@ namespace Game
 	{
 		if (!file_system::exists(path))
 		{
-			GAME_ERR("[Serialization] -> File doesn't exists: {0}", path);
+			SFG_ERR("[Serialization] -> File doesn't exists: {0}", path);
 			return {};
 		}
 
@@ -69,7 +69,7 @@ namespace Game
 
 		if (!rf)
 		{
-			GAME_ERR("[Serialization] -> Could not open file for reading! {0}", path);
+			SFG_ERR("[Serialization] -> Could not open file for reading! {0}", path);
 			return istream();
 		}
 
@@ -83,7 +83,7 @@ namespace Game
 
 		if (!rf.good())
 		{
-			GAME_ERR("[Serialization] -> Error occured while reading the file! {0}", path);
+			SFG_ERR("[Serialization] -> Error occured while reading the file! {0}", path);
 			readStream.destroy();
 			return {};
 		}

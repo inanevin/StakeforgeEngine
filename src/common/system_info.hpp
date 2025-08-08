@@ -4,14 +4,14 @@
 #include "size_definitions.hpp"
 #include "data/atomic.hpp"
 
-#ifdef GAME_DEBUG
+#ifdef SFG_DEBUG
 #include <thread>
 #include "io/assert.hpp"
 #endif
 
 namespace Game
 {
-#ifdef GAME_DEBUG
+#ifdef SFG_DEBUG
 
 	class thread_info
 	{
@@ -58,9 +58,9 @@ namespace Game
 #define REGISTER_THREAD_MAIN()	 thread_info::register_thread_main(std::this_thread::get_id())
 #define REGISTER_THREAD_RENDER() thread_info::register_thread_render(std::this_thread::get_id())
 #define SET_INIT(IS_INIT)		 thread_info::set_is_init(IS_INIT)
-#define VERIFY_THREAD_MAIN()	 GAME_ASSERT(thread_info::get_thread_id_main() == std::this_thread::get_id())
-#define VERIFY_THREAD_RENDER()	 GAME_ASSERT(thread_info::get_thread_id_render() == std::this_thread::get_id())
-#define VERIFY_INIT()			 GAME_ASSERT(thread_info::get_is_init())
+#define VERIFY_THREAD_MAIN()	 SFG_ASSERT(thread_info::get_thread_id_main() == std::this_thread::get_id())
+#define VERIFY_THREAD_RENDER()	 SFG_ASSERT(thread_info::get_thread_id_render() == std::this_thread::get_id())
+#define VERIFY_INIT()			 SFG_ASSERT(thread_info::get_is_init())
 #else
 #define REGISTER_THREAD_MAIN()
 #define REGISTER_THREAD_RENDER()

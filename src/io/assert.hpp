@@ -5,20 +5,23 @@
 namespace Game
 {
 
-#ifdef GAME_PLATFORM_WINDOWS
+#ifdef SFG_PLATFORM_WINDOWS
 #define DBG_BRK __debugbreak();
 #else
 #define DBG_BRK __builtin_trap();
 #endif
 
-#ifdef GAME_DEBUG
-#define GAME_ASSERT(x, ...)                                                                                                                                                                                                                                        \
-	if (!(x)) { DBG_BRK }
+#ifdef SFG_DEBUG
+#define SFG_ASSERT(x, ...)                                                                                                                                                                                                                                         \
+	if (!(x))                                                                                                                                                                                                                                                      \
+	{                                                                                                                                                                                                                                                              \
+		DBG_BRK                                                                                                                                                                                                                                                    \
+	}
 
 #else
-#define GAME_ASSERT(x, ...)
+#define SFG_ASSERT(x, ...)
 #endif
 
-#define GAME_NOTIMPLEMENTED GAME_ASSERT(false, "Implementation missing!")
+#define SFG_NOTIMPLEMENTED SFG_ASSERT(false, "Implementation missing!")
 
 }
