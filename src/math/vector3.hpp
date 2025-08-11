@@ -5,7 +5,7 @@
 #undef min
 #undef max
 
-namespace Game
+namespace SFG
 {
 	class vector3
 	{
@@ -44,7 +44,10 @@ namespace Game
 		inline vector3 normalized() const
 		{
 			float mag = magnitude();
-			if (mag > MATH_EPS) { return vector3(x / mag, y / mag, z / mag); }
+			if (mag > MATH_EPS)
+			{
+				return vector3(x / mag, y / mag, z / mag);
+			}
 			return vector3::zero;
 		}
 
@@ -75,7 +78,8 @@ namespace Game
 		}
 		inline vector3 operator/(float scalar) const
 		{
-			if (scalar == 0.0f) return vector3::zero;
+			if (scalar == 0.0f)
+				return vector3::zero;
 			return vector3(x / scalar, y / scalar, z / scalar);
 		}
 

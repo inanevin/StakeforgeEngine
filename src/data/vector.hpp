@@ -4,7 +4,7 @@
 
 #include <vector>
 
-namespace Game
+namespace SFG
 {
 	template <typename T> using vector = std::vector<T>;
 }

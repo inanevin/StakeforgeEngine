@@ -4,7 +4,7 @@
 #include "common/size_definitions.hpp"
 #include "gfx/buffer.hpp"
 
-namespace Game
+namespace SFG
 {
 	class material
 	{

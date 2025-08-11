@@ -8,7 +8,7 @@
 #include <timeapi.h>
 #pragma comment(lib, "Winmm.lib")
 
-namespace Game
+namespace SFG
 {
 	int64 time::s_frequency = 0;
 

@@ -1,7 +1,7 @@
 // Copyright (c) 2025 Inan Evin
 #include "model.hpp"
 
-namespace Game
+namespace SFG
 {
 	bool model::load_from_file(const char* file)
 	{

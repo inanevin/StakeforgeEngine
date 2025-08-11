@@ -52,11 +52,11 @@
                                 CommandParameter="{x:Static common:LogLevel.Error}"/>
 
                             <widgets:MenuItemDefault
-                                Header="Fatal"
-                                HeaderIcon="{Binding LevelMask, Converter={StaticResource log_mask_to_icon}, ConverterParameter={x:Static common:LogLevel.Fatal}}"
+                                Header="Progress"
+                                HeaderIcon="{Binding LevelMask, Converter={StaticResource log_mask_to_icon}, ConverterParameter={x:Static common:LogLevel.Progress}}"
                                 HeaderIconColor="{StaticResource brush_accent_primary}"
                                 Command="{Binding ToggleLevelCommand}"
-                                CommandParameter="{x:Static common:LogLevel.Fatal}"/>
+                                CommandParameter="{x:Static common:LogLevel.Progress}"/>
 
                         </ContextMenu>
                     </Button.ContextMenu>

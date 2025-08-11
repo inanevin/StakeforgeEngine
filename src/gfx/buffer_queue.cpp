@@ -3,7 +3,7 @@
 #include "buffer_queue.hpp"
 #include "gfx/buffer.hpp"
 
-namespace Game
+namespace SFG
 {
 
 	void buffer_queue::init()

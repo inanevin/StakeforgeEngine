@@ -4,7 +4,7 @@
 #include "data/bitmask.hpp"
 #include "resource_limits.hpp"
 
-namespace Game
+namespace SFG
 {
 	enum barrier_flags
 	{

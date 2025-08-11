@@ -4,7 +4,7 @@
 
 #include <span>
 
-namespace Game
+namespace SFG
 {
 	template <typename T> struct span
 	{

@@ -4,6 +4,7 @@
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
              xmlns:local="clr-namespace:StakeforgeEditor.Main"
+             xmlns:widgets="clr-namespace:StakeforgeEditor.Widgets"
              mc:Ignorable="d" 
              d:DesignHeight="48" d:DesignWidth="800">
     <Grid>
@@ -25,7 +26,20 @@
                 <StackPanel  Grid.Column="0"  Orientation="Horizontal" VerticalAlignment="Stretch">
                     <Label Margin=" 4, 0, 4, 0" VerticalAlignment="Center" Style="{StaticResource style_label_icon}" FontSize="{StaticResource height_item_base_big}" Content="{StaticResource str_icon_stake}" Foreground="{StaticResource brush_accent_purple_light}"/>
                     <Border  Background="{StaticResource brush_background0}" Width="{StaticResource size_border_thickness}" Height="Auto"/>
-                    <Button Margin="{StaticResource spacing_left}" Content="{StaticResource str_icon_burger}" Style="{StaticResource style_button_icon}"/>
+                    <Button Margin="{StaticResource spacing_left}" Content="{StaticResource str_icon_burger}" Style="{StaticResource style_button_icon}" Click="OnClickContext">
+                        <Button.ContextMenu >
+                            <ContextMenu  Style="{StaticResource style_context_menu}">
+                                <widgets:MenuItemDefault Header="New Project" Click="MenuItem_NewProject"/>
+                                <widgets:MenuItemDefault Header="Open Project" Click="MenuItem_OpenProject"/>
+                                <widgets:MenuItemDefault Header="Save Project" Click="MenuItem_SaveProject"/>
+                                <Separator Style="{StaticResource style_seperator_default}"/>
+                                <widgets:MenuItemDefault Header="Set Server Location" Click="MenuItem_SetEngineServer"/>
+                                <widgets:MenuItemDefault Header="Restart Engine Server" Click="MenuItem_RestartEngineServer"/>
+                                <widgets:MenuItemDefault Header="Kill Engine Server" Click="MenuItem_KillEngineServer"/>
+                            </ContextMenu>
+                        </Button.ContextMenu>
+
+                    </Button>
                     <Button Margin="{StaticResource spacing_left}" Content="{StaticResource str_icon_play}"  Foreground="{StaticResource brush_accent_green}" Style="{StaticResource style_button_icon}"/>
                     <Button Margin="{StaticResource spacing_left}" Content="{StaticResource str_icon_pause}" Foreground="{StaticResource brush_accent_primary}" Style="{StaticResource style_button_icon}"/>
                 </StackPanel>
@@ -38,12 +52,28 @@
                     </Grid.RowDefinitions>
 
                     <StackPanel Grid.Row="0" Orientation="Horizontal" HorizontalAlignment="Right">
-                        <Button x:Name="Minimize" Content="{StaticResource str_icon_minimize}" Style="{StaticResource style_button_window}" Click="OnClickMinimize"/>
+                        <Border  VerticalAlignment="Stretch" Width="Auto" Margin="{StaticResource indent_left}" Background="{StaticResource brush_background0}">
+                            <Label Content="{Binding ServerPath}" Style="{StaticResource style_label_default}" />
+                        </Border>
+                        <Border  VerticalAlignment="Stretch" Width="Auto" Margin="{StaticResource indent_left}" Background="{StaticResource brush_background0}">
+                            <Label Content="{Binding ProjectName}" Style="{StaticResource style_label_default}" />
+                        </Border>
+                        <Button Margin="{StaticResource indent_left}"  x:Name="Minimize" Content="{StaticResource str_icon_minimize}" Style="{StaticResource style_button_window}" Click="OnClickMinimize"/>
                         <Button Content="{StaticResource str_icon_maximize}" Style="{StaticResource style_button_window}" Click="OnClickMaximize"/>
                         <Button Content="{StaticResource str_icon_close}" Style="{StaticResource style_button_window_close}" Click="OnClickClose"/>
                     </StackPanel>
 
-                    <Border Grid.Row="1" Background="Transparent"/>
+                    <Border Grid.Row="1" Background="Transparent">
+
+                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+
+                            <StackPanel Orientation="Horizontal">
+                                <Label Content="{Binding ConnectionIcon}" Style="{StaticResource style_label_icon_small}" Foreground="{Binding ConnectionBrush}" VerticalAlignment="Center" />
+                                <Label Margin="-4, 0,0,0" Content="{Binding ConnectionStatus}" Style="{StaticResource style_label_default}"  Foreground="{Binding ConnectionBrush}" VerticalAlignment="Center"/>
+                            </StackPanel>
+
+                        </StackPanel>
+                    </Border>
                 </Grid>
             </Grid>
         </Border>

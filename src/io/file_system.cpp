@@ -17,7 +17,7 @@
 #include <shlobj.h>
 #endif
 
-namespace Game
+namespace SFG
 {
 	bool file_system::delete_file(const char* path)
 	{

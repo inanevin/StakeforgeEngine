@@ -6,7 +6,7 @@
 #include "data/ostream.hpp"
 #include <lz4/lz4.h>
 
-namespace Game
+namespace SFG
 {
 	size_t estimate_decompressed_size(size_t compressedSize)
 	{

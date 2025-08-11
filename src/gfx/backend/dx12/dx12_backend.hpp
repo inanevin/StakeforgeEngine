@@ -21,7 +21,7 @@ namespace D3D12MA
 	class Allocation;
 } // namespace D3D12MA
 
-namespace Game
+namespace SFG
 {
 	struct resource_desc;
 	struct texture_desc;

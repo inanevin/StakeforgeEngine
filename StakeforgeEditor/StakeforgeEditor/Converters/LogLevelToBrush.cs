@@ -17,8 +17,8 @@ namespace StakeforgeEditor.Converters
 				Common.LogLevel.Trace => System.Windows.Application.Current.Resources["brush_accent_primary"],
 				Common.LogLevel.Info => System.Windows.Application.Current.Resources["brush_text_primary"],
 				Common.LogLevel.Warn => System.Windows.Application.Current.Resources["brush_accent_warn"],
-				Common.LogLevel.Error => System.Windows.Application.Current.Resources["brush_accent_secondary"],
-				Common.LogLevel.Fatal => System.Windows.Application.Current.Resources["brush_accent_secondary"],
+				Common.LogLevel.Error => System.Windows.Application.Current.Resources["brush_accent_error"],
+				Common.LogLevel.Progress => System.Windows.Application.Current.Resources["brush_accent_green"],
 				_ => Brushes.Gray
 			};
 		}

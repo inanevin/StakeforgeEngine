@@ -6,7 +6,7 @@
 #include "gfx/common/gfx_constants.hpp"
 #include <functional>
 
-namespace Game
+namespace SFG
 {
 	struct texture_buffer;
 

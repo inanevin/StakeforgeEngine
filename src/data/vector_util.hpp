@@ -5,7 +5,7 @@
 #include "common/size_definitions.hpp"
 #include "data/vector.hpp"
 
-namespace Game
+namespace SFG
 {
 	namespace vector_util
 	{

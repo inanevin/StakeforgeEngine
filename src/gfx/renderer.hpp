@@ -12,7 +12,7 @@
 #include "memory/bump_allocator.hpp"
 #include "app/debug_controller.hpp"
 
-namespace Game
+namespace SFG
 {
 	class vector2ui;
 	class window;
@@ -22,7 +22,11 @@ namespace Game
 	class renderer
 	{
 	public:
+#ifdef SFG_TOOLMODE
+		void init(const vector2ui16& rt_size);
+#else
 		void init(const window& main_window);
+#endif
 		void uninit();
 		void wait_backend();
 		void populate_render_data(uint8 index);
@@ -44,18 +48,24 @@ namespace Game
 
 		struct per_frame_data
 		{
-			buffer		   buf_engine_global	= {};
-			semaphore_data sem_frame			= {};
-			semaphore_data sem_copy				= {};
-			resource_id	   cmd_gfx				= 0;
-			resource_id	   cmd_copy				= 0;
-			resource_id	   bind_group_global	= 0;
-			resource_id	   bind_group_swapchain = 0;
+			buffer		   buf_engine_global = {};
+			semaphore_data sem_frame		 = {};
+			semaphore_data sem_copy			 = {};
+			resource_id	   cmd_gfx			 = 0;
+			resource_id	   cmd_copy			 = 0;
+			resource_id	   bind_group_global = 0;
+			resource_id	   bind_group_rt	 = 0;
+
+#ifdef SFG_TOOLMODE
+			resource_id render_target = 0;
+#endif
 		};
 
 		struct gfx_data
 		{
-			resource_id swapchain_main	   = 0;
+#ifndef SFG_TOOLMODE
+			resource_id swapchain = 0;
+#endif
 			resource_id bind_layout_global = 0;
 			resource_id dummy_ubo		   = 0;
 			resource_id dummy_ssbo		   = 0;
@@ -66,7 +76,7 @@ namespace Game
 
 		struct shader_data
 		{
-			shader swapchain = {};
+			shader render_target = {};
 		};
 
 	private:

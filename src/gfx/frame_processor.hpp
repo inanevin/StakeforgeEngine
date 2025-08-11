@@ -8,7 +8,7 @@
 #include "memory/memory.hpp"
 #include <functional>
 
-namespace Game
+namespace SFG
 {
 
 #define MAX_SEMAPHORE_DATA 64

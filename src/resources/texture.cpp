@@ -4,7 +4,7 @@
 #include "io/log.hpp"
 #include "io/assert.hpp"
 
-namespace Game
+namespace SFG
 {
 	texture::~texture()
 	{

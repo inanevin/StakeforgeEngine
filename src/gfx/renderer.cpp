@@ -12,25 +12,42 @@
 #include "common/system_info.hpp"
 #include "platform/time.hpp"
 
-namespace Game
+namespace SFG
 {
 #define RT_FORMAT format::r8g8b8a8_srgb
 
+#ifdef SFG_TOOLMODE
+	void renderer::init(const vector2ui16& rt_size)
+#else
 	void renderer::init(const window& main_window)
+#endif
 	{
 		gfx_backend::s_instance = new gfx_backend();
 		gfx_backend* backend	= gfx_backend::get();
 		backend->init();
 
-		_gfx_data.swapchain_main = backend->create_swapchain({
+#ifdef SFG_TOOLMODE
+		for (uint32 i = 0; i < FRAMES_IN_FLIGHT; i++)
+		{
+			per_frame_data& pfd = _pfd[i];
+			pfd.render_target	= backend->create_texture({
+				  .texture_format = RT_FORMAT,
+				  .size			  = rt_size,
+				  .flags		  = texture_flags::tf_render_target | texture_flags::tf_is_2d,
+				  .debug_name	  = "renderer_rt",
+			  });
+		}
+#else
+		_gfx_data.swapchain = backend->create_swapchain({
 			.window	   = main_window.get_window_handle(),
 			.os_handle = main_window.get_platform_handle(),
 			.scaling   = 1.0f,
-			.format	   = format::r8g8b8a8_srgb,
+			.format	   = RT_FORMAT,
 			.pos	   = vector2ui16::zero,
 			.size	   = main_window.get_size(),
 			.flags	   = swapchain_flags::sf_allow_tearing | swapchain_flags::sf_vsync_every_v_blank,
 		});
+#endif
 
 		_gfx_data.bind_layout_global = gfx_util::create_bind_layout_global();
 
@@ -43,16 +60,19 @@ namespace Game
 		_gfx_data.dummy_ubo		= backend->create_resource({.size = 4, .flags = resource_flags::rf_constant_buffer | resource_flags::rf_gpu_only});
 		_gfx_data.dummy_ssbo	= backend->create_resource({.size = 4, .flags = resource_flags::rf_storage_buffer | resource_flags::rf_gpu_only});
 
-		_shaders.swapchain.get_desc().attachments = {{.format = RT_FORMAT, .blend_attachment = gfx_util::get_blend_attachment_alpha_blending()}};
-		_shaders.swapchain.get_desc().inputs	  = gfx_util::get_input_layout(input_layout_type::gui_default);
-		_shaders.swapchain.get_desc().cull		  = cull_mode::back;
-		_shaders.swapchain.get_desc().front		  = front_face::cw;
-		_shaders.swapchain.get_desc().layout	  = _gfx_data.bind_layout_global;
-		_shaders.swapchain.get_desc().set_name("swapchain");
-		_shaders.swapchain.create_from_file_vertex_pixel("assets/engine/shaders/swapchain/swapchain.hlsl");
+		_shaders.render_target.get_desc().attachments = {{.format = RT_FORMAT, .blend_attachment = gfx_util::get_blend_attachment_alpha_blending()}};
+		_shaders.render_target.get_desc().inputs	  = gfx_util::get_input_layout(input_layout_type::gui_default);
+		_shaders.render_target.get_desc().cull		  = cull_mode::back;
+		_shaders.render_target.get_desc().front		  = front_face::cw;
+		_shaders.render_target.get_desc().layout	  = _gfx_data.bind_layout_global;
+		_shaders.render_target.get_desc().set_name("render_target");
+		_shaders.render_target.create_from_file_vertex_pixel("assets/engine/shaders/render_target/render_target_basic.hlsl");
 
+#ifdef SFG_TOOLMODE
+		_debug_controller.init(&_texture_queue, _gfx_data.bind_layout_global, rt_size);
+#else
 		_debug_controller.init(&_texture_queue, _gfx_data.bind_layout_global, main_window.get_size());
-
+#endif
 		for (uint32 i = 0; i < FRAMES_IN_FLIGHT; i++)
 		{
 			per_frame_data& pfd		= _pfd[i];
@@ -74,9 +94,9 @@ namespace Game
 			backend->bind_group_update_descriptor(pfd.bind_group_global, 0, pfd.buf_engine_global.get_hw_gpu());
 			gfx_util::update_dummy_bind_group(pfd.bind_group_global, _gfx_data.dummy_texture, _gfx_data.dummy_sampler, _gfx_data.dummy_ssbo, _gfx_data.dummy_ubo);
 
-			pfd.bind_group_swapchain = backend->create_empty_bind_group();
-			backend->bind_group_add_pointer(pfd.bind_group_swapchain, rpi_table_material, 3, false);
-			backend->bind_group_update_pointer(pfd.bind_group_swapchain, 0, {{.resource = _debug_controller.get_final_rt(i), .view = 0, .pointer_index = upi_material_texture0, .type = binding_type::texture}});
+			pfd.bind_group_rt = backend->create_empty_bind_group();
+			backend->bind_group_add_pointer(pfd.bind_group_rt, rpi_table_material, 3, false);
+			backend->bind_group_update_pointer(pfd.bind_group_rt, 0, {{.resource = _debug_controller.get_final_rt(i), .view = 0, .pointer_index = upi_material_texture0, .type = binding_type::texture}});
 			_frame_allocator[i].init(1024 * 1024, 4);
 		}
 
@@ -87,7 +107,7 @@ namespace Game
 
 	void renderer::uninit()
 	{
-		_shaders.swapchain.destroy();
+		_shaders.render_target.destroy();
 
 		_debug_controller.uninit();
 		_texture_queue.uninit();
@@ -104,7 +124,7 @@ namespace Game
 		for (uint32 i = 0; i < FRAMES_IN_FLIGHT; i++)
 		{
 			per_frame_data& pfd = _pfd[i];
-			backend->destroy_bind_group(pfd.bind_group_swapchain);
+			backend->destroy_bind_group(pfd.bind_group_rt);
 			backend->destroy_semaphore(pfd.sem_frame.semaphore);
 			backend->destroy_semaphore(pfd.sem_copy.semaphore);
 			backend->destroy_command_buffer(pfd.cmd_gfx);
@@ -112,9 +132,15 @@ namespace Game
 			backend->destroy_bind_group(pfd.bind_group_global);
 			pfd.buf_engine_global.destroy();
 			_frame_allocator[i].uninit();
+
+#ifdef SFG_TOOLMODE
+			backend->destroy_texture(pfd.render_target);
+#endif
 		}
 
-		backend->destroy_swapchain(_gfx_data.swapchain_main);
+#ifndef SFG_TOOLMODE
+		backend->destroy_swapchain(_gfx_data.swapchain);
+#endif
 
 		backend->uninit();
 		delete gfx_backend::s_instance;
@@ -151,10 +177,15 @@ namespace Game
 		/* access frame data */
 		const uint8		  frame_index	= _gfx_data.frame_index;
 		const resource_id layout_global = _gfx_data.bind_layout_global;
-		const resource_id swapchain		= _gfx_data.swapchain_main;
+		per_frame_data&	  pfd			= _pfd[frame_index];
 		_gfx_data.frame_index			= (_gfx_data.frame_index + 1) % FRAMES_IN_FLIGHT;
 
-		per_frame_data& pfd	  = _pfd[frame_index];
+#ifdef SFG_TOOLMODE
+		const resource_id render_target = pfd.render_target;
+#else
+		const resource_id render_target = _gfx_data.swapchain;
+#endif
+
 		bump_allocator& alloc = _frame_allocator[frame_index];
 		alloc.reset();
 
@@ -169,8 +200,8 @@ namespace Game
 		/* access pfd */
 		const resource_id cmd_list			  = pfd.cmd_gfx;
 		const resource_id bg_global			  = pfd.bind_group_global;
-		const resource_id bg_swapchain		  = pfd.bind_group_swapchain;
-		const resource_id shader_swp		  = _shaders.swapchain.get_hw();
+		const resource_id bg_swapchain		  = pfd.bind_group_rt;
+		const resource_id shader_swp		  = _shaders.render_target.get_hw();
 		const resource_id sem_frame			  = pfd.sem_frame.semaphore;
 		const resource_id sem_copy			  = pfd.sem_copy.semaphore;
 		const uint64	  previous_copy_value = pfd.sem_copy.value;
@@ -190,12 +221,21 @@ namespace Game
 		backend->cmd_bind_layout(cmd_list, {.layout = layout_global});
 		backend->cmd_bind_group(cmd_list, {.group = bg_global});
 
+#ifdef SFG_TOOLMODE
 		_reuse_barriers.push_back({
-			.resource	= swapchain,
+			.resource	= render_target,
+			.flags		= barrier_flags::baf_is_texture,
+			.from_state = resource_state::ps_resource,
+			.to_state	= resource_state::render_target,
+		});
+#else
+		_reuse_barriers.push_back({
+			.resource	= render_target,
 			.flags		= barrier_flags::baf_is_swapchain,
 			.from_state = resource_state::present,
 			.to_state	= resource_state::render_target,
 		});
+#endif
 		_debug_controller.collect_barriers(_reuse_barriers);
 		send_barriers(cmd_list);
 
@@ -208,9 +248,13 @@ namespace Game
 			attachment->clear_color					 = vector4(0.8f, 0.7f, 0.7f, 1.0f);
 			attachment->load_op						 = load_op::clear;
 			attachment->store_op					 = store_op::store;
-			attachment->texture						 = swapchain;
+			attachment->texture						 = render_target;
 
+#ifdef SFG_TOOLMODE
+			backend->cmd_begin_render_pass(cmd_list, {.color_attachments = attachment, .color_attachment_count = 1});
+#else
 			backend->cmd_begin_render_pass_swapchain(cmd_list, {.color_attachments = attachment, .color_attachment_count = 1});
+#endif
 			backend->cmd_set_scissors(cmd_list, {.width = static_cast<uint16>(size.x), .height = static_cast<uint16>(size.y)});
 			backend->cmd_set_viewport(cmd_list, {.width = static_cast<uint16>(size.x), .height = static_cast<uint16>(size.y)});
 			backend->cmd_bind_group(cmd_list, {.group = bg_swapchain});
@@ -221,12 +265,22 @@ namespace Game
 
 		// Rt -> Present Barrier
 		{
+#ifdef SFG_TOOLMODE
 			_reuse_barriers.push_back({
-				.resource	= swapchain,
+				.resource	= render_target,
+				.flags		= barrier_flags::baf_is_texture,
+				.from_state = resource_state::render_target,
+				.to_state	= resource_state::ps_resource,
+			});
+#else
+			_reuse_barriers.push_back({
+				.resource	= render_target,
 				.flags		= barrier_flags::baf_is_swapchain,
 				.from_state = resource_state::render_target,
 				.to_state	= resource_state::present,
 			});
+#endif
+
 			send_barriers(cmd_list);
 		}
 
@@ -243,7 +297,9 @@ namespace Game
 		backend->submit_commands(queue_gfx, &cmd_list, 1);
 
 		out_time_before_presnet = time::get_cpu_microseconds();
-		backend->present(&swapchain, 1);
+#ifndef SFG_TOOLMODE
+		backend->present(&render_target, 1);
+#endif
 		backend->queue_signal(queue_gfx, &sem_frame, 1, &next_frame_value);
 		out_time_after_present = time::get_cpu_microseconds();
 	}
@@ -258,17 +314,31 @@ namespace Game
 		VERIFY_THREAD_MAIN();
 
 		gfx_backend* backend = gfx_backend::get();
+
+#ifdef SFG_TOOLMODE
+		for (uint32 i = 0; i < FRAMES_IN_FLIGHT; i++)
+		{
+			per_frame_data& pfd = _pfd[i];
+			backend->destroy_texture(pfd.render_target);
+			pfd.render_target = backend->create_texture({
+				.texture_format = RT_FORMAT,
+				.size			= size,
+				.flags			= texture_flags::tf_render_target | texture_flags::tf_is_2d,
+				.debug_name		= "renderer_rt",
+			});
+		}
+#else
 		backend->recreate_swapchain({
 			.size	   = size,
-			.swapchain = _gfx_data.swapchain_main,
+			.swapchain = _gfx_data.swapchain,
 			.flags	   = swapchain_flags::sf_allow_tearing | swapchain_flags::sf_vsync_every_v_blank,
 		});
-
+#endif
 		_debug_controller.on_window_resize(size);
 
 		for (uint32 i = 0; i < FRAMES_IN_FLIGHT; i++)
 		{
-			backend->bind_group_update_pointer(_pfd[i].bind_group_swapchain, 0, {{.resource = _debug_controller.get_final_rt(i), .view = 0, .pointer_index = upi_material_texture0, .type = binding_type::texture}});
+			backend->bind_group_update_pointer(_pfd[i].bind_group_rt, 0, {{.resource = _debug_controller.get_final_rt(i), .view = 0, .pointer_index = upi_material_texture0, .type = binding_type::texture}});
 		}
 	}
 

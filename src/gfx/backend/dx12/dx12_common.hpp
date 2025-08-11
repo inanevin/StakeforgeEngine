@@ -8,7 +8,7 @@
 #include "io/assert.hpp"
 #include <stdexcept>
 
-namespace Game
+namespace SFG
 {
 	inline string HrToString(HRESULT hr)
 	{

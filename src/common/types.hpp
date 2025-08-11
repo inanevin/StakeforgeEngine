@@ -5,7 +5,7 @@
 #include "data/vector.hpp"
 #include "data/hash_map.hpp"
 
-namespace Game
+namespace SFG
 {
 	namespace
 	{

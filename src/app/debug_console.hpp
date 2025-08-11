@@ -10,7 +10,7 @@
 #include "data/vector.hpp"
 #include <functional>
 
-namespace Game
+namespace SFG
 {
 	namespace detail
 	{

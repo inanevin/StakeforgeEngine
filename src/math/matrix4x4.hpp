@@ -4,7 +4,7 @@
 #include "vector3.hpp"
 #include "vector4.hpp"
 
-namespace Game
+namespace SFG
 {
 	class quaternion;
 

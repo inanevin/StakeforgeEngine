@@ -3,7 +3,7 @@
 #include "math.hpp"
 #include "quat.hpp"
 
-namespace Game
+namespace SFG
 {
 	matrix4x4::matrix4x4(float m00,
 						 float m10,
@@ -45,7 +45,8 @@ namespace Game
 	matrix4x4 matrix4x4::get_normal_matrix() const
 	{
 		matrix4x4 inv_mat = inverse();
-		if (inv_mat == matrix4x4::identity) return identity;
+		if (inv_mat == matrix4x4::identity)
+			return identity;
 		return inv_mat.transpose();
 	}
 
@@ -85,7 +86,8 @@ namespace Game
 	matrix4x4 matrix4x4::inverse() const
 	{
 		float det = determinant();
-		if (math::abs(det) < MATH_EPS) return identity;
+		if (math::abs(det) < MATH_EPS)
+			return identity;
 
 		float	  inv_det = 1.0f / det;
 		matrix4x4 inv;
@@ -195,14 +197,16 @@ namespace Game
 	{
 		vector4 temp_v4(v.x, v.y, v.z, 1.0f);
 		vector4 transformed_v4 = (*this) * temp_v4;
-		if (math::abs(transformed_v4.w) < MATH_EPS) return vector3(transformed_v4.x, transformed_v4.y, transformed_v4.z);
+		if (math::abs(transformed_v4.w) < MATH_EPS)
+			return vector3(transformed_v4.x, transformed_v4.y, transformed_v4.z);
 		return vector3(transformed_v4.x / transformed_v4.w, transformed_v4.y / transformed_v4.w, transformed_v4.z / transformed_v4.w);
 	}
 
 	matrix4x4 matrix4x4::operator/(float scalar) const
 	{
 		matrix4x4 result;
-		if (math::abs(scalar) < MATH_EPS) return identity;
+		if (math::abs(scalar) < MATH_EPS)
+			return identity;
 		float inv_scalar = 1.0f / scalar;
 		for (int i = 0; i < 16; ++i)
 		{
@@ -233,7 +237,10 @@ namespace Game
 	{
 		for (int i = 0; i < 16; ++i)
 		{
-			if (!math::almost_equal(m[i], other.m[i], epsilon)) { return false; }
+			if (!math::almost_equal(m[i], other.m[i], epsilon))
+			{
+				return false;
+			}
 		}
 		return true;
 	}

@@ -6,7 +6,7 @@
 #else
 #endif
 
-namespace Game
+namespace SFG
 {
 #ifdef SFG_PLATFORM_WINDOWS
 	typedef dx12_backend gfx_backend;

@@ -7,7 +7,7 @@
 #include "gfx/common/format.hpp"
 #include "gfx/common/gfx_common.hpp"
 
-namespace Game
+namespace SFG
 {
 	class texture
 	{

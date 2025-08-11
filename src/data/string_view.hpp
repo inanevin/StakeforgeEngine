@@ -4,7 +4,7 @@
 
 #include <string_view>
 
-namespace Game
+namespace SFG
 {
 	typedef std::string_view string_view;
 }

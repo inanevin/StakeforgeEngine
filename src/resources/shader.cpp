@@ -6,7 +6,7 @@
 #include "io/file_system.hpp"
 #include "gfx/backend/backend.hpp"
 
-namespace Game
+namespace SFG
 {
 	void shader::destroy()
 	{

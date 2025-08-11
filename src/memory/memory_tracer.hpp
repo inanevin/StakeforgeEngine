@@ -14,7 +14,7 @@
 #include "malloc_allocator_map.hpp"
 #include "malloc_allocator_stl.hpp"
 
-namespace Game
+namespace SFG
 {
 #define MEMORY_STACK_TRACE_SIZE 50
 
@@ -84,8 +84,8 @@ namespace Game
 		static uint8 s_category_counter;
 	};
 
-#define PUSH_MEMORY_CATEGORY(NAME) Game::memory_tracer::get().push_category(NAME)
-#define POP_MEMORY_CATEGORY()	   Game::memory_tracer::get().pop_category()
+#define PUSH_MEMORY_CATEGORY(NAME) SFG::memory_tracer::get().push_category(NAME)
+#define POP_MEMORY_CATEGORY()	   SFG::memory_tracer::get().pop_category()
 }
 
 #else

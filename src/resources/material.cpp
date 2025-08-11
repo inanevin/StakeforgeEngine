@@ -2,7 +2,7 @@
 
 #include "material.hpp"
 
-namespace Game
+namespace SFG
 {
 	// void material::create(const size_t size, const LinaGX::DescriptorSetDesc& set_desc)
 	// {

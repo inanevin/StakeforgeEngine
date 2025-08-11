@@ -4,7 +4,7 @@
 
 #include <atomic>
 
-namespace Game
+namespace SFG
 {
 	template <typename T> using atomic = std::atomic<T>;
 }

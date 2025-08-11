@@ -5,7 +5,7 @@
 #include "common/size_definitions.hpp"
 #include "span.hpp"
 
-namespace Game
+namespace SFG
 {
 	class ostream;
 	class istream;

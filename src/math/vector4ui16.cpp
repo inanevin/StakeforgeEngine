@@ -2,7 +2,7 @@
 
 #include "vector4ui16.hpp"
 
-namespace Game
+namespace SFG
 {
 	vector4ui16 vector4ui16::zero = vector4ui16(0, 0, 0, 0);
 	vector4ui16 vector4ui16::one  = vector4ui16(1, 1, 1, 1);

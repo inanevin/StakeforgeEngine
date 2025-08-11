@@ -5,7 +5,7 @@
 #undef min
 #undef max
 
-namespace Game
+namespace SFG
 {
 	class vector4
 	{

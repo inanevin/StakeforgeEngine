@@ -46,7 +46,7 @@ namespace StakeforgeEditor.Panels
 			}
 		}
 
-		public bool IsLevelEnabled(Common.LogLevel level) => (LevelMask & (1 << (int)level)) != 0;
+		public bool IsLevelEnabled(Common.LogLevel level) => (LevelMask & (1 << (byte)level)) != 0;
 
 		public ICommand ToggleLevelCommand { get; }
 
@@ -54,18 +54,12 @@ namespace StakeforgeEditor.Panels
 		{
 			Title = "Console";
 
-			// sample logs...
-			AddLog(new Common.LogEntry(DateTime.Now, Common.LogLevel.Trace, "loading scene with context GLTF files.", null, 0));
-			AddLog(new Common.LogEntry(DateTime.Now, Common.LogLevel.Error, "testing this shit", null, 0));
-			AddLog(new Common.LogEntry(DateTime.Now, Common.LogLevel.Warn, "Happy to be involved in your font obsession mam", null, 0));
-			AddLog(new Common.LogEntry(DateTime.Now, Common.LogLevel.Warn, "cus ur like cute", null, 0));
-
 			FilteredLogs = CollectionViewSource.GetDefaultView(Logs);
 			FilteredLogs.Filter = FilterPredicate;
 
 			ToggleLevelCommand = new Commands.RelayCommand(lvl =>
 			{
-				LevelMask ^= 1 << (int)lvl; 
+				LevelMask ^= 1 << (byte)lvl; 
 											
 			});
 		}
@@ -88,6 +82,9 @@ namespace StakeforgeEditor.Panels
 
 		public void AddLog(Common.LogEntry entry)
 		{
+			if (Application.Current == null)
+				return;
+
 			// Ensure we're on UI thread if called from engine threads
 			if (Application.Current.Dispatcher.CheckAccess())
 			{
@@ -105,6 +102,23 @@ namespace StakeforgeEditor.Panels
 					Logs.RemoveAt(0);
 				OnPropertyChanged();
 			}
+		}
+
+		public static void Loge(string msg)
+		{
+			Panels.Instance.ConsoleViewModel.AddLog(new Common.LogEntry(DateTime.Now, LogLevel.Error, msg, null, 0));
+		}
+		public static void Logw(string msg)
+		{
+			Panels.Instance.ConsoleViewModel.AddLog(new Common.LogEntry(DateTime.Now, LogLevel.Warn, msg, null, 0));
+		}
+		public static void Logt(string msg)
+		{
+			Panels.Instance.ConsoleViewModel.AddLog(new Common.LogEntry(DateTime.Now, LogLevel.Trace, msg, null, 0));
+		}
+		public static void Logp(string msg)
+		{
+			Panels.Instance.ConsoleViewModel.AddLog(new Common.LogEntry(DateTime.Now, LogLevel.Progress, msg, null, 0));
 		}
 
 	}

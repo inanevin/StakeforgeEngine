@@ -2,7 +2,7 @@
 #include "mesh_manager.hpp"
 #include "gfx/common/gfx_common.hpp"
 
-namespace Game
+namespace SFG
 {
 	void mesh_manager::init()
 	{

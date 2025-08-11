@@ -2,7 +2,7 @@
 #include "render_pass.hpp"
 #include "math/vector2ui.hpp"
 
-namespace Game
+namespace SFG
 {
 	void render_pass::init(uint16* descriptor_sets, uint16 descriptor_layout)
 	{

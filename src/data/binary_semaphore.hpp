@@ -4,7 +4,7 @@
 
 #include <semaphore>
 
-namespace Game
+namespace SFG
 {
 	typedef std::binary_semaphore binary_semaphore;
 }

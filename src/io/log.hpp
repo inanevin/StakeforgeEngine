@@ -4,33 +4,33 @@
 
 #ifdef SFG_DEBUG
 
-#define SFG_ERR(...)   Game::log::instance().log_msg(Game::log_level::error, __VA_ARGS__)
-#define SFG_WARN(...)  Game::log::instance().log_msg(Game::log_level::warning, __VA_ARGS__)
-#define SFG_INFO(...)  Game::log::instance().log_msg(Game::log_level::info, __VA_ARGS__)
-#define SFG_TRACE(...) Game::log::instance().log_msg(Game::log_level::trace, __VA_ARGS__)
-#define SFG_FATAL(...) Game::log::instance().log_msg(Game::log_level::error, __VA_ARGS__)
-#define SFG_PROG(...)  Game::log::instance().log_msg(Game::log_level::progress, __VA_ARGS__)
+#define SFG_ERR(...)   SFG::log::instance().log_msg(SFG::log_level::error, __VA_ARGS__)
+#define SFG_WARN(...)  SFG::log::instance().log_msg(SFG::log_level::warning, __VA_ARGS__)
+#define SFG_INFO(...)  SFG::log::instance().log_msg(SFG::log_level::info, __VA_ARGS__)
+#define SFG_TRACE(...) SFG::log::instance().log_msg(SFG::log_level::trace, __VA_ARGS__)
+#define SFG_FATAL(...) SFG::log::instance().log_msg(SFG::log_level::error, __VA_ARGS__)
+#define SFG_PROG(...)  SFG::log::instance().log_msg(SFG::log_level::progress, __VA_ARGS__)
 
 #else
 
-#define SFG_ERR(...)   Game::log::instance().log_msg(Game::log_level::error, __VA_ARGS__)
-#define SFG_WARN(...)  Game::log::instance().log_msg(Game::log_level::warning, __VA_ARGS__)
-#define SFG_INFO(...)  Game::log::instance().log_msg(Game::log_level::info, __VA_ARGS__)
-#define SFG_TRACE(...) Game::log::instance().log_msg(Game::log_level::trace, __VA_ARGS__)
-#define SFG_FATAL(...) Game::log::instance().log_msg(Game::log_level::error, __VA_ARGS__)
-#define SFG_PROG(...)  Game::log::instance().log_msg(Game::log_level::progress, __VA_ARGS__)
+#define SFG_ERR(...)   SFG::log::instance().log_msg(SFG::log_level::error, __VA_ARGS__)
+#define SFG_WARN(...)  SFG::log::instance().log_msg(SFG::log_level::warning, __VA_ARGS__)
+#define SFG_INFO(...)  SFG::log::instance().log_msg(SFG::log_level::info, __VA_ARGS__)
+#define SFG_TRACE(...) SFG::log::instance().log_msg(SFG::log_level::trace, __VA_ARGS__)
+#define SFG_FATAL(...) SFG::log::instance().log_msg(SFG::log_level::error, __VA_ARGS__)
+#define SFG_PROG(...)  SFG::log::instance().log_msg(SFG::log_level::progress, __VA_ARGS__)
 
 #endif
 
 #include "data/mutex.hpp"
+#include "memory/malloc_allocator_stl.hpp"
+#include "data/vector.hpp"
 #include <iostream>
 #include <sstream>
 #include <string>
-#include "data/vector.hpp"
-#include "memory/malloc_allocator_stl.hpp"
 #include <functional>
 
-namespace Game
+namespace SFG
 {
 	enum class log_level
 	{

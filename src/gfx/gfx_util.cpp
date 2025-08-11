@@ -3,7 +3,7 @@
 #include "math/vector4.hpp"
 #include "gfx/backend/backend.hpp"
 
-namespace Game
+namespace SFG
 {
 
 	/*

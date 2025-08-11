@@ -15,7 +15,7 @@
 #include <algorithm>
 #include <array>
 
-namespace Game
+namespace SFG
 {
 	class endianness
 	{

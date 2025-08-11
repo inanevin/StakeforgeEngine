@@ -4,7 +4,7 @@
 
 #include "common/size_definitions.hpp"
 
-namespace Game
+namespace SFG
 {
 	template <typename T> class bitmask
 	{

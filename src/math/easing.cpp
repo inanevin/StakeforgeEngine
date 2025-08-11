@@ -3,7 +3,7 @@
 #include "easing.hpp"
 #include "math.hpp"
 
-namespace Game
+namespace SFG
 {
 	float easing::smooth_damp(float current, float target, float* current_velocity, float smooth_time, float maxSpeed, float dt)
 	{
@@ -71,7 +71,8 @@ namespace Game
 
 	float easing::ease_in_out(float start, float end, float alpha)
 	{
-		if (alpha < 0.5f) return lerp(start, end, 2.0f * alpha * alpha);
+		if (alpha < 0.5f)
+			return lerp(start, end, 2.0f * alpha * alpha);
 		return lerp(start, end, 1.0f - math::fast_pow(-2.0f * alpha + 2.0f, 2.0f) / 2.0f);
 	}
 
@@ -82,14 +83,18 @@ namespace Game
 
 	float easing::exponential(float start, float end, float alpha)
 	{
-		if (alpha < 0.001f && alpha > -0.001f) return 0.0f;
+		if (alpha < 0.001f && alpha > -0.001f)
+			return 0.0f;
 
 		return lerp(start, end, math::fast_pow(2.0f, 10.0f * alpha - 10.0f));
 	}
 
 	float easing::bounce(float start, float end, float alpha)
 	{
-		if (alpha < (1.0f / 2.75f)) { return lerp(start, end, 7.5625f * alpha * alpha); }
+		if (alpha < (1.0f / 2.75f))
+		{
+			return lerp(start, end, 7.5625f * alpha * alpha);
+		}
 		else if (alpha < (2.0f / 2.75f))
 		{
 			alpha -= (1.5f / 2.75f);

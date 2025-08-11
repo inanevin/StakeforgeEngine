@@ -24,7 +24,6 @@ namespace StakeforgeEditor
 	{
 
 		private List<SubWindow> _subWindows = new List<SubWindow>();
-
 		public MainWindow()
 		{
 			InitializeComponent();
@@ -88,8 +87,8 @@ namespace StakeforgeEditor
 						double width = ActualWidth;
 						double height = ActualHeight;
 
-						Point relative = TopBar.LastColumn.TransformToAncestor(this).Transform(new Point(0,0));
-						Point relativeMin = TopBar.Minimize.TransformToAncestor(this).Transform(new Point(0,0));
+						Point relative = TopBar.LastColumn.TransformToAncestor(this).Transform(new Point(0, 0));
+						Point relativeMin = TopBar.Minimize.TransformToAncestor(this).Transform(new Point(0, 0));
 
 						if (mouse.Y <= edge)
 						{
@@ -116,7 +115,7 @@ namespace StakeforgeEditor
 						else if (mouse.Y <= TopBar.ActualHeight && mouse.X > relative.X && mouse.X < relativeMin.X)
 						{
 							handled = true;
-							return (IntPtr)Common.WinAPI.HTCAPTION; 
+							return (IntPtr)Common.WinAPI.HTCAPTION;
 						}
 
 						return (IntPtr)Common.WinAPI.HTCLIENT;

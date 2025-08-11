@@ -26,12 +26,12 @@
 #include "io/file_system.hpp"
 
 #define VEKT_STRING_CSTR
-#define VEKT_VEC4 Game::vector4
-#define VEKT_VEC2 Game::vector2
+#define VEKT_VEC4 SFG::vector4
+#define VEKT_VEC2 SFG::vector2
 #define VEKT_IMPL
 #include "gui/vekt.hpp"
 
-namespace Game
+namespace SFG
 {
 
 #define MAX_CONSOLE_TEXT		128
@@ -44,7 +44,7 @@ namespace Game
 #define COLOR_CONSOLE_BG		color::srgb_to_linear(color(12.0f / 255.0f, 16.0f / 255.0f, 12.0f / 255.0f, 0.99f)).to_vector()
 #define COLOR_CONSOLE_BG_OPAQUE color::srgb_to_linear(color(12.0f / 255.0f, 16.0f / 255.0f, 12.0f / 255.0f, 1.0f)).to_vector()
 #define COLOR_BORDER			color::srgb_to_linear(color(89.0f / 255.0f, 180.0f / 255.0f, 108.0f / 255.0f, 1.0f)).to_vector()
-#define DEBUG_FONT_SIZE			16
+#define DEBUG_FONT_SIZE			32
 #define INPUT_FIELD_HEIGHT		static_cast<float>(DEBUG_FONT_SIZE) * 1.5f
 #define CONSOLE_SPACING			static_cast<float>(DEBUG_FONT_SIZE) * 0.5f
 #define MAX_HISTORY				8

@@ -7,7 +7,7 @@
 #include "io/log.hpp"
 #include "io/assert.hpp"
 
-namespace Game
+namespace SFG
 {
 
 	void dx12_heap::init(ID3D12Device* device, D3D12_DESCRIPTOR_HEAP_TYPE heap_type, uint32 num_descriptors, uint32 descriptor_size, bool shader_access)

@@ -3,7 +3,7 @@
 
 #include "vector3.hpp"
 
-namespace Game
+namespace SFG
 {
 	// LH coordinates
 	class quaternion

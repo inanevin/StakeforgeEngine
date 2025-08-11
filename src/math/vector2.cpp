@@ -4,7 +4,7 @@
 #include "math.hpp"
 #include <limits>
 
-namespace Game
+namespace SFG
 {
 	vector2 vector2::zero = vector2(0.f, 0.f);
 	vector2 vector2::one  = vector2(1.f, 1.f);
@@ -17,7 +17,10 @@ namespace Game
 	vector2 vector2::clamp_magnitude(const vector2& vector, float max_length)
 	{
 		float mag = vector.magnitude();
-		if (mag > max_length) { return vector.normalized() * max_length; }
+		if (mag > max_length)
+		{
+			return vector.normalized() * max_length;
+		}
 		return vector;
 	}
 
@@ -51,7 +54,8 @@ namespace Game
 		float dot_product = dot(a, b);
 		float magnitudes  = a.magnitude() * b.magnitude();
 
-		if (magnitudes == 0.0f) return 0.0f;
+		if (magnitudes == 0.0f)
+			return 0.0f;
 
 		float cos_angle = dot_product / magnitudes;
 		cos_angle		= math::max(-1.0f, math::min(1.0f, cos_angle));
@@ -62,7 +66,10 @@ namespace Game
 	vector2 vector2::normalized() const
 	{
 		float mag = magnitude();
-		if (mag > MATH_EPS) { return vector2(x / mag, y / mag); }
+		if (mag > MATH_EPS)
+		{
+			return vector2(x / mag, y / mag);
+		}
 		return vector2::zero;
 	}
 

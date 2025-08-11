@@ -3,7 +3,7 @@
 #pragma once
 #include "vector4.hpp"
 
-namespace Game
+namespace SFG
 {
 	class ostream;
 	class istream;

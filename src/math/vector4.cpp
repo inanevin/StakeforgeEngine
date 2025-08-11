@@ -3,7 +3,7 @@
 #include "vector4.hpp"
 #include "math.hpp"
 
-namespace Game
+namespace SFG
 {
 	const vector4 vector4::zero(0.0f, 0.0f, 0.0f, 0.0f);
 	const vector4 vector4::one(1.0f, 1.0f, 1.0f, 1.0f);
@@ -41,14 +41,20 @@ namespace Game
 	vector4 vector4::project(const vector4& on_normal) const
 	{
 		vector4 unit_normal = on_normal.normalized();
-		if (unit_normal.is_zero()) { return vector4::zero; }
+		if (unit_normal.is_zero())
+		{
+			return vector4::zero;
+		}
 		return unit_normal * dot(*this, unit_normal);
 	}
 
 	vector4 vector4::rotate(const vector4& axis, float angle_degrees) const
 	{
 		vector4 unit_axis = axis.normalized();
-		if (unit_axis.is_zero()) { return *this; }
+		if (unit_axis.is_zero())
+		{
+			return *this;
+		}
 
 		float angle_rad = math::degrees_to_radians(angle_degrees);
 		float cos_theta = math::cos(angle_rad);
@@ -77,7 +83,8 @@ namespace Game
 
 	vector4 vector4::operator/(float scalar) const
 	{
-		if (math::abs(scalar) < MATH_EPS) return vector4::zero;
+		if (math::abs(scalar) < MATH_EPS)
+			return vector4::zero;
 		return vector4(x / scalar, y / scalar, z / scalar, w / scalar);
 	}
 
@@ -90,7 +97,10 @@ namespace Game
 			z /= scalar;
 			w /= scalar;
 		}
-		else { x = y = z = w = MATH_INF_F; }
+		else
+		{
+			x = y = z = w = MATH_INF_F;
+		}
 		return *this;
 	}
 

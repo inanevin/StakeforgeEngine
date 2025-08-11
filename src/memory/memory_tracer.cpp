@@ -19,7 +19,7 @@
 #pragma comment(lib, "pdh.lib")
 #pragma comment(lib, "DbgHelp.lib")
 
-namespace Game
+namespace SFG
 {
 	uint8 memory_tracer::s_category_counter = 0;
 

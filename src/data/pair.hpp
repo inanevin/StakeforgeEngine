@@ -4,7 +4,7 @@
 
 #include <utility>
 
-namespace Game
+namespace SFG
 {
 	template <typename T, typename U> using pair = std::pair<T, U>;
 }

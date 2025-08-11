@@ -20,7 +20,7 @@
 #pragma GCC diagnostic ignored "-Wunused-parameter"
 #endif
 
-namespace Game
+namespace SFG
 {
 
 	wstring string_util::to_wstr(const string& string)

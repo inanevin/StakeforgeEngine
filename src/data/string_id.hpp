@@ -6,7 +6,7 @@
 #include <string>
 
 // Headers here.
-namespace Game
+namespace SFG
 {
 	typedef uint32 string_id;
 	typedef uint32 type_id;

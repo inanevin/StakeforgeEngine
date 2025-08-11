@@ -9,7 +9,7 @@
 #include "io/assert.hpp"
 #endif
 
-namespace Game
+namespace SFG
 {
 #ifdef SFG_DEBUG
 

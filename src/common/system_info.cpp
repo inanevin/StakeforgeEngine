@@ -2,7 +2,7 @@
 
 #include "system_info.hpp"
 
-namespace Game
+namespace SFG
 {
 #ifdef SFG_DEBUG
 	std::thread::id thread_info::s_thread_id_render;

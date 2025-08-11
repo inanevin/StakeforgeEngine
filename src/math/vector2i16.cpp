@@ -3,7 +3,7 @@
 #include "vector2i16.hpp"
 #include "math.hpp"
 
-namespace Game
+namespace SFG
 {
 	vector2i16 vector2i16::zero = vector2i16(0, 0);
 	vector2i16 vector2i16::one	= vector2i16(1, 1);

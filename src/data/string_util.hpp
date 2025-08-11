@@ -6,7 +6,7 @@
 #include "data/vector.hpp"
 #include "data/string.hpp"
 
-namespace Game
+namespace SFG
 {
 	class string_util
 	{

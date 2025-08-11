@@ -3,7 +3,7 @@
 #include "bump_allocator.hpp"
 #include "memory/memory.hpp"
 
-namespace Game
+namespace SFG
 {
 	void bump_allocator::init(size_t sz, size_t alignment)
 	{

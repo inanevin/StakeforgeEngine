@@ -2,7 +2,7 @@
 #pragma once
 #include "common/size_definitions.hpp"
 
-namespace Game
+namespace SFG
 {
 	class vector4ui
 	{

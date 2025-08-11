@@ -4,7 +4,7 @@
 
 #include <mutex>
 
-namespace Game
+namespace SFG
 {
 	typedef std::mutex mutex;
 

@@ -8,6 +8,8 @@ namespace StakeforgeEditor.Panels
 {
 	class Panels
 	{
+		private Main.TopBarViewModel _topBarViewModel = new Main.TopBarViewModel();
+
 		private ConsoleViewModel _consoleViewModel = new ConsoleViewModel();
 		private ResourcesViewModel _resourcesViewModel = new ResourcesViewModel();
 		private EntitiesViewModel _entitiesViewModel = new EntitiesViewModel();
@@ -16,6 +18,8 @@ namespace StakeforgeEditor.Panels
 		public ConsoleViewModel ConsoleViewModel { get => _consoleViewModel; }
 		public ResourcesViewModel ResourcesViewModel { get => _resourcesViewModel; }
 		public EntitiesViewModel EntitiesViewModel { get => _entitiesViewModel; }
+
+		public Main.TopBarViewModel TopBarViewModel { get => _topBarViewModel; }
 
 		public static Panels Instance
 		{

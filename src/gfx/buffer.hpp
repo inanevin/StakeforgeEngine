@@ -6,7 +6,7 @@
 #include "gfx/common/gfx_constants.hpp"
 #include "data/bitmask.hpp"
 
-namespace Game
+namespace SFG
 {
 	struct resource_desc;
 

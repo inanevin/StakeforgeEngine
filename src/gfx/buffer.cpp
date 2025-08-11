@@ -8,7 +8,7 @@
 #include "gfx/common/descriptions.hpp"
 #include "gfx/common/commands.hpp"
 
-namespace Game
+namespace SFG
 {
 
 	void buffer::create_staging_hw(const resource_desc& staging, const resource_desc& hw)

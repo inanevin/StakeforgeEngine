@@ -27,7 +27,7 @@ namespace vekt
 	struct font;
 }
 
-namespace Game
+namespace SFG
 {
 	class window;
 

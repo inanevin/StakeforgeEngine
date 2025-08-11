@@ -3,7 +3,7 @@
 
 #include "common/size_definitions.hpp"
 
-namespace Game
+namespace SFG
 {
 	enum class format : uint8
 	{

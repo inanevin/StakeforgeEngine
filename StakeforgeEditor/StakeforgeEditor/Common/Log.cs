@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace StakeforgeEditor.Common
 {
-	public enum LogLevel { Trace, Info, Warn, Error, Fatal, Max }
+	public enum LogLevel : Byte { Info, Error, Trace, Warn, Progress, Max }
 	public sealed class LogEntry
 	{
 		public LogEntry(DateTime now, LogLevel level, string msg, string? cat, int threadID)

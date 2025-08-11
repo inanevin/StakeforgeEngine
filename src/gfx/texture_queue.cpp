@@ -5,7 +5,7 @@
 #include "gfx/backend/backend.hpp"
 #include "gfx/common/commands.hpp"
 
-namespace Game
+namespace SFG
 {
 
 	void texture_queue::init()

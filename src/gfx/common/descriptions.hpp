@@ -11,7 +11,7 @@
 #include "resource_limits.hpp"
 #include "shader_description.hpp"
 
-namespace Game
+namespace SFG
 {
 	struct viewport
 	{

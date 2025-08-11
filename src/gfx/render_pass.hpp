@@ -5,7 +5,7 @@
 #include "data/vector.hpp"
 #include "gfx/common/gfx_constants.hpp"
 
-namespace Game
+namespace SFG
 {
 	class vector2ui;
 

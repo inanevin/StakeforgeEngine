@@ -6,7 +6,7 @@
 #include "gltf_definitions.hpp"
 #include <glaze/glaze.hpp>
 
-namespace Game
+namespace SFG
 {
 
 	void scene_context::init()

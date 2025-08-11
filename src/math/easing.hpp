@@ -2,7 +2,7 @@
 
 #pragma once
 
-namespace Game
+namespace SFG
 {
 	class easing
 	{

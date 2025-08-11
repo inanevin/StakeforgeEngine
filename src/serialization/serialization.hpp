@@ -4,7 +4,7 @@
 
 #include "data/string_view.hpp"
 
-namespace Game
+namespace SFG
 {
 	class ostream;
 	class istream;

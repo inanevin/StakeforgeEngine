@@ -8,7 +8,7 @@
 #include <Xinput.h>
 #endif
 
-namespace Game
+namespace SFG
 {
 
 #ifdef SFG_PLATFORM_WINDOWS

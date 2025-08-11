@@ -4,7 +4,7 @@
 
 #include <queue>
 
-namespace Game
+namespace SFG
 {
 	template <typename T, typename Container = std::deque<T>> using queue = std::queue<T, Container>;
 

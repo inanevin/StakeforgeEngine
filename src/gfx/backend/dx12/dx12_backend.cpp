@@ -19,7 +19,7 @@
 
 using Microsoft::WRL::ComPtr;
 
-namespace Game
+namespace SFG
 {
 
 	Microsoft::WRL::ComPtr<IDxcLibrary> dx12_backend::s_idxcLib;
@@ -454,37 +454,37 @@ namespace Game
 		{
 			switch (state)
 			{
-			case Game::resource_state::common:
+			case SFG::resource_state::common:
 				return D3D12_RESOURCE_STATE_COMMON;
-			case Game::resource_state::vertex_cbv:
+			case SFG::resource_state::vertex_cbv:
 				return D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER;
-			case Game::resource_state::index_buffer:
+			case SFG::resource_state::index_buffer:
 				return D3D12_RESOURCE_STATE_INDEX_BUFFER;
-			case Game::resource_state::render_target:
+			case SFG::resource_state::render_target:
 				return D3D12_RESOURCE_STATE_RENDER_TARGET;
-			case Game::resource_state::uav:
+			case SFG::resource_state::uav:
 				return D3D12_RESOURCE_STATE_UNORDERED_ACCESS;
-			case Game::resource_state::depth_write:
+			case SFG::resource_state::depth_write:
 				return D3D12_RESOURCE_STATE_DEPTH_WRITE;
-			case Game::resource_state::depth_read:
+			case SFG::resource_state::depth_read:
 				return D3D12_RESOURCE_STATE_DEPTH_READ;
-			case Game::resource_state::non_ps_resource:
+			case SFG::resource_state::non_ps_resource:
 				return D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE;
-			case Game::resource_state::ps_resource:
+			case SFG::resource_state::ps_resource:
 				return D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE;
-			case Game::resource_state::indirect_arg:
+			case SFG::resource_state::indirect_arg:
 				return D3D12_RESOURCE_STATE_INDIRECT_ARGUMENT;
-			case Game::resource_state::copy_dest:
+			case SFG::resource_state::copy_dest:
 				return D3D12_RESOURCE_STATE_COPY_DEST;
-			case Game::resource_state::copy_source:
+			case SFG::resource_state::copy_source:
 				return D3D12_RESOURCE_STATE_COPY_SOURCE;
-			case Game::resource_state::resolve_dest:
+			case SFG::resource_state::resolve_dest:
 				return D3D12_RESOURCE_STATE_RESOLVE_DEST;
-			case Game::resource_state::resolve_source:
+			case SFG::resource_state::resolve_source:
 				return D3D12_RESOURCE_STATE_RESOLVE_SOURCE;
-			case Game::resource_state::generic_read:
+			case SFG::resource_state::generic_read:
 				return D3D12_RESOURCE_STATE_GENERIC_READ;
-			case Game::resource_state::present:
+			case SFG::resource_state::present:
 				return D3D12_RESOURCE_STATE_PRESENT;
 			default:
 				return D3D12_RESOURCE_STATE_COMMON;

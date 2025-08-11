@@ -5,7 +5,7 @@
 #include "data/istream.hpp"
 #include "data/ostream.hpp"
 
-namespace Game
+namespace SFG
 {
 	color color::red	= color(1, 0, 0, 1);
 	color color::green	= color(0, 1, 0);

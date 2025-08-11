@@ -8,7 +8,7 @@
 #include <execution>
 #include <ranges>
 
-namespace Game
+namespace SFG
 {
 	void frame_processor::init(size_t processor_memory_size, size_t aux_size)
 	{

@@ -6,7 +6,7 @@
 #include "gfx/common/gfx_common.hpp"
 #include "sdk/d3d12.h"
 
-namespace Game
+namespace SFG
 {
 	class dx12_heap
 	{

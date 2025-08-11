@@ -12,7 +12,7 @@
 #pragma comment(lib, "dwmapi.lib")
 #pragma comment(lib, "Shcore.lib")
 
-namespace Game
+namespace SFG
 {
 	window::map window::s_key_down_map = {};
 

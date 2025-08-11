@@ -5,7 +5,7 @@
 #include "math/vector2.hpp"
 #include "math/vector2ui16.hpp"
 
-namespace Game
+namespace SFG
 {
 	struct vertex
 	{

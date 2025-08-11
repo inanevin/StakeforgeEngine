@@ -7,7 +7,7 @@
 #include "format.hpp"
 #include "resource_limits.hpp"
 
-namespace Game
+namespace SFG
 {
 	enum class blend_op : uint8
 	{

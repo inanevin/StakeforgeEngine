@@ -8,7 +8,7 @@
 #include <iomanip>
 #include <sstream>
 
-namespace Game
+namespace SFG
 {
 	color color_utils::lerp(const color& c1, const color& c2, float a)
 	{

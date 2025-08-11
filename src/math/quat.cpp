@@ -2,7 +2,7 @@
 #include "quat.hpp"
 #include "math.hpp"
 
-namespace Game
+namespace SFG
 {
 	const quaternion quaternion::identity(0.0f, 0.0f, 0.0f, 1.0f);
 
@@ -29,14 +29,16 @@ namespace Game
 	quaternion quaternion::inverse() const
 	{
 		float mag_sqr = sqr_magnitude();
-		if (math::abs(mag_sqr) < MATH_EPS) return identity;
+		if (math::abs(mag_sqr) < MATH_EPS)
+			return identity;
 		return conjugate() / mag_sqr;
 	}
 
 	quaternion quaternion::normalized() const
 	{
 		float mag = magnitude();
-		if (math::abs(mag) < MATH_EPS) return identity;
+		if (math::abs(mag) < MATH_EPS)
+			return identity;
 		return (*this) / mag;
 	}
 
@@ -140,7 +142,10 @@ namespace Game
 			b_adjusted.w = -b.w;
 		}
 
-		if (dot_product > 0.9995f) { return lerp(a, b_adjusted, t); }
+		if (dot_product > 0.9995f)
+		{
+			return lerp(a, b_adjusted, t);
+		}
 
 		float theta		= std::acos(dot_product);
 		float sin_theta = math::sin(theta);
@@ -208,7 +213,8 @@ namespace Game
 
 	quaternion quaternion::operator/(float scalar) const
 	{
-		if (math::abs(scalar) < MATH_EPS) return identity;
+		if (math::abs(scalar) < MATH_EPS)
+			return identity;
 		return quaternion(x / scalar, y / scalar, z / scalar, w / scalar);
 	}
 
@@ -221,7 +227,10 @@ namespace Game
 			z /= scalar;
 			w /= scalar;
 		}
-		else { x = y = z = w = MATH_NAN; }
+		else
+		{
+			x = y = z = w = MATH_NAN;
+		}
 		return *this;
 	}
 

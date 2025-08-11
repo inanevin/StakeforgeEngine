@@ -1,7 +1,7 @@
 // Copyright (c) 2025 Inan Evin
 #pragma once
 
-namespace Game
+namespace SFG
 {
 #define MAX_RESOURCES		   512
 #define MAX_TEXTURES		   512

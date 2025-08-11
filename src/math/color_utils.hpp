@@ -4,7 +4,7 @@
 
 #include "data/string.hpp"
 
-namespace Game
+namespace SFG
 {
 	class color;
 

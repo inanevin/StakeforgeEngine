@@ -7,7 +7,7 @@
 #undef min
 #undef max
 
-namespace Game
+namespace SFG
 {
 	namespace math
 	{
@@ -55,13 +55,15 @@ namespace Game
 		}
 		template <typename T> inline T inverse_lerp(T a, T b, T value)
 		{
-			if (std::fabs(b - a) < MATH_EPS) return T(0);
+			if (std::fabs(b - a) < MATH_EPS)
+				return T(0);
 			return (value - a) / (b - a);
 		}
 
 		template <typename T> inline T remap(T value, T in_min, T in_max, T out_min, T out_max)
 		{
-			if (std::fabs(in_max - in_min) < MATH_EPS) return out_min;
+			if (std::fabs(in_max - in_min) < MATH_EPS)
+				return out_min;
 			T normalized_value = (value - in_min) / (in_max - in_min);
 			return out_min + normalized_value * (out_max - out_min);
 		}

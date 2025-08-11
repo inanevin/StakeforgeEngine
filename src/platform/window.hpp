@@ -8,7 +8,7 @@
 #ifdef SFG_PLATFORM_WINDOWS
 struct HWND__;
 #endif
-namespace Game
+namespace SFG
 {
 #define MAX_EVENTS 32
 

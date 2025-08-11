@@ -32,7 +32,13 @@ cmake_minimum_required (VERSION 4.0)
 project (Stakeforge)
 
 set(CMAKE_CONFIGURATION_TYPES "Debug;Release;Profile;" CACHE STRING "" FORCE)
+
+if(WIN32)
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
+endif()
+
+# --- Option: TOOLMODE ---
+option(TOOLMODE "Enable tool mode (adds SFG_TOOLMODE)" OFF)
 
 # ------------- COMPILE DEFINITIONS -------------
 
@@ -46,6 +52,10 @@ add_compile_definitions($<$<CONFIG:Release>:_ITERATOR_DEBUG_LEVEL=0>)
 
 add_definitions(-DSFG_CONFIGURATION="$<CONFIGURATION>")
 
+if (TOOLMODE)
+    add_compile_definitions(SFG_TOOLMODE=1)
+endif()
+
 if (WIN32)
     add_compile_definitions(SFG_PLATFORM_WINDOWS=1)
 endif()
@@ -56,8 +66,7 @@ endif()
 if (CMAKE_CXX_COMPILER_ID MATCHES "Clang")
     add_compile_definitions(SFG_COMPILER_CLANG=1)
 elseif (CMAKE_CXX_COMPILER_ID MATCHES "GNU")
-    add_compile_definitions(SFG_COMPILER_
-    NU=1)
+    add_compile_definitions(SFG_COMPILER_GNU=1)
 elseif (CMAKE_CXX_COMPILER_ID MATCHES "MSVC")
     add_compile_definitions(SFG_COMPILER_MSVC=1)
 else()
@@ -95,6 +104,7 @@ src/gfx/backend/*.cpp
 src/gfx/common/*.cpp
 src/resources/*.cpp
 src/app/*.cpp
+src/sfg_api.cpp
 )
 
 file(GLOB HEADERS 
@@ -113,6 +123,7 @@ src/app/*.hpp
 src/resources/*.hpp
 src/vendor/stb/*.h
 src/vendor/moodycamel/*.h
+src/sfg_api.hpp
 )
 
 if(WIN32)
@@ -148,16 +159,29 @@ endif()
 
 # ------------- TARGET -------------
 
+# Prevent FXC from compiling HLSL sources automatically on Windows.
 if(WIN32)
-
-# prevent FXC from compiling hlsl sources automatically.
-set_source_files_properties(${SHADERS} PROPERTIES HEADER_FILE_ONLY ON)
-
+    set_source_files_properties(${SHADERS} PROPERTIES HEADER_FILE_ONLY ON)
 	add_executable(${PROJECT_NAME} WIN32 ${SOURCES} ${HEADERS} ${SHADERS} ${PLATFORM_HEADERS} ${PLATFORM_SOURCES} ${ICON})
 else()
 	add_executable(${PROJECT_NAME} MACOSX_BUNDLE ${SOURCES} ${HEADERS} ${PLATFORM_HEADERS} ${PLATFORM_SOURCES} ${ICON})
 endif()
+
+# Shared library (DLL/.dylib/.so)
+# add_library(${PROJECT_NAME} SHARED
+#     ${SOURCES} ${HEADERS}
+#     ${PLATFORM_HEADERS} ${PLATFORM_SOURCES}
+#     ${SHADERS} ${ICON}
+# )
+
 include(${CMAKE_SOURCE_DIR}/utils/cmake/executable_settings.cmake)
+
+# ------------- EXPORT HEADER -------------
+# include(GenerateExportHeader)
+# generate_export_header(${PROJECT_NAME}
+#     BASE_NAME SFG
+#     EXPORT_FILE_NAME "${CMAKE_CURRENT_BINARY_DIR}/sfg_export.h"
+# )
 
 target_include_directories(${PROJECT_NAME} PUBLIC ${PROJECT_SOURCE_DIR}/src/)
 target_include_directories(${PROJECT_NAME} PRIVATE ${PROJECT_SOURCE_DIR}/deps/phmap/include)
@@ -190,13 +214,13 @@ set_target_properties(glaze_glaze PROPERTIES FOLDER "Dependencies")
 add_custom_command(
 TARGET ${PROJECT_NAME}
 POST_BUILD
-COMMAND ${CMAKE_COMMAND} -E copy_directory "${CMAKE_CURRENT_SOURCE_DIR}/assets" "${CMAKE_BINARY_DIR}/bin/$<CONFIGURATION>/assets")
+COMMAND ${CMAKE_COMMAND} -E copy_directory "${CMAKE_CURRENT_SOURCE_DIR}/assets" "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/$<CONFIGURATION>/assets")
 
 if(WIN32)
 add_custom_command(
 TARGET ${PROJECT_NAME}
 POST_BUILD
-COMMAND ${CMAKE_COMMAND} -E copy_directory "${CMAKE_CURRENT_SOURCE_DIR}/deps/dx12_bin" "${CMAKE_BINARY_DIR}/bin/$<CONFIGURATION>/")
+COMMAND ${CMAKE_COMMAND} -E copy_directory "${CMAKE_CURRENT_SOURCE_DIR}/deps/dx12_bin" "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/$<CONFIGURATION>")
 endif()
 
 include(${CMAKE_SOURCE_DIR}/utils/cmake/common_functions.cmake)

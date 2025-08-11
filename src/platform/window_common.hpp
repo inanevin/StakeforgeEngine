@@ -5,7 +5,7 @@
 #include "math/vector2ui16.hpp"
 #include "data/bitmask.hpp"
 
-namespace Game
+namespace SFG
 {
 	struct monitor_info
 	{

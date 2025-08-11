@@ -2,7 +2,7 @@
 
 #pragma once
 
-namespace Game
+namespace SFG
 {
 	enum class input_action
 	{

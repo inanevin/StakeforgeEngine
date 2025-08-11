@@ -3,7 +3,7 @@
 #include "istream.hpp"
 #include "vector.hpp"
 
-namespace Game
+namespace SFG
 {
 	void istream::create(uint8* data, size_t size)
 	{

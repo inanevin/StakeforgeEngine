@@ -2,6 +2,7 @@
 
 #include "platform/process.hpp"
 #include "platform/window_common.hpp"
+#include "io/assert.hpp"
 
 #include "io/log.hpp"
 
@@ -14,9 +15,9 @@ namespace
 {
 	int enumerate_monitors(HMONITOR monitor, HDC, LPRECT, LPARAM l_param)
 	{
-		Game::vector<Game::monitor_info>* infos = reinterpret_cast<Game::vector<Game::monitor_info>*>(l_param);
+		SFG::vector<SFG::monitor_info>* infos = reinterpret_cast<SFG::vector<SFG::monitor_info>*>(l_param);
 		infos->push_back({});
-		Game::monitor_info& info = infos->back();
+		SFG::monitor_info& info = infos->back();
 
 		MONITORINFOEX monitor_info;
 		monitor_info.cbSize = sizeof(monitor_info);
@@ -34,9 +35,12 @@ namespace
 	}
 }
 
-namespace Game
+namespace SFG
 {
 
+#ifdef SFG_TOOLMODE
+	void* process::s_pipe_handle = nullptr;
+#endif
 	void process::pump_os_messages()
 	{
 		MSG msg	   = {0};
@@ -84,7 +88,7 @@ namespace Game
 			return '\0'; // Non-printable or failed
 	}
 
-	uint16 Game::process::get_character_mask_from_key(uint32 keycode, char ch)
+	uint16 SFG::process::get_character_mask_from_key(uint32 keycode, char ch)
 	{
 		uint16 mask = 0;
 
@@ -125,4 +129,22 @@ namespace Game
 
 		return mask;
 	}
+#ifdef SFG_TOOLMODE
+
+	void process::send_pipe_data(void* data, size_t data_size)
+	{
+		HANDLE pipe = static_cast<HANDLE>(s_pipe_handle);
+		if (pipe == INVALID_HANDLE_VALUE || pipe == nullptr)
+			return;
+
+		SFG_ASSERT(data_size < PIPE_MAX_MSG_SIZE);
+
+		DWORD bytesWritten;
+		if (!WriteFile(pipe, data, static_cast<DWORD>(data_size), &bytesWritten, NULL))
+		{
+			DWORD dwError = GetLastError();
+			// SFG_ERR("send_pipe_data() -> Failed to write to pipe: {0}", dwError);
+		}
+	}
+#endif
 } // namespace SFG

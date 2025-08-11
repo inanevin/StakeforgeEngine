@@ -40,7 +40,7 @@
 
     <SolidColorBrush x:Key="brush_accent_primary" Color="{StaticResource color_accent_primary}"/>
     <SolidColorBrush x:Key="brush_accent_primary_light" Color="{StaticResource color_accent_primary_light}"/>
-    <SolidColorBrush x:Key="brush_accent_secondary" Color="{StaticResource color_accent_secondary}"/>
+    <SolidColorBrush x:Key="brush_accent_error" Color="{StaticResource color_accent_secondary}"/>
     <SolidColorBrush x:Key="brush_accent_green" Color="{StaticResource color_accent_green}"/>
     <SolidColorBrush x:Key="brush_accent_warn" Color="{StaticResource color_accent_warn}"/>
     <SolidColorBrush x:Key="brush_accent_purple" Color="{StaticResource color_accent_purple}"/>
@@ -49,9 +49,10 @@
     <SolidColorBrush x:Key="brush_text_primary" Color="{StaticResource color_text_primary}"/>
     <SolidColorBrush x:Key="brush_text_muted" Color="{StaticResource color_text_muted}"/>
 
-    <FontFamily x:Key="font_default">fonts/vt323_regular.ttf#VT323</FontFamily>
+    <FontFamily x:Key="font_default">Consolas</FontFamily>
     <FontFamily x:Key="font_icons">fonts/sfg.ttf#StakeforgeEditorIcons</FontFamily>
-
+    <!-- fonts/vt323_regular.ttf#VT323 with  14 size -->
+    
     <!-- Dimensions -->
     <sys:Double x:Key="height_item_base">24</sys:Double>
     <sys:Double x:Key="width_item_base">156</sys:Double>
@@ -74,7 +75,7 @@
 
     <sys:Double x:Key="size_icon_font">16</sys:Double>
     <sys:Double x:Key="size_icon_font_small">12</sys:Double>
-    <sys:Double x:Key="size_default_font">14</sys:Double>
+    <sys:Double x:Key="size_default_font">11</sys:Double>
     <sys:Double x:Key="size_min_dock_area">250</sys:Double>
 
     <!-- ICONS -->
@@ -96,6 +97,13 @@
     <sys:String x:Key="str_icon_console">&#x24;</sys:String>
     <sys:String x:Key="str_icon_search">&#x25;</sys:String>
     <sys:String x:Key="str_icon_circle">&#x26;</sys:String>
+    <sys:String x:Key="str_icon_error_circle">&#x27;</sys:String>
+    <sys:String x:Key="str_icon_warning_sq">&#x28;</sys:String>
+    <sys:String x:Key="str_icon_check_circle">&#x29;</sys:String>
+    <sys:String x:Key="str_icon_plug_check">&#x2A;</sys:String>
+    <sys:String x:Key="str_icon_plug_error">&#x2B;</sys:String>
+    <sys:String x:Key="str_icon_plug_warn">&#x2E;</sys:String>
+
 
     <LinearGradientBrush x:Key="gradient_title_bar_0" StartPoint="0,0.5" EndPoint="1,0.5">
         <GradientStop Color="{StaticResource color_background3}" Offset="0.0"/>

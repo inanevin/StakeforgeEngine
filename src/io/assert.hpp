@@ -2,7 +2,7 @@
 
 #pragma once
 
-namespace Game
+namespace SFG
 {
 
 #ifdef SFG_PLATFORM_WINDOWS

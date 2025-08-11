@@ -9,7 +9,7 @@
 #include "data/vector_util.hpp"
 #include <cstring>
 
-namespace Game
+namespace SFG
 {
 	template <size_t CAPACITY> class text_allocator
 	{

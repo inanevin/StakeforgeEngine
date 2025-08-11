@@ -8,16 +8,19 @@
 #include "gfx/backend/backend.hpp"
 #include "io/log.hpp"
 #include "debug_console.hpp"
-
 #include "resources/scene_context.hpp"
 
-namespace Game
+#ifdef SFG_TOOLMODE
+#include "data/istream.hpp"
+#endif
+
+namespace SFG
 {
 #define SFG_DT 1.0f / 60.0f
 
 	scene_context _context;
 
-	void game_app::init()
+	void game_app::init(const vector2ui16& render_target_size)
 	{
 		SET_INIT(true);
 		REGISTER_THREAD_MAIN();
@@ -26,19 +29,31 @@ namespace Game
 		debug_console::init();
 
 		PUSH_MEMORY_CATEGORY("Gfx");
-		_main_window.create("Game", window_flags::wf_style_windowed | window_flags::wf_high_freq, vector2i16(0, 0), vector2ui16(1920, 1080));
 
-		vector<monitor_info> out_infos;
-		process::get_all_monitors(out_infos);
+#ifndef SFG_TOOLMODE
+		_main_window.create("Game", window_flags::wf_style_windowed | window_flags::wf_high_freq, vector2i16(0, 0), render_target_size);
 
-		_main_window.set_position(out_infos[1].position);
-		_main_window.set_size(out_infos[1].work_size);
+		// vector<monitor_info> out_infos;
+		// process::get_all_monitors(out_infos);
+		// _main_window.set_position(out_infos[1].position);
+		// _main_window.set_size(out_infos[1].work_size);
 
+#endif
+
+#ifndef SFG_TOOLMODE
 		_renderer.init(_main_window);
+#else
+		_renderer.init(render_target_size);
+#endif
+
 		POP_MEMORY_CATEGORY();
 
 		_render_joined.store(1);
 		kick_off_render();
+
+#ifdef SFG_TOOLMODE
+		_pipe_read_thread = std::thread(&game_app::pipe_read, this);
+#endif
 
 		_context.init();
 
@@ -49,12 +64,19 @@ namespace Game
 	{
 		join_render();
 
+#ifdef SFG_TOOLMODE
+		if (_pipe_read_thread.joinable())
+			_pipe_read_thread.join();
+#endif
+
 		time::uninit();
 		debug_console::uninit();
 
 		PUSH_MEMORY_CATEGORY("Gfx");
 		_renderer.uninit();
+#ifndef SFG_TOOLMODE
 		_main_window.destroy();
+#endif
 		POP_MEMORY_CATEGORY();
 	}
 
@@ -71,6 +93,7 @@ namespace Game
 			previous_time			 = current_time;
 			frame_info::s_main_thread_time_milli.store(static_cast<double>(delta_micro) * 0.001);
 
+#ifndef SFG_TOOLMODE
 			process::pump_os_messages();
 
 			const uint32	event_count	 = _main_window.get_event_count();
@@ -98,7 +121,7 @@ namespace Game
 				_renderer.on_window_resize(_main_window.get_size());
 				kick_off_render();
 			}
-
+#endif
 			/* add any fast tick events here */
 
 			constexpr uint32 MAX_TICKS = 4;
@@ -145,6 +168,50 @@ namespace Game
 		_renderer.wait_backend();
 	}
 
+#ifdef SFG_TOOLMODE
+	void game_app::pipe_read()
+	{
+		char  buffer[PIPE_MAX_MSG_SIZE];
+		DWORD bytesRead;
+
+		const HANDLE pipe = static_cast<HANDLE>(process::get_pipe_handle());
+
+		// Read loop
+		while (pipe != INVALID_HANDLE_VALUE)
+		{
+			if (ReadFile(pipe, buffer, sizeof(buffer) - 1, &bytesRead, NULL))
+			{
+				if (bytesRead > 0)
+				{
+
+					buffer[bytesRead] = '\0'; // Null-terminate the string
+					istream		   stream((uint8*)buffer, static_cast<size_t>(bytesRead));
+					pipe_data_type data_type = {};
+					stream >> data_type;
+
+					if (data_type == pipe_data_type::log)
+					{
+						log_level lvl = {};
+						stream >> lvl;
+
+						const char* msg = reinterpret_cast<const char*>(stream.get_data_current());
+						log::instance().log_msg(lvl, msg);
+					}
+				}
+			}
+			else
+			{
+				DWORD dwError = GetLastError();
+				if (dwError == ERROR_BROKEN_PIPE)
+				{
+					SFG_ERR("pipe_read() -> pipe disconnected! {0}", dwError);
+					break;
+				}
+			}
+		}
+	}
+#endif
+
 	void game_app::kick_off_render()
 	{
 		if (_render_joined.load() == 0)
@@ -158,9 +225,23 @@ namespace Game
 		_render_thread			   = std::thread(&game_app::render_loop, this);
 	}
 
+#ifdef SFG_TOOLMODE
+	void game_app::resize_render_target(const vector2ui16& sz)
+	{
+		_render_target_size = sz;
+		join_render();
+		_renderer.on_window_resize(_render_target_size);
+		kick_off_render();
+	}
+#endif
+
 	void game_app::render_loop()
 	{
+#ifdef SFG_TOOLMODE
+		const vector2ui16& screen_size = _render_target_size;
+#else
 		const vector2ui16& screen_size = _main_window.get_size();
+#endif
 		REGISTER_THREAD_RENDER();
 
 		int64 previous_time = time::get_cpu_microseconds();

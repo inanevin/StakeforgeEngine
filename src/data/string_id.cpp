@@ -2,7 +2,7 @@
 
 #include "string_id.hpp"
 
-namespace Game
+namespace SFG
 {
 
 }

@@ -4,6 +4,6 @@
 
 #include <array>
 
-namespace Game
+namespace SFG
 {
 	template <typename T, int SZ> using array = std::array<T, SZ>;

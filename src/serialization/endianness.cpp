@@ -2,7 +2,7 @@
 
 #include "endianness.hpp"
 
-namespace Game
+namespace SFG
 {
 
 }

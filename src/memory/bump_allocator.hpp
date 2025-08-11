@@ -7,7 +7,7 @@
 #include "memory.hpp"
 #include <new>
 
-namespace Game
+namespace SFG
 {
 	class bump_allocator
 	{

@@ -3,7 +3,7 @@
 #include "vector3.hpp"
 #include "math.hpp"
 
-namespace Game
+namespace SFG
 {
 	const vector3 vector3::zero(0.0f, 0.0f, 0.0f);
 	const vector3 vector3::one(1.0f, 1.0f, 1.0f);
@@ -59,7 +59,10 @@ namespace Game
 	vector3 vector3::rotate(const vector3& axis, float angle_degrees) const
 	{
 		vector3 unit_axis = axis.normalized();
-		if (unit_axis.is_zero()) { return *this; }
+		if (unit_axis.is_zero())
+		{
+			return *this;
+		}
 
 		float angle_rad = math::degrees_to_radians(angle_degrees);
 		float cos_theta = math::cos(angle_rad);
@@ -72,7 +75,10 @@ namespace Game
 	vector3 vector3::reflect(const vector3& in_normal) const
 	{
 		vector3 unit_normal = in_normal.normalized();
-		if (unit_normal.is_zero()) { return -(*this); }
+		if (unit_normal.is_zero())
+		{
+			return -(*this);
+		}
 		return *this - (unit_normal * (2.0f * vector3::dot(*this, unit_normal)));
 	}
 

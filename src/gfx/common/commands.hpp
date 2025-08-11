@@ -8,7 +8,7 @@
 #include "gfx/common/descriptions.hpp"
 #include "gfx/common/barrier_description.hpp"
 
-namespace Game
+namespace SFG
 {
 	struct texture_buffer;
 

@@ -3,7 +3,7 @@
 #include "ostream.hpp"
 #include "data/vector.hpp"
 
-namespace Game
+namespace SFG
 {
 	void ostream::create(size_t size)
 	{

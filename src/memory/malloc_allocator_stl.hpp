@@ -9,7 +9,7 @@
 #include <new>
 #include <limits>
 
-namespace Game
+namespace SFG
 {
 	template <class T> struct malloc_allocator_stl
 	{

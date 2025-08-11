@@ -1,7 +1,7 @@
 // Copyright (c) 2025 Inan Evin
 #pragma once
 
-namespace Game
+namespace SFG
 {
 	class scene_context
 	{

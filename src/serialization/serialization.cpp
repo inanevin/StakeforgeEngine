@@ -10,7 +10,7 @@
 #include <fstream>
 #include <filesystem>
 
-namespace Game
+namespace SFG
 {
 	bool serialization::write_to_file(string_view fileInput, const char* target_file)
 	{

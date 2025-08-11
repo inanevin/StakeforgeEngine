@@ -5,7 +5,7 @@
 #include "istream.hpp"
 #include "memory/memory.hpp"
 
-namespace Game
+namespace SFG
 {
 	void raw_stream::create(uint8* data, size_t size)
 	{

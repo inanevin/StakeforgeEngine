@@ -8,7 +8,7 @@
 #include <mach/mach_time.h>
 #endif
 
-namespace Game
+namespace SFG
 {
 	class time
 	{

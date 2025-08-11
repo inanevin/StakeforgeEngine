@@ -3,7 +3,7 @@
 #include "common/size_definitions.hpp"
 #include "gfx/common/descriptions.hpp"
 
-namespace Game
+namespace SFG
 {
 	enum class input_layout_type
 	{

@@ -19,7 +19,7 @@ namespace vekt
 	struct font;
 }
 
-namespace Game
+namespace SFG
 {
 	enum class log_level;
 	class vector2ui;

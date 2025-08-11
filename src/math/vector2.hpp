@@ -6,7 +6,7 @@
 #undef min
 #undef max
 
-namespace Game
+namespace SFG
 {
 	class vector2
 	{
@@ -50,7 +50,10 @@ namespace Game
 
 		inline vector2 operator/(float scalar) const
 		{
-			if (scalar == 0.0f) { return vector2(std::numeric_limits<float>::infinity(), std::numeric_limits<float>::infinity()); }
+			if (scalar == 0.0f)
+			{
+				return vector2(std::numeric_limits<float>::infinity(), std::numeric_limits<float>::infinity());
+			}
 			return vector2(x / scalar, y / scalar);
 		}
 

@@ -12,7 +12,7 @@
 #include "common/types.hpp"
 #include <fstream>
 
-namespace Game
+namespace SFG
 {
 	template <typename Stream, typename Key, typename Value> void serialize_hash_map(Stream& stream, const hash_map<Key, Value>& map)
 	{

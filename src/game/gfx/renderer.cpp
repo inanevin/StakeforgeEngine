@@ -10,7 +10,7 @@
 #define VEKT_IMPL
 #include "gui/vekt.hpp"
 
-namespace Game
+namespace SFG
 {
 	void renderer::init(window& main_window)
 	{

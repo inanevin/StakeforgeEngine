@@ -10,7 +10,7 @@
 #include "io/assert.hpp"
 #include <fstream>
 
-namespace Game
+namespace SFG
 {
 
 	template <typename Stream, typename Key, typename Value> void deserialize_hash_map(Stream& stream, hash_map<Key, Value>& map)
@@ -50,6 +50,12 @@ namespace Game
 	class istream
 	{
 	public:
+		istream(){};
+		istream(uint8* data, size_t size)
+		{
+			_data = data;
+			_size = size;
+		}
 		void create(uint8* data, size_t size);
 		void destroy();
 		void read_from_ifstream(std::ifstream& stream);

@@ -3,7 +3,7 @@
 #include "vector2ui.hpp"
 #include "vector2i.hpp"
 
-namespace Game
+namespace SFG
 {
 	vector2ui vector2ui::zero = vector2ui(0, 0);
 	vector2ui vector2ui::one  = vector2ui(1, 1);

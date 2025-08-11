@@ -19,7 +19,7 @@
 #define SFG_MALLOC(...)	 malloc(__VA_ARGS__)
 #define SFG_FREE(...)	 free(__VA_ARGS__)
 
-namespace Game
+namespace SFG
 {
 
 }

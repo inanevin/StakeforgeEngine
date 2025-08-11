@@ -4,7 +4,7 @@
 #include "vector2ui.hpp"
 #include "math.hpp"
 
-namespace Game
+namespace SFG
 {
 	vector2i vector2i::zero = vector2i(0, 0);
 	vector2i vector2i::one	= vector2i(1, 1);

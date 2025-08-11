@@ -107,7 +107,7 @@
                                 </Border.Style>
 
                             </Border>
-                            <TextBlock Margin="{StaticResource indent_horizontal}" VerticalAlignment="Center" Text="{Binding Title}"/>
+                            <TextBlock Margin="{StaticResource indent_left}" VerticalAlignment="Center" Text="{Binding Title}"/>
                          
                             <Button 
                             Visibility="{Binding DataContext.EnableClosingTabs, RelativeSource={RelativeSource AncestorType={x:Type local:DockArea}}, Converter={StaticResource bool_to_vis_converter}}"

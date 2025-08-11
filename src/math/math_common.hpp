@@ -3,7 +3,7 @@
 
 #include <limits>
 
-namespace Game
+namespace SFG
 {
 	namespace math
 	{

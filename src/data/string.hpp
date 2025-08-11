@@ -5,7 +5,7 @@
 #include <string>
 
 // Headers here.
-namespace Game
+namespace SFG
 {
 	typedef std::string	 string;
 	typedef std::wstring wstring;

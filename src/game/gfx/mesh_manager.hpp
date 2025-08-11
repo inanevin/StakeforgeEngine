@@ -5,7 +5,7 @@
 #include "data/vector.hpp"
 #include "gfx/common/gfx_common.hpp"
 
-namespace Game
+namespace SFG
 {
 	class mesh_manager
 	{

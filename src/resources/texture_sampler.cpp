@@ -2,7 +2,7 @@
 
 #include "texture_sampler.hpp"
 
-namespace Game
+namespace SFG
 {
 	texture_sampler::~texture_sampler()
 	{

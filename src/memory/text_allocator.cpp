@@ -2,7 +2,7 @@
 
 #include "text_allocator.hpp"
 
-namespace Game
+namespace SFG
 {
 
 }

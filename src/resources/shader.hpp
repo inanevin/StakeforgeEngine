@@ -6,7 +6,7 @@
 #include "data/string.hpp"
 #include "gfx/common/shader_description.hpp"
 
-namespace Game
+namespace SFG
 {
 	struct shader_desc;
 

@@ -3,7 +3,7 @@
 #include "math.hpp"
 // Copyright (c) 2025 Inan Evin
 
-namespace Game
+namespace SFG
 {
 	double math::fast_pow(double a, double b)
 	{

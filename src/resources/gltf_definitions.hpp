@@ -7,7 +7,7 @@
 #include "data/string.hpp"
 #include <map>
 
-namespace Game
+namespace SFG
 {
 	namespace gltf
 	{

@@ -2,7 +2,7 @@
 
 #include "debug_console.hpp"
 
-namespace Game
+namespace SFG
 {
 	debug_console* debug_console::s_instance = nullptr;
 
