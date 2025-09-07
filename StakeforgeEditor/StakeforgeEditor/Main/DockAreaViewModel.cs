@@ -44,26 +44,13 @@ namespace StakeforgeEditor.Main
 				}
 			}
 		}
-		private bool _enableClosingTabs;
-		public bool EnableClosingTabs
-		{
-			get => _enableClosingTabs;
-			set
-			{
-				if (_enableClosingTabs != value)
-				{
-					_enableClosingTabs = value;
-					OnPropertyChanged();
-				}
-			}
-		}
+
 
 
 		public DockAreaViewModel()
 		{
 			RemovePanelCommand = new RelayCommand(RemovePanel);
 			AddPanelCommand = new RelayCommand(AddPanelFromMenu);
-			Panels.CollectionChanged += Panels_CollectionChanged;
 			_selectedPanel = null;
 			SelectedPanel = null;
 		}
@@ -74,10 +61,7 @@ namespace StakeforgeEditor.Main
 			PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
 		}
 
-		private void Panels_CollectionChanged(object? sender, System.Collections.Specialized.NotifyCollectionChangedEventArgs e)
-		{
-			EnableClosingTabs = Panels.Count > 1;
-		}
+
 
 		public void AddPanelFromMenu(object parameter)
 		{
@@ -123,10 +107,12 @@ namespace StakeforgeEditor.Main
 					if (_selectedPanel == panelToRemove)
 					{
 						int index = Panels.IndexOf(_selectedPanel);
-						nextSelected = index == Panels.Count - 1 ? index : index + 1;
+
+						if (Panels.Count > 2)
+							nextSelected = Math.Clamp(index + 1 , 0, Panels.Count-2);
 					}
-					SelectedPanel = Panels[nextSelected];
 					Panels.Remove(panelToRemove);
+					SelectedPanel = nextSelected < Panels.Count ? Panels[nextSelected] : null;
 				}
 			}
 		}

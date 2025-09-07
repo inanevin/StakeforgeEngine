@@ -196,9 +196,9 @@ namespace SFG
 		return fixed_path;
 	}
 
-	string file_system::read_file_as_string(const string& filePath)
+	string file_system::read_file_as_string(const char* file)
 	{
-		std::ifstream ifs(filePath.c_str());
+		std::ifstream ifs(file);
 		auto		  a = std::istreambuf_iterator<char>(ifs);
 		auto		  b = (std::istreambuf_iterator<char>());
 		return std::string(a, b);

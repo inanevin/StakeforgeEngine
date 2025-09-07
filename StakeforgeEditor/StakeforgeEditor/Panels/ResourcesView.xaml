@@ -4,8 +4,130 @@
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
              xmlns:local="clr-namespace:StakeforgeEditor.Panels"
+             xmlns:converters="clr-namespace:StakeforgeEditor.Converters"
+             xmlns:widgets="clr-namespace:StakeforgeEditor.Widgets"
              mc:Ignorable="d" 
              d:DesignHeight="450" d:DesignWidth="800">
     <Grid Background="{StaticResource brush_background3}">
+
+        <Grid.RowDefinitions>
+            <RowDefinition Height="{StaticResource height_item_base_big_grid}"/>
+            <RowDefinition Height="*"></RowDefinition>
+            <RowDefinition Height="{StaticResource height_item_base_big_grid}"/>
+
+        </Grid.RowDefinitions>
+
+        <StackPanel Margin="{StaticResource indent_left}" Grid.Row="0" VerticalAlignment="Stretch" Orientation="Horizontal">
+            <Button Grid.Column="0"
+            Content="{StaticResource str_icon_filter}"
+            Style="{StaticResource style_button_icon}"/>
+
+            <widgets:InputFieldDefault Grid.Column="1"
+                                       Width="{StaticResource width_item_base}"
+                   Margin="{StaticResource spacing_left}"
+                   Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}"
+                   PlaceholderIcon="{StaticResource str_icon_search}"
+                   PlaceholderText="Search..."
+                   Style="{StaticResource input_field_default}"
+                   HorizontalAlignment="Stretch"/>
+
+        </StackPanel>
+
+        <TreeView 
+              Grid.Row="1" x:Name="ResourcesTree"
+              Background="{StaticResource brush_background0}"
+              ItemsSource="{Binding Roots}"
+              BorderThickness="0"
+              VirtualizingStackPanel.IsVirtualizing="True"
+              VirtualizingStackPanel.VirtualizationMode="Recycling"
+              ScrollViewer.CanContentScroll="True">
+
+            <TreeView.Resources>
+                <DataTemplate DataType="{x:Type local:FileNode}">
+                    <StackPanel Orientation="Horizontal">
+                        <TextBlock Text="{Binding ResourceType, Converter={StaticResource resource_type_to_tag_str}}"  VerticalAlignment="Center" Style="{StaticResource style_textblock_alt}" Foreground="{Binding ResourceType, Converter={StaticResource resource_type_to_tag_brush}}"/>
+                        <Image Width="{StaticResource height_item_base}" Height="{StaticResource height_item_base}"
+                            SnapsToDevicePixels="True" />
+                        <TextBlock Margin="{StaticResource spacing_left}" VerticalAlignment="Center" Text="{Binding Name}" Style="{StaticResource style_textblock_default}"/>
+                    </StackPanel>
+                </DataTemplate>
+
+                <HierarchicalDataTemplate DataType="{x:Type local:FolderNode}"
+                                  ItemsSource="{Binding Children}">
+                    <StackPanel Orientation="Horizontal">
+                        <TextBlock VerticalAlignment="Center" Style="{StaticResource style_textblock_icon}" Text="{StaticResource str_icon_folder}"/>
+                        <TextBlock Margin="{StaticResource spacing_left}" VerticalAlignment="Center" Text="{Binding Name}"  Style="{StaticResource style_textblock_default}" />
+                    </StackPanel>
+                </HierarchicalDataTemplate>
+
+                <Style TargetType="{x:Type TreeViewItem}">
+                    <Setter Property="IsSelected" Value="{Binding IsSelected, Mode=TwoWay}" />
+                    <Setter Property="Background" Value="Transparent" />
+                    <Setter Property="Template">
+                        <Setter.Value>
+                            <ControlTemplate TargetType="{x:Type TreeViewItem}">
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="Auto"/>
+                                        <ColumnDefinition Width="Auto" />
+                                        <ColumnDefinition Width="*" />
+                                    </Grid.ColumnDefinitions>
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="{StaticResource height_item_base_grid}" />
+                                        <RowDefinition />
+                                    </Grid.RowDefinitions>
+
+                                    <Border x:Name="SelectionBorder"
+                                        Grid.ColumnSpan="3"
+                                        CornerRadius="2"
+                                        Background="{TemplateBinding Background}" />
+
+                                    <TextBlock MouseDown="Expander_MouseDown" x:Name="Expander" Grid.Column="0" VerticalAlignment="Center" Margin="{StaticResource indent_left}"  Style="{StaticResource style_textblock_icon_small}" Text="{StaticResource str_icon_dd_arrow_right}"/>
+
+                                    <ContentPresenter x:Name="PART_Header"
+                                          Grid.Column="1"
+                                          ContentSource="Header"
+                                          VerticalAlignment="Center"
+                                          Margin="{StaticResource spacing_left}" />
+
+                                    <ItemsPresenter x:Name="ItemsHost"
+                                        Grid.Row="1"
+                                        Grid.Column="1"
+                                        Grid.ColumnSpan="2" />
+                                </Grid>
+                                <ControlTemplate.Triggers>
+
+                                    <Trigger Property="IsSelected" Value="True">
+                                        <Setter TargetName="SelectionBorder" Property="Background" Value="{StaticResource gradient_purple_vertical}" />
+                                    </Trigger>
+                                    <MultiTrigger>
+                                        <MultiTrigger.Conditions>
+                                            <Condition Property="IsSelected" Value="True" />
+                                            <Condition Property="IsSelectionActive" Value="False" />
+                                        </MultiTrigger.Conditions>
+                                        <Setter TargetName="SelectionBorder" Property="Background" Value="{StaticResource brush_background_light0}" />
+                                    </MultiTrigger>
+                                    <DataTrigger Binding="{Binding RelativeSource={RelativeSource Self}, Path=HasItems}" Value="False">
+                                        <Setter TargetName="Expander" Property="Visibility" Value="Hidden" />
+                                    </DataTrigger>
+                                    <Trigger Property="IsExpanded" Value="False">
+                                        <Setter TargetName="ItemsHost" Property="Visibility" Value="Collapsed" />
+                                        <Setter TargetName="Expander" Property="Text" Value="{StaticResource str_icon_dd_arrow_right}" />
+
+                                    </Trigger>
+                                    <Trigger Property="IsExpanded" Value="True">
+                                        <Setter TargetName="Expander" Property="Text" Value="{StaticResource str_icon_dd_arrow_down}" />
+
+                                    </Trigger>
+                                </ControlTemplate.Triggers>
+                            </ControlTemplate>
+                        </Setter.Value>
+                    </Setter>
+                </Style>
+            </TreeView.Resources>
+
+        </TreeView>
+
+
     </Grid>
 </UserControl>

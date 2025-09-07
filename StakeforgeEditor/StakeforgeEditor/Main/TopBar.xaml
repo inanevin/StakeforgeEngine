@@ -68,7 +68,7 @@
                         <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
 
                             <StackPanel Orientation="Horizontal">
-                                <Label Content="{Binding ConnectionIcon}" Style="{StaticResource style_label_icon_small}" Foreground="{Binding ConnectionBrush}" VerticalAlignment="Center" />
+                                <Label Content="{Binding ConnectionIcon}" Style="{StaticResource style_label_icon}" Foreground="{Binding ConnectionBrush}" VerticalAlignment="Center" />
                                 <Label Margin="-4, 0,0,0" Content="{Binding ConnectionStatus}" Style="{StaticResource style_label_default}"  Foreground="{Binding ConnectionBrush}" VerticalAlignment="Center"/>
                             </StackPanel>
 

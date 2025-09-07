@@ -20,7 +20,7 @@ namespace SFG
 		_requests.push_back(req);
 	}
 
-	void buffer_queue::flush_all(resource_id cmd_list)
+	void buffer_queue::flush_all(gfx_id cmd_list)
 	{
 		for (const buffer_request& buf : _requests)
 			buf.buffer->copy(cmd_list);
@@ -32,7 +32,7 @@ namespace SFG
 	{
 		for (const buffer_request& buf : _requests)
 		{
-			if (buf.buffer->get_is_modified())
+			if (buf.buffer->is_dirty())
 				return false;
 		}
 

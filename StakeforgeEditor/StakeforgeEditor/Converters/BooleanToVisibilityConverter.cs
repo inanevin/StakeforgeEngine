@@ -14,17 +14,25 @@ namespace StakeforgeEditor.Converters
 		public object Convert(object value, Type targetType, object parameter, System.Globalization.CultureInfo culture)
 		{
 			if (value is bool b)
-			{
-				// If the value is true, return Visible
 				return b ? Visibility.Visible : Visibility.Collapsed;
-			}
-			// Fallback for non-boolean values or null
 			return Visibility.Collapsed;
 		}
 		public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
 		{
-			// This converter is designed for one-way binding, so ConvertBack is not needed.
-			// Throwing an exception is the standard way to handle this.
+			throw new NotSupportedException();
+		}
+	}
+
+	internal class BooleanToVisibilityConverterInv : IValueConverter
+	{
+		public object Convert(object value, Type targetType, object parameter, System.Globalization.CultureInfo culture)
+		{
+			if (value is bool b)
+				return b ? Visibility.Collapsed : Visibility.Visible;
+			return Visibility.Visible;
+		}
+		public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
+		{
 			throw new NotSupportedException();
 		}
 	}

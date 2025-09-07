@@ -14,7 +14,7 @@ namespace SFG
 #define MAX_SEMAPHORE_DATA 64
 #define MAX_CMD_GROUPS	   64
 
-	typedef std::function<void(resource_id buffer)> record_func;
+	typedef std::function<void(gfx_id buffer)> record_func;
 
 	enum processor_event_flags
 	{
@@ -31,11 +31,11 @@ namespace SFG
 	struct alignas(8) processor_event_work_group
 	{
 		processor_header header					  = {};
-		resource_id		 queue					  = 0;
-		resource_id*	 command_buffers		  = nullptr;
+		gfx_id			 queue					  = 0;
+		gfx_id*			 command_buffers		  = nullptr;
 		record_func*	 command_record_callbacks = nullptr;
-		resource_id*	 wait_semaphores		  = nullptr;
-		resource_id*	 signal_semaphores		  = nullptr;
+		gfx_id*			 wait_semaphores		  = nullptr;
+		gfx_id*			 signal_semaphores		  = nullptr;
 		uint64*			 wait_values			  = nullptr;
 		uint64*			 signal_values			  = nullptr;
 		uint16			 command_buffer_count	  = 0;
@@ -46,7 +46,7 @@ namespace SFG
 	struct alignas(8) processor_event_cpu_wait
 	{
 		processor_header header			 = {};
-		resource_id*	 wait_semaphores = nullptr;
+		gfx_id*			 wait_semaphores = nullptr;
 		uint64*			 wait_values	 = nullptr;
 		uint16			 wait_count		 = 0;
 	};
@@ -54,7 +54,7 @@ namespace SFG
 	struct alignas(8) processor_event_present
 	{
 		processor_header header			 = {};
-		resource_id*	 swapchains		 = 0;
+		gfx_id*			 swapchains		 = 0;
 		uint8			 swapchain_count = 0;
 	};
 

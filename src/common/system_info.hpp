@@ -83,6 +83,11 @@ namespace SFG
 			return s_render_thread_time_milli.load();
 		}
 
+		static double get_present_time_micro()
+		{
+			return s_present_time_micro.load();
+		}
+
 		static double get_present_time_milli()
 		{
 			return s_present_time_milli.load();
@@ -93,12 +98,26 @@ namespace SFG
 			return s_fps.load();
 		}
 
+		static uint64 get_frame()
+		{
+			return s_frame.load();
+		}
+
+		static uint64 get_render_frame()
+		{
+			return s_render_frame.load();
+		}
+
 	private:
 		friend class game_app;
+		friend class renderer;
 
 		static atomic<double> s_main_thread_time_milli;
 		static atomic<double> s_render_thread_time_milli;
+		static atomic<double> s_present_time_micro;
 		static atomic<double> s_present_time_milli;
 		static atomic<uint32> s_fps;
+		static atomic<uint64> s_frame;
+		static atomic<uint64> s_render_frame;
 	};
 }

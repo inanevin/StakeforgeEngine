@@ -8,17 +8,20 @@
 #include "gfx/backend/backend.hpp"
 #include "io/log.hpp"
 #include "debug_console.hpp"
-#include "resources/scene_context.hpp"
+#include "project/engine_data.hpp"
+#include "game/world.hpp"
+#include "game/world_renderer.hpp"
 
 #ifdef SFG_TOOLMODE
-#include "data/istream.hpp"
+#include "io/file_system.hpp"
 #endif
 
 namespace SFG
 {
+
 #define SFG_DT 1.0f / 60.0f
 
-	scene_context _context;
+	static uint8 wr = 0;
 
 	void game_app::init(const vector2ui16& render_target_size)
 	{
@@ -30,53 +33,109 @@ namespace SFG
 
 		PUSH_MEMORY_CATEGORY("Gfx");
 
-#ifndef SFG_TOOLMODE
-		_main_window.create("Game", window_flags::wf_style_windowed | window_flags::wf_high_freq, vector2i16(0, 0), render_target_size);
+		_main_window.create("Game", window_flags::wf_style_windowed, vector2i16(0, 0), render_target_size);
 
 		// vector<monitor_info> out_infos;
 		// process::get_all_monitors(out_infos);
 		// _main_window.set_position(out_infos[1].position);
 		// _main_window.set_size(out_infos[1].work_size);
 
-#endif
+		gfx_backend::s_instance = new gfx_backend();
+		gfx_backend* backend	= gfx_backend::get();
+		backend->init();
 
-#ifndef SFG_TOOLMODE
 		_renderer.init(_main_window);
-#else
-		_renderer.init(render_target_size);
-#endif
 
 		POP_MEMORY_CATEGORY();
 
 		_render_joined.store(1);
 		kick_off_render();
 
-#ifdef SFG_TOOLMODE
-		_pipe_read_thread = std::thread(&game_app::pipe_read, this);
-#endif
+		engine_data::get().init();
 
-		_context.init();
+		_world = new world();
+
+#ifdef SFG_TOOLMODE
+		const string& last_world = engine_data::get().get_last_world();
+		if (file_system::exists(last_world.c_str()))
+		{
+			_world->load(last_world.c_str());
+			_world->init();
+		}
+#endif
+		debug_console::get()->register_console_function("app_new_world", [this]() {
+			if (_world->get_flags().is_set(world::world_flags_is_init))
+				_world->uninit();
+			_world->init();
+
+			join_render();
+			_renderer.on_world_init(_world);
+			kick_off_render();
+		});
+
+		debug_console::get()->register_console_function("app_delete_world", [this]() {
+			if (_world->get_flags().is_set(world::world_flags_is_init))
+			{
+				join_render();
+				_renderer.on_world_uninit(_world);
+				kick_off_render();
+
+				_world->uninit();
+			}
+		});
+
+		debug_console::get()->register_console_function<const char*>("app_save_world", [this](const char* path) {
+			if (!_world->get_flags().is_set(world::world_flags_is_init))
+				return;
+			const string p = engine_data::get().get_working_dir() + path;
+			_world->save(p.c_str());
+			engine_data::get().set_last_world(p);
+			engine_data::get().save();
+		});
+
+		debug_console::get()->register_console_function<const char*>("app_load_world", [this](const char* path) {
+			join_render();
+
+			if (_world->get_flags().is_set(world::world_flags_is_init))
+			{
+				_renderer.on_world_uninit(_world);
+				_world->uninit();
+			}
+
+			const string p = engine_data::get().get_working_dir() + path;
+			_world->load(p.c_str());
+			_world->init();
+
+			_renderer.on_world_init(_world);
+			kick_off_render();
+
+			engine_data::get().set_last_world(p);
+			engine_data::get().save();
+		});
 
 		SET_INIT(false);
 	}
 
 	void game_app::uninit()
 	{
-		join_render();
+		delete _world;
 
-#ifdef SFG_TOOLMODE
-		if (_pipe_read_thread.joinable())
-			_pipe_read_thread.join();
-#endif
+		engine_data::get().uninit();
+
+		join_render();
 
 		time::uninit();
 		debug_console::uninit();
 
 		PUSH_MEMORY_CATEGORY("Gfx");
 		_renderer.uninit();
-#ifndef SFG_TOOLMODE
 		_main_window.destroy();
-#endif
+
+		gfx_backend* backend = gfx_backend::get();
+		backend->uninit();
+		delete gfx_backend::s_instance;
+		gfx_backend::s_instance = nullptr;
+
 		POP_MEMORY_CATEGORY();
 	}
 
@@ -93,12 +152,12 @@ namespace SFG
 			previous_time			 = current_time;
 			frame_info::s_main_thread_time_milli.store(static_cast<double>(delta_micro) * 0.001);
 
-#ifndef SFG_TOOLMODE
 			process::pump_os_messages();
 
 			const uint32	event_count	 = _main_window.get_event_count();
 			bitmask<uint8>& window_flags = _main_window.get_flags();
 			window_event*	events		 = _main_window.get_events();
+			const bool		has_world	 = _world->get_flags().is_set(world::world_flags_is_init);
 
 			if (window_flags.is_set(window_flags::wf_close_requested))
 			{
@@ -121,7 +180,6 @@ namespace SFG
 				_renderer.on_window_resize(_main_window.get_size());
 				kick_off_render();
 			}
-#endif
 			/* add any fast tick events here */
 
 			constexpr uint32 MAX_TICKS = 4;
@@ -130,26 +188,30 @@ namespace SFG
 			while (accumulator > FIXED_INTERVAL_US && ticks < MAX_TICKS)
 			{
 				accumulator -= FIXED_INTERVAL_US;
-				tick_game_state(SFG_DT);
+
+				if (has_world)
+					_world->tick(SFG_DT);
+
 				ticks++;
 			}
 
 			const double interpolation = static_cast<double>(accumulator) / static_cast<double>(FIXED_INTERVAL_US);
-			_renderer.populate_render_data(_update_render_frame_index);
+			_renderer.populate_render_data(_update_render_frame_index, interpolation);
 			_current_render_frame_index.store(_update_render_frame_index, std::memory_order_release);
 			_update_render_frame_index = (_update_render_frame_index + 1) % 2;
 			_frame_available_semaphore.release();
+			frame_info::s_frame.fetch_add(1);
 		}
-	}
-
-	void game_app::tick_game_state(float delta_time)
-	{
 	}
 
 	void game_app::on_window_event(const window_event& ev)
 	{
 		if (_renderer.on_window_event(ev))
 			return;
+
+		const bool has_world = _world->get_flags().is_set(world::world_flags_is_init);
+		if (has_world)
+			_world->on_window_event(ev);
 	}
 
 	void game_app::join_render()
@@ -168,7 +230,7 @@ namespace SFG
 		_renderer.wait_backend();
 	}
 
-#ifdef SFG_TOOLMODE
+	/*
 	void game_app::pipe_read()
 	{
 		char  buffer[PIPE_MAX_MSG_SIZE];
@@ -210,7 +272,7 @@ namespace SFG
 			}
 		}
 	}
-#endif
+*/
 
 	void game_app::kick_off_render()
 	{
@@ -218,30 +280,14 @@ namespace SFG
 			return;
 
 		_render_joined.store(0, std::memory_order_release);
-		_renderer.reset_render_data(0);
-		_renderer.reset_render_data(1);
 		_current_render_frame_index.store(1);
 		_update_render_frame_index = 1;
 		_render_thread			   = std::thread(&game_app::render_loop, this);
 	}
 
-#ifdef SFG_TOOLMODE
-	void game_app::resize_render_target(const vector2ui16& sz)
-	{
-		_render_target_size = sz;
-		join_render();
-		_renderer.on_window_resize(_render_target_size);
-		kick_off_render();
-	}
-#endif
-
 	void game_app::render_loop()
 	{
-#ifdef SFG_TOOLMODE
-		const vector2ui16& screen_size = _render_target_size;
-#else
 		const vector2ui16& screen_size = _main_window.get_size();
-#endif
 		REGISTER_THREAD_RENDER();
 
 		int64 previous_time = time::get_cpu_microseconds();
@@ -251,20 +297,20 @@ namespace SFG
 			_frame_available_semaphore.acquire();
 			const uint8 index = _current_render_frame_index.load(std::memory_order_acquire);
 
+#ifndef SFG_PRODUCTION
 			const int64 current_time = time::get_cpu_microseconds();
 			const int64 delta_micro	 = current_time - previous_time;
 			previous_time			 = current_time;
+#endif
 
-			int64 time_before_present = 0;
-			int64 time_after_present  = 0;
-			_renderer.render(index, screen_size, time_before_present, time_after_present);
+			_renderer.render(index, screen_size);
+			frame_info::s_render_frame.fetch_add(1);
 
-			const int64 present_time = time_after_present - time_before_present;
-			frame_info::s_present_time_milli.store(static_cast<double>(present_time) * 0.001);
-
-			frame_info::s_render_thread_time_milli.store(static_cast<double>(delta_micro - present_time) * 0.001);
+#ifndef SFG_PRODUCTION
+			frame_info::s_present_time_milli.store(frame_info::get_present_time_micro() * 0.001);
+			frame_info::s_render_thread_time_milli.store(static_cast<double>(delta_micro - frame_info::s_present_time_micro) * 0.001);
 			frame_info::s_fps.store(1.0f / static_cast<float>(delta_micro * 1e-6));
+#endif
 		}
 	}
-
 }

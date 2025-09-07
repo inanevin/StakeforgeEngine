@@ -4,6 +4,7 @@ using System.ComponentModel;
 using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Text;
+using System.Text.Json;
 using System.Threading.Tasks;
 
 namespace StakeforgeEditor.Panels
@@ -12,8 +13,11 @@ namespace StakeforgeEditor.Panels
 	{
 		private bool _isSelected = false;
 		public string Title { get; set; }
-		public bool IsSelected {
-			get => _isSelected; 
+		public Common.PanelType Type { get; set; }
+
+		public bool IsSelected
+		{
+			get => _isSelected;
 			set
 			{
 				if (_isSelected != value)
@@ -31,5 +35,8 @@ namespace StakeforgeEditor.Panels
 		{
 			PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
 		}
+
+		public abstract void WriteJson(Utf8JsonWriter w);
+		public abstract void ReadJson(ref Utf8JsonReader r);
 	}
 }

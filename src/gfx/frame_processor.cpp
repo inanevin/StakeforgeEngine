@@ -63,11 +63,11 @@ namespace SFG
 				processor_event_work_group* event = reinterpret_cast<processor_event_work_group*>(ptr);
 				offset += sizeof(processor_event_work_group);
 
-				resource_id* cmd_buffers	  = event->command_buffers;
+				gfx_id*		 cmd_buffers	  = event->command_buffers;
 				record_func* record_callbacks = event->command_record_callbacks;
 				const int	 count			  = static_cast<int>(event->command_buffer_count);
 
-				std::for_each_n(std::execution::par, cmd_buffers, count, [backend, cmd_buffers, record_callbacks](resource_id& id) {
+				std::for_each_n(std::execution::par, cmd_buffers, count, [backend, cmd_buffers, record_callbacks](gfx_id& id) {
 					const int n = std::distance(cmd_buffers, &id);
 					backend->reset_command_buffer(id);
 					record_callbacks[n](id);
@@ -75,12 +75,12 @@ namespace SFG
 				});
 
 				if (event->wait_count != 0)
-					backend->queue_wait(event->queue, event->wait_semaphores, static_cast<uint8>(event->wait_count), event->wait_values);
+					backend->queue_wait(event->queue, event->wait_semaphores, event->wait_values, static_cast<uint8>(event->wait_count));
 
 				gfx_backend::get()->submit_commands(event->queue, cmd_buffers, count);
 
 				if (event->signal_count != 0)
-					backend->queue_signal(event->queue, event->signal_semaphores, static_cast<uint8>(event->signal_count), event->signal_values);
+					backend->queue_signal(event->queue, event->signal_semaphores, event->signal_values, static_cast<uint8>(event->signal_count));
 			}
 		}
 	}

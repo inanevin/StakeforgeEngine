@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -23,6 +24,29 @@ namespace StakeforgeEditor.Panels
 		public ResourcesView()
 		{
 			InitializeComponent();
+			Loaded += OnLoaded;
 		}
-	}
+
+		private void OnLoaded(object sender, RoutedEventArgs e)
+		{
+			ResourcesViewModel? vm = this.DataContext as ResourcesViewModel;
+			Debug.Assert(vm != null);
+			vm.Init();
+		}
+
+		private void Expander_MouseDown(object sender, MouseButtonEventArgs e)
+		{
+			var textBlock = sender as TextBlock;
+			if (textBlock != null)
+			{
+				var treeViewItem = Common.ObjectUtil.FindParent<TreeViewItem>(textBlock);
+
+				if (treeViewItem != null)
+				{
+					treeViewItem.IsExpanded = !treeViewItem.IsExpanded;
+					e.Handled = true; 
+				}
+			}
+		}
+    }
 }

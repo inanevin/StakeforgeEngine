@@ -4,8 +4,14 @@
 #include "data/bitmask.hpp"
 #include "data/vector.hpp"
 #include "data/span.hpp"
+#include "data/string.hpp"
 #include "format.hpp"
 #include "resource_limits.hpp"
+
+#ifdef SFG_TOOLMODE
+#include "vendor/nhlohmann/json_fwd.hpp"
+#endif
+#include <io/log.hpp>
 
 namespace SFG
 {
@@ -134,7 +140,7 @@ namespace SFG
 
 	struct vertex_input
 	{
-		char   name[16] = "TEXCOORD";
+		string name		= "TEXCOORD";
 		uint8  location = 0;
 		uint8  index	= 0;
 		size_t offset	= 0;
@@ -202,9 +208,9 @@ namespace SFG
 
 	struct shader_desc
 	{
-		const char*						vertex_entry  = "VSMain";
-		const char*						pixel_entry	  = "PSMain";
-		const char*						compute_entry = "CSMain";
+		string							vertex_entry  = "VSMain";
+		string							pixel_entry	  = "PSMain";
+		string							compute_entry = "CSMain";
 		bitmask<uint16>					flags		  = 0;
 		span<uint8>						layout_data	  = {};
 		vector<shader_blob>				blobs		  = {};
@@ -217,20 +223,59 @@ namespace SFG
 		cull_mode				  cull				 = cull_mode::back;
 		front_face				  front				 = front_face::cw;
 		polygon_mode			  poly_mode			 = polygon_mode::fill;
-		resource_id				  layout			 = 0;
+		gfx_id					  layout			 = 0;
 
 		uint32 samples			   = 1;
 		float  depth_bias_constant = 0.0f;
 		float  depth_bias_clamp	   = 0.0f;
 		float  depth_bias_slope	   = 0.0f;
 
-		char debug_name[16] = "shader";
-
-		inline void set_name(const char* name)
-		{
-			if (strlen(name) < 16)
-				strcpy(debug_name, name);
-		}
+		const char* debug_name = "shader";
 	};
 
+#ifdef SFG_TOOLMODE
+
+	void to_json(nlohmann::json& j, const vertex_input& s);
+	void from_json(const nlohmann::json& j, vertex_input& s);
+
+	void to_json(nlohmann::json& j, const shader_desc& s);
+	void from_json(const nlohmann::json& j, shader_desc& s);
+
+	void to_json(nlohmann::json& j, const cull_mode& c);
+	void from_json(const nlohmann::json& j, cull_mode& c);
+
+	void to_json(nlohmann::json& j, const front_face& f);
+	void from_json(const nlohmann::json& j, front_face& f);
+
+	void to_json(nlohmann::json& j, const blend_factor& f);
+	void from_json(const nlohmann::json& j, blend_factor& f);
+
+	void to_json(nlohmann::json& j, const blend_op& op);
+	void from_json(const nlohmann::json& j, blend_op& op);
+
+	void to_json(nlohmann::json& j, const stencil_op& op);
+	void from_json(const nlohmann::json& j, stencil_op& op);
+
+	void to_json(nlohmann::json& j, const compare_op& op);
+	void from_json(const nlohmann::json& j, compare_op& op);
+
+	void to_json(nlohmann::json& j, const store_op& op);
+	void from_json(const nlohmann::json& j, store_op& op);
+
+	void to_json(nlohmann::json& j, const load_op& op);
+	void from_json(const nlohmann::json& j, load_op& op);
+
+	void to_json(nlohmann::json& j, const color_blend_attachment& att);
+	void from_json(const nlohmann::json& j, color_blend_attachment& att);
+
+	void to_json(nlohmann::json& j, const shader_color_attachment& att);
+	void from_json(const nlohmann::json& j, shader_color_attachment& att);
+
+	void to_json(nlohmann::json& j, const stencil_state& ss);
+	void from_json(const nlohmann::json& j, stencil_state& ss);
+
+	void to_json(nlohmann::json& j, const shader_depth_stencil_desc& att);
+	void from_json(const nlohmann::json& j, shader_depth_stencil_desc& att);
+
+#endif
 }

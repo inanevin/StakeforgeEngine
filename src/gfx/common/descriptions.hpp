@@ -11,6 +11,9 @@
 #include "resource_limits.hpp"
 #include "shader_description.hpp"
 
+#ifdef SFG_TOOLMODE
+#include "vendor/nhlohmann/json_fwd.hpp"
+#endif
 namespace SFG
 {
 	struct viewport
@@ -62,7 +65,7 @@ namespace SFG
 		uav,
 		pointer,
 		sampler,
-		texture,
+		texture_binding,
 	};
 
 	enum binding_flags
@@ -92,6 +95,7 @@ namespace SFG
 		tf_is_2d					= 1 << 10,
 		tf_is_3d					= 1 << 11,
 		tf_is_1d					= 1 << 12,
+		tf_shared					= 1 << 13,
 	};
 
 	enum sampler_flags
@@ -127,16 +131,16 @@ namespace SFG
 	struct swapchain_recreate_desc
 	{
 		vector2ui16	   size		 = vector2ui16::zero;
-		resource_id	   swapchain = 0;
+		gfx_id		   swapchain = 0;
 		float		   scaling	 = 1.0f;
 		bitmask<uint8> flags	 = 0;
 	};
 
 	struct resource_desc
 	{
-		uint32		   size			  = 0;
-		bitmask<uint8> flags		  = 0;
-		char		   debug_name[16] = {"Resource"};
+		uint32		   size		  = 0;
+		bitmask<uint8> flags	  = 0;
+		const char*	   debug_name = "resource";
 	};
 
 	struct view_desc
@@ -151,27 +155,27 @@ namespace SFG
 	struct texture_desc
 	{
 		format			  texture_format	   = format::r8g8b8a8_srgb;
-		format			  depth_stencil_format = format::r32_sfloat;
+		format			  depth_stencil_format = format::d16_unorm;
 		vector2ui16		  size				   = vector2ui16::zero;
 		bitmask<uint16>	  flags				   = 0;
 		vector<view_desc> views				   = {
 			   {},
 		   };
-		uint8 mip_levels	  = 1;
-		uint8 array_length	  = 1;
-		uint8 samples		  = 1;
-		float clear_values[4] = {0.0f, 0.0f, 0.0f, 1.0f};
-		char  debug_name[16]  = {"Texture"};
+		uint8		mip_levels		= 1;
+		uint8		array_length	= 1;
+		uint8		samples			= 1;
+		float		clear_values[4] = {0.0f, 0.0f, 0.0f, 1.0f};
+		const char* debug_name		= "texture";
 	};
 
 	struct sampler_desc
 	{
-		uint32			anisotropy	   = 0;
-		float			min_lod		   = 0.0f;
-		float			max_lod		   = 1.0f;
-		float			lod_bias	   = 0.0f;
-		bitmask<uint16> flags		   = 0;
-		char			debug_name[16] = {"Sampler"};
+		uint32			anisotropy = 0;
+		float			min_lod	   = 0.0f;
+		float			max_lod	   = 1.0f;
+		float			lod_bias   = 0.0f;
+		bitmask<uint16> flags	   = 0;
+		const char*		debug_name = "sampler";
 	};
 
 	struct layout_entry
@@ -200,7 +204,7 @@ namespace SFG
 
 	struct bind_group_pointer
 	{
-		resource_id	 resource	   = 0;
+		gfx_id		 resource	   = 0;
 		uint8		 view		   = 0;
 		uint8		 pointer_index = 0;
 		binding_type type		   = binding_type::ubo;
@@ -218,7 +222,7 @@ namespace SFG
 	{
 		uint32				 binding_index	= 0;
 		vector<binding_type> resource_types = {};
-		vector<resource_id>	 resources		= {};
+		vector<gfx_id>		 resources		= {};
 		vector<uint32>		 resource_views = {};
 	};
 
@@ -239,4 +243,9 @@ namespace SFG
 		char		 debug_name[16] = {"CmdBuffer"};
 	};
 
+#ifdef SFG_TOOLMODE
+
+	void to_json(nlohmann::json& j, const sampler_desc& s);
+	void from_json(const nlohmann::json& j, sampler_desc& s);
+#endif
 }

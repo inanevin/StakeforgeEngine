@@ -4,6 +4,7 @@
 #include "math/vector3.hpp"
 #include "math/vector2.hpp"
 #include "math/vector2ui16.hpp"
+#include "gfx/common/gfx_constants.hpp"
 
 namespace SFG
 {
@@ -12,9 +13,6 @@ namespace SFG
 		vector3 po = vector3();
 		vector2 uv = vector2();
 	};
-
-	typedef uint32 index;
-	typedef uint16 resource_id;
 
 	struct mesh_data
 	{
@@ -31,8 +29,8 @@ namespace SFG
 
 	struct semaphore_data
 	{
-		resource_id semaphore = 0;
-		uint64		value	  = 0;
+		gfx_id semaphore = 0;
+		uint64 value	 = 0;
 	};
 
 	struct texture_buffer

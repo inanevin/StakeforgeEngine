@@ -39,6 +39,7 @@ endif()
 
 # --- Option: TOOLMODE ---
 option(TOOLMODE "Enable tool mode (adds SFG_TOOLMODE)" OFF)
+option(PRODUCTION "Enable production build (adds SFG_PRODUCTION)" OFF)
 
 # ------------- COMPILE DEFINITIONS -------------
 
@@ -99,12 +100,17 @@ src/data/*.cpp
 src/memory/*.cpp
 src/serialization/*.cpp
 src/input/*.cpp
+src/project/*.cpp
 src/gfx/*.cpp
+src/gfx/util/*.cpp
 src/gfx/backend/*.cpp
 src/gfx/common/*.cpp
 src/resources/*.cpp
+src/game/*.cpp
 src/app/*.cpp
 src/sfg_api.cpp
+src/sfg_api.cpp
+src/vendor/util/*.cpp
 )
 
 file(GLOB HEADERS 
@@ -116,13 +122,19 @@ src/data/*.hpp
 src/memory/*.hpp
 src/input/*.hpp
 src/gfx/*.hpp
+src/gfx/util/*.hpp
 src/gfx/backend/*.hpp
 src/gfx/common/*.hpp
 src/gui/*.hpp
 src/app/*.hpp
+src/project/*.hpp
 src/resources/*.hpp
+src/game/*.hpp
 src/vendor/stb/*.h
 src/vendor/moodycamel/*.h
+src/vendor/nhlohmann/*.hpp
+src/vendor/util/*.hpp
+src/vendor/syoyo/*.h
 src/sfg_api.hpp
 )
 
@@ -188,7 +200,6 @@ target_include_directories(${PROJECT_NAME} PRIVATE ${PROJECT_SOURCE_DIR}/deps/ph
 
 # ------------- DEPS -------------
 add_subdirectory(deps/lz4-1.9.4)
-add_subdirectory(deps/glaze-5.5.4)
 
 if(WIN32)
 
@@ -205,11 +216,9 @@ endif()
 
 target_link_libraries(${PROJECT_NAME} 
 PUBLIC lz4
-PUBLIC glaze_glaze
 )
 
 set_target_properties(lz4 PROPERTIES FOLDER "Dependencies")
-set_target_properties(glaze_glaze PROPERTIES FOLDER "Dependencies")
 
 add_custom_command(
 TARGET ${PROJECT_NAME}

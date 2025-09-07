@@ -110,10 +110,8 @@
                             <TextBlock Margin="{StaticResource indent_left}" VerticalAlignment="Center" Text="{Binding Title}"/>
                          
                             <Button 
-                            Visibility="{Binding DataContext.EnableClosingTabs, RelativeSource={RelativeSource AncestorType={x:Type local:DockArea}}, Converter={StaticResource bool_to_vis_converter}}"
                             Margin="4, 2, 0, 0"
-                            Command="{Binding DataContext.RemovePanelCommand, RelativeSource={RelativeSource AncestorType={x:Type local:DockArea}}}"
-                            CommandParameter="{Binding}"
+                            Click="OnRemovePanel"
                             VerticalAlignment="Center"
                             Style="{StaticResource style_button_icon_small}"
                             Foreground="{Binding RelativeSource={RelativeSource AncestorType=TabItem}, Path=Foreground}"

@@ -3,6 +3,10 @@
 
 #include "common/size_definitions.hpp"
 
+#ifdef SFG_TOOLMODE
+#include "vendor/nhlohmann/json_fwd.hpp"
+#endif
+
 namespace SFG
 {
 	enum class format : uint8
@@ -77,4 +81,13 @@ namespace SFG
 		bc3_block_unorm,
 		format_max,
 	};
+
+	extern uint8 format_get_bpp(format fmt);
+	extern uint8 format_get_channels(format fmt);
+	extern bool	 format_is_linear(format fmt);
+
+#ifdef SFG_TOOLMODE
+	void to_json(nlohmann::json& j, const format& f);
+	void from_json(const nlohmann::json& j, format& f);
+#endif
 }

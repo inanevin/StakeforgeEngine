@@ -9,7 +9,7 @@
 #include "gfx/backend/backend.hpp"
 #include "gfx/common/descriptions.hpp"
 #include "gfx/common/commands.hpp"
-#include "gfx/gfx_util.hpp"
+#include "gfx/util/gfx_util.hpp"
 #include "gfx/texture_queue.hpp"
 #include "common/system_info.hpp"
 #include "platform/window_common.hpp"
@@ -44,7 +44,7 @@ namespace SFG
 #define COLOR_CONSOLE_BG		color::srgb_to_linear(color(12.0f / 255.0f, 16.0f / 255.0f, 12.0f / 255.0f, 0.99f)).to_vector()
 #define COLOR_CONSOLE_BG_OPAQUE color::srgb_to_linear(color(12.0f / 255.0f, 16.0f / 255.0f, 12.0f / 255.0f, 1.0f)).to_vector()
 #define COLOR_BORDER			color::srgb_to_linear(color(89.0f / 255.0f, 180.0f / 255.0f, 108.0f / 255.0f, 1.0f)).to_vector()
-#define DEBUG_FONT_SIZE			32
+#define DEBUG_FONT_SIZE			20
 #define INPUT_FIELD_HEIGHT		static_cast<float>(DEBUG_FONT_SIZE) * 1.5f
 #define CONSOLE_SPACING			static_cast<float>(DEBUG_FONT_SIZE) * 0.5f
 #define MAX_HISTORY				8
@@ -343,7 +343,7 @@ namespace SFG
 		set_console_visible(false);
 	}
 
-	void debug_controller::init(texture_queue* texture_queue, resource_id global_bind_layout, const vector2ui16& screen_size)
+	void debug_controller::init(texture_queue* texture_queue, gfx_id global_bind_layout, const vector2ui16& screen_size)
 	{
 
 		_gfx_data.texture_queue = texture_queue;
@@ -354,40 +354,16 @@ namespace SFG
 		gfx_backend* backend = gfx_backend::get();
 
 		// gui default
-		_shaders.gui_default.get_desc().attachments = {{.format = RT_FORMAT, .blend_attachment = gfx_util::get_blend_attachment_alpha_blending()}};
-		_shaders.gui_default.get_desc().inputs		= gfx_util::get_input_layout(input_layout_type::gui_default);
-		_shaders.gui_default.get_desc().cull		= cull_mode::back;
-		_shaders.gui_default.get_desc().front		= front_face::cw;
-		_shaders.gui_default.get_desc().layout		= global_bind_layout;
-		_shaders.gui_default.get_desc().set_name("gui_default");
-		_shaders.gui_default.create_from_file_vertex_pixel("assets/engine/shaders/gui/gui_default.hlsl");
+		_shaders.gui_default.create_from_file_vertex_pixel("assets/engine/shaders/gui/gui_default.stkfrg", false, global_bind_layout);
 
 		// gui text
-		_shaders.gui_text.get_desc().attachments = {{.format = RT_FORMAT, .blend_attachment = gfx_util::get_blend_attachment_alpha_blending()}};
-		_shaders.gui_text.get_desc().inputs		 = gfx_util::get_input_layout(input_layout_type::gui_default);
-		_shaders.gui_text.get_desc().cull		 = cull_mode::back;
-		_shaders.gui_text.get_desc().front		 = front_face::cw;
-		_shaders.gui_text.get_desc().layout		 = global_bind_layout;
-		_shaders.gui_text.get_desc().set_name("gui_text");
-		_shaders.gui_text.create_from_file_vertex_pixel("assets/engine/shaders/gui/gui_text.hlsl");
+		_shaders.gui_text.create_from_file_vertex_pixel("assets/engine/shaders/gui/gui_text.stkfrg", false, global_bind_layout);
 
 		// gui sdf
-		_shaders.gui_sdf.get_desc().attachments = {{.format = RT_FORMAT, .blend_attachment = gfx_util::get_blend_attachment_alpha_blending()}};
-		_shaders.gui_sdf.get_desc().inputs		= gfx_util::get_input_layout(input_layout_type::gui_default);
-		_shaders.gui_sdf.get_desc().cull		= cull_mode::back;
-		_shaders.gui_sdf.get_desc().front		= front_face::cw;
-		_shaders.gui_sdf.get_desc().layout		= global_bind_layout;
-		_shaders.gui_sdf.get_desc().set_name("gui_sdf");
-		_shaders.gui_sdf.create_from_file_vertex_pixel("assets/engine/shaders/gui/gui_sdf.hlsl");
+		_shaders.gui_sdf.create_from_file_vertex_pixel("assets/engine/shaders/gui/gui_sdf.stkfrg", false, global_bind_layout);
 
 		// console draw
-		_shaders.debug_controller_console_draw.get_desc().attachments = {{.format = RT_FORMAT, .blend_attachment = gfx_util::get_blend_attachment_alpha_blending()}};
-		_shaders.debug_controller_console_draw.get_desc().inputs	  = {};
-		_shaders.debug_controller_console_draw.get_desc().cull		  = cull_mode::none;
-		_shaders.debug_controller_console_draw.get_desc().front		  = front_face::cw;
-		_shaders.debug_controller_console_draw.get_desc().layout	  = global_bind_layout;
-		_shaders.debug_controller_console_draw.get_desc().set_name("dbg_cont");
-		_shaders.debug_controller_console_draw.create_from_file_vertex_pixel("assets/engine/shaders/debug_controller/console_draw.hlsl");
+		_shaders.debug_controller_console_draw.create_from_file_vertex_pixel("assets/engine/shaders/debug_controller/console_draw.stkfrg", false, global_bind_layout);
 
 		for (uint32 i = 0; i < FRAMES_IN_FLIGHT; i++)
 		{
@@ -435,7 +411,7 @@ namespace SFG
 											   0,
 											   {
 												   {.resource = pfd.buf_fullscreen_pass_view.get_hw_gpu(), .pointer_index = upi_material_ubo0, .type = binding_type::ubo},
-												   {.resource = pfd.rt_console, .pointer_index = upi_material_texture0, .type = binding_type::texture},
+												   {.resource = pfd.rt_console, .pointer_index = upi_material_texture0, .type = binding_type::texture_binding},
 											   });
 
 			pfd.buf_gui_vtx.create_staging_hw(
@@ -614,17 +590,27 @@ namespace SFG
 		});
 	}
 
-	void debug_controller::render(resource_id cmd_buffer, uint8 frame_index, bump_allocator& alloc)
+	void debug_controller::tick()
+	{
+		const char* cmd = nullptr;
+		while (_commands.try_dequeue(cmd))
+		{
+			debug_console::get()->parse_console_command(cmd);
+			SFG_FREE((void*)cmd);
+		}
+	}
+
+	void debug_controller::render(gfx_id cmd_buffer, uint8 frame_index, bump_allocator& alloc)
 	{
 		per_frame_data&	  pfd				= _pfd[frame_index];
 		const vector2ui16 rt_size			= _gfx_data.rt_size;
-		const resource_id rt_console		= pfd.rt_console;
-		const resource_id rt_fullscreen		= pfd.rt_fullscreen;
-		const resource_id gui_vertex		= pfd.buf_gui_vtx.get_hw_gpu();
-		const resource_id gui_index			= pfd.buf_gui_idx.get_hw_gpu();
-		const resource_id bg_rp				= pfd.bind_group_gui_render_pass;
-		const resource_id bg_fullscreen		= pfd.bind_group_fullscreen;
-		const resource_id shader_fullscreen = _shaders.debug_controller_console_draw.get_hw();
+		const gfx_id	  rt_console		= pfd.rt_console;
+		const gfx_id	  rt_fullscreen		= pfd.rt_fullscreen;
+		const gfx_id	  gui_vertex		= pfd.buf_gui_vtx.get_hw_gpu();
+		const gfx_id	  gui_index			= pfd.buf_gui_idx.get_hw_gpu();
+		const gfx_id	  bg_rp				= pfd.bind_group_gui_render_pass;
+		const gfx_id	  bg_fullscreen		= pfd.bind_group_fullscreen;
+		const gfx_id	  shader_fullscreen = _shaders.debug_controller_console_draw.get_hw();
 		const uint16	  dc_count			= pfd.draw_call_count;
 
 		render_pass_color_attachment* attachment_console_rt = alloc.allocate<render_pass_color_attachment>(1);
@@ -663,7 +649,7 @@ namespace SFG
 
 			if (CHECK_BIT(dc.bind_group, 15) && (last_bind_group == -1 || last_bind_group != dc.bind_group))
 			{
-				const resource_id bg = UNSET_BIT(dc.bind_group, 15);
+				const gfx_id bg = UNSET_BIT(dc.bind_group, 15);
 				backend->cmd_bind_group(cmd_buffer, {.group = bg});
 				last_bind_group = static_cast<int32>(dc.bind_group);
 			}
@@ -786,7 +772,8 @@ namespace SFG
 			   .debug_name = "vekt_atlas",
 		   });
 
-		const uint32 adjusted_size = backend->get_aligned_texture_size(atlas->get_width(), atlas->get_height(), atlas->get_is_lcd() ? 3 : 1);
+		const uint32 txt_size	   = backend->get_texture_size(atlas->get_width(), atlas->get_height(), atlas->get_is_lcd() ? 3 : 1);
+		const uint32 adjusted_size = backend->align_texture_size(txt_size);
 		ref.intermediate_buffer	   = backend->create_resource({
 			   .size	   = adjusted_size,
 			   .flags	   = resource_flags::rf_cpu_visible,
@@ -796,7 +783,7 @@ namespace SFG
 		ref.res_alive  = true;
 		ref.bind_group = backend->create_empty_bind_group();
 		backend->bind_group_add_pointer(ref.bind_group, rpi_table_material, 3, false);
-		backend->bind_group_update_pointer(ref.bind_group, 0, {{.resource = ref.texture, .view = 0, .pointer_index = upi_material_texture0, .type = binding_type::texture}});
+		backend->bind_group_update_pointer(ref.bind_group, 0, {{.resource = ref.texture, .view = 0, .pointer_index = upi_material_texture0, .type = binding_type::texture_binding}});
 	}
 
 	void debug_controller::on_atlas_updated(vekt::atlas* atlas)
@@ -1067,7 +1054,10 @@ namespace SFG
 					_input_field.history.push_back(history_element);
 					_input_field.history_traversal = static_cast<int8>(_input_field.history.size());
 
-					debug_console::get()->parse_console_command(buffer);
+					const size_t buffer_sz = strlen(buffer);
+					const char*	 cmd	   = (const char*)SFG_MALLOC(buffer_sz);
+					SFG_MEMCPY((char*)cmd, buffer, buffer_sz);
+					_commands.emplace(cmd);
 
 					buffer[0] = '\0';
 					update_console_input_field();
@@ -1196,7 +1186,7 @@ namespace SFG
 			backend->bind_group_update_pointer(pfd.bind_group_fullscreen,
 											   0,
 											   {
-												   {.resource = pfd.rt_console, .pointer_index = upi_material_texture0, .type = binding_type::texture},
+												   {.resource = pfd.rt_console, .pointer_index = upi_material_texture0, .type = binding_type::texture_binding},
 											   });
 		}
 

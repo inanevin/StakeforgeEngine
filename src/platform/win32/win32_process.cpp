@@ -38,9 +38,6 @@ namespace
 namespace SFG
 {
 
-#ifdef SFG_TOOLMODE
-	void* process::s_pipe_handle = nullptr;
-#endif
 	void process::pump_os_messages()
 	{
 		MSG msg	   = {0};
@@ -129,8 +126,7 @@ namespace SFG
 
 		return mask;
 	}
-#ifdef SFG_TOOLMODE
-
+	/*
 	void process::send_pipe_data(void* data, size_t data_size)
 	{
 		HANDLE pipe = static_cast<HANDLE>(s_pipe_handle);
@@ -145,6 +141,6 @@ namespace SFG
 			DWORD dwError = GetLastError();
 			// SFG_ERR("send_pipe_data() -> Failed to write to pipe: {0}", dwError);
 		}
-	}
-#endif
+	}*/
+
 } // namespace SFG

@@ -1,5 +1,6 @@
 // Copyright (c) 2025 Inan Evin
 #pragma once
+
 #include "common/size_definitions.hpp"
 #include "gfx/common/gfx_constants.hpp"
 #include "gfx/common/gfx_common.hpp"
@@ -17,27 +18,37 @@ namespace SFG
 	class vector2ui;
 	class window;
 	class render_data;
+	class world_renderer;
+	class world;
+
 	struct window_event;
+
+#ifndef SFG_PRODUCTION
+#define USE_DEBUG_CONTROLLER
+#endif
 
 	class renderer
 	{
+
+	private:
+		using render_fn = void (renderer::*)(uint8 index, const vector2ui16& size);
+
 	public:
-#ifdef SFG_TOOLMODE
-		void init(const vector2ui16& rt_size);
-#else
 		void init(const window& main_window);
-#endif
 		void uninit();
 		void wait_backend();
-		void populate_render_data(uint8 index);
-		void render(uint8 index, const vector2ui16& size, int64& out_time_before_presnet, int64& out_time_after_present);
+		void populate_render_data(uint8 index, double interpolation);
+		void render_w_world(uint8 index, const vector2ui16& size);
+		void render_no_world(uint8 index, const vector2ui16& size);
+		void render(uint8 index, const vector2ui16& size);
 		bool on_window_event(const window_event& ev);
 		void on_window_resize(const vector2ui16& size);
-		void reset_render_data(uint8 index);
+		void on_world_init(world* w);
+		void on_world_uninit(world* w);
 
 	private:
 		void send_uploads(uint8 frame_index);
-		void send_barriers(resource_id cmd_list);
+		void send_barriers(gfx_id cmd_list);
 
 	private:
 		struct buf_engine_global
@@ -48,46 +59,45 @@ namespace SFG
 
 		struct per_frame_data
 		{
-			buffer		   buf_engine_global = {};
-			semaphore_data sem_frame		 = {};
-			semaphore_data sem_copy			 = {};
-			resource_id	   cmd_gfx			 = 0;
-			resource_id	   cmd_copy			 = 0;
-			resource_id	   bind_group_global = 0;
-			resource_id	   bind_group_rt	 = 0;
-
-#ifdef SFG_TOOLMODE
-			resource_id render_target = 0;
-#endif
+			buffer		   buf_engine_global	= {};
+			semaphore_data sem_frame			= {};
+			semaphore_data sem_copy				= {};
+			gfx_id		   cmd_gfx				= 0;
+			gfx_id		   cmd_copy				= 0;
+			gfx_id		   bind_group_global	= 0;
+			gfx_id		   bind_group_swapchain = 0;
 		};
 
 		struct gfx_data
 		{
-#ifndef SFG_TOOLMODE
-			resource_id swapchain = 0;
-#endif
-			resource_id bind_layout_global = 0;
-			resource_id dummy_ubo		   = 0;
-			resource_id dummy_ssbo		   = 0;
-			resource_id dummy_sampler	   = 0;
-			resource_id dummy_texture	   = 0;
-			uint8		frame_index		   = 0;
+			gfx_id swapchain		  = 0;
+			gfx_id bind_layout_global = 0;
+			gfx_id dummy_ubo		  = 0;
+			gfx_id dummy_ssbo		  = 0;
+			gfx_id dummy_sampler	  = 0;
+			gfx_id dummy_texture	  = 0;
+			uint8  frame_index		  = 0;
 		};
 
 		struct shader_data
 		{
-			shader render_target = {};
+			shader swapchain = {};
 		};
 
 	private:
+#ifdef USE_DEBUG_CONTROLLER
 		debug_controller _debug_controller = {};
-		gfx_data		 _gfx_data		   = {};
-		shader_data		 _shaders		   = {};
-		per_frame_data	 _pfd[FRAMES_IN_FLIGHT];
-		bump_allocator	 _frame_allocator[FRAMES_IN_FLIGHT] = {};
-		buffer_queue	 _buffer_queue						= {};
-		texture_queue	 _texture_queue						= {};
-		render_data		 _render_data[2];
-		vector<barrier>	 _reuse_barriers;
+#endif
+		render_fn		_render_function = nullptr;
+		world_renderer* _world_renderer	 = nullptr;
+		world*			_world			 = nullptr;
+		gfx_data		_gfx_data		 = {};
+		shader_data		_shaders		 = {};
+		per_frame_data	_pfd[FRAMES_IN_FLIGHT];
+		bump_allocator	_frame_allocator[FRAMES_IN_FLIGHT] = {};
+		buffer_queue	_buffer_queue					   = {};
+		texture_queue	_texture_queue					   = {};
+		render_data		_render_data[2];
+		vector<barrier> _reuse_barriers;
 	};
 }

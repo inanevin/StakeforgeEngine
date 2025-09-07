@@ -36,15 +36,16 @@ namespace SFG
 	class debug_controller
 	{
 	public:
-		void init(texture_queue* texture_queue, resource_id global_bind_layout, const vector2ui16& screen_size);
+		void init(texture_queue* texture_queue, gfx_id global_bind_layout, const vector2ui16& screen_size);
 		void uninit();
+		void tick();
 		void collect_barriers(vector<barrier>& out_barriers);
-		void render(resource_id cmd_buffer, uint8 frame_index, bump_allocator& alloc);
+		void render(gfx_id cmd_buffer, uint8 frame_index, bump_allocator& alloc);
 		void upload(buffer_queue& q, uint8 frame_index);
 		void on_window_resize(const vector2ui16& size);
 		bool on_window_event(const window_event& ev);
 
-		inline resource_id get_final_rt(uint8 frame_index) const
+		inline gfx_id get_final_rt(uint8 frame_index) const
 		{
 			return _pfd[frame_index].rt_fullscreen;
 		}
@@ -82,8 +83,8 @@ namespace SFG
 			uint16		start_vtx	= 0;
 			uint16		start_idx	= 0;
 			uint16		index_count = 0;
-			resource_id shader		= 0;
-			resource_id bind_group	= 0;
+			gfx_id		shader		= 0;
+			gfx_id		bind_group	= 0;
 		};
 
 		struct per_frame_data
@@ -92,10 +93,10 @@ namespace SFG
 			buffer		 buf_gui_idx				= {};
 			buffer		 buf_gui_pass_view			= {};
 			buffer		 buf_fullscreen_pass_view	= {};
-			resource_id	 bind_group_gui_render_pass = 0;
-			resource_id	 bind_group_fullscreen		= 0;
-			resource_id	 rt_console					= 0;
-			resource_id	 rt_fullscreen				= 0;
+			gfx_id		 bind_group_gui_render_pass = 0;
+			gfx_id		 bind_group_fullscreen		= 0;
+			gfx_id		 rt_console					= 0;
+			gfx_id		 rt_fullscreen				= 0;
 			unsigned int counter_vtx				= 0;
 			unsigned int counter_idx				= 0;
 			uint16		 draw_call_count			= 0;
@@ -122,9 +123,9 @@ namespace SFG
 		struct atlas_ref
 		{
 			vekt::atlas*   atlas			   = nullptr;
-			resource_id	   texture			   = 0;
-			resource_id	   bind_group		   = 0;
-			resource_id	   intermediate_buffer = 0;
+			gfx_id		   texture			   = 0;
+			gfx_id		   bind_group		   = 0;
+			gfx_id		   intermediate_buffer = 0;
 			texture_buffer buffer			   = {};
 			uint8		   res_alive		   = false;
 		};
@@ -185,6 +186,7 @@ namespace SFG
 		per_frame_data											   _pfd[FRAMES_IN_FLIGHT];
 		gui_draw_call											   _gui_draw_calls[MAX_GUI_DRAW_CALLS];
 		moodycamel::ReaderWriterQueue<input_event, MAX_KEY_EVENTS> _input_events;
+		moodycamel::ReaderWriterQueue<const char*, 2>			   _commands;
 		console_state											   _console_state = console_state::invisible;
 	};
 }

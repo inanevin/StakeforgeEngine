@@ -55,16 +55,16 @@ namespace SFG
 
 	struct render_pass_color_attachment
 	{
-		vector4		clear_color = vector4(0, 0, 0, 1);
-		resource_id texture		= 0;
-		load_op		load_op		= load_op::clear;
-		store_op	store_op	= store_op::store;
-		uint8		view_index	= 0;
+		vector4	 clear_color = vector4(0, 0, 0, 1);
+		gfx_id	 texture	 = 0;
+		load_op	 load_op	 = load_op::clear;
+		store_op store_op	 = store_op::store;
+		uint8	 view_index	 = 0;
 	};
 
 	struct render_pass_depth_stencil_attachment
 	{
-		resource_id	   texture			= 0;
+		gfx_id		   texture			= 0;
 		uint8		   clear_stencil	= 0;
 		float		   clear_depth		= 1.0f;
 		bitmask<uint8> att_flags		= 0;
@@ -140,14 +140,14 @@ namespace SFG
 	{
 		static constexpr uint8 TID = 4;
 
-		resource_id pipeline = 0;
+		gfx_id pipeline = 0;
 	};
 
 	struct command_bind_pipeline_compute
 	{
 		static constexpr uint8 TID = 22;
 
-		resource_id pipeline = 0;
+		gfx_id pipeline = 0;
 	};
 
 	struct command_draw_instanced
@@ -175,40 +175,40 @@ namespace SFG
 	{
 		static constexpr uint8 TID = 7;
 
-		resource_id indirect_buffer		   = 0;
-		uint32		indirect_buffer_offset = 0;
-		uint16		count				   = 0;
-		resource_id indirect_signature	   = 0;
+		gfx_id indirect_buffer		  = 0;
+		uint32 indirect_buffer_offset = 0;
+		uint16 count				  = 0;
+		gfx_id indirect_signature	  = 0;
 	};
 
 	struct command_draw_indirect
 	{
 		static constexpr uint8 TID = 8;
 
-		resource_id indirect_buffer		   = 0;
-		uint32		indirect_buffer_offset = 0;
-		uint16		count				   = 0;
-		resource_id indirect_signature	   = 0;
+		gfx_id indirect_buffer		  = 0;
+		uint32 indirect_buffer_offset = 0;
+		uint16 count				  = 0;
+		gfx_id indirect_signature	  = 0;
 	};
 
 	struct command_copy_resource
 	{
 		static constexpr uint8 TID = 9;
 
-		resource_id source		= 0;
-		resource_id destination = 0;
+		gfx_id source	   = 0;
+		gfx_id destination = 0;
 	};
 
 	struct command_copy_texture_to_buffer
 	{
 		static constexpr uint8 TID = 10;
 
-		resource_id dest_buffer = 0;
-		resource_id src_texture = 0;
-		uint32		src_layer	= 0;
-		uint32		src_mip		= 0;
-		vector2ui	size		= vector2ui::zero;
-		uint8		bpp			= 0;
+		gfx_id	  dest_buffer = 0;
+		gfx_id	  src_texture = 0;
+		uint32	  src_layer	  = 0;
+		uint32	  src_mip	  = 0;
+		vector2ui size		  = vector2ui::zero;
+		uint8	  bpp		  = 0;
 	};
 
 	struct command_copy_buffer_to_texture
@@ -216,8 +216,8 @@ namespace SFG
 		static constexpr uint8 TID = 11;
 
 		texture_buffer* textures			= nullptr;
-		resource_id		destination_texture = 0;
-		resource_id		intermediate_buffer = 0;
+		gfx_id			destination_texture = 0;
+		gfx_id			intermediate_buffer = 0;
 		uint8			mip_levels			= 0;
 		uint8			destination_slice	= 0;
 	};
@@ -226,40 +226,40 @@ namespace SFG
 	{
 		static constexpr uint8 TID = 12;
 
-		resource_id source				   = 0;
-		resource_id destination			   = 0;
-		uint8		source_layer		   = 0;
-		uint8		destination_layer	   = 0;
-		uint8		source_mip			   = 0;
-		uint8		source_total_mips	   = 0;
-		uint8		destination_mip		   = 0;
-		uint8		destination_total_mips = 0;
+		gfx_id source				  = 0;
+		gfx_id destination			  = 0;
+		uint8  source_layer			  = 0;
+		uint8  destination_layer	  = 0;
+		uint8  source_mip			  = 0;
+		uint8  source_total_mips	  = 0;
+		uint8  destination_mip		  = 0;
+		uint8  destination_total_mips = 0;
 	};
 
 	struct command_bind_vertex_buffers
 	{
 		static constexpr uint8 TID = 13;
 
-		resource_id buffer		= 0;
-		uint8		slot		= 0;
-		uint16		vertex_size = 0;
-		uint64		offset		= 0;
+		gfx_id buffer	   = 0;
+		uint8  slot		   = 0;
+		uint16 vertex_size = 0;
+		uint64 offset	   = 0;
 	};
 
 	struct command_bind_index_buffers
 	{
 		static constexpr uint8 TID = 14;
 
-		resource_id buffer	  = 0;
-		uint64		offset	  = 0;
-		uint8		bit_depth = 0;
+		gfx_id buffer	 = 0;
+		uint64 offset	 = 0;
+		uint8  bit_depth = 0;
 	};
 
 	struct command_bind_group
 	{
 		static constexpr uint8 TID = 15;
 
-		resource_id group = 0;
+		gfx_id group = 0;
 	};
 
 	struct command_bind_constants
@@ -293,14 +293,14 @@ namespace SFG
 	{
 		static constexpr uint8 TID = 23;
 
-		resource_id layout = 0;
+		gfx_id layout = 0;
 	};
 
 	struct command_bind_layout_compute
 	{
 		static constexpr uint8 TID = 24;
 
-		resource_id layout = 0;
+		gfx_id layout = 0;
 	};
 
 }

@@ -3,49 +3,104 @@
 #include "shader.hpp"
 #include "data/string.hpp"
 #include "data/vector.hpp"
-#include "io/file_system.hpp"
 #include "gfx/backend/backend.hpp"
+#include "gfx/common/shader_description.hpp"
+
+#ifdef SFG_TOOLMODE
+#include "io/file_system.hpp"
+#include "vendor/nhlohmann/json.hpp"
+using json = nlohmann::json;
+#endif
+
+#include <fstream>
 
 namespace SFG
 {
+
+#ifdef SFG_TOOLMODE
+	void to_json(nlohmann::json& j, const shader_meta& s)
+	{
+		j["source"] = s.source;
+		j["desc"]	= s.desc;
+	}
+
+	void from_json(const nlohmann::json& j, shader_meta& s)
+	{
+		s.source = j.value<string>("source", "");
+		s.desc	 = j.value<shader_desc>("desc", {});
+	}
+
+#endif
+
+	shader::~shader()
+	{
+		SFG_ASSERT(!CHECK_BIT(_hw, 15));
+	}
+
 	void shader::destroy()
 	{
+		SFG_ASSERT(CHECK_BIT(_hw, 15));
+		_hw = UNSET_BIT(_hw, 15);
 		gfx_backend::get()->destroy_shader(_hw);
 	}
 
-	bool shader::create_from_file_vertex_pixel(const char* path)
+#ifdef SFG_TOOLMODE
+
+	bool shader::create_from_file_vertex_pixel(const char* path, bool use_embedded_layout, gfx_id layout)
 	{
-		const string shader_text = file_system::read_file_as_string(path);
+		SFG_ASSERT(!CHECK_BIT(_hw, 15));
+
+		if (!file_system::exists(path))
+		{
+			SFG_ERR("File don't exist! {0}", path);
+			return false;
+		}
+
+		std::ifstream f(path);
+		json		  json_data = json::parse(f);
+		shader_meta	  meta		= json_data;
+		f.close();
+
+		const string shader_text = file_system::read_file_as_string(meta.source.c_str());
 		if (shader_text.empty())
 			return false;
 
 		gfx_backend* backend = gfx_backend::get();
+		meta.desc.debug_name = meta.source.c_str();
 
-		_desc.blobs = {
+		meta.desc.blobs = {
 			{.stage = shader_stage::vertex},
 			{.stage = shader_stage::fragment},
 		};
 
-		span<uint8> layout_data	   = {};
-		const bool	compile_layout = _desc.flags.is_set(shader_flags::shf_use_embedded_layout);
+		if (use_embedded_layout)
+			meta.desc.flags.set(shader_flags::shf_use_embedded_layout);
+		else
+			meta.desc.layout = layout;
 
-		const string folder_path = file_system::get_directory_of_file(path);
-		if (!backend->compile_shader_vertex_pixel(shader_text, folder_path.c_str(), _desc.vertex_entry, _desc.pixel_entry, _desc.blobs[0].data, _desc.blobs[1].data, compile_layout, _desc.layout_data))
+		span<uint8> layout_data	   = {};
+		const bool	compile_layout = meta.desc.flags.is_set(shader_flags::shf_use_embedded_layout);
+
+		const string folder_path = file_system::get_directory_of_file(meta.source.c_str());
+		if (!backend->compile_shader_vertex_pixel(shader_text, folder_path.c_str(), meta.desc.vertex_entry.c_str(), meta.desc.pixel_entry.c_str(), meta.desc.blobs[0].data, meta.desc.blobs[1].data, compile_layout, meta.desc.layout_data))
 			return false;
 
-		_hw = backend->create_shader(_desc);
+		_hw = backend->create_shader(meta.desc);
+		_hw = SET_BIT(_hw, 15);
 
-		for (shader_blob& b : _desc.blobs)
+		for (shader_blob& b : meta.desc.blobs)
 			delete[] b.data.data;
 
 		if (compile_layout)
-			delete[] _desc.layout_data.data;
+			delete[] meta.desc.layout_data.data;
 
-		_desc.layout_data = {};
-		_desc.blobs		  = {};
+		meta.desc.layout_data = {};
+		meta.desc.blobs		  = {};
 
 		return true;
 	}
+
+#endif
 
 	void shader::get_shader_block(const string& text, const string& block_ident, const string& end_ident, string& out_block)
 	{
@@ -61,4 +116,10 @@ namespace SFG
 
 		out_block = text.substr(block_start, block_end - block_start);
 	}
+
+	gfx_id shader::get_hw() const
+	{
+		return UNSET_BIT(_hw, 15);
+	}
+
 } // namespace Lina

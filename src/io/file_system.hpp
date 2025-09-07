@@ -26,7 +26,7 @@ namespace SFG
 		static string get_file_extension(const string& file);
 		static string get_filename_from_path(const string& file);
 		static string get_last_folder_from_path(const char* path);
-		static string read_file_as_string(const string& file_path);
+		static string read_file_as_string(const char* file);
 		static string get_running_directory();
 		static string get_user_directory();
 		static void	  fix_path(string& str);

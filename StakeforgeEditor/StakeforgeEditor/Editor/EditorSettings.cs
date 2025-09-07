@@ -1,18 +1,30 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using System.Net.NetworkInformation;
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Threading.Tasks;
+using System.Windows;
+using System.Windows.Shapes;
 
 namespace StakeforgeEditor.Editor
 {
 	public sealed class EditorSettings
 	{
-		public string? EngineHostExePath { get; set; }
-		public string? LastProjectPath { get; set; }
+		public string EngineHostExePath { get; set; }
+		public string LastProjectPath { get; set; }
+		public string LastProjectFolder { get; set; }
+
+		public EditorSettings()
+		{
+			EngineHostExePath = "";
+			LastProjectPath = "";
+			LastProjectFolder = "";
+		}
 
 		[JsonIgnore]
 		private static readonly JsonSerializerOptions JsonOpts = new()
@@ -22,44 +34,18 @@ namespace StakeforgeEditor.Editor
 			ReadCommentHandling = JsonCommentHandling.Skip
 		};
 
-		public static EditorSettings LoadOrCreate()
+		public static EditorSettings Load(string path)
 		{
-			EditorPaths.EnsureDirectories();
-
-			if (!File.Exists(EditorPaths.SettingsPath))
-			{
-				var defaults = new EditorSettings();
-				Save(defaults);
-				return defaults;
-			}
-
-			try
-			{
-				var json = File.ReadAllText(EditorPaths.SettingsPath);
-				var loaded = JsonSerializer.Deserialize<EditorSettings>(json, JsonOpts);
-				return loaded ?? new EditorSettings();
-			}
-			catch
-			{
-				// Corrupt? Back it up and recreate.
-				try
-				{
-					var backup = EditorPaths.SettingsPath + ".bak";
-					File.Copy(EditorPaths.SettingsPath, backup, overwrite: true);
-				}
-				catch { /* best-effort */ }
-
-				var defaults = new EditorSettings();
-				Save(defaults);
-				return defaults;
-			}
+			string json = File.ReadAllText(path);
+			EditorSettings? settings = JsonSerializer.Deserialize<EditorSettings>(json, JsonOpts);
+			Debug.Assert(settings != null);
+			return settings;
 		}
 
-		public static void Save(EditorSettings settings)
+		public static void Save(string path, EditorSettings settings)
 		{
-			EditorPaths.EnsureDirectories();
-			var json = JsonSerializer.Serialize(settings, JsonOpts);
-			File.WriteAllText(EditorPaths.SettingsPath, json);
+			string json = JsonSerializer.Serialize<EditorSettings>(settings, JsonOpts);
+			File.WriteAllText(path, json);
 		}
 	}
 }

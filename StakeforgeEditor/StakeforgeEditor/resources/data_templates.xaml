@@ -14,4 +14,14 @@
         <panels:ConsoleView/>
     </DataTemplate>
 
+
+    <DataTemplate DataType="{x:Type panels:PropertiesViewModel}">
+        <panels:PropertiesView/>
+    </DataTemplate>
+
+
+    <DataTemplate DataType="{x:Type panels:WorldViewModel}">
+        <panels:WorldView/>
+    </DataTemplate>
+
 </ResourceDictionary>

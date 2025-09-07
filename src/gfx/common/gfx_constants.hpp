@@ -23,5 +23,6 @@ namespace SFG
 	// 0 discrete, 1 integrated
 #define GPU_DEVICE 0
 
-	typedef unsigned short resource_id;
+	typedef unsigned short gfx_id;
+	typedef unsigned short primitive_index;
 }

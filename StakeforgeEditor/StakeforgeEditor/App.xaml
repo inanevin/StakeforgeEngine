@@ -19,10 +19,13 @@
             </ResourceDictionary.MergedDictionaries>
 
             <converters:BooleanToVisibilityConverter x:Key="bool_to_vis_converter"/>
+            <converters:BooleanToVisibilityConverterInv x:Key="bool_to_vis_converter_inv"/>
             <converters:PercentageConverter x:Key="percentage_converter"/>
             <converters:DockOverlayStateToVisibilityConverter x:Key="dock_overlay_to_visibility"/>
             <converters:LogLevelToBrush x:Key="log_level_to_brush"/>
             <converters:LogMaskToIconConverter x:Key="log_mask_to_icon"/>
+            <converters:ResourceTypeToTagBrush x:Key="resource_type_to_tag_brush"/>
+            <converters:ResourceTypeToTagString x:Key="resource_type_to_tag_str"/>
 
         </ResourceDictionary>
     </Application.Resources>

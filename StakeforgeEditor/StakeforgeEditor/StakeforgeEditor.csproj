@@ -11,16 +11,21 @@
 
   <ItemGroup>
     <None Remove="Resources\Fonts\editor_icons.ttf" />
+    <None Remove="resources\fonts\IBMPlexMono-Regular.ttf" />
     <None Remove="Resources\Fonts\icons.ttf" />
+    <None Remove="resources\fonts\play\Play-Bold.ttf" />
+    <None Remove="resources\fonts\play\Play-Regular.ttf" />
     <None Remove="resources\fonts\sfg.ttf" />
     <None Remove="Resources\Fonts\VT323-Regular.ttf" />
     <None Remove="Resources\Fonts\vt323_regular.ttf" />
   </ItemGroup>
 
   <ItemGroup>
+    <Resource Include="resources\fonts\play\Play-Bold.ttf" />
+    <Resource Include="resources\fonts\play\Play-Regular.ttf" />
     <Resource Include="resources\fonts\sfg.ttf" />
     <Resource Include="Resources\Fonts\vt323_regular.ttf">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+      <CopyToOutputDirectory></CopyToOutputDirectory>
     </Resource>
   </ItemGroup>
 

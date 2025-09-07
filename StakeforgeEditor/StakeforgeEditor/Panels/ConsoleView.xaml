@@ -17,7 +17,7 @@
             <RowDefinition Height="{StaticResource height_item_base_big_grid}"/>
         </Grid.RowDefinitions>
 
-        <Border Grid.Row="0" Background="{StaticResource brush_background3}"  VerticalAlignment="Stretch">
+        <Border Grid.Row="0" Background="{StaticResource brush_background3}"  VerticalAlignment="Stretch" Effect="{StaticResource fx_drop_shadow_default}" BorderBrush="{StaticResource brush_background0}" BorderThickness="{StaticResource thickness_border_bottom}">
             <StackPanel Margin="{StaticResource indent_horizontal}"  Orientation="Horizontal" Width="Auto" HorizontalAlignment="Left" VerticalAlignment="Center">
                 <Button Content="{StaticResource str_icon_filter}" Style="{StaticResource style_button_icon}" Click="Filter_Click">
 

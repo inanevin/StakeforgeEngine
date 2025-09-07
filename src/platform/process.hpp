@@ -22,15 +22,6 @@ namespace SFG
 		sign	   = 1 << 9,
 	};
 
-#ifdef SFG_TOOLMODE
-#define PIPE_MAX_MSG_SIZE 4096
-
-	enum class pipe_data_type : uint8
-	{
-		log,
-	};
-#endif
-
 	class process
 	{
 	public:
@@ -41,29 +32,24 @@ namespace SFG
 		static char	  get_character_from_key(uint32 key);
 		static uint16 get_character_mask_from_key(uint32 key, char ch);
 
-#ifdef SFG_TOOLMODE
+		/*
+				static void send_pipe_data(void* data, size_t data_size);
 
-		/* pipe_data_type + data itself */
-		static void send_pipe_data(void* data, size_t data_size);
+				static inline void set_pipe_handle(void* hnd)
+				{
+					s_pipe_handle = hnd;
+				}
 
-		static inline void set_pipe_handle(void* hnd)
-		{
-			s_pipe_handle = hnd;
-		}
-
-		static inline void* get_pipe_handle()
-		{
-			return s_pipe_handle;
-		}
-
-#endif
+				static inline void* get_pipe_handle()
+				{
+					return s_pipe_handle;
+				}
+		*/
 
 	private:
-#ifdef SFG_TOOLMODE
-
-		static void* s_pipe_handle;
-
-#endif
+		/*
+				static void* s_pipe_handle;
+		*/
 	};
 
 } // namespace SFG

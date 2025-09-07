@@ -1,8 +1,11 @@
 ﻿using Microsoft.Win32;
+using StakeforgeEditor.Common;
 using StakeforgeEditor.Engine;
+using StakeforgeEditor.Main;
 using StakeforgeEditor.Panels;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Text;
@@ -17,23 +20,20 @@ namespace StakeforgeEditor.Editor
 	{
 		private bool _disposed;
 		private static Editor? _instance;
-		private ConnectionManager _connectionManager = new ConnectionManager();
-
+		public EditorLayout Layout { get; private set; }
 		public EditorSettings Settings { get; private set; }
 		public ProjectSettings Project { get; private set; }
 		public ConnectionManager Connection { get; private set; }
 
 		public static Editor Instance { get { return _instance!; } }
 
+
 		public Editor()
 		{
 			_instance = this;
-			Settings = EditorSettings.LoadOrCreate();
-			Project = new ProjectSettings();
-			Connection = _connectionManager;
-			EnsureEngineHostPath();
-			EnsureProject();
-			_connectionManager.StartEngineProcess();
+
+			EditorPaths.EnsureSettingsPath();
+			Settings = EditorSettings.Load(EditorPaths.SettingsPath);
 		}
 
 		public void Dispose()
@@ -44,10 +44,25 @@ namespace StakeforgeEditor.Editor
 			GC.SuppressFinalize(this);
 		}
 
+		public void PostInit()
+		{
+			EditorPaths.EnsureLayoutPath();
+			Layout = EditorLayout.Load(EditorPaths.LayoutPath);
+
+			Project = new ProjectSettings();
+
+			EnsureEngineHostPath();
+			EnsureProject();
+
+			Connection = new ConnectionManager();
+			Connection.StartEngineProcess();
+		}
+
 		public void Shutdown()
 		{
-			_connectionManager.StopEngineProcess();
+			Connection.StopEngineProcess();
 			SaveSettings();
+			SaveLayout();
 			SaveProject();
 			Application.Current.MainWindow.Close();
 		}
@@ -60,7 +75,12 @@ namespace StakeforgeEditor.Editor
 
 		public void SaveSettings()
 		{
-			EditorSettings.Save(Settings);
+			EditorSettings.Save(EditorPaths.SettingsPath, Settings);
+		}
+
+		public void SaveLayout()
+		{
+			EditorLayout.Save(EditorPaths.LayoutPath, Layout);
 		}
 
 		public void CreateProject()
@@ -114,6 +134,9 @@ namespace StakeforgeEditor.Editor
 			// Cleanup current.
 			Project = ProjectSettings.Load(path);
 			Settings.LastProjectPath = Project.Path;
+			string? folder = System.IO.Path.GetDirectoryName(Project.Path);
+			Debug.Assert(folder != null);
+			Settings.LastProjectFolder = folder;
 			SaveSettings();
 
 			ConsoleViewModel.Logp("Loaded project: " + path);

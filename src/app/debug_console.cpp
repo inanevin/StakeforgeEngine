@@ -51,6 +51,20 @@ namespace SFG
 		it->second->execute(args);
 	}
 
+	void debug_console::unregister_console_function(const char* name)
+	{
+		const string_id sid = TO_SIDC(name);
+		auto			it	= _console_entries.find(sid);
+		if (it == _console_entries.end())
+		{
+			SFG_ERR("debug_console::unregister_console_function() -> can't find function! {0}", name);
+			return;
+		}
+
+		delete it->second;
+		_console_entries.erase(it);
+	}
+
 	void debug_console::init()
 	{
 		s_instance = new debug_console();

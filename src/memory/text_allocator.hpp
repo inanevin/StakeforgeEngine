@@ -111,6 +111,13 @@ namespace SFG
 			return _raw;
 		}
 
+		inline void reset()
+		{
+			_free_list.resize(0);
+			_alloc_count = 0;
+			_head		 = 0;
+		}
+
 	private:
 		char			   _raw[CAPACITY];
 		vector<allocation> _free_list;

@@ -17,7 +17,7 @@ namespace SFG
 		_hw_staging			 = backend->create_resource(staging);
 		_hw_gpu				 = backend->create_resource(hw);
 		backend->map_resource(_hw_staging, _mapped);
-		_flags.set(buf_has_staging);
+		_flags.set(buf_has_staging | buf_alive);
 	}
 
 	void buffer::create_hw(const resource_desc& desc)
@@ -34,17 +34,18 @@ namespace SFG
 			backend->destroy_resource(_hw_staging);
 		backend->destroy_resource(_hw_gpu);
 		_mapped = nullptr;
+		_flags.remove(buffer_flags::buf_alive);
 	}
 
 	void buffer::buffer_data(size_t padding, const void* data, size_t size)
 	{
 		SFG_MEMCPY(_mapped + padding, data, size);
-		_flags.set(buf_modified);
+		_flags.set(buf_dirty);
 	}
 
-	bool buffer::copy(resource_id cmd_buffer)
+	bool buffer::copy(gfx_id cmd_buffer)
 	{
-		if (!_flags.is_set(buf_modified) || !_flags.is_set(buffer_flags::buf_has_staging))
+		if (!_flags.is_set(buf_dirty) || !_flags.is_set(buffer_flags::buf_has_staging))
 			return false;
 
 		gfx_backend* backend = gfx_backend::get();
@@ -53,7 +54,7 @@ namespace SFG
 									   .source		= _hw_staging,
 									   .destination = _hw_gpu,
 								   });
-		_flags.remove(buf_modified);
+		_flags.remove(buf_dirty);
 		return true;
 	}
 

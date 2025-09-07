@@ -11,7 +11,9 @@ namespace SFG
 {
 	namespace math
 	{
-		double fast_pow(double base, double exponent);
+
+		unsigned int floor_log2(unsigned int val);
+		double		 fast_pow(double base, double exponent);
 
 		template <typename T> inline T clamp(T value, T min_val, T max_val)
 		{

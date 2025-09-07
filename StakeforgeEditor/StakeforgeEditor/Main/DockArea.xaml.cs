@@ -1,24 +1,12 @@
 ﻿using StakeforgeEditor.Common;
 using StakeforgeEditor.Panels;
-using System;
-using System.Collections.Generic;
-using System.ComponentModel;
 using System.Diagnostics;
-using System.Linq;
-using System.Reflection;
-using System.Text;
-using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
-using System.Windows.Data;
-using System.Windows.Documents;
 using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Animation;
-using System.Windows.Media.Imaging;
-using System.Windows.Navigation;
-using System.Windows.Shapes;
-using System.Windows.Threading;
+
 
 namespace StakeforgeEditor.Main
 {
@@ -107,11 +95,16 @@ namespace StakeforgeEditor.Main
 			DockAreaViewModel? viewModel = this.DataContext as DockAreaViewModel;
 			Debug.Assert(viewModel != null);
 
+			DockContainer? container = Common.ObjectUtil.FindParent<DockContainer>(this);
+			Debug.Assert(container != null);
+
+			if (viewModel.Panels.Count == 1 && !container.CanKill())
+				return;
+
 			viewModel.RemovePanel(model);
+
 			if (viewModel.Panels.Count == 0)
 			{
-				DockContainer? container = Common.ObjectUtil.FindParent<DockContainer>(this);
-				Debug.Assert(container != null);
 				container.Kill();
 			}
 		}
@@ -432,7 +425,15 @@ namespace StakeforgeEditor.Main
 			btn.ContextMenu.Placement = System.Windows.Controls.Primitives.PlacementMode.Bottom;
 			btn.ContextMenu.IsOpen = true;
 		}
-    }
+
+		private void OnRemovePanel(object sender, RoutedEventArgs e)
+		{
+			if (sender is Button btn && btn.DataContext is PanelViewModel panel)
+			{
+				RemovePanel(panel);
+			}
+		}
+	}
 
 
 }

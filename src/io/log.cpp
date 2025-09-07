@@ -4,11 +4,6 @@
 #include "data/vector_util.hpp"
 #include "data/string.hpp"
 
-#ifdef SFG_TOOLMODE
-#include "data/ostream.hpp"
-#include "platform/process.hpp"
-#endif
-
 #ifdef SFG_PLATFORM_WINDOWS
 #define WIN32_LEAN_AND_MEAN
 #include <Windows.h>
@@ -44,16 +39,16 @@ namespace SFG
 		std::cout << msgStr.c_str();
 #endif
 
-#ifdef SFG_TOOLMODE
-		ostream		stream;
-		const uint8 dt		  = (uint8)pipe_data_type::log;
-		const uint8 log_level = (uint8)level;
-		stream << dt;
-		stream << level;
-		stream.write_raw((uint8*)msg, strlen(msg));
-		process::send_pipe_data(stream.get_raw(), stream.get_size());
-		stream.destroy();
-#endif
+		/*
+				ostream		stream;
+				const uint8 dt		  = (uint8)pipe_data_type::log;
+				const uint8 log_level = (uint8)level;
+				stream << dt;
+				stream << level;
+				stream.write_raw((uint8*)msg, strlen(msg));
+				process::send_pipe_data(stream.get_raw(), stream.get_size());
+				stream.destroy();
+		*/
 
 		for (const listener& l : _listeners)
 			l.f(level, msg);

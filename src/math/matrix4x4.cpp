@@ -140,7 +140,7 @@ namespace SFG
 		return matrix4x4(s.x, 0.0f, 0.0f, 0.0f, 0.0f, s.y, 0.0f, 0.0f, 0.0f, 0.0f, s.z, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f);
 	}
 
-	matrix4x4 matrix4x4::rotation(const quaternion& q)
+	matrix4x4 matrix4x4::rotation(const quat& q)
 	{
 		float x2 = q.x * q.x;
 		float y2 = q.y * q.y;
@@ -174,7 +174,7 @@ namespace SFG
 		return matrix4x4(1.0f / (aspect_ratio * tan_half_fov), 0.0f, 0.0f, 0.0f, 0.0f, 1.0f / tan_half_fov, 0.0f, 0.0f, 0.0f, 0.0f, far_plane * inv_depth, 1.0f, 0.0f, 0.0f, -near_plane * far_plane * inv_depth, 0.0f);
 	}
 
-	matrix4x4 matrix4x4::transform(const vector3& position, const quaternion& rotation, const vector3& scale_vec)
+	matrix4x4 matrix4x4::transform(const vector3& position, const quat& rotation, const vector3& scale_vec)
 	{
 		matrix4x4 mat_s = matrix4x4::scale(scale_vec);
 		matrix4x4 mat_r = matrix4x4::rotation(rotation);

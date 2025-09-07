@@ -31,7 +31,7 @@ namespace StakeforgeEditor.Editor
 
 		public static void Save(ProjectSettings settings)
 		{
-			EditorPaths.EnsureDirectories();
+			EditorPaths.EnsureSettingsPath();
 			var json = JsonSerializer.Serialize(settings, JsonOpts);
 			File.WriteAllText(settings.Path, json);
 		}

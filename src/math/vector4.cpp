@@ -3,6 +3,9 @@
 #include "vector4.hpp"
 #include "math.hpp"
 
+#ifdef SFG_TOOLMODE
+#include "vendor/nhlohmann/json.hpp"
+#endif
 namespace SFG
 {
 	const vector4 vector4::zero(0.0f, 0.0f, 0.0f, 0.0f);
@@ -113,4 +116,23 @@ namespace SFG
 	{
 		return math::almost_equal(x, 0.0f, epsilon) && math::almost_equal(y, 0.0f, epsilon) && math::almost_equal(z, 0.0f, epsilon) && math::almost_equal(w, 0.0f, epsilon);
 	}
+
+#ifdef SFG_TOOLMODE
+	void to_json(nlohmann::json& j, const vector4& v)
+	{
+		j["x"] = v.x;
+		j["y"] = v.y;
+		j["z"] = v.z;
+		j["w"] = v.w;
+	}
+
+	void from_json(const nlohmann::json& j, vector4& v)
+	{
+		v.x = j.value<float>("x", 0.0f);
+		v.y = j.value<float>("y", 0.0f);
+		v.z = j.value<float>("z", 0.0f);
+		v.w = j.value<float>("w", 0.0f);
+	}
+
+#endif
 }

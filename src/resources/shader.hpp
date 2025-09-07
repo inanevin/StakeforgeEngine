@@ -4,55 +4,40 @@
 
 #include "common/size_definitions.hpp"
 #include "data/string.hpp"
+#include "data/vector.hpp"
 #include "gfx/common/shader_description.hpp"
 
 namespace SFG
 {
 	struct shader_desc;
 
+	struct shader_meta
+	{
+		string		source = "";
+		shader_desc desc   = {};
+	};
+
+#ifdef SFG_TOOLMODE
+
+	void to_json(nlohmann::json& j, const shader_meta& s);
+	void from_json(const nlohmann::json& j, shader_meta& s);
+#endif
+
 	class shader
 	{
 	public:
-		bool create_from_file_vertex_pixel(const char* file);
-		void destroy();
+		~shader();
 
-		inline uint16 get_hw() const
-		{
-			return _hw;
-		}
+#ifdef SFG_TOOLMODE
+		bool create_from_file_vertex_pixel(const char* file, bool use_embedded_layout, gfx_id layout);
+#endif
+		void   destroy();
+		gfx_id get_hw() const;
 
 		static void get_shader_block(const string& text, const string& block_ident, const string& end_ident, string& out_block);
 
-		inline shader_desc& get_desc()
-		{
-			return _desc;
-		}
-
 	private:
-		uint16 _hw = 0;
-
-		shader_desc _desc = {
-			.vertex_entry		 = "VSMain",
-			.pixel_entry		 = "PSMain",
-			.compute_entry		 = "CSMain",
-			.flags				 = 0,
-			.layout_data		 = {},
-			.blobs				 = {},
-			.attachments		 = {},
-			.inputs				 = {},
-			.depth_stencil_desc	 = {},
-			.blend_logic_op		 = logic_op::and_,
-			.topo				 = topology::triangle_list,
-			.cull				 = cull_mode::back,
-			.front				 = front_face::cw,
-			.poly_mode			 = polygon_mode::fill,
-			.layout				 = 0,
-			.samples			 = 1,
-			.depth_bias_constant = 0.0f,
-			.depth_bias_clamp	 = 0.0f,
-			.depth_bias_slope	 = 0.0f,
-			.debug_name			 = "shader",
-		};
+		gfx_id _hw = 0;
 	};
 
 }

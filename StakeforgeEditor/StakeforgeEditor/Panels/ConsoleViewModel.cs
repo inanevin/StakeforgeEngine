@@ -3,13 +3,14 @@ using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Globalization;
 using System.Runtime.CompilerServices;
+using System.Text.Json;
 using System.Windows;
 using System.Windows.Data;
 using System.Windows.Input;
 
 namespace StakeforgeEditor.Panels
 {
-	
+
 	internal class ConsoleViewModel : PanelViewModel
 	{
 		private string _searchText = string.Empty;
@@ -33,7 +34,7 @@ namespace StakeforgeEditor.Panels
 
 		public ObservableCollection<Common.LogEntry> Logs { get; } = new();
 
-		private int _levelMask = (1 << (int)LogLevel.Max) - 1; 
+		private int _levelMask = (1 << (int)LogLevel.Max) - 1;
 		public int LevelMask
 		{
 			get => _levelMask;
@@ -41,7 +42,7 @@ namespace StakeforgeEditor.Panels
 			{
 				if (_levelMask == value) return;
 				_levelMask = value;
-				OnPropertyChanged(); 
+				OnPropertyChanged();
 				FilteredLogs.Refresh();
 			}
 		}
@@ -53,14 +54,15 @@ namespace StakeforgeEditor.Panels
 		public ConsoleViewModel()
 		{
 			Title = "Console";
+			Type = Common.PanelType.Console;
 
 			FilteredLogs = CollectionViewSource.GetDefaultView(Logs);
 			FilteredLogs.Filter = FilterPredicate;
 
 			ToggleLevelCommand = new Commands.RelayCommand(lvl =>
 			{
-				LevelMask ^= 1 << (byte)lvl; 
-											
+				LevelMask ^= 1 << (byte)lvl;
+
 			});
 		}
 
@@ -121,5 +123,32 @@ namespace StakeforgeEditor.Panels
 			Panels.Instance.ConsoleViewModel.AddLog(new Common.LogEntry(DateTime.Now, LogLevel.Progress, msg, null, 0));
 		}
 
+		public override void WriteJson(Utf8JsonWriter w)
+		{
+			w.WriteNumber("filter", _levelMask);
+		}
+
+		public override void ReadJson(ref Utf8JsonReader r)
+		{
+			while (r.Read() && r.TokenType != JsonTokenType.EndObject)
+			{
+				if (r.TokenType != JsonTokenType.PropertyName) continue;
+
+				string propertyName = r.GetString() ?? "";
+				if (!r.Read()) throw new JsonException();
+
+				switch (propertyName)
+				{
+					case "filter":
+						_levelMask = r.TokenType == JsonTokenType.Number ? r.GetInt32() : 0;
+						break;
+
+					// Add future fields here; otherwise:
+					default:
+						r.Skip(); // safely skip unknowns
+						break;
+				}
+			}
+		}
 	}
 }

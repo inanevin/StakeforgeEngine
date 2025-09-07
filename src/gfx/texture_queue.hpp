@@ -17,8 +17,8 @@ namespace SFG
 
 		struct texture_request
 		{
-			resource_id		texture		 = 0;
-			resource_id		intermediate = 0;
+			gfx_id			texture		 = 0;
+			gfx_id			intermediate = 0;
 			texture_buffer* buffers		 = nullptr;
 			uint8			buffer_count = 0;
 		};
@@ -27,7 +27,7 @@ namespace SFG
 		void uninit();
 
 		void add_request(const texture_request& req);
-		void flush_all(resource_id cmd);
+		void flush_all(gfx_id cmd);
 		bool empty() const;
 		void subscribe_flush_callback(flush_callback&& cb);
 

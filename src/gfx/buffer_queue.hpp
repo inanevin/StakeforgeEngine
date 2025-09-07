@@ -19,7 +19,7 @@ namespace SFG
 		void init();
 		void uninit();
 		void add_request(const buffer_request& req);
-		void flush_all(resource_id cmd);
+		void flush_all(gfx_id cmd);
 		bool empty() const;
 
 	private:

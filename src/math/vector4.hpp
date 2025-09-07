@@ -5,6 +5,10 @@
 #undef min
 #undef max
 
+#ifdef SFG_TOOLMODE
+#include "vendor/nhlohmann/json_fwd.hpp"
+#endif
+
 namespace SFG
 {
 	class vector4
@@ -126,4 +130,11 @@ namespace SFG
 	{
 		return vector * scalar;
 	}
+
+#ifdef SFG_TOOLMODE
+
+	void to_json(nlohmann::json& j, const vector4& v);
+	void from_json(const nlohmann::json& j, vector4& v);
+
+#endif
 }

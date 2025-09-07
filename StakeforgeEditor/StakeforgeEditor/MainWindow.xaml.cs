@@ -1,5 +1,9 @@
 ﻿
+using StakeforgeEditor.Main;
+using System;
+using System.Runtime.InteropServices;
 using System.Text;
+using System.Text.Json;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Data;
@@ -10,9 +14,6 @@ using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
-using System;
-using System.Runtime.InteropServices;
-using StakeforgeEditor.Main;
 
 
 namespace StakeforgeEditor
@@ -24,23 +25,18 @@ namespace StakeforgeEditor
 	{
 
 		private List<SubWindow> _subWindows = new List<SubWindow>();
+		private DockContainer _mainDockContainer = new DockContainer();
+		private double _loadedLeft = 0;
+		private double _loadedTop = 0;
+
 		public MainWindow()
 		{
 			InitializeComponent();
 			Loaded += OnLoaded;
 
-			DockArea area0 = new DockArea();
-			DockAreaViewModel area0VM = new DockAreaViewModel();
-			area0.DataContext = area0VM;
-			area0VM.AddPanel(Panels.Panels.Instance.ConsoleViewModel);
-			area0VM.AddPanel(Panels.Panels.Instance.ResourcesViewModel);
-			area0VM.AddPanel(Panels.Panels.Instance.EntitiesViewModel);
+			Grid.SetRow(_mainDockContainer, 1);
+			RootGrid.Children.Add(_mainDockContainer);
 
-			DockContainer container = new DockContainer();
-			container.InitArea(area0);
-
-			Grid.SetRow(container, 1);
-			RootGrid.Children.Add(container);
 		}
 
 		public SubWindow CreateSubWindow(double width, double height)
@@ -59,9 +55,12 @@ namespace StakeforgeEditor
 		private void OnLoaded(object sender, RoutedEventArgs e)
 		{
 			var hwnd = new WindowInteropHelper(this).Handle;
-
-			// Hook WndProc for resize + drag
 			HwndSource.FromHwnd(hwnd).AddHook(WndProc);
+
+			this.Left = _loadedLeft;
+			this.Top = _loadedTop;
+			Editor.Editor.Instance.PostInit();
+
 		}
 
 		private IntPtr WndProc(IntPtr hwnd, int msg, IntPtr wParam, IntPtr lParam, ref bool handled)
@@ -132,6 +131,99 @@ namespace StakeforgeEditor
 			return PointFromScreen(new Point(x, y));
 		}
 
+		public void WriteJson(Utf8JsonWriter w)
+		{
+			w.WriteStartObject();
 
+			w.WriteNumber("left", this.Left);
+			w.WriteNumber("top", this.Top);
+			w.WriteNumber("width", this.Width);
+			w.WriteNumber("height", this.Height);
+
+			if (_mainDockContainer.SplitDirection == Common.Direction.None && _mainDockContainer.TargetArea == null)
+				InitDefault();
+			else if (_mainDockContainer.SplitDirection != Common.Direction.None && _mainDockContainer.Container0 == null)
+				InitDefault();
+
+			w.WriteStartObject("container");
+			_mainDockContainer.WriteJson(w);
+			w.WriteEndObject();
+
+			foreach (SubWindow sw in _subWindows)
+			{
+				w.WriteStartObject("subwindow");
+				sw.WriteJson(w);
+				w.WriteEndObject();
+			}
+
+			w.WriteEndObject();
+		}
+
+		public void ReadJson(ref Utf8JsonReader r)
+		{
+			while (r.Read() && r.TokenType != JsonTokenType.EndObject)
+			{
+				if (r.TokenType == JsonTokenType.PropertyName)
+				{
+					string propertyName = r.GetString() ?? "";
+					r.Read();
+
+					switch (propertyName)
+					{
+						case "left":
+							{
+								double val = r.GetDouble();
+								this.Left = val;
+								_loadedLeft = val;
+								break;
+							}
+						case "top":
+							{
+								double val = r.GetDouble();
+								this.Top = val;
+								_loadedTop = val;
+								break;
+							}
+						case "width":
+							{
+								double val = r.GetDouble();
+								this.Width = val;
+								break;
+							}
+						case "height":
+							{
+								double val = r.GetDouble();
+								this.Height = val;
+								break;
+							}
+						case "container":
+							{
+								_mainDockContainer.ReadJson(ref r);
+								break;
+							}
+						case "subwindow":
+							{
+								SubWindow sw = CreateSubWindow(10, 10);
+								sw.ReadJson(ref r);
+								break;
+							}
+					}
+				}
+			}
+		}
+
+		private void InitDefault()
+		{
+			DockArea area0 = new DockArea();
+			DockAreaViewModel area0VM = new DockAreaViewModel();
+			area0.DataContext = area0VM;
+			area0VM.AddPanel(Panels.Panels.Instance.ConsoleViewModel);
+			area0VM.AddPanel(Panels.Panels.Instance.ResourcesViewModel);
+			area0VM.AddPanel(Panels.Panels.Instance.EntitiesViewModel);
+			area0VM.AddPanel(Panels.Panels.Instance.WorldViewModel);
+			area0VM.AddPanel(Panels.Panels.Instance.PropertiesViewModel);
+
+			_mainDockContainer.InitArea(area0);
+		}
 	}
 }

@@ -1,0 +1,45 @@
+{
+    "source": "assets/engine/shaders/render_target/render_target_tri.hlsl",
+    "desc":
+    {
+        "vertex_entry": "VSMain",
+        "pixel_entry": "PSMain",
+        "cull": "none",
+        "front": "cw",
+        "color_attachments": [
+            {
+                "format":"r8g8b8a8_srgb",
+                "blend_attachment":{
+                    "blend_enabled": true,
+                    "src_color_blend_factor": "src_alpha",
+                    "dst_color_blend_factor": "one_minus_src_alpha",
+                    "color_blend_op": "add",
+                    "src_alpha_blend_factor": "one",
+                    "dst_alpha_blend_factor": "one_minus_src_alpha",
+                    "alpha_blend_op": "add",
+                    "color_comp_flags": 15 
+                }
+            }
+        ],
+        "vertex_inputs": [
+            {
+                "name": "POSITION",
+                "offset": 0,
+                "size": 8,
+                "format": "r32g32_sfloat"
+            },
+            {
+                "name": "TEXCOORD",
+                "offset": 8,
+                "size": 8,
+                "format": "r32g32_sfloat"
+            },
+            {
+                "name": "COLOR",
+                "offset": 16,
+                "size": 16,
+                "format": "r32g32b32a32_sfloat"
+            }
+        ]
+    }
+}

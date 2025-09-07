@@ -4,29 +4,29 @@
 
 namespace SFG
 {
-	const quaternion quaternion::identity(0.0f, 0.0f, 0.0f, 1.0f);
+	const quat quat::identity(0.0f, 0.0f, 0.0f, 1.0f);
 
-	vector3 quaternion::get_right() const
+	vector3 quat::get_right() const
 	{
 		return (*this) * vector3(1.0f, 0.0f, 0.0f);
 	}
 
-	vector3 quaternion::get_up() const
+	vector3 quat::get_up() const
 	{
 		return (*this) * vector3(0.0f, 1.0f, 0.0f);
 	}
 
-	vector3 quaternion::get_forward() const
+	vector3 quat::get_forward() const
 	{
 		return (*this) * vector3(0.0f, 0.0f, 1.0f);
 	}
 
-	quaternion quaternion::conjugate() const
+	quat quat::conjugate() const
 	{
-		return quaternion(-x, -y, -z, w);
+		return quat(-x, -y, -z, w);
 	}
 
-	quaternion quaternion::inverse() const
+	quat quat::inverse() const
 	{
 		float mag_sqr = sqr_magnitude();
 		if (math::abs(mag_sqr) < MATH_EPS)
@@ -34,7 +34,7 @@ namespace SFG
 		return conjugate() / mag_sqr;
 	}
 
-	quaternion quaternion::normalized() const
+	quat quat::normalized() const
 	{
 		float mag = magnitude();
 		if (math::abs(mag) < MATH_EPS)
@@ -42,22 +42,22 @@ namespace SFG
 		return (*this) / mag;
 	}
 
-	float quaternion::dot(const quaternion& other) const
+	float quat::dot(const quat& other) const
 	{
 		return x * other.x + y * other.y + z * other.z + w * other.w;
 	}
 
-	float quaternion::magnitude() const
+	float quat::magnitude() const
 	{
 		return std::sqrt(sqr_magnitude());
 	}
 
-	float quaternion::sqr_magnitude() const
+	float quat::sqr_magnitude() const
 	{
 		return x * x + y * y + z * z + w * w;
 	}
 
-	quaternion quaternion::from_euler(float pitch_degrees, float yaw_degrees, float roll_degrees)
+	quat quat::from_euler(float pitch_degrees, float yaw_degrees, float roll_degrees)
 	{
 		float pitch_rad = math::degrees_to_radians(pitch_degrees);
 		float yaw_rad	= math::degrees_to_radians(yaw_degrees);
@@ -70,7 +70,7 @@ namespace SFG
 		float cr = math::cos(roll_rad * 0.5f);
 		float sr = math::sin(roll_rad * 0.5f);
 
-		quaternion q;
+		quat q;
 		q.w = cy * cp * cr + sy * sp * sr;
 		q.x = cy * sp * cr + sy * cp * sr;
 		q.y = sy * cp * cr - cy * sp * sr;
@@ -79,7 +79,7 @@ namespace SFG
 		return q;
 	}
 
-	vector3 quaternion::to_euler(const quaternion& q)
+	vector3 quat::to_euler(const quat& q)
 	{
 		vector3 euler_angles;
 
@@ -104,18 +104,18 @@ namespace SFG
 		return euler_angles;
 	}
 
-	quaternion quaternion::angle_axis(float angle_degrees, const vector3& axis)
+	quat quat::angle_axis(float angle_degrees, const vector3& axis)
 	{
 		float	angle_rad_half	= math::degrees_to_radians(angle_degrees * 0.5f);
 		float	s				= math::sin(angle_rad_half);
 		vector3 normalized_axis = axis.normalized();
-		return quaternion(normalized_axis.x * s, normalized_axis.y * s, normalized_axis.z * s, math::cos(angle_rad_half));
+		return quat(normalized_axis.x * s, normalized_axis.y * s, normalized_axis.z * s, math::cos(angle_rad_half));
 	}
 
-	quaternion quaternion::lerp(const quaternion& a, const quaternion& b, float t)
+	quat quat::lerp(const quat& a, const quat& b, float t)
 	{
-		float	   dot_product = a.dot(b);
-		quaternion result	   = b;
+		float dot_product = a.dot(b);
+		quat  result	  = b;
 
 		if (dot_product < 0.0f)
 		{
@@ -128,10 +128,10 @@ namespace SFG
 		return (a * (1.0f - t) + (result * t)).normalized();
 	}
 
-	quaternion quaternion::slerp(const quaternion& a, const quaternion& b, float t)
+	quat quat::slerp(const quat& a, const quat& b, float t)
 	{
-		float	   dot_product = a.dot(b);
-		quaternion b_adjusted  = b;
+		float dot_product = a.dot(b);
+		quat  b_adjusted  = b;
 
 		if (dot_product < 0.0f)
 		{
@@ -156,7 +156,7 @@ namespace SFG
 		return (a * s0) + (b_adjusted * s1);
 	}
 
-	quaternion quaternion::look_at(const vector3& source_point, const vector3& target_point, const vector3& up_vector)
+	quat quat::look_at(const vector3& source_point, const vector3& target_point, const vector3& up_vector)
 	{
 		vector3 forward_vec	 = (target_point - source_point).normalized();
 		vector3 right_vec	 = vector3::cross(up_vector, forward_vec).normalized();
@@ -172,8 +172,8 @@ namespace SFG
 		float m21 = final_up_vec.z;
 		float m22 = forward_vec.z;
 
-		quaternion q;
-		float	   trace = m00 + m11 + m22;
+		quat  q;
+		float trace = m00 + m11 + m22;
 
 		if (trace > 0.0f)
 		{
@@ -211,14 +211,14 @@ namespace SFG
 		return q.normalized();
 	}
 
-	quaternion quaternion::operator/(float scalar) const
+	quat quat::operator/(float scalar) const
 	{
 		if (math::abs(scalar) < MATH_EPS)
 			return identity;
-		return quaternion(x / scalar, y / scalar, z / scalar, w / scalar);
+		return quat(x / scalar, y / scalar, z / scalar, w / scalar);
 	}
 
-	quaternion& quaternion::operator/=(float scalar)
+	quat& quat::operator/=(float scalar)
 	{
 		if (math::abs(scalar) > MATH_EPS)
 		{
@@ -234,7 +234,7 @@ namespace SFG
 		return *this;
 	}
 
-	bool quaternion::equals(const quaternion& other, float epsilon) const
+	bool quat::equals(const quat& other, float epsilon) const
 	{
 		return math::almost_equal(x, other.x, epsilon) && math::almost_equal(y, other.y, epsilon) && math::almost_equal(z, other.z, epsilon) && math::almost_equal(w, other.w, epsilon);
 	}

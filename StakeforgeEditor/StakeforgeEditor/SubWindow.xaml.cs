@@ -1,9 +1,11 @@
-﻿using System;
+﻿using StakeforgeEditor.Main;
+using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using System.Net.Http;
 using System.Text;
+using System.Text.Json;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
@@ -24,7 +26,11 @@ namespace StakeforgeEditor
 	/// </summary>
 	public partial class SubWindow : Window
 	{
+		public DockContainer MainDockContainer { get => _mainDockContainer; private set; }
 		private double _barHeight = 0;
+		private DockContainer _mainDockContainer = new DockContainer();
+		private double _loadedLeft = 0;
+		private double _loadedTop = 0;
 
 		public SubWindow()
 		{
@@ -33,6 +39,10 @@ namespace StakeforgeEditor
 			this.Visibility = Visibility.Visible;
 			Loaded += OnLoaded;
 			_barHeight = (double)Application.Current.Resources["height_item_base"];
+
+			Grid.SetRow(_mainDockContainer, 1);
+			RootGrid.Children.Add(_mainDockContainer);
+
 		}
 
 		public void SetPosition(double x, double y)
@@ -74,8 +84,10 @@ namespace StakeforgeEditor
 		{
 			var hwnd = new WindowInteropHelper(this).Handle;
 
-			// Hook WndProc for resize + drag
 			HwndSource.FromHwnd(hwnd).AddHook(WndProc);
+
+			this.Left = _loadedLeft;
+			this.Top = _loadedTop;
 		}
 
 		private IntPtr WndProc(IntPtr hwnd, int msg, IntPtr wParam, IntPtr lParam, ref bool handled)
@@ -146,7 +158,64 @@ namespace StakeforgeEditor
 			return PointFromScreen(new Point(x, y));
 		}
 
+		public void WriteJson(Utf8JsonWriter w)
+		{
+			w.WriteNumber("left", this.Left);
+			w.WriteNumber("top", this.Top);
+			w.WriteNumber("width", this.Width);
+			w.WriteNumber("height", this.Height);
 
+			w.WriteStartObject("container");
+			_mainDockContainer.WriteJson(w);
+			w.WriteEndObject();
+		}
+
+		public void ReadJson(ref Utf8JsonReader r)
+		{
+			while (r.Read() && r.TokenType != JsonTokenType.EndObject)
+			{
+				if (r.TokenType == JsonTokenType.PropertyName)
+				{
+					string propertyName = r.GetString() ?? "";
+					r.Read();
+
+					switch (propertyName)
+					{
+						case "left":
+							{
+								double val = r.GetDouble();
+								this.Left = val;
+								_loadedLeft = val;
+								break;
+							}
+						case "top":
+							{
+								double val = r.GetDouble();
+								this.Top = val;
+								_loadedTop = val;
+								break;
+							}
+						case "width":
+							{
+								double val = r.GetDouble();
+								this.Width = val;
+								break;
+							}
+						case "height":
+							{
+								double val = r.GetDouble();
+								this.Height = val;
+								break;
+							}
+						case "container":
+							{
+								_mainDockContainer.ReadJson(ref r);
+								break;
+							}
+					}
+				}
+			}
+		}
 
 	}
 }

@@ -3,145 +3,218 @@
 #include "memory/memory.hpp"
 #include "io/log.hpp"
 #include "io/assert.hpp"
+#include "gfx/backend/backend.hpp"
+#include "gfx/common/descriptions.hpp"
+#include "gfx/util/image_util.hpp"
+
+#ifdef SFG_TOOLMODE
+#include "io/file_system.hpp"
+#include <fstream>
+#include <vendor/nhlohmann/json.hpp>
+using json = nlohmann::json;
+#endif
 
 namespace SFG
 {
+
+#ifdef SFG_TOOLMODE
+
+	void to_json(nlohmann::json& j, const texture_meta& s)
+	{
+		j["source"]	  = s.source;
+		j["format"]	  = static_cast<format>(s.fmt);
+		j["gen_mips"] = s.gen_mips;
+	}
+
+	void from_json(const nlohmann::json& j, texture_meta& s)
+	{
+		s.fmt	   = static_cast<uint8>(j.value<format>("format", format::undefined));
+		s.source   = j.value<string>("source", "");
+		s.gen_mips = j.value<uint8>("gen_mips", 0);
+
+		SFG_ASSERT(file_system::exists(s.source.c_str()));
+		SFG_ASSERT(static_cast<format>(s.fmt) != format::undefined);
+	}
+#endif
+
 	texture::~texture()
 	{
-		SFG_ASSERT(_cpu.empty(), "");
+		SFG_ASSERT(_cpu_count == 0, "");
+		SFG_ASSERT(!_flags.is_set(texture::flags::hw_exists));
 	}
 
-	// void texture::copy(LinaGX::CommandStream* cmd)
-	//{
-	//	if (_cpu.empty())
-	//	{
-	//		SFG_ERR("Trying to copy a texture with empty buffers!");
-	//		return;
-	//	}
-	//
-	//	LinaGX::CMDCopyBufferToTexture2D* copy = cmd->AddCommand<LinaGX::CMDCopyBufferToTexture2D>();
-	//	copy->destTexture					   = _hw;
-	//	copy->mipLevels						   = 1;
-	//	copy->buffers						   = cmd->EmplaceAuxMemory<LinaGX::TextureBuffer>(_cpu.data(), _cpu.size() * sizeof(LinaGX::TextureBuffer));
-	//
-	//	if (_clear_buffers_after_copy) { destroy_cpu(); }
-	// }
+#ifdef SFG_TOOLMODE
 
-	void texture::destroy()
+	bool texture::create_from_file(const char* file)
 	{
-		// if (_owns_hw)
-		//{
-		//	LinaGX::instance()->DestroyTexture(_hw);
-		//	_hw = 0;
-		// }
-		//
-		// destroy_cpu();
+		SFG_ASSERT(!_flags.is_set(texture::flags::hw_exists));
+
+		if (!file_system::exists(file))
+		{
+			SFG_ERR("File doesn't exist! {0}", file);
+			return false;
+		}
+
+		std::ifstream f(file);
+		json		  json_data = json::parse(f);
+		texture_meta  meta		= json_data;
+		f.close();
+
+		destroy_cpu();
+
+		const format fmt	  = static_cast<format>(static_cast<format>(meta.fmt));
+		const uint8	 channels = format_get_channels(fmt);
+		const uint8	 bpp	  = format_get_bpp(fmt);
+
+		vector2ui16 size = vector2ui16::zero;
+		void*		data = image_util::load_from_file_ch(file, size, channels);
+
+		const texture_buffer b = {
+			.pixels = reinterpret_cast<uint8*>(data),
+			.size	= size,
+			.bpp	= bpp,
+		};
+
+		_cpu_count	 = meta.gen_mips ? image_util::calculate_mip_levels(size.x, size.y) : 1;
+		_cpu_buffers = new texture_buffer[_cpu_count];
+
+		if (meta.gen_mips == 1)
+			populate_mips(channels, format_is_linear(fmt));
+
+		gfx_backend* backend = gfx_backend::get();
+		_hw					 = backend->create_texture({
+							 .texture_format = fmt,
+							 .size			 = vector2ui16(get_width(), get_height()),
+							 .views			 = {{}},
+							 .mip_levels	 = _cpu_count,
+							 .array_length	 = 1,
+							 .samples		 = 1,
+							 .debug_name	 = meta.source.c_str(),
+
+		 });
+		_flags.set(texture::flags::hw_exists | texture::flags::upload_pending);
+		create_intermediate();
+		return true;
 	}
+#endif
 
-	void texture::create_cpu(uint8* data, uint32 width, uint32 height, uint32 bpp, uint8 channels, bool linear)
+	void texture::create_from_buffer(uint8* data, const vector2ui16& size, uint8 bpp, uint8 fmt, const char* debug_name)
 	{
-		//_mip_levels = 1;
-		//_channels	= channels;
-		//_is_linear	= linear;
-		//
-		// destroy_cpu();
-		//
-		// const size_t				data_size = static_cast<size_t>(width * height * bpp);
-		// const LinaGX::TextureBuffer b		  = {
-		//			.pixels		   = reinterpret_cast<uint8*>(SFG_MALLOC(data_size)),
-		//			.width		   = width,
-		//			.height		   = height,
-		//			.bytesPerPixel = bpp,
-		//};
-		//
-		// if (b.pixels) SFG_MEMCPY(b.pixels, data, data_size);
-		//_cpu.push_back(b);
-	}
+		destroy_cpu();
 
-	// void texture::create_hw(const LinaGX::TextureDesc& desc)
-	//{
-	//	_hw		 = LinaGX::instance()->CreateTexture(desc);
-	//	_owns_hw = true;
-	// }
+		const size_t data_size = static_cast<size_t>(size.x * size.y * bpp);
 
-	void texture::create_hw_default()
-	{
-		// if (_cpu.empty())
-		//{
-		//	SFG_ERR("Failed creating hw_default as no cpu data is available!");
-		//	return;
-		// }
-		//
-		//_hw		 = LinaGX::instance()->CreateTexture({
-		//		 .type		= LinaGX::TextureType::Texture2D,
-		//		 .format	= determine_format_from_cpu(),
-		//		 .width		= _cpu[0].width,
-		//		 .height	= _cpu[0].height,
-		//		 .mipLevels = static_cast<uint32>(_cpu.size()),
-		//		 .debugName = "texture",
-		//  });
-		//_owns_hw = true;
+		_cpu_buffers = new texture_buffer();
+		_cpu_count	 = 1;
+
+		texture_buffer& b = _cpu_buffers[0];
+		b				  = {
+							.pixels = reinterpret_cast<uint8*>(SFG_MALLOC(data_size)),
+							.size	= size,
+							.bpp	= bpp,
+		};
+
+		if (b.pixels)
+			SFG_MEMCPY(b.pixels, data, data_size);
+
+		gfx_backend* backend = gfx_backend::get();
+		_hw					 = backend->create_texture({
+							 .texture_format = static_cast<format>(fmt),
+							 .size			 = vector2ui16(get_width(), get_height()),
+							 .views			 = {{}},
+							 .mip_levels	 = _cpu_count,
+							 .array_length	 = 1,
+							 .samples		 = 1,
+							 .debug_name	 = debug_name,
+
+		 });
+
+		create_intermediate();
 	}
 
 	void texture::destroy_cpu()
 	{
-		// for (LinaGX::TextureBuffer& b : _cpu)
-		//{
-		//	SFG_FREE(b.pixels);
-		// }
-		//
-		//_cpu.resize(0);
+		for (uint8 i = 0; i < _cpu_count; i++)
+			SFG_FREE(_cpu_buffers[i].pixels);
+
+		if (_cpu_count == 1)
+			delete _cpu_buffers;
+		else
+			delete[] _cpu_buffers;
+		_cpu_buffers = nullptr;
 	}
 
-	void texture::populate_mips_from_cpu(uint32 max_level)
+	void texture::destroy()
 	{
-		// if (_cpu.empty())
-		//{
-		//	SFG_ERR("Can't generate mipmaps as cpu data is empty!");
-		//	return;
-		// }
-		//
-		// LinaGX::GenerateMipmaps(_cpu[0], _cpu, LinaGX::MipmapFilter::Box, _cpu[0].bytesPerPixel, true, max_level, false);
+		destroy_cpu();
+
+		SFG_ASSERT(_flags.is_set(texture::flags::hw_exists));
+		_flags.remove(texture::flags::hw_exists);
+		gfx_backend* backend = gfx_backend::get();
+		backend->destroy_texture(_hw);
+
+		if (_flags.is_set(texture::flags::intermediate_exists))
+			backend->destroy_resource(_intermediate);
 	}
 
-	format texture::determine_format_from_cpu()
+	void texture::destroy_intermediate()
 	{
-		if (_cpu.empty())
-			return format::undefined;
-
-		const uint32 bpp = _cpu[0].bpp;
-		const uint32 ch	 = _channels;
-
-		if (ch == 1)
-		{
-			if (bpp == 1)
-				return format::r8_unorm;
-			else if (bpp == 2)
-				return format::r16_unorm;
-		}
-		else if (ch == 2)
-		{
-			if (bpp == 2)
-				return format::r8g8_unorm;
-			else if (bpp == 4)
-				return format::r16g16_unorm;
-		}
-		else if (ch == 3)
-		{
-			if (bpp == 12)
-				return format::r32g32b32_sfloat;
-		}
-		else if (ch == 4)
-		{
-			if (bpp == 4)
-				return _is_linear ? format::r8g8b8a8_unorm : format::b8g8r8a8_srgb;
-			else if (bpp == 8)
-				return format::r16g16b16a16_unorm;
-			else if (bpp == 16)
-				return format::r32g32b32a32_sfloat;
-		}
-
-		return format::undefined;
+		SFG_ASSERT(_flags.is_set(texture::flags::intermediate_exists));
+		gfx_backend* backend = gfx_backend::get();
+		backend->destroy_resource(_intermediate);
 	}
 
+	void texture::populate_mips(uint8 channels, bool is_linear)
+	{
+		if (_cpu_count == 0)
+		{
+			SFG_ERR("Can't generate mipmaps as cpu data is empty!");
+			return;
+		}
+
+		image_util::generate_mips(_cpu_buffers, _cpu_count, image_util::mip_gen_filter::box, channels, is_linear, false);
+	}
+
+	uint8 texture::get_bpp() const
+	{
+		return _cpu_count == 0 ? 0 : _cpu_buffers[0].bpp;
+	}
+
+	uint16 texture::get_width() const
+	{
+		return _cpu_count == 0 ? 0 : _cpu_buffers[0].size.x;
+	}
+
+	uint16 texture::get_height() const
+	{
+		return _cpu_count == 0 ? 0 : _cpu_buffers[0].size.y;
+	}
+
+	gfx_id texture::get_hw() const
+	{
+		SFG_ASSERT(_flags.is_set(texture::flags::hw_exists));
+		return _hw;
+	}
+
+	void texture::create_intermediate()
+	{
+		gfx_backend* backend = gfx_backend::get();
+
+		uint32 total_size = 0;
+		for (uint32 i = 0; i < _cpu_count++; i++)
+		{
+			const texture_buffer& buf = _cpu_buffers[i];
+			total_size += backend->get_texture_size(buf.size.x, buf.size.y, buf.bpp);
+		}
+
+		const uint32 intermediate_size = backend->align_texture_size(total_size);
+
+		_intermediate = backend->create_resource({
+			.size		= intermediate_size,
+			.flags		= resource_flags::rf_cpu_visible,
+			.debug_name = "intermediate_texture_res",
+		});
+
+		_flags.set(texture::flags::intermediate_exists);
+	}
 }

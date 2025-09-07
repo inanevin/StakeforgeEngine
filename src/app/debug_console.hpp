@@ -32,6 +32,7 @@ namespace SFG
 				return false;
 			}
 		}
+
 		template <> bool cvar_convert<unsigned int>(const string& str, unsigned int& out)
 		{
 			try
@@ -168,6 +169,7 @@ namespace SFG
 			{
 				std::tuple<TArgs...> parsed_args;
 				call_func_from_tuple(_func, parsed_args, std::index_sequence_for<TArgs...>{});
+				return;
 			}
 
 			vector<string> tokens;
@@ -197,8 +199,6 @@ namespace SFG
 
 		template <typename... TArgs> void register_console_function(const char* name, typename console_function<TArgs...>::function_type cb)
 		{
-			VERIFY_INIT();
-
 			const string_id sid = TO_SIDC(name);
 
 			if (_console_entries.contains(sid))
@@ -212,8 +212,6 @@ namespace SFG
 
 		template <typename T> void register_console_variable(const char* name, T initial_value, typename console_variable<T>::callback_function cb = nullptr)
 		{
-			VERIFY_INIT();
-
 			const uint32 sid = TO_SIDC(name);
 			if (_console_entries.find(sid) != _console_entries.end())
 			{
@@ -238,6 +236,7 @@ namespace SFG
 		}
 
 		void parse_console_command(const char* cmd);
+		void unregister_console_function(const char* name);
 
 	private:
 		friend class game_app;

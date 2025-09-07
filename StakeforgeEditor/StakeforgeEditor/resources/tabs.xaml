@@ -5,8 +5,8 @@
         <Setter Property="Height" Value="{StaticResource height_item_base}"/>
         <Setter Property="BorderThickness" Value="0"/>
         <Setter Property="Margin" Value="0,0,1,0"/>
-        <Setter Property="FontFamily" Value="{StaticResource font_default}"/>
-        <Setter Property="FontSize" Value="{StaticResource size_default_font}"/>
+        <Setter Property="FontFamily" Value="{StaticResource font_alt}"/>
+        <Setter Property="FontSize" Value="{StaticResource size_alt_font_tab}"/>
         <Setter Property="VerticalContentAlignment" Value="Center"/>
         <Setter Property="HorizontalContentAlignment" Value="Center"/>
         <Setter Property="AllowDrop" Value="True"/>

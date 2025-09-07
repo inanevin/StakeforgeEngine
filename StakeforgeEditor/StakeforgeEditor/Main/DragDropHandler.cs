@@ -116,11 +116,7 @@ namespace StakeforgeEditor.Main
 				dockArea.DataContext = vm;
 				vm.AddPanel(CurrentPanelData.panelViewModel!);
 
-				DockContainer container = new DockContainer();
-				container.InitArea(dockArea);
-
-				Grid.SetRow(container, 1);
-				sw.RootGrid.Children.Add(container);
+				sw.MainDockContainer.InitArea(dockArea);
 			}
 
 			_previewWindow.HidePreview();

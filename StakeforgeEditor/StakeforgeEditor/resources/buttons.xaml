@@ -50,6 +50,31 @@
         <Setter Property="FontFamily" Value="{StaticResource font_default}"/>
     </Style>
 
+    <Style x:Key="style_textblock_default" TargetType="{x:Type TextBlock}">
+        <Setter Property="Foreground" Value="{StaticResource brush_text_primary}"/>
+        <Setter Property="FontSize" Value="{StaticResource size_default_font}"/>
+        <Setter Property="FontFamily" Value="{StaticResource font_default}"/>
+    </Style>
+
+    <Style x:Key="style_textblock_icon" TargetType="{x:Type TextBlock}">
+        <Setter Property="Foreground" Value="{StaticResource brush_text_primary}"/>
+        <Setter Property="FontSize" Value="{StaticResource size_icon_font}"/>
+        <Setter Property="FontFamily" Value="{StaticResource font_icons}"/>
+    </Style>
+
+
+    <Style x:Key="style_textblock_icon_small" TargetType="{x:Type TextBlock}">
+        <Setter Property="Foreground" Value="{StaticResource brush_text_primary}"/>
+        <Setter Property="FontSize" Value="{StaticResource size_icon_font_small}"/>
+        <Setter Property="FontFamily" Value="{StaticResource font_icons}"/>
+    </Style>
+
+    <Style x:Key="style_textblock_alt" TargetType="{x:Type TextBlock}">
+        <Setter Property="Foreground" Value="{StaticResource brush_text_primary}"/>
+        <Setter Property="FontSize" Value="{StaticResource size_alt_font}"/>
+        <Setter Property="FontFamily" Value="{StaticResource font_alt}"/>
+    </Style>
+
     <!-- Window Buttons -->
     <Style x:Key="style_button_window" TargetType="{x:Type Button}">
         <Setter Property="Background" Value="{StaticResource brush_background0}"/>

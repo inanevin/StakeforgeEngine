@@ -35,7 +35,7 @@ namespace SFG
 
 	struct barrier
 	{
-		resource_id	   resource	  = 0;
+		gfx_id		   resource	  = 0;
 		bitmask<uint8> flags	  = 0;
 		resource_state from_state = resource_state::common;
 		resource_state to_state	  = resource_state::common;

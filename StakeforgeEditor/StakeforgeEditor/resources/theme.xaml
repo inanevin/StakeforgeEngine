@@ -50,16 +50,20 @@
     <SolidColorBrush x:Key="brush_text_muted" Color="{StaticResource color_text_muted}"/>
 
     <FontFamily x:Key="font_default">Consolas</FontFamily>
+    <FontFamily x:Key="font_alt">fonts/play/Play-Bold.ttf#Play</FontFamily>
     <FontFamily x:Key="font_icons">fonts/sfg.ttf#StakeforgeEditorIcons</FontFamily>
+    
     <!-- fonts/vt323_regular.ttf#VT323 with  14 size -->
     
     <!-- Dimensions -->
-    <sys:Double x:Key="height_item_base">24</sys:Double>
+    <sys:Double x:Key="height_item_base">20</sys:Double>
     <sys:Double x:Key="width_item_base">156</sys:Double>
     <sys:Double x:Key="height_item_base_small">16</sys:Double>
-    <sys:Double x:Key="height_item_base_big">28</sys:Double>
-    <GridLength x:Key="height_item_base_big_grid">28</GridLength>
-    <sys:Double x:Key="size_border_thickness">2</sys:Double>
+    <sys:Double x:Key="height_item_base_big">24</sys:Double>
+    <sys:Double x:Key="size_border_thickness">1</sys:Double>
+    <GridLength x:Key="height_item_base_big_grid">24</GridLength>
+    <GridLength x:Key="height_item_base_grid">20</GridLength>
+
     <GridLength x:Key="height_top_bar">48</GridLength>
     <GridLength x:Key="height_top_bar_sub">22</GridLength>
     <sys:Double x:Key="height_scroll">10</sys:Double>
@@ -68,15 +72,18 @@
     <Thickness x:Key="indent_horizontal">8,0,8,0</Thickness>
     <Thickness x:Key="indent_horizontal_vertical">8,2,8,2</Thickness>
     <Thickness x:Key="spacing_left">4,0,0,0</Thickness>
-    <Thickness x:Key="context_border">2,2,2,2</Thickness>
-    <Thickness x:Key="thickness_border">2,2,2,2</Thickness>
+    <Thickness x:Key="context_border">1,1,1,1</Thickness>
+    <Thickness x:Key="thickness_border">1,1,1,1</Thickness>
+    <Thickness x:Key="thickness_border_bottom">0,0,0,1</Thickness>
 
     <CornerRadius x:Key="rounding_default">2</CornerRadius>
 
-    <sys:Double x:Key="size_icon_font">16</sys:Double>
-    <sys:Double x:Key="size_icon_font_small">12</sys:Double>
-    <sys:Double x:Key="size_default_font">11</sys:Double>
-    <sys:Double x:Key="size_min_dock_area">250</sys:Double>
+    <sys:Double x:Key="size_default_font">12</sys:Double>
+    <sys:Double x:Key="size_icon_font">12</sys:Double>
+    <sys:Double x:Key="size_icon_font_small">8</sys:Double>
+    <sys:Double x:Key="size_min_dock_area">200</sys:Double>
+    <sys:Double x:Key="size_alt_font_tab">12</sys:Double>
+    <sys:Double x:Key="size_alt_font">12</sys:Double>
 
     <!-- ICONS -->
     <sys:String x:Key="str_icon_stake">&#x37;</sys:String>
@@ -103,6 +110,7 @@
     <sys:String x:Key="str_icon_plug_check">&#x2A;</sys:String>
     <sys:String x:Key="str_icon_plug_error">&#x2B;</sys:String>
     <sys:String x:Key="str_icon_plug_warn">&#x2E;</sys:String>
+    <sys:String x:Key="str_icon_folder">&#x2F;</sys:String>
 
 
     <LinearGradientBrush x:Key="gradient_title_bar_0" StartPoint="0,0.5" EndPoint="1,0.5">
@@ -113,8 +121,8 @@
     </LinearGradientBrush>
 
     <LinearGradientBrush x:Key="gradient_purple_vertical" StartPoint="0.5,0" EndPoint="0.5,1">
-        <GradientStop Color="{StaticResource color_accent_purple_light}" Offset="0.0"/>
-        <GradientStop Color="{StaticResource color_accent_purple}" Offset="1.0"/>
+        <GradientStop Color="{StaticResource color_accent_purple}" Offset="0.0"/>
+        <GradientStop Color="{StaticResource color_accent_purple_light}" Offset="1.0"/>
     </LinearGradientBrush>
 
     <LinearGradientBrush x:Key="gradient_blue_vertical" StartPoint="0.5,0" EndPoint="0.5,1">

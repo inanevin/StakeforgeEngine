@@ -31,7 +31,7 @@ namespace SFG
 		_requests.push_back(req);
 	}
 
-	void texture_queue::flush_all(resource_id cmd_list)
+	void texture_queue::flush_all(gfx_id cmd_list)
 	{
 		gfx_backend* backend = gfx_backend::get();
 

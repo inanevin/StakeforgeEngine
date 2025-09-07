@@ -28,6 +28,16 @@ namespace StakeforgeEditor.Common
 		Console,
 	}
 
+	public enum ResourceType
+	{
+		Texture,
+		Material,
+		World,
+		Font,
+		Model,
+		Audio
+	}
+
 	class ObjectUtil
 	{
 		public static T? FindParent<T>(DependencyObject child) where T : DependencyObject

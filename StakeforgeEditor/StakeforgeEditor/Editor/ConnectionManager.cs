@@ -232,7 +232,7 @@ namespace StakeforgeEditor.Editor
 				await _pipeClient.WriteAsync(data, 0, data.Length);
 				await _pipeClient.FlushAsync(); // Ensure the data is sent immediately
 			}
-			catch (IOException ex)
+			catch (IOException)
 			{
 				// This exception indicates a problem with the pipe, likely a disconnection
 				DisconnectPipe();
