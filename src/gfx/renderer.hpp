@@ -34,7 +34,7 @@ namespace SFG
 		using render_fn = void (renderer::*)(uint8 index, const vector2ui16& size);
 
 	public:
-		void init(const window& main_window);
+		void init(const window& main_window, world_renderer* wr);
 		void uninit();
 		void wait_backend();
 		void populate_render_data(uint8 index, double interpolation);
@@ -85,11 +85,12 @@ namespace SFG
 		};
 
 	private:
+		world_renderer* _world_renderer = nullptr;
+
 #ifdef USE_DEBUG_CONTROLLER
 		debug_controller _debug_controller = {};
 #endif
 		render_fn		_render_function = nullptr;
-		world_renderer* _world_renderer	 = nullptr;
 		world*			_world			 = nullptr;
 		gfx_data		_gfx_data		 = {};
 		shader_data		_shaders		 = {};

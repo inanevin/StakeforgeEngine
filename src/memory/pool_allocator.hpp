@@ -2,7 +2,7 @@
 
 #pragma once
 
-#include "common/size_definitions.hpp"
+#include "pool_handle.hpp"
 #include "io/assert.hpp"
 #include "memory.hpp"
 #include "data/vector.hpp"
@@ -10,6 +10,27 @@
 
 namespace SFG
 {
+	template <typename T, typename U, int N> struct pool_allocator_simple
+	{
+		T data[N];
+
+		void reset(U id)
+		{
+			data[id] = T();
+		}
+
+		T& get(U id)
+		{
+			return data[id];
+		}
+
+		void reset()
+		{
+			for (int i = 0; i < N; i++)
+				data[i] = {};
+		}
+	};
+
 	template <typename T, typename U, int N> struct pool_allocator
 	{
 		T		  data[N];
@@ -53,15 +74,18 @@ namespace SFG
 		{
 			SFG_ASSERT(static_cast<U>(free_list.size()) == head);
 		}
+
+		void reset()
+		{
+			for (int i = 0; i < N; i++)
+				data[i] = {};
+
+			free_list.resize(0);
+			head = 0;
+		}
 	};
 
-	template <typename T> struct pool_handle
-	{
-		T id;
-		T generation;
-	};
-
-	template <typename T, typename U, int N> struct pool_allocator_gen
+	template <typename T, typename U, size_t N> struct pool_allocator_gen
 	{
 		struct slot
 		{
@@ -73,6 +97,15 @@ namespace SFG
 		slot	  data[N];
 		vector<U> free_list = {};
 		U		  head		= 0;
+
+		void reset()
+		{
+			for (size_t i = 0; i < N; i++)
+				data[i] = {};
+
+			free_list.resize(0);
+			head = 0;
+		}
 
 		pool_handle<U> add()
 		{
@@ -95,6 +128,8 @@ namespace SFG
 
 		void remove(pool_handle<U> h)
 		{
+			SFG_ASSERT(is_valid(h));
+
 			if (!is_valid(h))
 				return;
 

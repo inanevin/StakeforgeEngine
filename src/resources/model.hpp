@@ -34,6 +34,11 @@ namespace SFG
 			return _all_meshes;
 		}
 
+		inline const aabb& get_total_aabb() const
+		{
+			return _total_aabb;
+		}
+
 	private:
 		vector<model_node> _all_nodes;
 		vector<mesh>	   _all_meshes;

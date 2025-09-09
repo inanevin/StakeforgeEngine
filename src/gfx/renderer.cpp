@@ -18,8 +18,9 @@ namespace SFG
 {
 #define RT_FORMAT format::r8g8b8a8_srgb
 
-	void renderer::init(const window& main_window)
+	void renderer::init(const window& main_window, world_renderer* wr)
 	{
+		_world_renderer		 = wr;
 		gfx_backend* backend = gfx_backend::get();
 
 		_gfx_data.swapchain = backend->create_swapchain({
@@ -47,7 +48,6 @@ namespace SFG
 #ifdef USE_DEBUG_CONTROLLER
 		_debug_controller.init(&_texture_queue, _gfx_data.bind_layout_global, main_window.get_size());
 #endif
-		_world_renderer = new world_renderer();
 		_world_renderer->init(main_window.get_size(), &_texture_queue, &_buffer_queue);
 
 		for (uint32 i = 0; i < FRAMES_IN_FLIGHT; i++)

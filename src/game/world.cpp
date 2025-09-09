@@ -5,6 +5,7 @@
 #include "io/file_system.hpp"
 #include "project/engine_data.hpp"
 #include "app/debug_console.hpp"
+#include "world_renderer.hpp"
 
 #ifdef SFG_TOOLMODE
 #include <fstream>
@@ -16,83 +17,37 @@ namespace SFG
 {
 
 	world::world()
+		: _entity_manager(*this){
+
+		  };
+
+	world::~world()
 	{
-		_entity_free_list.reserve(MAX_ENTITIES);
 	}
 
 	void world::init()
 	{
 		SFG_PROG("initializing world.");
-
-		_entity_count = 0;
-		_entity_free_list.resize(0);
-
 		_flags.set(world_flags_is_init);
 		debug_console::get()->register_console_function<int>("world_set_play", [this](int b) { _flags.set(world_flags_is_playing, b != 0); });
 
-		_resources.init();
+		_resources.init(this);
+		_entity_manager.init();
 	}
 
 	void world::uninit()
 	{
+		_entity_manager.uninit();
 		_resources.uninit();
-
 		_txt_allocator.reset();
 
 		SFG_PROG("uninitializing world.");
 		_flags.remove(world_flags_is_init);
 		debug_console::get()->unregister_console_function("world_set_play");
-
-		_entity_metas.verify_uninit();
-		_entity_positions.verify_uninit();
-		_entity_rotations.verify_uninit();
-		_entity_scales.verify_uninit();
 	}
 
 	void world::tick(float dt)
 	{
-	}
-
-	entity_id world::create_entity(const char* name)
-	{
-		entity_id id = 0;
-
-		if (_entity_free_list.empty())
-		{
-			id = _entity_count;
-			_entity_count++;
-			SFG_ASSERT(_entity_count < MAX_ENTITIES);
-		}
-		else
-		{
-			id = _entity_free_list.back();
-			_entity_free_list.pop_back();
-		}
-
-		entity_meta& meta = _entity_metas.get(id);
-		meta			  = {
-						 .name	= _txt_allocator.allocate(name),
-						 .flags = 0,
-		 };
-
-		return id;
-	}
-
-	void world::destroy_entity(entity_id id)
-	{
-		_entity_free_list.push_back(id);
-
-		entity_meta&  meta	= _entity_metas.get(id);
-		entity_pos&	  pos	= _entity_positions.get(id);
-		entity_rot&	  rot	= _entity_rotations.get(id);
-		entity_scale& scale = _entity_scales.get(id);
-
-		_txt_allocator.deallocate((char*)meta.name);
-
-		meta  = {};
-		pos	  = {};
-		rot	  = {};
-		scale = {};
 	}
 
 #ifdef SFG_TOOLMODE

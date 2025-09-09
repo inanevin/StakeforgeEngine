@@ -96,6 +96,14 @@ namespace SFG
 			});
 		}
 
+		void deallocate(const char* ptr)
+		{
+			_free_list.push_back({
+				.ptr  = (char*)ptr,
+				.size = strlen(ptr),
+			});
+		}
+
 		inline constexpr size_t get_capacity() const
 		{
 			return CAPACITY;

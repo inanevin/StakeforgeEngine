@@ -35,4 +35,16 @@ namespace SFG
 
 		return negative;
 	}
+
+	void aabb::remove(const aabb& other)
+	{
+		bounds_min -= other.bounds_min;
+		bounds_max -= other.bounds_max;
+	}
+
+	void aabb::add(const aabb& other)
+	{
+		bounds_min += other.bounds_min;
+		bounds_max += other.bounds_max;
+	}
 }

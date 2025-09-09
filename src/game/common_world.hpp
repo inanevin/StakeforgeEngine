@@ -3,15 +3,31 @@
 #pragma once
 #include "common/size_definitions.hpp"
 #include "data/bitmask.hpp"
+#include "data/string.hpp"
+#include "data/string_id.hpp"
 #include "math/vector3.hpp"
 #include "math/quat.hpp"
+#include "memory/pool_handle.hpp"
+
+#ifdef SFG_TOOLMODE
+#include "vendor/nhlohmann/json_fwd.hpp"
+#endif
 
 namespace SFG
 {
-	typedef uint16 entity_id;
+	typedef uint16 world_id;
 	typedef uint16 resource_id;
 
-#define MAX_ENTITIES 1024
+	struct resource_ident
+	{
+#ifdef SFG_TOOLMODE
+		string path = "";
+#else
+		string_id hash = 0;
+#endif
+	};
+
+#define MAX_ENTITIES 512
 
 	struct entity_meta
 	{
@@ -33,5 +49,12 @@ namespace SFG
 	{
 		quat rot = quat::identity;
 	};
+
+#ifdef SFG_TOOLMODE
+
+	void to_json(nlohmann::json& j, const resource_ident& s);
+	void from_json(const nlohmann::json& j, resource_ident& s);
+
+#endif
 
 }

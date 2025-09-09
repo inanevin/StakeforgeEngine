@@ -44,7 +44,11 @@ namespace SFG
 		gfx_backend* backend	= gfx_backend::get();
 		backend->init();
 
-		_renderer.init(_main_window);
+		_world			= new world();
+		_world_renderer = new world_renderer();
+		_world->set_world_renderer(_world_renderer);
+
+		_renderer.init(_main_window, _world_renderer);
 
 		POP_MEMORY_CATEGORY();
 
@@ -52,8 +56,6 @@ namespace SFG
 		kick_off_render();
 
 		engine_data::get().init();
-
-		_world = new world();
 
 #ifdef SFG_TOOLMODE
 		const string& last_world = engine_data::get().get_last_world();

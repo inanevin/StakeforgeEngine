@@ -25,6 +25,9 @@ namespace SFG
 		vector3 get_positive(const vector3& normal) const;
 		vector3 get_negative(const vector3& normal) const;
 
+		void remove(const aabb& other);
+		void add(const aabb& other);
+
 		inline void update_half_extents()
 		{
 			bounds_half_extent = (bounds_max - bounds_min) / 2.0f;

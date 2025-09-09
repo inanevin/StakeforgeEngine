@@ -23,10 +23,43 @@ namespace SFG
 #define MAX_WORLD_MAT_PBR_DEF 20
 #define MAX_WORLD_SHADERS	  30
 
+	// clang-format off
+
+#define DEFINE_RES_FUNCS(RESOURCETYPE, HASHES, STORAGE) \
+	pool_handle<resource_id> create_##RESOURCETYPE(string_id hash) { \
+		pool_handle<resource_id> handle = ##STORAGE.add(); \
+		##HASHES[hash] = handle; \
+		return handle; \
+	} \
+	void destroy_##RESOURCETYPE(pool_handle<resource_id> handle) { \
+		##STORAGE.remove(handle); \
+	} \
+	##RESOURCETYPE& get_##RESOURCETYPE(pool_handle<resource_id> handle) { \
+		auto& res = ##STORAGE.get(handle); \
+		return res; \
+	} \
+	##RESOURCETYPE& get_##RESOURCETYPE##_by_hash(string_id hash) { \
+		pool_handle<resource_id> handle = ##HASHES.at(hash); \
+		auto& res = ##STORAGE.get(handle); \
+		return res; \
+	} \
+	##RESOURCETYPE& get_##RESOURCETYPE##_handle_by_hash(string_id hash) { \
+		pool_handle<resource_id> handle = ##HASHES.at(hash); \
+		return handle; \
+	} \
+	inline auto& get_##RESOURCETYPE##s() {\
+		auto& str = ##STORAGE; \
+		return str;\
+	}
+
+	// clang-format on
+
+	class world;
+
 	class world_resources
 	{
 	public:
-		void init();
+		void init(world* w);
 		void uninit();
 
 #ifdef SFG_TOOLMODE
@@ -36,47 +69,15 @@ namespace SFG
 		pool_handle<resource_id> load_material_pbr_default(const char* path);
 #endif
 
-		pool_handle<resource_id> create_shader(string_id hash);
-		void					 destroy_shader(pool_handle<resource_id> id);
-		shader&					 get_shader(pool_handle<resource_id> id);
-
-		pool_handle<resource_id> create_texture(string_id hash);
-		void					 destroy_texture(pool_handle<resource_id> id);
-		texture&				 get_texture(pool_handle<resource_id> id);
-		texture&				 get_texture_by_hash(string_id hash);
-
-		pool_handle<resource_id> create_material_pbr_default(string_id hash);
-		void					 destroy_material_pbr_default(pool_handle<resource_id> id);
-		material_pbr_default&	 get_material_pbr_default(pool_handle<resource_id> id);
-
-		pool_handle<resource_id> create_model(string_id hash);
-		void					 destroy_model(pool_handle<resource_id> id);
-		model&					 get_model(pool_handle<resource_id> id);
-
-		pool_handle<resource_id> create_animation(string_id hash);
-		void					 destroy_animation(pool_handle<resource_id> id);
-		animation&				 get_animation(pool_handle<resource_id> id);
-
-		pool_handle<resource_id> create_skin(string_id hash);
-		void					 destroy_skin(pool_handle<resource_id> id);
-		skin&					 get_skin(pool_handle<resource_id> id);
-
-		inline pool_allocator_gen<texture, resource_id, MAX_WORLD_TEXTURES>& get_textures()
-		{
-			return _textures;
-		}
-
-		inline pool_allocator_gen<model, resource_id, MAX_WORLD_MODELS>& get_models()
-		{
-			return _models;
-		}
-
-		inline pool_allocator_gen<material_pbr_default, resource_id, MAX_WORLD_MAT_PBR_DEF>& get_materials_pbr_default()
-		{
-			return _materials_pbr_default;
-		}
+		DEFINE_RES_FUNCS(texture, _texture_hashes, _textures);
+		DEFINE_RES_FUNCS(shader, _shader_hashes, _shaders);
+		DEFINE_RES_FUNCS(model, _model_hashes, _models);
+		DEFINE_RES_FUNCS(material_pbr_default, _material_pbr_default_hashes, _materials_pbr_default);
+		DEFINE_RES_FUNCS(animation, _anim_hashes, _anims);
+		DEFINE_RES_FUNCS(skin, _skin_hashes, _skins);
 
 	private:
+		world*										  _world = nullptr;
 		hash_map<string_id, pool_handle<resource_id>> _texture_hashes;
 		hash_map<string_id, pool_handle<resource_id>> _anim_hashes;
 		hash_map<string_id, pool_handle<resource_id>> _skin_hashes;

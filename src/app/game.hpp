@@ -14,6 +14,7 @@ namespace SFG
 	struct window_event;
 	class vector2ui;
 	class world;
+	class world_renderer;
 
 	class game_app
 	{
@@ -46,9 +47,10 @@ namespace SFG
 		void on_window_event(const window_event& ev);
 
 	private:
-		window			 _main_window = {};
-		renderer		 _renderer	  = {};
-		world*			 _world		  = nullptr;
+		window			 _main_window	 = {};
+		renderer		 _renderer		 = {};
+		world*			 _world			 = nullptr;
+		world_renderer*	 _world_renderer = nullptr;
 		std::thread		 _render_thread;
 		binary_semaphore _frame_available_semaphore{0};
 		uint8			 _update_render_frame_index	 = 0;

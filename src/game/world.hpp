@@ -9,9 +9,13 @@
 #include "world_resources.hpp"
 #include "gfx/camera.hpp"
 
+#include "entity_manager.hpp"
+
 namespace SFG
 {
 	struct window_event;
+
+	class world_renderer;
 
 	class world
 	{
@@ -24,19 +28,22 @@ namespace SFG
 
 	public:
 		world();
+		~world();
 
 		void init();
 		void uninit();
 		void tick(float dt);
-
-		entity_id create_entity(const char* name = "entity");
-		void	  destroy_entity(entity_id id);
 
 #ifdef SFG_TOOLMODE
 		void save(const char* path);
 		void load(const char* path);
 #endif
 		bool on_window_event(const window_event& ev);
+
+		inline entity_manager& get_entity_manager()
+		{
+			return _entity_manager;
+		}
 
 		inline bitmask<uint8>& get_flags()
 		{
@@ -53,17 +60,28 @@ namespace SFG
 			return _camera;
 		}
 
+		inline text_allocator<MAX_ENTITIES * 5>& get_text_allocator()
+		{
+			return _txt_allocator;
+		}
+
+		inline world_renderer* get_world_renderer() const
+		{
+			return _world_renderer;
+		}
+
+		inline void set_world_renderer(world_renderer* wr)
+		{
+			_world_renderer = wr;
+		}
+
 	private:
-		world_resources					 _resources = {};
+		world_renderer*					 _world_renderer = nullptr;
+		world_resources					 _resources		 = {};
 		text_allocator<MAX_ENTITIES * 5> _txt_allocator;
 		bitmask<uint8>					 _flags = 0;
 
-		pool_allocator<entity_meta, entity_id, MAX_ENTITIES>  _entity_metas		= {};
-		pool_allocator<entity_pos, entity_id, MAX_ENTITIES>	  _entity_positions = {};
-		pool_allocator<entity_rot, entity_id, MAX_ENTITIES>	  _entity_rotations = {};
-		pool_allocator<entity_scale, entity_id, MAX_ENTITIES> _entity_scales	= {};
-		entity_id											  _entity_count		= 0;
-		vector<entity_id>									  _entity_free_list = {};
-		camera												  _camera			= {};
+		entity_manager _entity_manager;
+		camera		   _camera = {};
 	};
 }

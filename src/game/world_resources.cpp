@@ -3,17 +3,20 @@
 #include "world_resources.hpp"
 #include "app/debug_console.hpp"
 #include "project/engine_data.hpp"
+#include "world.hpp"
+#include "world_renderer.hpp"
 
 namespace SFG
 {
-
-	void world_resources::init()
+	void world_resources::init(world* w)
 	{
+		_world = w;
 		debug_console::get()->register_console_function<const char*>("world_load_texture", std::bind(&world_resources::load_texture, this, std::placeholders::_1));
 	}
 
 	void world_resources::uninit()
 	{
+		_world = nullptr;
 		debug_console::get()->unregister_console_function("world_load_texture");
 		_textures.verify_uninit();
 		_models.verify_uninit();
@@ -34,6 +37,9 @@ namespace SFG
 		const pool_handle<resource_id> txt = create_texture(sid);
 		texture&					   res = get_texture(txt);
 		res.create_from_file(abs_path.c_str());
+
+		_world->get_world_renderer()->add_pending_texture(&res);
+
 		return txt;
 	}
 
@@ -47,6 +53,9 @@ namespace SFG
 
 		const pool_handle<resource_id> handle = create_model(sid);
 		model&						   mdl	  = get_model(handle);
+		mdl.create_from_file(abs_path.c_str(), path, *this);
+		_world->get_world_renderer()->add_pending_model(&mdl);
+
 		return handle;
 	}
 
@@ -79,125 +88,4 @@ namespace SFG
 	}
 
 #endif
-
-	pool_handle<resource_id> world_resources::create_shader(string_id hash)
-	{
-		const pool_handle<resource_id> handle = _shaders.add();
-		_shader_hashes[hash]				  = handle;
-		return handle;
-	}
-
-	void world_resources::destroy_shader(pool_handle<resource_id> id)
-	{
-		SFG_ASSERT(_shaders.is_valid(id));
-		_shaders.remove(id);
-	}
-
-	shader& world_resources::get_shader(pool_handle<resource_id> id)
-	{
-		SFG_ASSERT(_shaders.is_valid(id));
-		return _shaders.get(id);
-	}
-
-	pool_handle<resource_id> world_resources::create_texture(string_id hash)
-	{
-		const pool_handle<resource_id> id = _textures.add();
-		_texture_hashes[hash]			  = id;
-		return id;
-	}
-
-	void world_resources::destroy_texture(pool_handle<resource_id> id)
-	{
-		SFG_ASSERT(_textures.is_valid(id));
-		_textures.remove(id);
-	}
-
-	texture& world_resources::get_texture(pool_handle<resource_id> id)
-	{
-		SFG_ASSERT(_textures.is_valid(id));
-		return _textures.get(id);
-	}
-
-	texture& world_resources::get_texture_by_hash(string_id hash)
-	{
-		const pool_handle<resource_id> res_id = _texture_hashes.at(hash);
-		return _textures.get(res_id);
-	}
-
-	pool_handle<resource_id> world_resources::create_material_pbr_default(string_id hash)
-	{
-		const pool_handle<resource_id> handle = _materials_pbr_default.add();
-		_material_pbr_default_hashes[hash]	  = handle;
-		return handle;
-	}
-
-	void world_resources::destroy_material_pbr_default(pool_handle<resource_id> id)
-	{
-		SFG_ASSERT(_materials_pbr_default.is_valid(id));
-		_materials_pbr_default.remove(id);
-	}
-
-	material_pbr_default& world_resources::get_material_pbr_default(pool_handle<resource_id> id)
-	{
-		SFG_ASSERT(_materials_pbr_default.is_valid(id));
-		return _materials_pbr_default.get(id);
-	}
-
-	pool_handle<resource_id> world_resources::create_model(string_id hash)
-	{
-		const pool_handle<resource_id> id = _models.add();
-		_model_hashes[hash]				  = id;
-		return id;
-	}
-
-	void world_resources::destroy_model(pool_handle<resource_id> id)
-	{
-		SFG_ASSERT(_models.is_valid(id));
-		_models.remove(id);
-	}
-
-	model& world_resources::get_model(pool_handle<resource_id> id)
-	{
-		SFG_ASSERT(_models.is_valid(id));
-		return _models.get(id);
-	}
-
-	pool_handle<resource_id> world_resources::create_animation(string_id hash)
-	{
-		const pool_handle<resource_id> id = _anims.add();
-		_anim_hashes[hash]				  = id;
-		return id;
-	}
-
-	void world_resources::destroy_animation(pool_handle<resource_id> id)
-	{
-		SFG_ASSERT(_anims.is_valid(id));
-		_anims.remove(id);
-	}
-
-	animation& world_resources::get_animation(pool_handle<resource_id> id)
-	{
-		SFG_ASSERT(_anims.is_valid(id));
-		return _anims.get(id);
-	}
-
-	pool_handle<resource_id> world_resources::create_skin(string_id hash)
-	{
-		const pool_handle<resource_id> id = _skins.add();
-		_skin_hashes[hash]				  = id;
-		return id;
-	}
-
-	void world_resources::destroy_skin(pool_handle<resource_id> id)
-	{
-		SFG_ASSERT(_skins.is_valid(id));
-		_skins.remove(id);
-	}
-
-	skin& world_resources::get_skin(pool_handle<resource_id> id)
-	{
-		SFG_ASSERT(_skins.is_valid(id));
-		return _skins.get(id);
-	}
-
 }

@@ -107,6 +107,7 @@ src/gfx/backend/*.cpp
 src/gfx/common/*.cpp
 src/resources/*.cpp
 src/game/*.cpp
+src/game/traits/*.cpp
 src/app/*.cpp
 src/sfg_api.cpp
 src/sfg_api.cpp
@@ -130,6 +131,7 @@ src/app/*.hpp
 src/project/*.hpp
 src/resources/*.hpp
 src/game/*.hpp
+src/game/traits/*.hpp
 src/vendor/stb/*.h
 src/vendor/moodycamel/*.h
 src/vendor/nhlohmann/*.hpp

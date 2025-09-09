@@ -9,7 +9,7 @@ namespace SFG
 	{
 		plane()	 = default;
 		~plane() = default;
-		plane(float x, float y, float z, float dist) : normal(vector3(x, y, z)), distance(dis){};
+		plane(float x, float y, float z, float dist) : normal(vector3(x, y, z)), distance(dist){};
 		plane(const vector3& n, float dist) : normal(n), distance(dist){};
 
 		void  normalize();
