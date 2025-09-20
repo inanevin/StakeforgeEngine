@@ -64,15 +64,14 @@ namespace SFG
 
 	struct render_pass_depth_stencil_attachment
 	{
-		gfx_id		   texture			= 0;
-		uint8		   clear_stencil	= 0;
-		float		   clear_depth		= 1.0f;
-		bitmask<uint8> att_flags		= 0;
-		load_op		   depth_load_op	= load_op::clear;
-		load_op		   stencil_load_op	= load_op::clear;
-		store_op	   depth_store_op	= store_op::dont_care;
-		store_op	   stencil_store_op = store_op::dont_care;
-		uint8		   view_index		= 0;
+		gfx_id	 texture		  = 0;
+		uint8	 clear_stencil	  = 0;
+		float	 clear_depth	  = 1.0f;
+		load_op	 depth_load_op	  = load_op::clear;
+		load_op	 stencil_load_op  = load_op::clear;
+		store_op depth_store_op	  = store_op::dont_care;
+		store_op stencil_store_op = store_op::dont_care;
+		uint8	 view_index		  = 0;
 	};
 
 	struct command_begin_render_pass

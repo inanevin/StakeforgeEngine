@@ -6,8 +6,15 @@
 #undef min
 #undef max
 
+#ifdef SFG_TOOLMODE
+#include "vendor/nhlohmann/json_fwd.hpp"
+#endif
+
 namespace SFG
 {
+	class istream;
+	class ostream;
+
 	class vector2
 	{
 	public:
@@ -34,6 +41,9 @@ namespace SFG
 		bool	is_zero(float epsilon = MATH_EPS) const;
 		float	magnitude() const;
 		float	magnitude_sqr() const;
+
+		void serialize(ostream& stream) const;
+		void deserialize(istream& stream);
 
 		inline vector2 operator+(const vector2& other) const
 		{
@@ -103,4 +113,10 @@ namespace SFG
 		}
 	};
 
+#ifdef SFG_TOOLMODE
+
+	void to_json(nlohmann::json& j, const vector2& v);
+	void from_json(const nlohmann::json& j, vector2& v);
+
+#endif
 }

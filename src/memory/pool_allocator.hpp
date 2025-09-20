@@ -24,6 +24,11 @@ namespace SFG
 			return data[id];
 		}
 
+		const T& get(U id) const
+		{
+			return data[id];
+		}
+
 		void reset()
 		{
 			for (int i = 0; i < N; i++)
@@ -162,6 +167,71 @@ namespace SFG
 		inline void verify_uninit()
 		{
 			SFG_ASSERT(free_list.size() == head);
+		}
+
+		//-----------------------------------
+		// Handle iterator
+		//-----------------------------------
+		struct handle_iterator
+		{
+			slot* current;
+			slot* end;
+			U	  index;
+
+			handle_iterator(slot* start, slot* end, U startIndex) noexcept : current(start), end(end), index(startIndex)
+			{
+				while (current != end && !current->active)
+				{
+					++current;
+					++index;
+				}
+			}
+
+			pool_handle<U> operator*() const
+			{
+				return {index, current->generation};
+			}
+
+			handle_iterator& operator++()
+			{
+				do
+				{
+					++current;
+					++index;
+				} while (current != end && !current->active);
+				return *this;
+			}
+
+			bool operator==(const handle_iterator& other) const
+			{
+				return current == other.current;
+			}
+			bool operator!=(const handle_iterator& other) const
+			{
+				return current != other.current;
+			}
+		};
+
+		//-----------------------------------
+		// Range wrapper for handles
+		//-----------------------------------
+		struct handle_range
+		{
+			slot*			data;
+			U				head;
+			handle_iterator begin()
+			{
+				return handle_iterator(data, data + head, 0);
+			}
+			handle_iterator end()
+			{
+				return handle_iterator(data + head, data + head, head);
+			}
+		};
+
+		handle_range handles()
+		{
+			return {data, head};
 		}
 
 		//-----------------------------------

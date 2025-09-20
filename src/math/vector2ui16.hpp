@@ -4,7 +4,7 @@
 
 namespace SFG
 {
-	class vector2ui16
+	struct vector2ui16
 	{
 	public:
 		vector2ui16(){};

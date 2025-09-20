@@ -2,6 +2,8 @@
 
 #include "vector4.hpp"
 #include "math.hpp"
+#include "data/istream.hpp"
+#include "data/ostream.hpp"
 
 #ifdef SFG_TOOLMODE
 #include "vendor/nhlohmann/json.hpp"
@@ -115,6 +117,16 @@ namespace SFG
 	bool vector4::is_zero(float epsilon) const
 	{
 		return math::almost_equal(x, 0.0f, epsilon) && math::almost_equal(y, 0.0f, epsilon) && math::almost_equal(z, 0.0f, epsilon) && math::almost_equal(w, 0.0f, epsilon);
+	}
+
+	void vector4::serialize(ostream& stream) const
+	{
+		stream << x << y << z << w;
+	}
+
+	void vector4::deserialize(istream& stream)
+	{
+		stream >> x >> y >> z >> w;
 	}
 
 #ifdef SFG_TOOLMODE

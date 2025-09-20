@@ -1,0 +1,59 @@
+// Copyright (c) 2025 Inan Evin
+
+#pragma once
+
+#include "gfx/buffer.hpp"
+#include "data/static_vector.hpp"
+#include "data/atomic.hpp"
+#include "world/common_world.hpp"
+
+namespace SFG
+{
+
+	class texture_queue;
+	class buffer_queue;
+	class world;
+	class texture;
+	class model;
+
+	class world_resource_uploads
+	{
+	private:
+		struct mesh_data
+		{
+			buffer big_vertex_buffer   = {};
+			buffer big_index_buffer	   = {};
+			size_t current_vertex_size = 0;
+			size_t current_index_size  = 0;
+		};
+
+	public:
+		void init(texture_queue* tq, buffer_queue* bq);
+		void uninit();
+
+		void add_pending_texture(texture* txt);
+		void add_pending_model(model* mdl);
+		void upload(uint8 data_index, uint8 frame_index);
+		void check_uploads(bool force = false);
+
+		inline buffer& get_big_vertex_buffer()
+		{
+			return _mesh_data.big_vertex_buffer;
+		}
+
+		inline buffer& get_big_index_buffer()
+		{
+			return _mesh_data.big_index_buffer;
+		}
+
+	private:
+	private:
+		mesh_data									_mesh_data	   = {};
+		texture_queue*								_texture_queue = nullptr;
+		buffer_queue*								_buffer_queue  = nullptr;
+		static_vector<texture*, MAX_WORLD_TEXTURES> _reuse_pending_textures;
+		static_vector<texture*, MAX_WORLD_TEXTURES> _reuse_uploaded_textures;
+		static_vector<model*, MAX_WORLD_MODELS>		_reuse_pending_models;
+		atomic<uint64>								_last_upload_frame = 0;
+	};
+}

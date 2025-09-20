@@ -13,6 +13,7 @@ namespace SFG
 	{
 	public:
 		void init(size_t sz, size_t alignment);
+		void init(uint8* existing, size_t sz);
 		void uninit();
 
 		bump_allocator()									   = default;
@@ -73,5 +74,6 @@ namespace SFG
 		size_t _size = 0;
 		size_t _head = 0;
 		void*  _raw	 = nullptr;
+		uint8  _owns = 0;
 	};
 }

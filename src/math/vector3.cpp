@@ -2,6 +2,13 @@
 
 #include "vector3.hpp"
 #include "math.hpp"
+#include "math/easing.hpp"
+#include "data/ostream.hpp"
+#include "data/istream.hpp"
+
+#ifdef SFG_TOOLMODE
+#include "vendor/nhlohmann/json.hpp"
+#endif
 
 namespace SFG
 {
@@ -34,6 +41,11 @@ namespace SFG
 	vector3 vector3::max(const vector3& a, const vector3& b)
 	{
 		return vector3(math::max(a.x, b.x), math::max(a.y, b.y), math::max(a.z, b.z));
+	}
+
+	vector3 vector3::lerp(const vector3& a, const vector3& b, float t)
+	{
+		return vector3(easing::lerp(a.x, b.x, t), easing::lerp(a.y, b.y, t), easing::lerp(a.z, b.z, t));
 	}
 
 	float vector3::dot(const vector3& a, const vector3& b)
@@ -102,4 +114,30 @@ namespace SFG
 		return x * x + y * y + z * z;
 	}
 
+	void vector3::serialize(ostream& stream) const
+	{
+		stream << x << y << z;
+	}
+
+	void vector3::deserialize(istream& stream)
+	{
+		stream >> x >> y >> z;
+	}
+
+#ifdef SFG_TOOLMODE
+	void to_json(nlohmann::json& j, const vector3& v)
+	{
+		j["x"] = v.x;
+		j["y"] = v.y;
+		j["z"] = v.z;
+	}
+
+	void from_json(const nlohmann::json& j, vector3& v)
+	{
+		v.x = j.value<float>("x", 0.0f);
+		v.y = j.value<float>("y", 0.0f);
+		v.z = j.value<float>("z", 0.0f);
+	}
+
+#endif
 }

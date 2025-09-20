@@ -7,15 +7,23 @@ namespace SFG
 {
 	void bump_allocator::init(size_t sz, size_t alignment)
 	{
-
 		SFG_ASSERT(sz != 0);
 		_size = sz;
 		_raw  = SFG_ALIGNED_MALLOC(alignment, sz);
+		_owns = 1;
+	}
+
+	void bump_allocator::init(uint8* existing, size_t sz)
+	{
+		_owns = 0;
+		_raw  = existing;
+		_size = sz;
 	}
 
 	void bump_allocator::uninit()
 	{
-		SFG_ALIGNED_FREE(_raw);
+		if (_owns)
+			SFG_ALIGNED_FREE(_raw);
 		_raw = nullptr;
 	}
 

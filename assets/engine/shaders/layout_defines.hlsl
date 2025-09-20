@@ -1,4 +1,5 @@
-#define global_cbv register(b0, space0)
+#define constants_cbv register(b0, space0)
+#define global_cbv register(b1, space0)
 
 #define render_pass_ubo0 register(b0, space1)
 #define render_pass_ubo1 register(b1, space1)

@@ -1,5 +1,7 @@
 // Copyright (c) 2025 Inan Evin
 #include "game.hpp"
+#include "platform/window.hpp"
+#include "gfx/renderer.hpp"
 #include "platform/time.hpp"
 #include "platform/process.hpp"
 #include "memory/memory_tracer.hpp"
@@ -9,8 +11,8 @@
 #include "io/log.hpp"
 #include "debug_console.hpp"
 #include "project/engine_data.hpp"
-#include "game/world.hpp"
-#include "game/world_renderer.hpp"
+#include "world/world.hpp"
+#include "gfx/world/world_renderer.hpp"
 
 #ifdef SFG_TOOLMODE
 #include "io/file_system.hpp"
@@ -33,7 +35,8 @@ namespace SFG
 
 		PUSH_MEMORY_CATEGORY("Gfx");
 
-		_main_window.create("Game", window_flags::wf_style_windowed, vector2i16(0, 0), render_target_size);
+		_main_window = new window();
+		_main_window->create("Game", window_flags::wf_style_windowed, vector2i16(0, 0), render_target_size);
 
 		// vector<monitor_info> out_infos;
 		// process::get_all_monitors(out_infos);
@@ -44,11 +47,10 @@ namespace SFG
 		gfx_backend* backend	= gfx_backend::get();
 		backend->init();
 
-		_world			= new world();
-		_world_renderer = new world_renderer();
-		_world->set_world_renderer(_world_renderer);
+		_world = new world();
 
-		_renderer.init(_main_window, _world_renderer);
+		_renderer = new renderer();
+		_renderer->init(_main_window, _world);
 
 		POP_MEMORY_CATEGORY();
 
@@ -60,35 +62,15 @@ namespace SFG
 #ifdef SFG_TOOLMODE
 		const string& last_world = engine_data::get().get_last_world();
 		if (file_system::exists(last_world.c_str()))
-		{
 			_world->load(last_world.c_str());
-			_world->init();
-		}
 #endif
 		debug_console::get()->register_console_function("app_new_world", [this]() {
-			if (_world->get_flags().is_set(world::world_flags_is_init))
-				_world->uninit();
-			_world->init();
-
 			join_render();
-			_renderer.on_world_init(_world);
+			_world->load("");
 			kick_off_render();
 		});
 
-		debug_console::get()->register_console_function("app_delete_world", [this]() {
-			if (_world->get_flags().is_set(world::world_flags_is_init))
-			{
-				join_render();
-				_renderer.on_world_uninit(_world);
-				kick_off_render();
-
-				_world->uninit();
-			}
-		});
-
 		debug_console::get()->register_console_function<const char*>("app_save_world", [this](const char* path) {
-			if (!_world->get_flags().is_set(world::world_flags_is_init))
-				return;
 			const string p = engine_data::get().get_working_dir() + path;
 			_world->save(p.c_str());
 			engine_data::get().set_last_world(p);
@@ -97,18 +79,8 @@ namespace SFG
 
 		debug_console::get()->register_console_function<const char*>("app_load_world", [this](const char* path) {
 			join_render();
-
-			if (_world->get_flags().is_set(world::world_flags_is_init))
-			{
-				_renderer.on_world_uninit(_world);
-				_world->uninit();
-			}
-
 			const string p = engine_data::get().get_working_dir() + path;
 			_world->load(p.c_str());
-			_world->init();
-
-			_renderer.on_world_init(_world);
 			kick_off_render();
 
 			engine_data::get().set_last_world(p);
@@ -120,6 +92,7 @@ namespace SFG
 
 	void game_app::uninit()
 	{
+		_world->uninit();
 		delete _world;
 
 		engine_data::get().uninit();
@@ -130,8 +103,12 @@ namespace SFG
 		debug_console::uninit();
 
 		PUSH_MEMORY_CATEGORY("Gfx");
-		_renderer.uninit();
-		_main_window.destroy();
+
+		_renderer->uninit();
+		delete _renderer;
+
+		_main_window->destroy();
+		delete _main_window;
 
 		gfx_backend* backend = gfx_backend::get();
 		backend->uninit();
@@ -156,10 +133,10 @@ namespace SFG
 
 			process::pump_os_messages();
 
-			const uint32	event_count	 = _main_window.get_event_count();
-			bitmask<uint8>& window_flags = _main_window.get_flags();
-			window_event*	events		 = _main_window.get_events();
-			const bool		has_world	 = _world->get_flags().is_set(world::world_flags_is_init);
+			const uint32	  event_count  = _main_window->get_event_count();
+			bitmask<uint8>&	  window_flags = _main_window->get_flags();
+			window_event*	  events	   = _main_window->get_events();
+			const vector2ui16 ws		   = _main_window->get_size();
 
 			if (window_flags.is_set(window_flags::wf_close_requested))
 			{
@@ -173,13 +150,13 @@ namespace SFG
 				on_window_event(ev);
 			}
 
-			_main_window.clear_events();
+			_main_window->clear_events();
 
 			if (window_flags.is_set(window_flags::wf_size_dirty))
 			{
 				window_flags.remove(window_flags::wf_size_dirty);
 				join_render();
-				_renderer.on_window_resize(_main_window.get_size());
+				_renderer->on_window_resize(ws);
 				kick_off_render();
 			}
 			/* add any fast tick events here */
@@ -187,18 +164,16 @@ namespace SFG
 			constexpr uint32 MAX_TICKS = 4;
 			uint32			 ticks	   = 0;
 
-			while (accumulator > FIXED_INTERVAL_US && ticks < MAX_TICKS)
+			accumulator += delta_micro * 1000;
+			while (accumulator >= FIXED_INTERVAL_US && ticks < MAX_TICKS)
 			{
 				accumulator -= FIXED_INTERVAL_US;
-
-				if (has_world)
-					_world->tick(SFG_DT);
-
+				_world->tick(ws, SFG_DT);
 				ticks++;
 			}
 
 			const double interpolation = static_cast<double>(accumulator) / static_cast<double>(FIXED_INTERVAL_US);
-			_renderer.populate_render_data(_update_render_frame_index, interpolation);
+			_renderer->populate_render_data(_update_render_frame_index, interpolation);
 			_current_render_frame_index.store(_update_render_frame_index, std::memory_order_release);
 			_update_render_frame_index = (_update_render_frame_index + 1) % 2;
 			_frame_available_semaphore.release();
@@ -208,12 +183,10 @@ namespace SFG
 
 	void game_app::on_window_event(const window_event& ev)
 	{
-		if (_renderer.on_window_event(ev))
+		if (_renderer->on_window_event(ev))
 			return;
 
-		const bool has_world = _world->get_flags().is_set(world::world_flags_is_init);
-		if (has_world)
-			_world->on_window_event(ev);
+		_world->on_window_event(ev);
 	}
 
 	void game_app::join_render()
@@ -229,7 +202,7 @@ namespace SFG
 		if (_render_thread.joinable())
 			_render_thread.join();
 
-		_renderer.wait_backend();
+		_renderer->wait_backend();
 	}
 
 	/*
@@ -289,7 +262,7 @@ namespace SFG
 
 	void game_app::render_loop()
 	{
-		const vector2ui16& screen_size = _main_window.get_size();
+		const vector2ui16& screen_size = _main_window->get_size();
 		REGISTER_THREAD_RENDER();
 
 		int64 previous_time = time::get_cpu_microseconds();
@@ -305,7 +278,7 @@ namespace SFG
 			previous_time			 = current_time;
 #endif
 
-			_renderer.render(index, screen_size);
+			_renderer->render(index, screen_size);
 			frame_info::s_render_frame.fetch_add(1);
 
 #ifndef SFG_PRODUCTION

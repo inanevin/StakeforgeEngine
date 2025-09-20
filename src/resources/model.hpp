@@ -29,7 +29,7 @@ namespace SFG
 			return _flags;
 		}
 
-		inline const vector<mesh>& get_meshes() const
+		inline vector<mesh>& get_meshes()
 		{
 			return _all_meshes;
 		}
@@ -39,10 +39,21 @@ namespace SFG
 			return _total_aabb;
 		}
 
+		inline const vector<model_node>& get_nodes() const
+		{
+			return _all_nodes;
+		}
+
+		inline uint8 get_material_count() const
+		{
+			return _material_count;
+		}
+
 	private:
 		vector<model_node> _all_nodes;
 		vector<mesh>	   _all_meshes;
 		aabb			   _total_aabb;
 		bitmask<uint8>	   _flags;
+		uint8			   _material_count = 0;
 	};
 }

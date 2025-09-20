@@ -5,7 +5,12 @@
 #include "common/size_definitions.hpp"
 #include "data/string.hpp"
 #include "data/vector.hpp"
+#include "data/bitmask.hpp"
 #include "gfx/common/shader_description.hpp"
+#include <limits>
+
+#undef min
+#undef max
 
 namespace SFG
 {
@@ -13,8 +18,10 @@ namespace SFG
 
 	struct shader_meta
 	{
-		string		source = "";
-		shader_desc desc   = {};
+		string		   source	  = "";
+		shader_desc	   desc		  = {};
+		uint8		   is_skinned = 0;
+		vector<string> defines;
 	};
 
 #ifdef SFG_TOOLMODE
@@ -26,6 +33,11 @@ namespace SFG
 	class shader
 	{
 	public:
+		enum flags
+		{
+			is_skinned = 1 << 0,
+		};
+
 		~shader();
 
 #ifdef SFG_TOOLMODE
@@ -36,8 +48,14 @@ namespace SFG
 
 		static void get_shader_block(const string& text, const string& block_ident, const string& end_ident, string& out_block);
 
+		inline const bitmask<uint8>& get_flags() const
+		{
+			return _flags;
+		}
+
 	private:
-		gfx_id _hw = 0;
+		gfx_id		   _hw	  = std::numeric_limits<gfx_id>::max();
+		bitmask<uint8> _flags = 0;
 	};
 
 }

@@ -73,6 +73,9 @@ namespace SFG
 		case format::r32g32_sfloat:
 			j = "r32g32_sfloat";
 			return;
+		case format::r32g32b32_sfloat:
+			j = "r32g32b32_sfloat";
+			return;
 		case format::r32g32b32a32_sfloat:
 			j = "r32g32b32a32_sfloat";
 			return;
@@ -103,6 +106,11 @@ namespace SFG
 		if (str.compare("r32g32_sfloat") == 0)
 		{
 			f = format::r32g32_sfloat;
+			return;
+		}
+		if (str.compare("r32g32b32_sfloat") == 0)
+		{
+			f = format::r32g32b32_sfloat;
 			return;
 		}
 		if (str.compare("r32g32b32a32_sfloat") == 0)

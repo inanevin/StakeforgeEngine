@@ -4,12 +4,13 @@
 #include "io/log.hpp"
 #include "io/assert.hpp"
 #include "memory/memory.hpp"
+#include "data/vector_util.hpp"
 
 #ifdef SFG_TOOLMODE
 
 #include "math/math.hpp"
 #include "vendor/nhlohmann/json.hpp"
-#include "game/world_resources.hpp"
+#include "world/world_resources.hpp"
 
 #define TINYGLTF_NO_INCLUDE_STB_IMAGE
 #define TINYGLTF_NO_INCLUDE_STB_IMAGE_WRITE
@@ -35,14 +36,30 @@ namespace SFG
 			return mat;
 		}
 
-		auto fill_prim = [](auto prim, const tinygltf::Model& model, const tinygltf::Primitive& tprim, const tinygltf::Accessor& vertex_a, const tinygltf::BufferView& vertex_bv, const tinygltf::Buffer& vertex_b, size_t num_vertices) {
+		matrix4x3 make_mat43(const vector<double>& d)
+		{
+			matrix4x3 mat;
+			for (size_t i = 0; i < 12; ++i)
+				mat.m[i] = static_cast<float>(d[i]);
+			return mat;
+		}
+
+		auto fill_prim = [](auto						prim,
+							const tinygltf::Model&		model,
+							const tinygltf::Primitive&	tprim,
+							const tinygltf::Accessor&	vertex_a,
+							const tinygltf::BufferView& vertex_bv,
+							const tinygltf::Buffer&		vertex_b,
+							size_t						num_vertices,
+							size_t						start_vertices,
+							size_t						start_indices) {
 			prim.material_index = static_cast<int16>(tprim.material);
 
 			for (size_t j = 0; j < num_vertices; ++j)
 			{
-				const size_t stride		  = vertex_bv.byteStride == 0 ? sizeof(float) * 3 : vertex_bv.byteStride;
-				const float* rawFloatData = reinterpret_cast<const float*>(vertex_b.data.data() + vertex_a.byteOffset + vertex_bv.byteOffset + j * stride);
-				prim.vertices[j].pos	  = vector3(rawFloatData[0], rawFloatData[1], rawFloatData[2]);
+				const size_t stride					  = vertex_bv.byteStride == 0 ? sizeof(float) * 3 : vertex_bv.byteStride;
+				const float* rawFloatData			  = reinterpret_cast<const float*>(vertex_b.data.data() + vertex_a.byteOffset + vertex_bv.byteOffset + j * stride);
+				prim.vertices[start_vertices + j].pos = vector3(rawFloatData[0], rawFloatData[1], rawFloatData[2]);
 			}
 
 			if (tprim.indices != -1)
@@ -65,20 +82,20 @@ namespace SFG
 				}
 
 				const size_t num_indices = index_a.count;
-				prim.indices.resize(num_indices);
+				prim.indices.resize(start_indices + num_indices);
 				SFG_ASSERT(num_indices % 3 == 0);
 
 				if (index_a.componentType == TINYGLTF_COMPONENT_TYPE_UNSIGNED_BYTE)
 				{
 					uint8* data = (uint8*)&index_b.data[index_a.byteOffset + index_bv.byteOffset];
 					for (uint32 k = 0; k < num_indices; k++)
-						prim.indices[k] = static_cast<primitive_index>(data[k]);
+						prim.indices[start_indices + k] = static_cast<primitive_index>(data[k]);
 				}
 				else if (index_a.componentType == TINYGLTF_COMPONENT_TYPE_UNSIGNED_SHORT)
 				{
 					if (sizeof(primitive_index) == sizeof(uint16))
 					{
-						SFG_MEMCPY(prim.indices.data(), &index_b.data[index_a.byteOffset + index_bv.byteOffset], num_indices * sizeof(uint16));
+						SFG_MEMCPY(prim.indices.data() + start_indices * sizeof(primitive_index), &index_b.data[index_a.byteOffset + index_bv.byteOffset], num_indices * sizeof(uint16));
 					}
 					else
 					{
@@ -86,12 +103,12 @@ namespace SFG
 						uint16* data = (uint16*)&index_b.data[index_a.byteOffset + index_bv.byteOffset];
 
 						for (uint32 k = 0; k < num_indices; k++)
-							prim.indices[k] = static_cast<uint32>(data[k]);
+							prim.indices[start_indices + k] = static_cast<uint32>(data[k]);
 					}
 				}
 				else
 				{
-					SFG_MEMCPY(prim.indices.data(), &index_b.data[index_a.byteOffset + index_bv.byteOffset], num_indices * sizeof(uint32));
+					SFG_MEMCPY(prim.indices.data() + start_indices * sizeof(primitive_index), &index_b.data[index_a.byteOffset + index_bv.byteOffset], num_indices * sizeof(uint32));
 				}
 			}
 
@@ -108,10 +125,14 @@ namespace SFG
 
 				for (size_t j = 0; j < num_normals; ++j)
 				{
-					const size_t stride		= normals_bv.byteStride == 0 ? sizeof(float) * 3 : normals_bv.byteStride;
-					const float* raw_data	= reinterpret_cast<const float*>(normals_b.data.data() + normals_a.byteOffset + normals_bv.byteOffset + j * stride);
-					prim.vertices[j].normal = vector3(raw_data[0], raw_data[1], raw_data[2]);
+					const size_t stride						 = normals_bv.byteStride == 0 ? sizeof(float) * 3 : normals_bv.byteStride;
+					const float* raw_data					 = reinterpret_cast<const float*>(normals_b.data.data() + normals_a.byteOffset + normals_bv.byteOffset + j * stride);
+					prim.vertices[start_vertices + j].normal = vector3(raw_data[0], raw_data[1], raw_data[2]);
 				}
+			}
+			else
+			{
+				SFG_ASSERT(false);
 			}
 
 			auto uv_attribute = tprim.attributes.find("TEXCOORD_0");
@@ -127,10 +148,37 @@ namespace SFG
 
 				for (size_t j = 0; j < num_uv; ++j)
 				{
-					const size_t stride	  = uv_bv.byteStride == 0 ? sizeof(float) * 2 : uv_bv.byteStride;
-					const float* raw_data = reinterpret_cast<const float*>(uv_b.data.data() + uv_a.byteOffset + uv_bv.byteOffset + j * stride);
-					prim.vertices[j].uv	  = vector2(raw_data[0], raw_data[1]);
+					const size_t stride					 = uv_bv.byteStride == 0 ? sizeof(float) * 2 : uv_bv.byteStride;
+					const float* raw_data				 = reinterpret_cast<const float*>(uv_b.data.data() + uv_a.byteOffset + uv_bv.byteOffset + j * stride);
+					prim.vertices[start_vertices + j].uv = vector2(raw_data[0], raw_data[1]);
 				}
+			}
+			else
+			{
+				SFG_ASSERT(false);
+			}
+
+			auto tangents_attribute = tprim.attributes.find("tangent_0");
+			if (tangents_attribute != tprim.attributes.end())
+			{
+				const tinygltf::Accessor&	tangents_a	= model.accessors[tangents_attribute->second];
+				const tinygltf::BufferView& targents_bv = model.bufferViews[tangents_a.bufferView];
+				const tinygltf::Buffer&		tangents_b	= model.buffers[targents_bv.buffer];
+				SFG_ASSERT((tangents_a.type == TINYGLTF_TYPE_VEC4 && tangents_a.componentType == TINYGLTF_COMPONENT_TYPE_FLOAT), "Unsupported component type!");
+
+				const size_t num_tangents = tangents_a.count;
+				SFG_ASSERT(num_tangents == num_vertices);
+
+				for (size_t j = 0; j < num_tangents; ++j)
+				{
+					const size_t stride						  = targents_bv.byteStride == 0 ? sizeof(float) * 4 : targents_bv.byteStride;
+					const float* raw_data					  = reinterpret_cast<const float*>(tangents_b.data.data() + tangents_a.byteOffset + targents_bv.byteOffset + j * stride);
+					prim.vertices[start_vertices + j].tangent = vector4(raw_data[0], raw_data[1], raw_data[2], raw_data[3]);
+				}
+			}
+			else
+			{
+				SFG_ASSERT(false);
 			}
 
 			/*
@@ -157,28 +205,7 @@ namespace SFG
 				}
 			}
 
-			auto tangentsAttribute = tprim.attributes.find("tangent_0");
-			if (tangentsAttribute != tprim.attributes.end())
-			{
-				const tinygltf::Accessor&	tangentsAccessor   = model.accessors[tangentsAttribute->second];
-				const tinygltf::BufferView& tangentsBufferView = model.bufferViews[tangentsAccessor.bufferView];
-				const tinygltf::Buffer&		tangentsBuffer	   = model.buffers[tangentsBufferView.buffer];
-				SFG_ASSERT((tangentsAccessor.type == TINYGLTF_TYPE_VEC4 && tangentsAccessor.componentType == TINYGLTF_COMPONENT_TYPE_FLOAT), "Unsupported component type!");
 
-				const size_t numTangents = tangentsAccessor.count;
-				primitive->tangents.resize(numTangents);
-
-				for (size_t j = 0; j < numTangents; ++j)
-				{
-					const size_t stride		  = tangentsBufferView.byteStride == 0 ? sizeof(float) * 4 : tangentsBufferView.byteStride;
-					const float* rawFloatData = reinterpret_cast<const float*>(tangentsBuffer.data.data() + tangentsAccessor.byteOffset + tangentsBufferView.byteOffset + j * stride);
-					LGXVector4&	 tangent	  = primitive->tangents[j];
-					tangent.x				  = rawFloatData[0];
-					tangent.y				  = rawFloatData[1];
-					tangent.z				  = rawFloatData[2];
-					tangent.w				  = rawFloatData[3];
-				}
-			}
 			*/
 		};
 
@@ -209,6 +236,8 @@ namespace SFG
 			return false;
 		}
 
+		_material_count = static_cast<uint8>(model.materials.size());
+
 		const size_t all_meshes_sz = model.meshes.size();
 		_all_meshes.resize(all_meshes_sz);
 
@@ -238,9 +267,15 @@ namespace SFG
 				// if skinned prim, fill joints & weights here & call generic fill_prim.
 				if (joints0 != tprim.attributes.end() && weights0 != tprim.attributes.end())
 				{
-					mesh.primitives_skinned.push_back({});
-					primitive_skinned& prim = mesh.primitives_skinned.back();
-					prim.vertices.resize(num_vertices);
+					auto it = vector_util::find_if(mesh.primitives_skinned, [&tprim](const primitive_skinned& p) -> bool { return p.material_index == tprim.material; });
+
+					if (it == mesh.primitives_skinned.end())
+						mesh.primitives_skinned.push_back({});
+
+					primitive_skinned& prim			= it == mesh.primitives_skinned.end() ? mesh.primitives_skinned.back() : *it;
+					const size_t	   start_vertex = prim.vertices.size();
+					const size_t	   start_index	= prim.indices.size();
+					prim.vertices.resize(start_vertex + num_vertices);
 
 					const tinygltf::Accessor&	joints_a   = model.accessors[joints0->second];
 					const tinygltf::BufferView& joints_bv  = model.bufferViews[joints_a.bufferView];
@@ -258,7 +293,7 @@ namespace SFG
 
 					for (size_t j = 0; j < num_joints; j++)
 					{
-						const uint32 vertex_index = j / 4;
+						const uint32 vertex_index = start_vertex + j / 4;
 
 						if (joints_a.componentType == TINYGLTF_COMPONENT_TYPE_UNSIGNED_SHORT)
 						{
@@ -277,20 +312,23 @@ namespace SFG
 					const size_t num_weights = weights_a.count;
 					for (size_t j = 0; j < num_weights; ++j)
 					{
-						const uint32 vertex_index				 = j / 4;
+						const uint32 vertex_index				 = start_vertex + j / 4;
 						const size_t stride						 = weights_bv.byteStride == 0 ? sizeof(float) * 4 : weights_bv.byteStride;
 						const float* rawData					 = reinterpret_cast<const float*>(weights_b.data.data() + weights_a.byteOffset + weights_bv.byteOffset + j * stride);
 						prim.vertices[vertex_index].bone_weights = vector4(rawData[0], rawData[1], rawData[2], rawData[3]);
 					}
 
-					fill_prim(prim, model, tprim, vertex_accessor, vertex_buffer_view, vertex_buffer, num_vertices);
+					fill_prim(prim, model, tprim, vertex_accessor, vertex_buffer_view, vertex_buffer, num_vertices, start_vertex, start_index);
 					continue;
 				}
-
-				mesh.primitives_static.push_back({});
-				primitive_static& prim = mesh.primitives_static.back();
-				prim.vertices.resize(num_vertices);
-				fill_prim(prim, model, tprim, vertex_accessor, vertex_buffer_view, vertex_buffer, num_vertices);
+				auto it = vector_util::find_if(mesh.primitives_static, [&tprim](const primitive_static& p) -> bool { return p.material_index == tprim.material; });
+				if (it == mesh.primitives_static.end())
+					mesh.primitives_static.push_back({});
+				primitive_static& prim		   = it == mesh.primitives_static.end() ? mesh.primitives_static.back() : *it;
+				const size_t	  start_vertex = prim.vertices.size();
+				const size_t	  start_index  = prim.indices.size();
+				prim.vertices.resize(start_vertex + num_vertices);
+				fill_prim(prim, model, tprim, vertex_accessor, vertex_buffer_view, vertex_buffer, num_vertices, start_vertex, start_index);
 			}
 
 			const size_t all_nodes_sz = model.nodes.size();
@@ -308,11 +346,11 @@ namespace SFG
 					const vector3 p	  = tnode.translation.empty() ? vector3::zero : vector3(tnode.translation[0], tnode.translation[1], tnode.translation[2]);
 					const vector3 s	  = tnode.scale.empty() ? vector3::one : vector3(tnode.scale[0], tnode.scale[1], tnode.scale[2]);
 					const quat	  r	  = tnode.rotation.empty() ? quat::identity : quat(tnode.rotation[0], tnode.rotation[1], tnode.rotation[2], tnode.rotation[3]);
-					node.local_matrix = matrix4x4::transform(p, r, s);
+					node.local_matrix = matrix4x3::transform(p, r, s);
 				}
 				else
 				{
-					node.local_matrix = make_mat(tnode.matrix);
+					node.local_matrix = make_mat43(tnode.matrix);
 				}
 
 				for (int child : tnode.children)

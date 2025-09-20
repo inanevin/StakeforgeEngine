@@ -1,9 +1,7 @@
 // Copyright (c) 2025 Inan Evin
 
 #include "common/size_definitions.hpp"
-#include "platform/window.hpp"
 #include "gfx/frame_processor.hpp"
-#include "gfx/renderer.hpp"
 #include "data/binary_semaphore.hpp"
 #include "data/atomic.hpp"
 #include <thread>
@@ -14,7 +12,7 @@ namespace SFG
 	struct window_event;
 	class vector2ui;
 	class world;
-	class world_renderer;
+	class renderer;
 
 	class game_app
 	{
@@ -34,7 +32,7 @@ namespace SFG
 			return _flags.is_set(gaf_should_exit);
 		}
 
-		inline window& get_main_window()
+		inline window* get_main_window()
 		{
 			return _main_window;
 		}
@@ -43,14 +41,13 @@ namespace SFG
 		void kick_off_render();
 
 		void render_loop();
-		void tick_game_state(float delta_time);
 		void on_window_event(const window_event& ev);
 
 	private:
-		window			 _main_window	 = {};
-		renderer		 _renderer		 = {};
-		world*			 _world			 = nullptr;
-		world_renderer*	 _world_renderer = nullptr;
+		window* _main_window = nullptr;
+		;
+		renderer*		 _renderer = nullptr;
+		world*			 _world	   = nullptr;
 		std::thread		 _render_thread;
 		binary_semaphore _frame_available_semaphore{0};
 		uint8			 _update_render_frame_index	 = 0;

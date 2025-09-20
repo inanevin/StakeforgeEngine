@@ -5,15 +5,17 @@
 
 namespace SFG
 {
+	/*
 	void camera::update_matrices(const vector2ui16& size)
 	{
 		const matrix4x4 rot			= matrix4x4::rotation(_rotation.inverse());
 		const matrix4x4 translation = matrix4x4::translation(-_position);
 		_view						= rot * translation;
-		_proj						= matrix4x4::perspective(_fov_degrees / 2, static_cast<float>(size.x) / static_cast<float>(size.y), _z_near, _z_far);
+		_proj						= matrix4x4::perspective(_fov_degrees / 2, static_cast<float>(size.x) / static_cast<float>(size.y), _near, _far);
 		_view_proj					= _proj * _view;
 		_view_proj_inv				= _view_proj.inverse();
 	}
+	*/
 
 	matrix4x4 camera::view(const quat& rot, const vector3& pos)
 	{

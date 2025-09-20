@@ -2,11 +2,18 @@
 #pragma once
 #include "math_common.hpp"
 
+#ifdef SFG_TOOLMODE
+#include "vendor/nhlohmann/json_fwd.hpp"
+#endif
+
 #undef min
 #undef max
 
 namespace SFG
 {
+	class istream;
+	class ostream;
+
 	class vector3
 	{
 	public:
@@ -30,6 +37,7 @@ namespace SFG
 		static vector3 abs(const vector3& vector);
 		static vector3 min(const vector3& a, const vector3& b);
 		static vector3 max(const vector3& a, const vector3& b);
+		static vector3 lerp(const vector3& a, const vector3& b, float t);
 		static float   dot(const vector3& a, const vector3& b);
 		static float   distance(const vector3& a, const vector3& b);
 		static float   distance_sqr(const vector3& a, const vector3& b);
@@ -40,6 +48,9 @@ namespace SFG
 		bool		   is_zero(float epsilon = MATH_EPS) const;
 		float		   magnitude() const;
 		float		   magnitude_sqr() const;
+
+		void serialize(ostream& stream) const;
+		void deserialize(istream& stream);
 
 		inline vector3 normalized() const
 		{
@@ -140,4 +151,11 @@ namespace SFG
 	{
 		return vector * scalar;
 	}
+
+#ifdef SFG_TOOLMODE
+
+	void to_json(nlohmann::json& j, const vector3& v);
+	void from_json(const nlohmann::json& j, vector3& v);
+
+#endif
 }

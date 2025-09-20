@@ -2,7 +2,13 @@
 
 #include "vector2.hpp"
 #include "math.hpp"
+#include "data/istream.hpp"
+#include "data/ostream.hpp"
 #include <limits>
+
+#ifdef SFG_TOOLMODE
+#include "vendor/nhlohmann/json.hpp"
+#endif
 
 namespace SFG
 {
@@ -93,4 +99,28 @@ namespace SFG
 		return x * x + y * y;
 	}
 
+	void vector2::serialize(ostream& stream) const
+	{
+		stream << x << y;
+	}
+
+	void vector2::deserialize(istream& stream)
+	{
+		stream >> x >> y;
+	}
+
+#ifdef SFG_TOOLMODE
+	void to_json(nlohmann::json& j, const vector2& v)
+	{
+		j["x"] = v.x;
+		j["y"] = v.y;
+	}
+
+	void from_json(const nlohmann::json& j, vector2& v)
+	{
+		v.x = j.value<float>("x", 0.0f);
+		v.y = j.value<float>("y", 0.0f);
+	}
+
+#endif
 }

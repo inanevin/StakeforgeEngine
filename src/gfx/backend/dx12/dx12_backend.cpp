@@ -1382,7 +1382,8 @@ namespace SFG
 		_semaphores.remove(id);
 	}
 
-	bool dx12_backend::compile_shader_vertex_pixel(const string& source, const char* source_path, const char* vertex_entry, const char* pixel_entry, span<uint8>& vertex_out, span<uint8>& pixel_out, bool compile_root_sig, span<uint8>& out_signature_data) const
+	bool dx12_backend::compile_shader_vertex_pixel(
+		const string& source, const vector<string>& defines, const char* source_path, const char* vertex_entry, const char* pixel_entry, span<uint8>& vertex_out, span<uint8>& pixel_out, bool compile_root_sig, span<uint8>& out_signature_data) const
 	{
 		Microsoft::WRL::ComPtr<IDxcCompiler3> idxc_compiler;
 		throw_if_failed(DxcCreateInstance(CLSID_DxcCompiler, IID_PPV_ARGS(&idxc_compiler)));
@@ -1413,6 +1414,12 @@ namespace SFG
 			arguments.push_back(L"-Qstrip_reflect");
 			arguments.push_back(DXC_ARG_OPTIMIZATION_LEVEL3);
 #endif
+
+			for (const auto& def : defines)
+			{
+				std::wstring wstr = L"-D" + string_util::to_wstr(def);
+				arguments.push_back(wcscpy(new wchar_t[wstr.size() + 1], wstr.c_str()));
+			}
 
 			ComPtr<IDxcIncludeHandler> include_handler;
 			throw_if_failed(utils->CreateDefaultIncludeHandler(&include_handler));

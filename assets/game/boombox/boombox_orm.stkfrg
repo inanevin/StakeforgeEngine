@@ -1,0 +1,5 @@
+{
+  "source": "assets/boombox/BoomBox_occlusionRoughnessMetallic.png",
+  "format": "r8g8b8a8_unorm",
+  "gen_mips": 1,
+}

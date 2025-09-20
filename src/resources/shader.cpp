@@ -14,41 +14,47 @@ using json = nlohmann::json;
 
 #include <fstream>
 
+#undef min
+#undef max
+
 namespace SFG
 {
 
 #ifdef SFG_TOOLMODE
 	void to_json(nlohmann::json& j, const shader_meta& s)
 	{
-		j["source"] = s.source;
-		j["desc"]	= s.desc;
+		j["source"]		= s.source;
+		j["desc"]		= s.desc;
+		j["defines"]	= s.defines;
+		j["is_skinned"] = s.is_skinned;
 	}
 
 	void from_json(const nlohmann::json& j, shader_meta& s)
 	{
-		s.source = j.value<string>("source", "");
-		s.desc	 = j.value<shader_desc>("desc", {});
+		s.source	 = j.value<string>("source", "");
+		s.desc		 = j.value<shader_desc>("desc", {});
+		s.defines	 = j.value<vector<string>>("defines", {});
+		s.is_skinned = j.value<uint8>("is_skinned", 0);
 	}
 
 #endif
 
 	shader::~shader()
 	{
-		SFG_ASSERT(!CHECK_BIT(_hw, 15));
+		SFG_ASSERT(_hw == std::numeric_limits<gfx_id>::max());
 	}
 
 	void shader::destroy()
 	{
-		SFG_ASSERT(CHECK_BIT(_hw, 15));
-		_hw = UNSET_BIT(_hw, 15);
 		gfx_backend::get()->destroy_shader(_hw);
+		_hw = std::numeric_limits<gfx_id>::max();
 	}
 
 #ifdef SFG_TOOLMODE
 
 	bool shader::create_from_file_vertex_pixel(const char* path, bool use_embedded_layout, gfx_id layout)
 	{
-		SFG_ASSERT(!CHECK_BIT(_hw, 15));
+		SFG_ASSERT(_hw == std::numeric_limits<gfx_id>::max());
 
 		if (!file_system::exists(path))
 		{
@@ -64,6 +70,9 @@ namespace SFG
 		const string shader_text = file_system::read_file_as_string(meta.source.c_str());
 		if (shader_text.empty())
 			return false;
+
+		_flags = 0;
+		_flags.set(shader::flags::is_skinned, meta.is_skinned);
 
 		gfx_backend* backend = gfx_backend::get();
 		meta.desc.debug_name = meta.source.c_str();
@@ -82,11 +91,10 @@ namespace SFG
 		const bool	compile_layout = meta.desc.flags.is_set(shader_flags::shf_use_embedded_layout);
 
 		const string folder_path = file_system::get_directory_of_file(meta.source.c_str());
-		if (!backend->compile_shader_vertex_pixel(shader_text, folder_path.c_str(), meta.desc.vertex_entry.c_str(), meta.desc.pixel_entry.c_str(), meta.desc.blobs[0].data, meta.desc.blobs[1].data, compile_layout, meta.desc.layout_data))
+		if (!backend->compile_shader_vertex_pixel(shader_text, meta.defines, folder_path.c_str(), meta.desc.vertex_entry.c_str(), meta.desc.pixel_entry.c_str(), meta.desc.blobs[0].data, meta.desc.blobs[1].data, compile_layout, meta.desc.layout_data))
 			return false;
 
 		_hw = backend->create_shader(meta.desc);
-		_hw = SET_BIT(_hw, 15);
 
 		for (shader_blob& b : meta.desc.blobs)
 			delete[] b.data.data;
@@ -119,7 +127,7 @@ namespace SFG
 
 	gfx_id shader::get_hw() const
 	{
-		return UNSET_BIT(_hw, 15);
+		return _hw;
 	}
 
 } // namespace Lina

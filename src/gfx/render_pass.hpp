@@ -2,55 +2,64 @@
 #pragma once
 
 #include "common/size_definitions.hpp"
-#include "data/vector.hpp"
+#include "data/bitmask.hpp"
+#include "data/static_vector.hpp"
 #include "gfx/common/gfx_constants.hpp"
+#include "gfx/world/draws.hpp"
 
 namespace SFG
 {
-	class vector2ui;
+	class vector2ui16;
+	class bump_allocator;
+
+#define MAX_RP_TEXTURES 4
 
 	class render_pass
 	{
 	public:
-		struct indexed_draw
+		enum render_pass_flags
 		{
-			uint32 base_vertex		 = 0;
-			uint32 index_count		 = 0;
-			uint32 instance_count	 = 0;
-			uint32 start_index		 = 0;
-			uint32 start_instance	 = 0;
-			uint32 shader_handle	 = 0;
-			uint16 descriptor_handle = 0;
-			uint16 descriptor_layout = 0;
+			owns_color = 1 << 0,
+			owns_depth = 1 << 1,
 		};
 
 		struct per_frame_data
 		{
-			// vector<LinaGX::RenderPassColorAttachment> _color_attachments;
-			// LinaGX::RenderPassDepthStencilAttachment  _depth_stencil_attachment = {};
+			static_vector<gfx_id, MAX_RP_TEXTURES> textures;
+			gfx_id								   depth_texture = 0;
+			gfx_id								   bind_group	 = 0;
 		};
 
 	public:
-		void init(uint16* descriptor_sets, uint16 descriptor_layout);
+		void create_color_targets(uint8 target_count, uint8 format, const vector2ui16& size);
+		void create_depth_target(uint8 format, const vector2ui16& size);
+		void set_color_targets(uint8 target_count, gfx_id* targets);
+		void set_depth_target(gfx_id* targets);
+		void set_bind_group(uint8 frame_index, gfx_id group);
 		void uninit();
 
-		void add_indexed_draw(indexed_draw draw);
-		//	void render(LinaGX::CommandStream* cs, uint32 frame_index, const vector2ui& size);
+		void render(indexed_draw* draws, uint32 draws_count, bump_allocator& alloc, gfx_id cmd_buffer, uint8 frame_index, const vector2ui16& size);
+		void render_w_depth(indexed_draw* draws, uint32 draws_count, bump_allocator& alloc, gfx_id cmd_buffer, uint8 frame_index, const vector2ui16& size);
+		void resize(const vector2ui16& size);
 
-		//	inline vector<LinaGX::RenderPassColorAttachment>& get_color_attachments(uint32 frame_index)
-		//	{
-		//		return _pfd[frame_index]._color_attachments;
-		//	}
-		//
-		//	inline LinaGX::RenderPassDepthStencilAttachment& get_depth_stencil_attachment(uint32 frame_index)
-		//	{
-		//		return _pfd[frame_index]._depth_stencil_attachment;
-		//	}
+		inline gfx_id get_color_texture(uint8 frame_index, uint8 texture_index) const
+		{
+			return _pfd[frame_index].textures[texture_index];
+		}
+
+		inline gfx_id get_depth_texture(uint8 frame_index) const
+		{
+			return _pfd[frame_index].depth_texture;
+		}
 
 	private:
-		vector<indexed_draw> _indexed_draws;
-		uint16				 _descriptor_sets[FRAMES_IN_FLIGHT];
-		uint16				 _descriptor_layout		= 0;
-		per_frame_data		 _pfd[FRAMES_IN_FLIGHT] = {};
+		void draw(indexed_draw* draws, uint32 draws_count, bump_allocator& alloc, gfx_id cmd_buffer, uint8 frame_index, const vector2ui16& size);
+
+	private:
+		per_frame_data _pfd[FRAMES_IN_FLIGHT] = {};
+		bitmask<uint8> _flags				  = 0;
+		uint8		   _texture_format		  = 0;
+		uint8		   _depth_format		  = 0;
 	};
+
 }

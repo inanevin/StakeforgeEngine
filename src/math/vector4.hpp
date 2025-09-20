@@ -11,6 +11,10 @@
 
 namespace SFG
 {
+
+	class istream;
+	class ostream;
+
 	class vector4
 	{
 	public:
@@ -39,6 +43,9 @@ namespace SFG
 		bool		   is_zero(float epsilon = MATH_EPS) const;
 		float		   magnitude() const;
 		float		   magnitude_sqr() const;
+
+		void serialize(ostream& stream) const;
+		void deserialize(istream& stream);
 
 		inline bool is_point_inside(float _x, float _y) const
 		{
@@ -137,4 +144,5 @@ namespace SFG
 	void from_json(const nlohmann::json& j, vector4& v);
 
 #endif
+
 }

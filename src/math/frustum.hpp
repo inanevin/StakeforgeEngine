@@ -3,6 +3,9 @@
 
 #include "plane.hpp"
 
+#undef near
+#undef far
+
 namespace SFG
 {
 	class matrix4x4;
@@ -28,5 +31,4 @@ namespace SFG
 		plane near	 = {};
 		plane far	 = {};
 	};
-
 }

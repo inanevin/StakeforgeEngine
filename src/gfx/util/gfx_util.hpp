@@ -12,7 +12,8 @@ namespace SFG
 
 	enum root_param_index : uint8
 	{
-		rpi_engine_cbv = 0,
+		rpi_constants = 0,
+		rpi_engine_cbv,
 		rpi_table_render_pass,
 		rpi_table_material,
 		rpi_table_object,

@@ -27,10 +27,13 @@ namespace SFG
 
 		gfx_id layout = backend->create_empty_bind_layout();
 
-		// Param 0 - Global CBV, [b0, space0]
-		backend->bind_layout_add_descriptor(layout, binding_type::ubo, 0, 0, shader_stage::all);
+		// Param 0 - Constants, [b0, space0]
+		backend->bind_layout_add_constant(layout, 4, 0, 0, shader_stage::all);
 
-		// Param 1 - Render Pass Table -> 2x CBV + 4 SRVs + 4 Textures [b0, b1, space1] - [t0, t3, space1] - [t4, t7, space1]
+		// Param 1 - Global CBV, [b1, space0]
+		backend->bind_layout_add_descriptor(layout, binding_type::ubo, 0, 1, shader_stage::all);
+
+		// Param 2 - Render Pass Table -> 2x CBV + 4 SRVs + 4 Textures [b0, b1, space1] - [t0, t3, space1] - [t4, t7, space1]
 		backend->bind_layout_add_pointer(layout,
 										 {
 											 {.type = binding_type::ubo, .set = 1, .binding = 0, .count = 2, .is_volatile = 1},
@@ -39,7 +42,7 @@ namespace SFG
 										 },
 										 shader_stage::all);
 
-		// Param 2 - Material Table -> CBV + SSBO + 4 textures, [b0, space2] - [t0, space2] - [t1, t4, space2]
+		// Param 3 - Material Table -> CBV + SSBO + 4 textures, [b0, space2] - [t0, space2] - [t1, t4, space2]
 		backend->bind_layout_add_pointer(layout,
 										 {
 											 {.type = binding_type::ubo, .set = 2, .binding = 0, .count = 1, .is_volatile = 1},
@@ -48,7 +51,7 @@ namespace SFG
 										 },
 										 shader_stage::all);
 
-		// Param 3 - Object Table -> CBV x 2 + Texture, [b0, b1, space3] - [t0, space3]
+		// Param 4 - Object Table -> CBV x 2 + Texture, [b0, b1, space3] - [t0, space3]
 		backend->bind_layout_add_pointer(layout,
 										 {
 											 {.type = binding_type::ubo, .set = 3, .binding = 0, .count = 1, .is_volatile = 1},
@@ -56,14 +59,14 @@ namespace SFG
 										 },
 										 shader_stage::all);
 
-		// Param 4 - 4x Dynamic Samplers, [s0, s4, space0]
+		// Param 5 - 4x Dynamic Samplers, [s0, s4, space0]
 		backend->bind_layout_add_pointer(layout,
 										 {
 											 {.type = binding_type::sampler, .set = 0, .binding = 0, .count = 4},
 										 },
 										 shader_stage::fragment);
 
-		// Param [5,9] - Immutable Samplers [s5, s9, space0]
+		// Param [6,10] - Immutable Samplers [s5, s9, space0]
 		backend->bind_layout_add_immutable_sampler(layout, 0, 5, gfx_util::get_sampler_desc_anisotropic(), shader_stage::fragment);
 		backend->bind_layout_add_immutable_sampler(layout, 0, 6, gfx_util::get_sampler_desc_linear(), shader_stage::fragment);
 		backend->bind_layout_add_immutable_sampler(layout, 0, 7, gfx_util::get_sampler_desc_nearest(), shader_stage::fragment);

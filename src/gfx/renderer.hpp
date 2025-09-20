@@ -29,22 +29,29 @@ namespace SFG
 
 	class renderer
 	{
-
-	private:
-		using render_fn = void (renderer::*)(uint8 index, const vector2ui16& size);
-
 	public:
-		void init(const window& main_window, world_renderer* wr);
+		void init(window* main_window, world* world);
 		void uninit();
 		void wait_backend();
 		void populate_render_data(uint8 index, double interpolation);
-		void render_w_world(uint8 index, const vector2ui16& size);
-		void render_no_world(uint8 index, const vector2ui16& size);
 		void render(uint8 index, const vector2ui16& size);
 		bool on_window_event(const window_event& ev);
 		void on_window_resize(const vector2ui16& size);
-		void on_world_init(world* w);
-		void on_world_uninit(world* w);
+
+		inline texture_queue& get_texture_queue()
+		{
+			return _texture_queue;
+		}
+
+		inline buffer_queue& get_buffer_queue()
+		{
+			return _buffer_queue;
+		}
+
+		inline world_renderer* get_world_renderer() const
+		{
+			return _world_renderer;
+		}
 
 	private:
 		void send_uploads(uint8 frame_index);
@@ -90,10 +97,9 @@ namespace SFG
 #ifdef USE_DEBUG_CONTROLLER
 		debug_controller _debug_controller = {};
 #endif
-		render_fn		_render_function = nullptr;
-		world*			_world			 = nullptr;
-		gfx_data		_gfx_data		 = {};
-		shader_data		_shaders		 = {};
+		world*			_world	  = nullptr;
+		gfx_data		_gfx_data = {};
+		shader_data		_shaders  = {};
 		per_frame_data	_pfd[FRAMES_IN_FLIGHT];
 		bump_allocator	_frame_allocator[FRAMES_IN_FLIGHT] = {};
 		buffer_queue	_buffer_queue					   = {};
