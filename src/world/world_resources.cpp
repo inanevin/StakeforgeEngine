@@ -5,6 +5,7 @@
 #include "app/debug_console.hpp"
 #include "project/engine_data.hpp"
 #include "world/world.hpp"
+#include "gfx/renderer.hpp"
 
 namespace SFG
 {
@@ -18,10 +19,20 @@ namespace SFG
 	{
 		_world = nullptr;
 		debug_console::get()->unregister_console_function("world_load_texture");
+
 		_textures.verify_uninit();
 		_models.verify_uninit();
 		_anims.verify_uninit();
 		_skins.verify_uninit();
+		_shaders.verify_uninit();
+		_materials.verify_uninit();
+
+		_textures.reset();
+		_models.reset();
+		_anims.reset();
+		_skins.reset();
+		_shaders.reset();
+		_materials.reset();
 	}
 
 #ifdef SFG_TOOLMODE
@@ -32,13 +43,21 @@ namespace SFG
 		auto			it	= _texture_hashes.find(sid);
 		if (it != _texture_hashes.end())
 			return it->second;
-		const string abs_path = engine_data::get().get_working_dir() + "/" + relative_path;
+		const string abs_path = engine_data::get().get_working_dir() + relative_path;
 
 		const pool_handle<resource_id> txt = create_texture(sid);
 		texture&					   res = get_texture(txt);
-		res.create_from_file(abs_path.c_str());
 
-		_world->get_renderer()->get_resource_uploads().add_pending_texture(&res);
+		if (res.create_from_file(abs_path.c_str()))
+		{
+			SFG_INFO("Loaded texture: {0}", abs_path);
+			_world->get_renderer()->get_resource_uploads().add_pending_texture(&res);
+		}
+		else
+		{
+			SFG_ERR("Failed loading texture: {0}", abs_path);
+			destroy_texture(txt);
+		}
 
 		return txt;
 	}
@@ -49,12 +68,21 @@ namespace SFG
 		auto			it	= _model_hashes.find(sid);
 		if (it != _model_hashes.end())
 			return it->second;
-		const string abs_path = engine_data::get().get_working_dir() + "/" + path;
+		const string abs_path = engine_data::get().get_working_dir() + path;
 
 		const pool_handle<resource_id> handle = create_model(sid);
 		model&						   mdl	  = get_model(handle);
-		mdl.create_from_file(abs_path.c_str(), path, *this);
-		_world->get_renderer()->get_resource_uploads().add_pending_model(&mdl);
+
+		if (mdl.create_from_file(abs_path.c_str(), path, *this))
+		{
+			SFG_INFO("Loaded model: {0}", abs_path);
+			_world->get_renderer()->get_resource_uploads().add_pending_model(&mdl);
+		}
+		else
+		{
+			SFG_ERR("Failed loading model: {0}", abs_path);
+			destroy_model(handle);
+		}
 
 		return handle;
 	}
@@ -65,11 +93,21 @@ namespace SFG
 		auto			it	= _shader_hashes.find(sid);
 		if (it != _shader_hashes.end())
 			return it->second;
-		const string abs_path = engine_data::get().get_working_dir() + "/" + path;
+		const string abs_path = engine_data::get().get_working_dir() + path;
 
 		const pool_handle<resource_id> handle = create_shader(sid);
 		shader&						   res	  = get_shader(handle);
-		res.create_from_file_vertex_pixel(abs_path.c_str(), true, 0);
+
+		if (res.create_from_file_vertex_pixel(abs_path.c_str(), false, renderer::get_bind_layout_global()))
+		{
+			SFG_INFO("Loaded shader: {0}", abs_path);
+		}
+		else
+		{
+			SFG_ERR("Failed loading shader: {0}", abs_path);
+			destroy_shader(handle);
+		}
+
 		return handle;
 	}
 
@@ -79,11 +117,20 @@ namespace SFG
 		auto			it	= _material_hashes.find(sid);
 		if (it != _material_hashes.end())
 			return it->second;
-		const string abs_path = engine_data::get().get_working_dir() + "/" + path;
+		const string abs_path = engine_data::get().get_working_dir() + path;
 
 		const pool_handle<resource_id> handle = create_material(sid);
 		material&					   mat	  = get_material(handle);
-		mat.create_from_file(abs_path.c_str(), *this);
+
+		if (mat.create_from_file(abs_path.c_str(), *this))
+		{
+			SFG_INFO("Loaded material: {0}", abs_path);
+		}
+		else
+		{
+			SFG_ERR("Failed loading material: {0}", abs_path);
+			destroy_material(handle);
+		}
 		return handle;
 	}
 

@@ -1,5 +1,0 @@
-{
-  "source": "assets/boombox/BoomBox_normal.png",
-  "format": "r8g8b8a8_unorm",
-  "gen_mips": 1,
-}

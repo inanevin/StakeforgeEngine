@@ -33,8 +33,59 @@ namespace SFG
 		_entity_manager.init();
 	}
 
+	static vector<const char*> debug_textures = {
+		"assets/boombox/boombox_base.stkfrg",
+		"assets/boombox/boombox_emissive.stkfrg",
+		"assets/boombox/boombox_normal.stkfrg",
+		"assets/boombox/boombox_orm.stkfrg",
+	};
+
+	static vector<const char*> debug_mats = {
+		"assets/boombox/boombox_material.stkfrg",
+	};
+
+	static vector<const char*> debug_shaders = {
+		"assets/shaders/object/default_lit.stkfrg",
+		"assets/shaders/object/default_lit_skinned.stkfrg",
+	};
+
+	static vector<pool_handle<resource_id>> loaded_debug_textures = {};
+	static vector<pool_handle<resource_id>> loaded_debug_mats	  = {};
+	static vector<pool_handle<resource_id>> loaded_debug_shaders  = {};
+
+	void world::load_debug()
+	{
+		/* Debug */
+		for (const char* t : debug_textures)
+			loaded_debug_textures.push_back(_resources.load_texture(t));
+
+		for (const char* t : debug_shaders)
+			loaded_debug_shaders.push_back(_resources.load_shader(t));
+
+		for (const char* t : debug_mats)
+			loaded_debug_mats.push_back(_resources.load_material(t));
+	}
+
 	void world::uninit()
 	{
+		for (pool_handle<resource_id> handle : loaded_debug_textures)
+		{
+			_resources.get_texture(handle).destroy();
+			_resources.destroy_texture(handle);
+		}
+
+		for (pool_handle<resource_id> handle : loaded_debug_mats)
+		{
+			_resources.get_material(handle).destroy();
+			_resources.destroy_material(handle);
+		}
+
+		for (pool_handle<resource_id> handle : loaded_debug_shaders)
+		{
+			_resources.get_shader(handle).destroy();
+			_resources.destroy_shader(handle);
+		}
+
 		_entity_manager.uninit();
 		_resources.uninit();
 		_txt_allocator.reset();

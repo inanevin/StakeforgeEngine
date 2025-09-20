@@ -1418,7 +1418,7 @@ namespace SFG
 			for (const auto& def : defines)
 			{
 				std::wstring wstr = L"-D" + string_util::to_wstr(def);
-				arguments.push_back(wcscpy(new wchar_t[wstr.size() + 1], wstr.c_str()));
+				arguments.push_back(wstr.c_str());
 			}
 
 			ComPtr<IDxcIncludeHandler> include_handler;

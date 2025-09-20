@@ -9,6 +9,7 @@
 #ifdef SFG_TOOLMODE
 #include "io/file_system.hpp"
 #include "vendor/nhlohmann/json.hpp"
+#include "project/engine_data.hpp"
 using json = nlohmann::json;
 #endif
 
@@ -31,7 +32,7 @@ namespace SFG
 
 	void from_json(const nlohmann::json& j, shader_meta& s)
 	{
-		s.source	 = j.value<string>("source", "");
+		s.source	 = engine_data::get().get_working_dir() + j.value<string>("source", "");
 		s.desc		 = j.value<shader_desc>("desc", {});
 		s.defines	 = j.value<vector<string>>("defines", {});
 		s.is_skinned = j.value<uint8>("is_skinned", 0);
@@ -62,50 +63,64 @@ namespace SFG
 			return false;
 		}
 
-		std::ifstream f(path);
-		json		  json_data = json::parse(f);
-		shader_meta	  meta		= json_data;
-		f.close();
+		try
+		{
+			std::ifstream f(path);
+			json		  json_data = json::parse(f);
+			shader_meta	  meta		= json_data;
+			f.close();
 
-		const string shader_text = file_system::read_file_as_string(meta.source.c_str());
-		if (shader_text.empty())
+			if (!file_system::exists(meta.source.c_str()))
+			{
+				SFG_ERR("File don't exist! {0}", path);
+				return false;
+			}
+
+			const string shader_text = file_system::read_file_as_string(meta.source.c_str());
+			if (shader_text.empty())
+				return false;
+
+			_flags = 0;
+			_flags.set(shader::flags::is_skinned, meta.is_skinned);
+
+			gfx_backend* backend = gfx_backend::get();
+			meta.desc.debug_name = meta.source.c_str();
+
+			meta.desc.blobs = {
+				{.stage = shader_stage::vertex},
+				{.stage = shader_stage::fragment},
+			};
+
+			if (use_embedded_layout)
+				meta.desc.flags.set(shader_flags::shf_use_embedded_layout);
+			else
+				meta.desc.layout = layout;
+
+			span<uint8> layout_data	   = {};
+			const bool	compile_layout = meta.desc.flags.is_set(shader_flags::shf_use_embedded_layout);
+
+			const string folder_path = file_system::get_directory_of_file(meta.source.c_str());
+			if (!backend->compile_shader_vertex_pixel(shader_text, meta.defines, folder_path.c_str(), meta.desc.vertex_entry.c_str(), meta.desc.pixel_entry.c_str(), meta.desc.blobs[0].data, meta.desc.blobs[1].data, compile_layout, meta.desc.layout_data))
+				return false;
+
+			_hw = backend->create_shader(meta.desc);
+
+			for (shader_blob& b : meta.desc.blobs)
+				delete[] b.data.data;
+
+			if (compile_layout)
+				delete[] meta.desc.layout_data.data;
+
+			meta.desc.layout_data = {};
+			meta.desc.blobs		  = {};
+
+			return true;
+		}
+		catch (std::exception e)
+		{
+			SFG_ERR("Failed loading shader: {0}", e.what());
 			return false;
-
-		_flags = 0;
-		_flags.set(shader::flags::is_skinned, meta.is_skinned);
-
-		gfx_backend* backend = gfx_backend::get();
-		meta.desc.debug_name = meta.source.c_str();
-
-		meta.desc.blobs = {
-			{.stage = shader_stage::vertex},
-			{.stage = shader_stage::fragment},
-		};
-
-		if (use_embedded_layout)
-			meta.desc.flags.set(shader_flags::shf_use_embedded_layout);
-		else
-			meta.desc.layout = layout;
-
-		span<uint8> layout_data	   = {};
-		const bool	compile_layout = meta.desc.flags.is_set(shader_flags::shf_use_embedded_layout);
-
-		const string folder_path = file_system::get_directory_of_file(meta.source.c_str());
-		if (!backend->compile_shader_vertex_pixel(shader_text, meta.defines, folder_path.c_str(), meta.desc.vertex_entry.c_str(), meta.desc.pixel_entry.c_str(), meta.desc.blobs[0].data, meta.desc.blobs[1].data, compile_layout, meta.desc.layout_data))
-			return false;
-
-		_hw = backend->create_shader(meta.desc);
-
-		for (shader_blob& b : meta.desc.blobs)
-			delete[] b.data.data;
-
-		if (compile_layout)
-			delete[] meta.desc.layout_data.data;
-
-		meta.desc.layout_data = {};
-		meta.desc.blobs		  = {};
-
-		return true;
+		}
 	}
 
 #endif

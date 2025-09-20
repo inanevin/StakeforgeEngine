@@ -31,6 +31,8 @@ namespace SFG
 
 		_base_size = size;
 
+		_resource_uploads.init();
+
 		static_vector<gfx_id, FRAMES_IN_FLIGHT> entity_buffers;
 		static_vector<gfx_id, FRAMES_IN_FLIGHT> bone_buffers;
 		static_vector<gfx_id, FRAMES_IN_FLIGHT> light_buffers;
@@ -137,6 +139,8 @@ namespace SFG
 	void world_renderer::uninit()
 	{
 		PUSH_MEMORY_CATEGORY("Gfx");
+
+		_resource_uploads.uninit();
 
 		_pass_opaque.uninit();
 		// _pass_lighting_fw.uninit();
@@ -269,7 +273,7 @@ namespace SFG
 
 	void world_renderer::upload(uint8 data_index, uint8 frame_index)
 	{
-		_resource_uploads.upload(data_index, frame_index);
+		_resource_uploads.upload(_texture_queue, _buffer_queue, data_index, frame_index);
 
 		world_render_data& rd  = _render_data[data_index];
 		per_frame_data&	   pfd = _pfd[frame_index];
@@ -290,7 +294,7 @@ namespace SFG
 		_pass_opaque.upload(_world, _buffer_queue, data_index, frame_index);
 	}
 
-	void world_renderer::render(uint8 data_index, uint8 frame_index, gfx_id layout_global, gfx_id bind_group_global)
+	void world_renderer::render(uint8 data_index, uint8 frame_index, gfx_id layout_global, gfx_id bind_group_global, uint64 prev_copy, uint64 next_copy, gfx_id sem_copy)
 	{
 		gfx_backend* backend   = gfx_backend::get();
 		const gfx_id queue_gfx = backend->get_queue_gfx();
@@ -321,6 +325,10 @@ namespace SFG
 
 		// Submit opaque, signals itself
 		backend->submit_commands(queue_gfx, &cmd_opaque, 1);
+
+		if (prev_copy != next_copy)
+			backend->queue_wait(queue_gfx, &sem_copy, &next_copy, 1);
+
 		backend->queue_signal(queue_gfx, &sem_opaque, &sem_opaque_val, 1);
 
 		// Submit lighting + forward, waits on opaque, signals itself

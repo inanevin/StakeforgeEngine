@@ -12,7 +12,7 @@
 
 namespace SFG
 {
-	void world_resource_uploads::init(texture_queue* tq, buffer_queue* bq)
+	void world_resource_uploads::init()
 	{
 		gfx_backend* backend			= gfx_backend::get();
 		const uint32 vertex_buffer_size = 36000;
@@ -49,11 +49,11 @@ namespace SFG
 		_mesh_data.big_index_buffer.destroy();
 	}
 
-	void world_resource_uploads::upload(uint8 data_index, uint8 frame_index)
+	void world_resource_uploads::upload(texture_queue* tq, buffer_queue* bq, uint8 data_index, uint8 frame_index)
 	{
 		for (texture* t : _reuse_pending_textures)
 		{
-			_texture_queue->add_request({
+			tq->add_request({
 				.texture	  = t->get_hw(),
 				.intermediate = t->get_intermediate(),
 				.buffers	  = t->get_cpu(),
@@ -101,8 +101,8 @@ namespace SFG
 
 		if (!_reuse_pending_models.empty())
 		{
-			_buffer_queue->add_request({.buffer = &_mesh_data.big_vertex_buffer});
-			_buffer_queue->add_request({.buffer = &_mesh_data.big_index_buffer});
+			bq->add_request({.buffer = &_mesh_data.big_vertex_buffer});
+			bq->add_request({.buffer = &_mesh_data.big_index_buffer});
 		}
 
 		_reuse_pending_textures.clear();

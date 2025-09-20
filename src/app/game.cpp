@@ -54,16 +54,27 @@ namespace SFG
 
 		POP_MEMORY_CATEGORY();
 
-		_render_joined.store(1);
-		kick_off_render();
-
 		engine_data::get().init();
 
 #ifdef SFG_TOOLMODE
 		const string& last_world = engine_data::get().get_last_world();
 		if (file_system::exists(last_world.c_str()))
 			_world->load(last_world.c_str());
+		else
+		{
+			engine_data::get().set_last_world("");
+			_world->load("");
+		}
 #endif
+
+		/*************** DEBUG *************/
+		_world->load_debug();
+		/*************** DEBUG *************/
+
+		_render_joined.store(1);
+		kick_off_render();
+
+		/*************** CONSOLE *************/
 		debug_console::get()->register_console_function("app_new_world", [this]() {
 			join_render();
 			_world->load("");

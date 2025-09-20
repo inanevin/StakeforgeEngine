@@ -13,7 +13,6 @@
 
 #ifdef SFG_TOOLMODE
 #include <fstream>
-#include "vendor/nhlohmann/json.hpp"
 #include "io/file_system.hpp"
 using json = nlohmann::json;
 #endif
@@ -23,6 +22,35 @@ namespace SFG
 
 #ifdef SFG_TOOLMODE
 
+	void to_json(nlohmann::json& j, const parameter_entry& p)
+	{
+		j = {{"name", p.name}, {"value", p.value}};
+	}
+
+	void from_json(const nlohmann::json& j, parameter_entry& p)
+	{
+		p.name	= j.at("name").get<std::string>();
+		p.value = j.at("value");
+	}
+
+	void to_json(nlohmann::json& j, const material_meta& s)
+	{
+		j["is_forward"] = s.is_forward;
+		j["is_opaque"]	= s.is_opaque;
+		j["textures"]	= s.textures;
+		j["shaders"]	= s.shaders;
+		j["parameters"] = s.parameters;
+	}
+	void from_json(const nlohmann::json& j, material_meta& s)
+	{
+		s.is_forward = j.value<uint8>("is_forward", 0);
+		s.is_opaque	 = j.value<uint8>("is_opaque", 0);
+		s.shaders	 = j.value<vector<string>>("shaders", {});
+		s.textures	 = j.value<vector<string>>("textures", {});
+		if (j.contains("parameters"))
+			s.parameters = j.at("parameters").get<std::vector<parameter_entry>>();
+	}
+
 	bool material::create_from_file(const char* file, world_resources& resources)
 	{
 		if (!file_system::exists(file))
@@ -31,80 +59,73 @@ namespace SFG
 			return false;
 		}
 
-		std::ifstream f(file);
-		json		  json_data = json::parse(f);
-
-		reset_material_data();
-
-		static_vector<string_id, 10> textures;
-
-		_flags = 0;
-
-		for (auto& [key, value] : json_data.items())
+		try
 		{
-			if (key.compare("shaders") == 0 && value.is_array())
+			std::ifstream f(file);
+			json		  json_data = json::parse(f);
+			material_meta meta		= json_data;
+			f.close();
+
+			SFG_ASSERT(!meta.shaders.empty());
+			_flags.set(material::flags::is_opaque, meta.is_opaque);
+			_flags.set(material::flags::is_forward, meta.is_forward);
+
+			reset_material_data();
+
+			static_vector<string_id, 10> textures;
+			SFG_ASSERT(meta.textures.size() < 10);
+			for (const string& txt : meta.textures)
+				textures.push_back(TO_SID(txt));
+
+			_flags = 0;
+
+			for (const parameter_entry& p : meta.parameters)
 			{
-				const vector<string> shaders = value.get<vector<string>>();
-				for (const string& sh : shaders)
-					_all_shaders.push_back(resources.get_shader_handle_by_hash(TO_SID(sh)));
-			}
-			else if (key.compare("is_opaque") == 0)
-			{
-				_flags.set(material::flags::is_opaque);
-			}
-			else if (key.compare("is_forward") == 0)
-			{
-				_flags.set(material::flags::is_opaque);
-			}
-			else if (value.is_number_unsigned())
-			{
-				uint32 val = value.get<uint32>();
-				_material_data << val;
-			}
-			else if (value.is_number_float())
-			{
-				float val = value.get<float>();
-				_material_data << val;
-			}
-			else if (value.is_object() && value.contains("x") && value.contains("y") && value.contains("z") && value.contains("w") && value.size() == 4)
-			{
-				vector4 val = value.get<vector4>();
-				_material_data << val;
-			}
-			else if (value.is_object() && value.contains("x") && value.contains("y") && value.contains("z") && value.size() == 3)
-			{
-				vector3 val = value.get<vector3>();
-				_material_data << val;
-			}
-			else if (value.is_object() && value.contains("x") && value.contains("y") && value.size() == 2)
-			{
-				vector2 val = value.get<vector2>();
-				_material_data << val;
-			}
-			else if (value.is_string())
-			{
-				if (value.contains("sampler"))
+				const auto& param = p.value;
+
+				if (param.is_number_unsigned())
 				{
-					// sampler deconstruct?
+					uint32 val = param.get<uint32>();
+					_material_data << val;
+				}
+				else if (param.is_number_float())
+				{
+					float val = param.get<float>();
+					_material_data << val;
+				}
+				else if (param.is_object() && param.contains("x") && param.contains("y") && param.contains("z") && param.contains("w") && param.size() == 4)
+				{
+					vector4 val = param.get<vector4>();
+					_material_data << val;
+				}
+				else if (param.is_object() && param.contains("x") && param.contains("y") && param.contains("z") && param.size() == 3)
+				{
+					vector3 val = param.get<vector3>();
+					_material_data << val;
+				}
+				else if (param.is_object() && param.contains("x") && param.contains("y") && param.size() == 2)
+				{
+					vector2 val = param.get<vector2>();
+					_material_data << val;
 				}
 				else
 				{
-					const string	txt_path = value.get<string>();
-					const string_id sid		 = TO_SID(txt_path);
-					textures.push_back(sid);
+					SFG_ASSERT(false);
 				}
 			}
-			else
-			{
-				SFG_ASSERT(false);
-			}
+
+			for (const string& sh : meta.shaders)
+				_all_shaders.push_back(resources.get_shader_handle_by_hash(TO_SID(sh)));
+			SFG_ASSERT(!_all_shaders.empty());
+			_default_shader = resources.get_shader(_all_shaders[0]).get_hw();
+
+			close_material_data(resources, textures.data(), static_cast<uint8>(textures.size()));
 		}
-
-		SFG_ASSERT(!_all_shaders.empty());
-		_default_shader = resources.get_shader(_all_shaders[0]).get_hw();
-
-		f.close();
-		close_material_data(resources, textures.data(), static_cast<uint8>(textures.size()));
+		catch (std::exception e)
+		{
+			SFG_ERR("Failed loading material: {0}", e.what());
+			return false;
+		}
 
 		return true;
 	}
@@ -196,6 +217,9 @@ namespace SFG
 			_buffers[i].destroy();
 			backend->destroy_bind_group(_bind_groups[i]);
 		}
+
+		if (_material_data.get_size() != 0)
+			_material_data.destroy();
 	}
 
 	void material::update_material_data()
@@ -209,4 +233,5 @@ namespace SFG
 	}
 
 #endif
+
 }

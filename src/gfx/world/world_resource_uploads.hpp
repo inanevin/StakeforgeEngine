@@ -28,12 +28,12 @@ namespace SFG
 		};
 
 	public:
-		void init(texture_queue* tq, buffer_queue* bq);
+		void init();
 		void uninit();
 
 		void add_pending_texture(texture* txt);
 		void add_pending_model(model* mdl);
-		void upload(uint8 data_index, uint8 frame_index);
+		void upload(texture_queue* tq, buffer_queue* bq, uint8 data_index, uint8 frame_index);
 		void check_uploads(bool force = false);
 
 		inline buffer& get_big_vertex_buffer()
@@ -48,9 +48,7 @@ namespace SFG
 
 	private:
 	private:
-		mesh_data									_mesh_data	   = {};
-		texture_queue*								_texture_queue = nullptr;
-		buffer_queue*								_buffer_queue  = nullptr;
+		mesh_data									_mesh_data = {};
 		static_vector<texture*, MAX_WORLD_TEXTURES> _reuse_pending_textures;
 		static_vector<texture*, MAX_WORLD_TEXTURES> _reuse_uploaded_textures;
 		static_vector<model*, MAX_WORLD_MODELS>		_reuse_pending_models;

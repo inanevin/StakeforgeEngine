@@ -19,6 +19,9 @@ namespace SFG
 {
 #define RT_FORMAT format::r8g8b8a8_srgb
 
+	gfx_id renderer::s_bind_group_global[FRAMES_IN_FLIGHT] = {};
+	gfx_id renderer::s_bind_layout_global				   = 0;
+
 	void renderer::init(window* main_window, world* w)
 	{
 		_world				 = w;
@@ -35,14 +38,16 @@ namespace SFG
 		});
 
 		_gfx_data.bind_layout_global = gfx_util::create_bind_layout_global();
-		_gfx_data.dummy_sampler		 = backend->create_sampler({});
-		_gfx_data.dummy_texture		 = backend->create_texture({
-				 .texture_format = format::r8_unorm,
-				 .size			 = vector2ui16(1, 1),
-				 .flags			 = texture_flags::tf_is_2d | texture_flags::tf_sampled,
-		 });
-		_gfx_data.dummy_ubo			 = backend->create_resource({.size = 4, .flags = resource_flags::rf_constant_buffer | resource_flags::rf_gpu_only});
-		_gfx_data.dummy_ssbo		 = backend->create_resource({.size = 4, .flags = resource_flags::rf_storage_buffer | resource_flags::rf_gpu_only});
+		s_bind_layout_global		 = _gfx_data.bind_layout_global;
+
+		_gfx_data.dummy_sampler = backend->create_sampler({});
+		_gfx_data.dummy_texture = backend->create_texture({
+			.texture_format = format::r8_unorm,
+			.size			= vector2ui16(1, 1),
+			.flags			= texture_flags::tf_is_2d | texture_flags::tf_sampled,
+		});
+		_gfx_data.dummy_ubo		= backend->create_resource({.size = 4, .flags = resource_flags::rf_constant_buffer | resource_flags::rf_gpu_only});
+		_gfx_data.dummy_ssbo	= backend->create_resource({.size = 4, .flags = resource_flags::rf_storage_buffer | resource_flags::rf_gpu_only});
 
 		_shaders.swapchain.create_from_file_vertex_pixel("assets/engine/shaders/swapchain/swapchain.stkfrg", false, _gfx_data.bind_layout_global);
 
@@ -90,6 +95,8 @@ namespace SFG
 											   });
 
 			_frame_allocator[i].init(1024 * 1024, 4);
+
+			s_bind_group_global[i] = pfd.bind_group_global;
 		}
 
 		_buffer_queue.init();
@@ -186,15 +193,14 @@ namespace SFG
 		pfd.buf_engine_global.buffer_data(0, (void*)&globals, sizeof(buf_engine_global));
 
 		/* access pfd */
-		const gfx_id		  cmd_list		   = pfd.cmd_gfx;
-		const gfx_id		  bg_global		   = pfd.bind_group_global;
-		const gfx_id		  bg_swapchain	   = pfd.bind_group_swapchain;
-		const gfx_id		  shader_swp	   = _shaders.swapchain.get_hw();
-		const gfx_id		  sem_frame		   = pfd.sem_frame.semaphore;
-		const gfx_id		  sem_copy		   = pfd.sem_copy.semaphore;
-		const uint64		  prev_copy_value  = pfd.sem_copy.value;
-		const uint64		  next_frame_value = ++pfd.sem_frame.value;
-		const semaphore_data& sem_data_copy	   = pfd.sem_copy;
+		const gfx_id cmd_list		  = pfd.cmd_gfx;
+		const gfx_id bg_global		  = pfd.bind_group_global;
+		const gfx_id bg_swapchain	  = pfd.bind_group_swapchain;
+		const gfx_id shader_swp		  = _shaders.swapchain.get_hw();
+		const gfx_id sem_frame		  = pfd.sem_frame.semaphore;
+		const gfx_id sem_copy		  = pfd.sem_copy.semaphore;
+		const uint64 prev_copy_value  = pfd.sem_copy.value;
+		const uint64 next_frame_value = ++pfd.sem_frame.value;
 
 		// uploads
 		_world_renderer->upload(index, frame_index);
@@ -222,7 +228,7 @@ namespace SFG
 		_debug_controller.collect_barriers(_reuse_barriers);
 		send_barriers(cmd_list);
 
-		_world_renderer->render(index, frame_index, layout_global, bg_global);
+		_world_renderer->render(index, frame_index, layout_global, bg_global, prev_copy_value, next_copy_value, sem_copy);
 		_debug_controller.render(cmd_list, frame_index, alloc);
 		const semaphore_data& sem_world_data  = _world_renderer->get_final_semaphore(frame_index);
 		const gfx_id		  sem_world		  = sem_world_data.semaphore;

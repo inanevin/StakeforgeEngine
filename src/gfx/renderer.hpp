@@ -53,6 +53,16 @@ namespace SFG
 			return _world_renderer;
 		}
 
+		inline static gfx_id get_bind_layout_global()
+		{
+			return s_bind_layout_global;
+		}
+
+		inline static gfx_id get_bind_group_global(uint8 index)
+		{
+			return s_bind_group_global[index];
+		}
+
 	private:
 		void send_uploads(uint8 frame_index);
 		void send_barriers(gfx_id cmd_list);
@@ -106,5 +116,8 @@ namespace SFG
 		texture_queue	_texture_queue					   = {};
 		render_data		_render_data[2];
 		vector<barrier> _reuse_barriers;
+
+		static gfx_id s_bind_layout_global;
+		static gfx_id s_bind_group_global[FRAMES_IN_FLIGHT];
 	};
 }

@@ -35,6 +35,8 @@ namespace SFG
 		void uninit();
 		void tick(const vector2ui16& res, float dt);
 
+		void load_debug();
+
 #ifdef SFG_TOOLMODE
 		void save(const char* path);
 		void load(const char* path);

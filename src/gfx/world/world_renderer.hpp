@@ -48,7 +48,7 @@ namespace SFG
 		void on_render_joined();
 		void populate_render_data(uint8 index, double interpolation);
 		void upload(uint8 data_index, uint8 frame_index);
-		void render(uint8 data_index, uint8 frame_index, gfx_id layout_global, gfx_id bind_group_global);
+		void render(uint8 data_index, uint8 frame_index, gfx_id layout_global, gfx_id bind_group_global, uint64 prev_copy, uint64 next_copy, gfx_id sem_copy);
 		void resize(const vector2ui16& size);
 
 		uint32 create_gpu_entity(uint8 data_index, const gpu_entity& e);

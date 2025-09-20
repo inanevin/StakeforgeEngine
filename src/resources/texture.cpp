@@ -6,6 +6,7 @@
 #include "gfx/backend/backend.hpp"
 #include "gfx/common/descriptions.hpp"
 #include "gfx/util/image_util.hpp"
+#include "project/engine_data.hpp"
 
 #ifdef SFG_TOOLMODE
 #include "io/file_system.hpp"
@@ -29,7 +30,7 @@ namespace SFG
 	void from_json(const nlohmann::json& j, texture_meta& s)
 	{
 		s.fmt	   = static_cast<uint8>(j.value<format>("format", format::undefined));
-		s.source   = j.value<string>("source", "");
+		s.source   = engine_data::get().get_working_dir() + j.value<string>("source", "");
 		s.gen_mips = j.value<uint8>("gen_mips", 0);
 
 		SFG_ASSERT(file_system::exists(s.source.c_str()));
@@ -39,7 +40,7 @@ namespace SFG
 
 	texture::~texture()
 	{
-		SFG_ASSERT(_cpu_count == 0, "");
+		SFG_ASSERT(_cpu_buffers.empty(), "");
 		SFG_ASSERT(!_flags.is_set(texture::flags::hw_exists));
 	}
 
@@ -56,44 +57,60 @@ namespace SFG
 		}
 
 		std::ifstream f(file);
-		json		  json_data = json::parse(f);
-		texture_meta  meta		= json_data;
-		f.close();
+		try
+		{
+			json		 json_data = json::parse(f);
+			texture_meta meta	   = json_data;
+			f.close();
 
-		destroy_cpu();
+			destroy_cpu();
 
-		const format fmt	  = static_cast<format>(static_cast<format>(meta.fmt));
-		const uint8	 channels = format_get_channels(fmt);
-		const uint8	 bpp	  = format_get_bpp(fmt);
+			const format fmt	  = static_cast<format>(static_cast<format>(meta.fmt));
+			const uint8	 channels = format_get_channels(fmt);
+			const uint8	 bpp	  = format_get_bpp(fmt);
 
-		vector2ui16 size = vector2ui16::zero;
-		void*		data = image_util::load_from_file_ch(file, size, channels);
+			vector2ui16 size = vector2ui16::zero;
+			void*		data = image_util::load_from_file_ch(meta.source.c_str(), size, channels);
 
-		const texture_buffer b = {
-			.pixels = reinterpret_cast<uint8*>(data),
-			.size	= size,
-			.bpp	= bpp,
-		};
+			if (data == nullptr)
+			{
+				return false;
+			}
 
-		_cpu_count	 = meta.gen_mips ? image_util::calculate_mip_levels(size.x, size.y) : 1;
-		_cpu_buffers = new texture_buffer[_cpu_count];
+			const texture_buffer b = {
+				.pixels = reinterpret_cast<uint8*>(data),
+				.size	= size,
+				.bpp	= bpp,
+			};
 
-		if (meta.gen_mips == 1)
-			populate_mips(channels, format_is_linear(fmt));
+			const uint8 count = meta.gen_mips ? image_util::calculate_mip_levels(size.x, size.y) : 1;
+			_cpu_buffers.resize(count);
+			_cpu_buffers[0] = b;
 
-		gfx_backend* backend = gfx_backend::get();
-		_hw					 = backend->create_texture({
-							 .texture_format = fmt,
-							 .size			 = vector2ui16(get_width(), get_height()),
-							 .views			 = {{}},
-							 .mip_levels	 = _cpu_count,
-							 .array_length	 = 1,
-							 .samples		 = 1,
-							 .debug_name	 = meta.source.c_str(),
+			if (meta.gen_mips == 1)
+				populate_mips(channels, format_is_linear(fmt));
 
-		 });
-		_flags.set(texture::flags::hw_exists | texture::flags::upload_pending);
-		create_intermediate();
+			gfx_backend* backend = gfx_backend::get();
+			_hw					 = backend->create_texture({
+								 .texture_format = fmt,
+								 .size			 = vector2ui16(get_width(), get_height()),
+								 .flags			 = texture_flags::tf_is_2d | texture_flags::tf_sampled,
+								 .views			 = {{}},
+								 .mip_levels	 = count,
+								 .array_length	 = 1,
+								 .samples		 = 1,
+								 .debug_name	 = meta.source.c_str(),
+
+			 });
+			_flags.set(texture::flags::hw_exists | texture::flags::upload_pending);
+			create_intermediate();
+		}
+		catch (std::exception e)
+		{
+			SFG_ERR("Exception: {0}", e.what());
+			return false;
+		}
+
 		return true;
 	}
 #endif
@@ -104,9 +121,7 @@ namespace SFG
 
 		const size_t data_size = static_cast<size_t>(size.x * size.y * bpp);
 
-		_cpu_buffers = new texture_buffer();
-		_cpu_count	 = 1;
-
+		_cpu_buffers.push_back({});
 		texture_buffer& b = _cpu_buffers[0];
 		b				  = {
 							.pixels = reinterpret_cast<uint8*>(SFG_MALLOC(data_size)),
@@ -122,7 +137,7 @@ namespace SFG
 							 .texture_format = static_cast<format>(fmt),
 							 .size			 = vector2ui16(get_width(), get_height()),
 							 .views			 = {{}},
-							 .mip_levels	 = _cpu_count,
+							 .mip_levels	 = static_cast<uint8>(_cpu_buffers.size()),
 							 .array_length	 = 1,
 							 .samples		 = 1,
 							 .debug_name	 = debug_name,
@@ -134,14 +149,9 @@ namespace SFG
 
 	void texture::destroy_cpu()
 	{
-		for (uint8 i = 0; i < _cpu_count; i++)
-			SFG_FREE(_cpu_buffers[i].pixels);
-
-		if (_cpu_count == 1)
-			delete _cpu_buffers;
-		else
-			delete[] _cpu_buffers;
-		_cpu_buffers = nullptr;
+		for (texture_buffer& buf : _cpu_buffers)
+			SFG_FREE(buf.pixels);
+		_cpu_buffers.clear();
 	}
 
 	void texture::destroy()
@@ -162,32 +172,36 @@ namespace SFG
 		SFG_ASSERT(_flags.is_set(texture::flags::intermediate_exists));
 		gfx_backend* backend = gfx_backend::get();
 		backend->destroy_resource(_intermediate);
+		_flags.set(texture::flags::intermediate_exists, false);
 	}
 
 	void texture::populate_mips(uint8 channels, bool is_linear)
 	{
-		if (_cpu_count == 0)
+		if (_cpu_buffers.empty())
 		{
 			SFG_ERR("Can't generate mipmaps as cpu data is empty!");
 			return;
 		}
 
-		image_util::generate_mips(_cpu_buffers, _cpu_count, image_util::mip_gen_filter::box, channels, is_linear, false);
+		image_util::generate_mips(_cpu_buffers.data(), static_cast<uint8>(_cpu_buffers.size()), image_util::mip_gen_filter::box, channels, is_linear, false);
 	}
 
 	uint8 texture::get_bpp() const
 	{
-		return _cpu_count == 0 ? 0 : _cpu_buffers[0].bpp;
+		SFG_ASSERT(!_cpu_buffers.empty());
+		return _cpu_buffers[0].bpp;
 	}
 
 	uint16 texture::get_width() const
 	{
-		return _cpu_count == 0 ? 0 : _cpu_buffers[0].size.x;
+		SFG_ASSERT(!_cpu_buffers.empty());
+		return _cpu_buffers[0].size.x;
 	}
 
 	uint16 texture::get_height() const
 	{
-		return _cpu_count == 0 ? 0 : _cpu_buffers[0].size.y;
+		SFG_ASSERT(!_cpu_buffers.empty());
+		return _cpu_buffers[0].size.y;
 	}
 
 	gfx_id texture::get_hw() const
@@ -201,9 +215,8 @@ namespace SFG
 		gfx_backend* backend = gfx_backend::get();
 
 		uint32 total_size = 0;
-		for (uint32 i = 0; i < _cpu_count++; i++)
+		for (const texture_buffer& buf : _cpu_buffers)
 		{
-			const texture_buffer& buf = _cpu_buffers[i];
 			total_size += backend->get_texture_size(buf.size.x, buf.size.y, buf.bpp);
 		}
 

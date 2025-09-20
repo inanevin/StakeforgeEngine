@@ -10,11 +10,43 @@
 #include "gfx/buffer.hpp"
 #include "memory/pool_handle.hpp"
 
+#ifdef SFG_TOOLMODE
+#include "vendor/nhlohmann/json.hpp"
+#endif
+
 namespace SFG
 {
 	class world_resources;
 
 #define MAX_MATERIAL_SHADER_VARIANTS 8
+
+	struct parameter_entry
+	{
+		std::string name;
+
+#ifdef SFG_TOOLMODE
+		nlohmann::json value;
+#endif
+	};
+
+	struct material_meta
+	{
+		uint8					is_forward = 0;
+		uint8					is_opaque  = 0;
+		vector<string>			shaders;
+		vector<string>			textures;
+		vector<parameter_entry> parameters;
+	};
+
+#ifdef SFG_TOOLMODE
+
+	void to_json(nlohmann::json& j, const parameter_entry& s);
+	void from_json(const nlohmann::json& j, parameter_entry& s);
+
+	void to_json(nlohmann::json& j, const material_meta& s);
+	void from_json(const nlohmann::json& j, material_meta& s);
+
+#endif
 
 	class material
 	{

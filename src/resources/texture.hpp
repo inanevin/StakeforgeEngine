@@ -5,7 +5,8 @@
 #include "common/size_definitions.hpp"
 #include "data/string.hpp"
 #include "data/bitmask.hpp"
-#include "gfx/common/gfx_constants.hpp"
+#include "data/static_vector.hpp"
+#include "gfx/common/gfx_common.hpp"
 
 #ifdef SFG_TOOLMODE
 #include "vendor/nhlohmann/json_fwd.hpp"
@@ -30,6 +31,8 @@ namespace SFG
 	void from_json(const nlohmann::json& j, texture_meta& s);
 
 #endif
+
+#define MAX_CPU_BUFFERS 16
 
 	class texture
 	{
@@ -65,14 +68,14 @@ namespace SFG
 			return _flags;
 		}
 
-		inline texture_buffer* get_cpu() const
+		inline texture_buffer* get_cpu()
 		{
-			return _cpu_buffers;
+			return &_cpu_buffers[0];
 		}
 
 		inline uint8 get_cpu_count() const
 		{
-			return _cpu_count;
+			return static_cast<uint8>(_cpu_buffers.size());
 		}
 
 		inline gfx_id get_intermediate() const
@@ -84,11 +87,10 @@ namespace SFG
 		void create_intermediate();
 
 	private:
-		texture_buffer* _cpu_buffers  = nullptr;
-		gfx_id			_hw			  = 0;
-		gfx_id			_intermediate = 0;
-		uint8			_cpu_count	  = 0;
-		bitmask<uint8>	_flags		  = 0;
+		static_vector<texture_buffer, MAX_CPU_BUFFERS> _cpu_buffers;
+		gfx_id										   _hw			 = 0;
+		gfx_id										   _intermediate = 0;
+		bitmask<uint8>								   _flags		 = 0;
 	};
 
 }

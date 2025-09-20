@@ -65,7 +65,7 @@ namespace SFG
 		DEFINE_RES_FUNCS(texture, _texture_hashes, _textures);
 		DEFINE_RES_FUNCS(shader, _shader_hashes, _shaders);
 		DEFINE_RES_FUNCS(model, _model_hashes, _models);
-		DEFINE_RES_FUNCS(material, _material_hashes, _materials_pbr_default);
+		DEFINE_RES_FUNCS(material, _material_hashes, _materials);
 		DEFINE_RES_FUNCS(animation, _anim_hashes, _anims);
 		DEFINE_RES_FUNCS(skin, _skin_hashes, _skins);
 
@@ -83,6 +83,6 @@ namespace SFG
 		pool_allocator_gen<animation, resource_id, MAX_WORLD_ANIMS>		 _anims;
 		pool_allocator_gen<skin, resource_id, MAX_WORLD_SKINS>			 _skins;
 		pool_allocator_gen<shader, resource_id, MAX_WORLD_SHADERS>		 _shaders;
-		pool_allocator_gen<material, resource_id, MAX_WORLD_MAT_PBR_DEF> _materials_pbr_default;
+		pool_allocator_gen<material, resource_id, MAX_WORLD_MAT_PBR_DEF> _materials;
 	};
 }

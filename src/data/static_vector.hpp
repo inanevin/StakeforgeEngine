@@ -132,6 +132,12 @@ namespace SFG
 			_head = 0;
 		}
 
+		void resize(size_t sz)
+		{
+			SFG_ASSERT(sz < capacity);
+			_head = sz;
+		}
+
 		void remove(const T& value)
 		{
 			auto end = begin() + _head;

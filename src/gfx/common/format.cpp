@@ -47,13 +47,16 @@ namespace SFG
 	{
 		switch (fmt)
 		{
+		case format::b8g8r8a8_srgb:
+		case format::bc3_block_srgb:
 		case format::r8g8b8a8_srgb:
-			return true;
+			return false;
 		default:
-			break;
+			return true;
 		}
+
 		SFG_ASSERT(false);
-		return false;
+		return true;
 	}
 
 #ifdef SFG_TOOLMODE
@@ -64,11 +67,11 @@ namespace SFG
 		case format::r8_unorm:
 			j = "r8";
 			return;
-		case format::r8g8b8a8_unorm:
-			j = "r8g8b8a8";
-			return;
 		case format::r8g8b8a8_srgb:
 			j = "r8g8b8a8_srgb";
+			return;
+		case format::r8g8b8a8_unorm:
+			j = "r8g8b8a8_unorm";
 			return;
 		case format::r32g32_sfloat:
 			j = "r32g32_sfloat";
@@ -78,6 +81,9 @@ namespace SFG
 			return;
 		case format::r32g32b32a32_sfloat:
 			j = "r32g32b32a32_sfloat";
+			return;
+		case format::r32g32b32a32_uint:
+			j = "r32g32b32a32_uint";
 			return;
 		}
 
@@ -93,14 +99,14 @@ namespace SFG
 			f = format::r8_unorm;
 			return;
 		}
-		if (str.compare("r8g8b8a8") == 0)
-		{
-			f = format::r8g8b8a8_unorm;
-			return;
-		}
 		if (str.compare("r8g8b8a8_srgb") == 0)
 		{
 			f = format::r8g8b8a8_srgb;
+			return;
+		}
+		if (str.compare("r8g8b8a8_unorm") == 0)
+		{
+			f = format::r8g8b8a8_unorm;
 			return;
 		}
 		if (str.compare("r32g32_sfloat") == 0)
@@ -116,6 +122,11 @@ namespace SFG
 		if (str.compare("r32g32b32a32_sfloat") == 0)
 		{
 			f = format::r32g32b32a32_sfloat;
+			return;
+		}
+		if (str.compare("r32g32b32a32_uint") == 0)
+		{
+			f = format::r32g32b32a32_uint;
 			return;
 		}
 
