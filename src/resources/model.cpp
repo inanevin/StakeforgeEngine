@@ -44,7 +44,7 @@ namespace SFG
 			return mat;
 		}
 
-		auto fill_prim = [](auto						prim,
+		auto fill_prim = [](auto&						prim,
 							const tinygltf::Model&		model,
 							const tinygltf::Primitive&	tprim,
 							const tinygltf::Accessor&	vertex_a,
@@ -158,7 +158,7 @@ namespace SFG
 				SFG_ASSERT(false);
 			}
 
-			auto tangents_attribute = tprim.attributes.find("tangent_0");
+			auto tangents_attribute = tprim.attributes.find("TANGENT");
 			if (tangents_attribute != tprim.attributes.end())
 			{
 				const tinygltf::Accessor&	tangents_a	= model.accessors[tangents_attribute->second];
@@ -259,7 +259,7 @@ namespace SFG
 				const vector3 max_position = {static_cast<float>(vertex_accessor.maxValues[0]), static_cast<float>(vertex_accessor.maxValues[1]), static_cast<float>(vertex_accessor.maxValues[2])};
 
 				_total_aabb.bounds_min = vector3::min(_total_aabb.bounds_min, min_position);
-				_total_aabb.bounds_max = vector3::min(_total_aabb.bounds_max, max_position);
+				_total_aabb.bounds_max = vector3::max(_total_aabb.bounds_max, max_position);
 
 				auto joints0  = tprim.attributes.find("JOINTS_0");
 				auto weights0 = tprim.attributes.find("WEIGHTS_0");
@@ -267,12 +267,12 @@ namespace SFG
 				// if skinned prim, fill joints & weights here & call generic fill_prim.
 				if (joints0 != tprim.attributes.end() && weights0 != tprim.attributes.end())
 				{
-					auto it = vector_util::find_if(mesh.primitives_skinned, [&tprim](const primitive_skinned& p) -> bool { return p.material_index == tprim.material; });
-
-					if (it == mesh.primitives_skinned.end())
+					auto	   it	 = vector_util::find_if(mesh.primitives_skinned, [&tprim](const primitive_skinned& p) -> bool { return p.material_index == tprim.material; });
+					const bool found = it != mesh.primitives_skinned.end();
+					if (!found)
 						mesh.primitives_skinned.push_back({});
 
-					primitive_skinned& prim			= it == mesh.primitives_skinned.end() ? mesh.primitives_skinned.back() : *it;
+					primitive_skinned& prim			= found ? *it : mesh.primitives_skinned.back();
 					const size_t	   start_vertex = prim.vertices.size();
 					const size_t	   start_index	= prim.indices.size();
 					prim.vertices.resize(start_vertex + num_vertices);
@@ -321,10 +321,12 @@ namespace SFG
 					fill_prim(prim, model, tprim, vertex_accessor, vertex_buffer_view, vertex_buffer, num_vertices, start_vertex, start_index);
 					continue;
 				}
-				auto it = vector_util::find_if(mesh.primitives_static, [&tprim](const primitive_static& p) -> bool { return p.material_index == tprim.material; });
-				if (it == mesh.primitives_static.end())
+
+				auto	   it	 = vector_util::find_if(mesh.primitives_static, [&tprim](const primitive_static& p) -> bool { return p.material_index == tprim.material; });
+				const bool found = it != mesh.primitives_static.end();
+				if (!found)
 					mesh.primitives_static.push_back({});
-				primitive_static& prim		   = it == mesh.primitives_static.end() ? mesh.primitives_static.back() : *it;
+				primitive_static& prim		   = found ? *it : mesh.primitives_static.back();
 				const size_t	  start_vertex = prim.vertices.size();
 				const size_t	  start_index  = prim.indices.size();
 				prim.vertices.resize(start_vertex + num_vertices);
@@ -543,6 +545,7 @@ namespace SFG
 			}
 		}
 
+		_total_aabb.update_half_extents();
 		_flags.set(model::flags::pending_upload);
 		return true;
 	}

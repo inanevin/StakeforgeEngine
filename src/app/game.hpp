@@ -22,6 +22,10 @@ namespace SFG
 			gaf_should_exit = 1 << 0,
 		};
 
+		game_app(){
+
+		};
+
 		void init(const vector2ui16& render_target_size);
 		void uninit();
 		void tick();
@@ -39,15 +43,13 @@ namespace SFG
 
 	private:
 		void kick_off_render();
-
 		void render_loop();
 		void on_window_event(const window_event& ev);
 
 	private:
-		window* _main_window = nullptr;
-		;
-		renderer*		 _renderer = nullptr;
-		world*			 _world	   = nullptr;
+		window*			 _main_window = nullptr;
+		renderer*		 _renderer	  = nullptr;
+		world*			 _world		  = nullptr;
 		std::thread		 _render_thread;
 		binary_semaphore _frame_available_semaphore{0};
 		uint8			 _update_render_frame_index	 = 0;

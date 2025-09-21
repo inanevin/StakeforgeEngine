@@ -27,6 +27,7 @@ namespace SFG
 
 	void game_app::init(const vector2ui16& render_target_size)
 	{
+
 		SET_INIT(true);
 		REGISTER_THREAD_MAIN();
 

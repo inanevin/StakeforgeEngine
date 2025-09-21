@@ -27,16 +27,16 @@ namespace SFG
 	void destroy_##RESOURCETYPE(pool_handle<resource_id> handle) { \
 		##STORAGE.remove(handle); \
 	} \
-	##RESOURCETYPE& get_##RESOURCETYPE(pool_handle<resource_id> handle) { \
+	##RESOURCETYPE& get_##RESOURCETYPE(pool_handle<resource_id> handle) const { \
 		auto& res = ##STORAGE.get(handle); \
 		return res; \
 	} \
-	##RESOURCETYPE& get_##RESOURCETYPE##_by_hash(string_id hash) { \
+	##RESOURCETYPE& get_##RESOURCETYPE##_by_hash(string_id hash) const { \
 		pool_handle<resource_id> handle = ##HASHES.at(hash); \
 		auto& res = ##STORAGE.get(handle); \
 		return res; \
 	} \
-	pool_handle<resource_id> get_##RESOURCETYPE##_handle_by_hash(string_id hash) { \
+	pool_handle<resource_id> get_##RESOURCETYPE##_handle_by_hash(string_id hash) const { \
 		pool_handle<resource_id> handle = ##HASHES.at(hash); \
 		return handle; \
 	} \
@@ -78,11 +78,11 @@ namespace SFG
 		hash_map<string_id, pool_handle<resource_id>> _material_hashes;
 		hash_map<string_id, pool_handle<resource_id>> _shader_hashes;
 
-		pool_allocator_gen<texture, resource_id, MAX_WORLD_TEXTURES>	 _textures;
-		pool_allocator_gen<model, resource_id, MAX_WORLD_MODELS>		 _models;
-		pool_allocator_gen<animation, resource_id, MAX_WORLD_ANIMS>		 _anims;
-		pool_allocator_gen<skin, resource_id, MAX_WORLD_SKINS>			 _skins;
-		pool_allocator_gen<shader, resource_id, MAX_WORLD_SHADERS>		 _shaders;
-		pool_allocator_gen<material, resource_id, MAX_WORLD_MAT_PBR_DEF> _materials;
+		mutable pool_allocator_gen<texture, resource_id, MAX_WORLD_TEXTURES>	 _textures;
+		mutable pool_allocator_gen<model, resource_id, MAX_WORLD_MODELS>		 _models;
+		mutable pool_allocator_gen<animation, resource_id, MAX_WORLD_ANIMS>		 _anims;
+		mutable pool_allocator_gen<skin, resource_id, MAX_WORLD_SKINS>			 _skins;
+		mutable pool_allocator_gen<shader, resource_id, MAX_WORLD_SHADERS>		 _shaders;
+		mutable pool_allocator_gen<material, resource_id, MAX_WORLD_MAT_PBR_DEF> _materials;
 	};
 }

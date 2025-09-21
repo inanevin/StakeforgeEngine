@@ -65,7 +65,7 @@ namespace SFG
 		}
 
 #ifdef SFG_TOOLMODE
-		bool create_from_file(const char* file, world_resources& resources);
+		bool create_from_file(const char* file, const world_resources& resources);
 #endif
 
 		void   destroy();
@@ -73,7 +73,7 @@ namespace SFG
 		void   reset_material_data();
 		void   set_material_data(size_t padding, uint8* data, size_t sz);
 		void   add_material_data(uint8* data, size_t sz);
-		void   close_material_data(world_resources& resources, string_id* textures, uint8 texture_count);
+		void   close_material_data(const world_resources& resources, string_id* textures, uint8 texture_count);
 		gfx_id get_shader(world_resources& resources, uint8 flags_to_match) const;
 
 		inline bool is_dirty(uint8 frame_index) const

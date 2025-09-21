@@ -12,7 +12,6 @@
 #include "world/world.hpp"
 #include <algorithm>
 #include <execution>
-
 namespace SFG
 {
 #define RT_FORMAT	 format::r8g8b8a8_srgb
@@ -318,10 +317,10 @@ namespace SFG
 
 		static_vector<std::function<void()>, 1> tasks;
 		tasks.push_back([&] { _pass_opaque.render(data_index, frame_index, resolution, layout_global, bind_group_global); });
+		std::for_each(std::execution::par, tasks.begin(), tasks.end(), [](std::function<void()>& task) { task(); });
+
 		//	tasks.push_back([&] { _pass_lighting_fw.render(data_index, frame_index, resolution, layout_global, bind_group_global); });
 		//	tasks.push_back([&] { _pass_post_combiner.render(data_index, frame_index, resolution, layout_global, bind_group_global); });
-
-		std::for_each(std::execution::par, tasks.begin(), tasks.end(), [](std::function<void()>& task) { task(); });
 
 		// Submit opaque, signals itself
 		backend->submit_commands(queue_gfx, &cmd_opaque, 1);

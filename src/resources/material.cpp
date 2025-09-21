@@ -51,7 +51,7 @@ namespace SFG
 			s.parameters = j.at("parameters").get<std::vector<parameter_entry>>();
 	}
 
-	bool material::create_from_file(const char* file, world_resources& resources)
+	bool material::create_from_file(const char* file, const world_resources& resources)
 	{
 		if (!file_system::exists(file))
 		{
@@ -148,7 +148,7 @@ namespace SFG
 		_material_data.write_raw(data, sz);
 	}
 
-	void material::close_material_data(world_resources& resources, string_id* textures, uint8 texture_count)
+	void material::close_material_data(const world_resources& resources, string_id* textures, uint8 texture_count)
 	{
 		gfx_backend* backend = gfx_backend::get();
 
