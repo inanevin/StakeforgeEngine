@@ -66,6 +66,26 @@ namespace SFG
 			return _material_count;
 		}
 
+		inline chunk_handle32 get_meshes() const
+		{
+			return _meshes;
+		}
+
+		inline chunk_handle32 get_nodes() const
+		{
+			return _nodes;
+		}
+
+		inline uint16 get_node_count() const
+		{
+			return _nodes_count;
+		}
+
+		inline uint16 get_mesh_count() const
+		{
+			return _meshes_count;
+		}
+
 	private:
 		chunk_handle32 _nodes;
 		chunk_handle32 _meshes;

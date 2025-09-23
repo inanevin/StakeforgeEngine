@@ -50,6 +50,7 @@ namespace SFG
 		uint8*		   _mapped	   = nullptr;
 		gfx_id		   _hw_staging = 0;
 		gfx_id		   _hw_gpu	   = 0;
+		uint32		   _total_size = 0;
 		bitmask<uint8> _flags	   = 0;
 	};
 }

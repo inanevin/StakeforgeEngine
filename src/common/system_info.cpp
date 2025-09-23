@@ -17,4 +17,5 @@ namespace SFG
 	atomic<uint32> frame_info::s_fps					  = 0;
 	atomic<uint64> frame_info::s_frame					  = 0;
 	atomic<uint64> frame_info::s_render_frame			  = 0;
+	bool		   frame_info::s_is_render_active		  = 0;
 }

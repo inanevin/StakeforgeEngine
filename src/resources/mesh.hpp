@@ -19,15 +19,42 @@ namespace SFG
 		vector<primitive_skinned_loaded> primitives_skinned;
 	};
 
-	struct mesh
+	class mesh
 	{
-		uint16		   node_index = 0;
-		chunk_handle32 name;
-		chunk_handle32 primitives_static;
-		chunk_handle32 primitives_skinned;
+	public:
+		inline chunk_handle32 get_primitives_static() const
+		{
+			return _primitives_static;
+		}
+
+		inline chunk_handle32 get_primitives_skinned() const
+		{
+			return _primitives_skinned;
+		}
+
+		inline uint16 get_primitives_static_count() const
+		{
+			return _primitives_static_count;
+		}
+
+		inline uint16 get_primitives_skinned_count() const
+		{
+			return _primitives_skinned_count;
+		}
+
+	private:
+		friend class model;
 
 		void create_from_loaded(const mesh_loaded& loaded, chunk_allocator32& alloc);
 		void destroy(chunk_allocator32& alloc);
+
+	private:
+		uint16		   _node_index = 0;
+		chunk_handle32 _name;
+		chunk_handle32 _primitives_static;
+		chunk_handle32 _primitives_skinned;
+		uint16		   _primitives_static_count	 = 0;
+		uint16		   _primitives_skinned_count = 0;
 	};
 
 }

@@ -215,6 +215,7 @@ namespace SFG
 			_render_thread.join();
 
 		_renderer->wait_backend();
+		frame_info::s_is_render_active = false;
 	}
 
 	/*
@@ -268,8 +269,9 @@ namespace SFG
 
 		_render_joined.store(0, std::memory_order_release);
 		_current_render_frame_index.store(1);
-		_update_render_frame_index = 1;
-		_render_thread			   = std::thread(&game_app::render_loop, this);
+		_update_render_frame_index	   = 1;
+		_render_thread				   = std::thread(&game_app::render_loop, this);
+		frame_info::s_is_render_active = true;
 	}
 
 	void game_app::render_loop()

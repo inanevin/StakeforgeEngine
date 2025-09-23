@@ -108,9 +108,20 @@ namespace SFG
 			return s_render_frame.load();
 		}
 
+		static inline bool get_is_render_acitve()
+		{
+			return s_is_render_active;
+		}
+
 	private:
 		friend class game_app;
 		friend class renderer;
+
+	private:
+		static inline void set_render_joined(bool b)
+		{
+			s_is_render_active = b;
+		}
 
 		static atomic<double> s_main_thread_time_milli;
 		static atomic<double> s_render_thread_time_milli;
@@ -119,5 +130,8 @@ namespace SFG
 		static atomic<uint32> s_fps;
 		static atomic<uint64> s_frame;
 		static atomic<uint64> s_render_frame;
+		static bool			  s_is_render_active;
 	};
+
+#define VERIFY_RENDER_JOINED() SFG_ASSERT(!frame_info::get_is_render_acitve())
 }

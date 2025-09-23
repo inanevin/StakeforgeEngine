@@ -21,6 +21,7 @@ using json = nlohmann::json;
 #include "resources/material.hpp"
 #include "resources/model.hpp"
 #include "platform/time.hpp"
+#include "gfx/world/world_renderer.hpp"
 
 namespace SFG
 {
@@ -66,11 +67,11 @@ namespace SFG
 		"assets/cesium_man/CesiumMan.gltf",
 	};
 
-	static vector<pool_handle16> loaded_debug_textures		= {};
-	static vector<pool_handle16> loaded_debug_mats			= {};
-	static vector<pool_handle16> loaded_debug_shaders		= {};
-	static vector<model_loaded>	 loaded_debug_models_loaded = {};
-	static vector<pool_handle16> loaded_debug_models		= {};
+	static vector<resource_handle> loaded_debug_textures	  = {};
+	static vector<resource_handle> loaded_debug_mats		  = {};
+	static vector<resource_handle> loaded_debug_shaders		  = {};
+	static vector<model_loaded>	   loaded_debug_models_loaded = {};
+	static vector<resource_handle> loaded_debug_models		  = {};
 
 	void world::load_debug()
 	{
@@ -81,7 +82,7 @@ namespace SFG
 		/* Debug */
 		for (const char* t : debug_textures)
 		{
-			const pool_handle16 handle = _resources.create_resource<texture>(TO_SIDC(t));
+			const resource_handle handle = _resources.create_resource<texture>(TO_SIDC(t));
 			loaded_debug_textures.push_back(handle);
 			const string abs = engine_data::get().get_working_dir() + t;
 			tasks.push_back([handle, abs, this]() { _resources.get_resource<texture>(handle).create_from_file(abs.c_str()); });
@@ -89,7 +90,7 @@ namespace SFG
 
 		for (const char* t : debug_shaders)
 		{
-			const pool_handle16 handle = _resources.create_resource<shader>(TO_SIDC(t));
+			const resource_handle handle = _resources.create_resource<shader>(TO_SIDC(t));
 			loaded_debug_shaders.push_back(handle);
 			const string abs = engine_data::get().get_working_dir() + t;
 			tasks.push_back([handle, abs, this]() { _resources.get_resource<shader>(handle).create_from_file_vertex_pixel(abs.c_str(), false, renderer::get_bind_layout_global()); });
@@ -101,7 +102,7 @@ namespace SFG
 
 		for (const char* t : debug_mats)
 		{
-			const pool_handle16 handle = _resources.create_resource<material>(TO_SIDC(t));
+			const resource_handle handle = _resources.create_resource<material>(TO_SIDC(t));
 			loaded_debug_mats.push_back(handle);
 			const string abs = engine_data::get().get_working_dir() + t;
 			tasks.push_back([handle, abs, this]() { _resources.get_resource<material>(handle).create_from_file(abs.c_str(), _resources); });
@@ -111,7 +112,7 @@ namespace SFG
 		int i = 0;
 		for (const char* t : debug_models)
 		{
-			const pool_handle16 handle = _resources.create_resource<model>(TO_SIDC(t));
+			const resource_handle handle = _resources.create_resource<model>(TO_SIDC(t));
 			loaded_debug_models.push_back(handle);
 
 			const string relative = t;
@@ -124,11 +125,26 @@ namespace SFG
 		std::for_each(std::execution::par, tasks.begin(), tasks.end(), [](std::function<void()>& task) { task(); });
 
 		i = 0;
-		for (pool_handle16 handle : loaded_debug_models)
+		for (resource_handle handle : loaded_debug_models)
 		{
 			model& mdl = _resources.get_resource<model>(handle);
 			mdl.create_from_loaded(loaded_debug_models_loaded[i], _resources.get_aux(), _resources);
 			i++;
+		}
+
+		for (resource_handle h : loaded_debug_textures)
+		{
+			_world_renderer->get_resource_uploads().add_pending_texture(&_resources.get_resource<texture>(h));
+		}
+
+		for (resource_handle h : loaded_debug_models)
+		{
+			_world_renderer->get_resource_uploads().add_pending_model(&_resources.get_resource<model>(h));
+		}
+
+		for (resource_handle h : loaded_debug_mats)
+		{
+			_world_renderer->get_resource_uploads().add_pending_material(&_resources.get_resource<material>(h));
 		}
 
 		const int64 mr_diff = time::get_cpu_microseconds() - mr_begin;
@@ -137,25 +153,25 @@ namespace SFG
 
 	void world::uninit()
 	{
-		for (pool_handle16 handle : loaded_debug_textures)
+		for (resource_handle handle : loaded_debug_textures)
 		{
 			_resources.get_resource<texture>(handle).destroy();
 			_resources.destroy_resource<texture>(handle);
 		}
 
-		for (pool_handle16 handle : loaded_debug_mats)
+		for (resource_handle handle : loaded_debug_mats)
 		{
 			_resources.get_resource<material>(handle).destroy();
 			_resources.destroy_resource<material>(handle);
 		}
 
-		for (pool_handle16 handle : loaded_debug_shaders)
+		for (resource_handle handle : loaded_debug_shaders)
 		{
 			_resources.get_resource<shader>(handle).destroy();
 			_resources.destroy_resource<shader>(handle);
 		}
 
-		for (pool_handle16 handle : loaded_debug_models)
+		for (resource_handle handle : loaded_debug_models)
 		{
 			_resources.get_resource<model>(handle).destroy(_resources, _resources.get_aux());
 
@@ -176,7 +192,7 @@ namespace SFG
 		// do your stuff.
 		auto& entities = _entity_manager.get_entities();
 
-		for (pool_handle16 handle : entities)
+		for (resource_handle handle : entities)
 		{
 			const vector3& p = _entity_manager.get_entity_position_abs(handle);
 			const quat&	   r = _entity_manager.get_entity_rotation_abs(handle);

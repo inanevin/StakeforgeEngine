@@ -24,11 +24,18 @@ namespace SFG
 		vector<primitive_index> indices;
 	};
 
+	struct primitive_runtime
+	{
+		uint32 vertex_start = 0;
+		uint32 index_start	= 0;
+	};
+
 	struct primitive
 	{
-		int16		   material_index = -1;
-		chunk_handle32 vertices;
-		chunk_handle32 indices;
+		primitive_runtime runtime		 = {};
+		int16			  material_index = -1;
+		chunk_handle32	  vertices;
+		chunk_handle32	  indices;
 	};
 
 }

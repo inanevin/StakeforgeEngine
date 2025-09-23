@@ -6,17 +6,20 @@
 #include "gfx/buffer_queue.hpp"
 #include "resources/texture.hpp"
 #include "resources/model.hpp"
+#include "resources/material.hpp"
 #include "gfx/backend/backend.hpp"
 #include "gfx/common/descriptions.hpp"
 #include "world/common_world.hpp"
+#include "memory/chunk_allocator.hpp"
+#include "common/system_info.hpp"
 
 namespace SFG
 {
 	void world_resource_uploads::init()
 	{
 		gfx_backend* backend			= gfx_backend::get();
-		const uint32 vertex_buffer_size = 36000;
-		const uint32 index_buffer_size	= 36000;
+		const uint32 vertex_buffer_size = 1024 * 1024 * 2;
+		const uint32 index_buffer_size	= 1024 * 1024 * 2;
 		_mesh_data.big_vertex_buffer.create_staging_hw(
 			{
 				.size		= vertex_buffer_size,
@@ -49,9 +52,9 @@ namespace SFG
 		_mesh_data.big_index_buffer.destroy();
 	}
 
-	void world_resource_uploads::upload(texture_queue* tq, buffer_queue* bq, uint8 data_index, uint8 frame_index)
+	void world_resource_uploads::upload(chunk_allocator32& resources_aux, texture_queue* tq, buffer_queue* bq, uint8 data_index, uint8 frame_index)
 	{
-		for (texture* t : _reuse_pending_textures)
+		for (texture* t : _pending_textures)
 		{
 			tq->add_request({
 				.texture	  = t->get_hw(),
@@ -59,80 +62,101 @@ namespace SFG
 				.buffers	  = t->get_cpu(),
 				.buffer_count = t->get_cpu_count(),
 			});
-			_reuse_uploaded_textures.push_back(t);
+			_uploaded_textures.push_back(t);
 			_last_upload_frame = frame_info::get_render_frame();
 		}
 
-		// for (model* mdl : _reuse_pending_models)
-		//{
-		//	vector<mesh>& meshes = mdl->get_meshes();
-		//
-		//	for (mesh& m : meshes)
-		//	{
-		//		for (primitive_static& p : m.primitives_static)
-		//		{
-		//			// p.runtime.vertex_start = _mesh_data.current_vertex_size;
-		//			// p.runtime.index_start  = _mesh_data.current_index_size;
-		//
-		//			const size_t sz = sizeof(primitive_index) * p.indices.size();
-		//			_mesh_data.big_index_buffer.buffer_data(_mesh_data.current_index_size, p.indices.data(), sz);
-		//			_mesh_data.current_index_size += sz;
-		//
-		//			const size_t vsz = sizeof(vertex_static) * p.vertices.size();
-		//			_mesh_data.big_vertex_buffer.buffer_data(_mesh_data.current_vertex_size, p.vertices.data(), vsz);
-		//			_mesh_data.current_vertex_size += sz;
-		//		}
-		//
-		//		for (primitive_skinned& p : m.primitives_skinned)
-		//		{
-		//			//p.runtime.vertex_start = _mesh_data.current_vertex_size;
-		//			//p.runtime.index_start  = _mesh_data.current_index_size;
-		//
-		//			const size_t sz = sizeof(primitive_index) * p.indices.size();
-		//			_mesh_data.big_index_buffer.buffer_data(_mesh_data.current_index_size, p.indices.data(), sz);
-		//			_mesh_data.current_index_size += sz;
-		//
-		//			const size_t vsz = sizeof(vertex_skinned) * p.vertices.size();
-		//			_mesh_data.big_vertex_buffer.buffer_data(_mesh_data.current_vertex_size, p.vertices.data(), vsz);
-		//			_mesh_data.current_vertex_size += sz;
-		//		}
-		//	}
-		// }
+		for (model* mdl : _pending_models)
+		{
+			const chunk_handle32 meshes		  = mdl->get_meshes();
+			const uint16		 meshes_count = mdl->get_mesh_count();
 
-		if (!_reuse_pending_models.empty())
+			mesh* all_meshes = meshes_count == 0 ? nullptr : resources_aux.get<mesh>(meshes);
+
+			for (uint16 i = 0; i < meshes_count; i++)
+			{
+				const mesh& m = all_meshes[i];
+
+				const chunk_handle32 prims_static		= m.get_primitives_static();
+				const uint16		 prims_static_count = m.get_primitives_static_count();
+				primitive*			 ptr_static			= prims_static_count == 0 ? nullptr : resources_aux.get<primitive>(prims_static);
+
+				for (uint16 j = 0; j < prims_static_count; j++)
+				{
+					primitive& p		   = ptr_static[j];
+					p.runtime.vertex_start = _mesh_data.current_vertex_size;
+					p.runtime.index_start  = _mesh_data.current_index_size;
+
+					_mesh_data.big_index_buffer.buffer_data(_mesh_data.current_index_size, resources_aux.get(p.indices.head), p.indices.size);
+					_mesh_data.current_index_size += p.indices.size;
+
+					_mesh_data.big_vertex_buffer.buffer_data(_mesh_data.current_vertex_size, resources_aux.get(p.vertices.head), p.vertices.size);
+					_mesh_data.current_vertex_size += p.vertices.size;
+				}
+
+				const chunk_handle32 prims_skinned		 = m.get_primitives_skinned();
+				const uint16		 prims_skinned_count = m.get_primitives_skinned_count();
+				primitive*			 ptr_skinned		 = prims_skinned_count == 0 ? nullptr : resources_aux.get<primitive>(prims_skinned);
+
+				for (uint16 j = 0; j < prims_skinned_count; j++)
+				{
+					primitive& p = ptr_skinned[j];
+
+					p.runtime.vertex_start = _mesh_data.current_vertex_size;
+					p.runtime.index_start  = _mesh_data.current_index_size;
+
+					_mesh_data.big_index_buffer.buffer_data(_mesh_data.current_index_size, resources_aux.get(p.indices.head), p.indices.size);
+					_mesh_data.current_index_size += p.indices.size;
+
+					_mesh_data.big_vertex_buffer.buffer_data(_mesh_data.current_vertex_size, resources_aux.get(p.vertices.head), p.vertices.size);
+					_mesh_data.current_vertex_size += p.vertices.size;
+				}
+			}
+		}
+
+		if (!_pending_models.empty())
 		{
 			bq->add_request({.buffer = &_mesh_data.big_vertex_buffer});
 			bq->add_request({.buffer = &_mesh_data.big_index_buffer});
 		}
 
-		_reuse_pending_textures.clear();
-		_reuse_pending_models.clear();
+		_pending_materials.clear();
+		_pending_textures.clear();
+		_pending_models.clear();
 	}
 
 	void world_resource_uploads::add_pending_texture(texture* txt)
 	{
-		_reuse_pending_textures.push_back(txt);
+		VERIFY_RENDER_JOINED();
+		_pending_textures.push_back(txt);
+	}
+
+	void world_resource_uploads::add_pending_material(material* mat)
+	{
+		VERIFY_RENDER_JOINED();
+		_pending_materials.push_back(mat);
 	}
 
 	void world_resource_uploads::add_pending_model(model* mdl)
 	{
-		_reuse_pending_models.push_back(mdl);
+		VERIFY_RENDER_JOINED();
+		_pending_models.push_back(mdl);
 	}
 
 	void world_resource_uploads::check_uploads(bool force)
 	{
-		if (_reuse_uploaded_textures.empty())
+		if (_uploaded_textures.empty())
 			return;
 
 		const uint64 current_frame = frame_info::get_render_frame();
 		if (force || current_frame > _last_upload_frame.load() + FRAMES_IN_FLIGHT + 2)
 		{
-			for (texture* txt : _reuse_uploaded_textures)
+			for (texture* txt : _uploaded_textures)
 			{
 				txt->destroy_cpu();
 				txt->destroy_intermediate();
 			}
-			_reuse_uploaded_textures.clear();
+			_uploaded_textures.clear();
 		}
 	}
 

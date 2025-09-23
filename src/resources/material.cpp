@@ -230,7 +230,6 @@ namespace SFG
 		{
 			SFG_ASSERT(_buffers[i].is_alive());
 			_buffers[i].buffer_data(0, &_material_data, _material_data.get_size());
-			_buffers[i].buffer_data(0, &_material_data, _material_data.get_size());
 		}
 	}
 

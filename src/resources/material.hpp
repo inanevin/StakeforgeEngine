@@ -98,6 +98,11 @@ namespace SFG
 			return _flags;
 		}
 
+		inline buffer& get_buffer(uint8 frame_index)
+		{
+			return _buffers[frame_index];
+		}
+
 	private:
 		ostream													   _material_data			  = {};
 		buffer													   _buffers[FRAMES_IN_FLIGHT] = {};

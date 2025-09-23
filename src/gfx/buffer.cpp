@@ -14,6 +14,7 @@ namespace SFG
 	void buffer::create_staging_hw(const resource_desc& staging, const resource_desc& hw)
 	{
 		gfx_backend* backend = gfx_backend::get();
+		_total_size			 = staging.size;
 		_hw_staging			 = backend->create_resource(staging);
 		_hw_gpu				 = backend->create_resource(hw);
 		backend->map_resource(_hw_staging, _mapped);
@@ -23,6 +24,7 @@ namespace SFG
 	void buffer::create_hw(const resource_desc& desc)
 	{
 		gfx_backend* backend = gfx_backend::get();
+		_total_size			 = desc.size;
 		_hw_gpu				 = backend->create_resource(desc);
 		backend->map_resource(_hw_gpu, _mapped);
 	}
@@ -39,6 +41,7 @@ namespace SFG
 
 	void buffer::buffer_data(size_t padding, const void* data, size_t size)
 	{
+		SFG_ASSERT(padding + size <= _total_size);
 		SFG_MEMCPY(_mapped + padding, data, size);
 		_flags.set(buf_dirty);
 	}

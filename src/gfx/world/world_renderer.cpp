@@ -277,7 +277,8 @@ namespace SFG
 
 	void world_renderer::upload(uint8 data_index, uint8 frame_index)
 	{
-		_resource_uploads.upload(_texture_queue, _buffer_queue, data_index, frame_index);
+
+		_resource_uploads.upload(_world->get_resources().get_aux(), _texture_queue, _buffer_queue, data_index, frame_index);
 
 		world_render_data& rd  = _render_data[data_index];
 		per_frame_data&	   pfd = _pfd[frame_index];

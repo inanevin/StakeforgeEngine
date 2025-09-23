@@ -15,6 +15,8 @@ namespace SFG
 	class world;
 	class texture;
 	class model;
+	class material;
+	class chunk_allocator32;
 
 	class world_resource_uploads
 	{
@@ -32,8 +34,9 @@ namespace SFG
 		void uninit();
 
 		void add_pending_texture(texture* txt);
+		void add_pending_material(material* matk);
 		void add_pending_model(model* mdl);
-		void upload(texture_queue* tq, buffer_queue* bq, uint8 data_index, uint8 frame_index);
+		void upload(chunk_allocator32& resources_aux, texture_queue* tq, buffer_queue* bq, uint8 data_index, uint8 frame_index);
 		void check_uploads(bool force = false);
 
 		inline buffer& get_big_vertex_buffer()
@@ -48,10 +51,11 @@ namespace SFG
 
 	private:
 	private:
-		mesh_data									_mesh_data = {};
-		static_vector<texture*, MAX_WORLD_TEXTURES> _reuse_pending_textures;
-		static_vector<texture*, MAX_WORLD_TEXTURES> _reuse_uploaded_textures;
-		static_vector<model*, MAX_WORLD_MODELS>		_reuse_pending_models;
-		atomic<uint64>								_last_upload_frame = 0;
+		mesh_data									  _mesh_data = {};
+		static_vector<texture*, MAX_WORLD_TEXTURES>	  _pending_textures;
+		static_vector<texture*, MAX_WORLD_TEXTURES>	  _uploaded_textures;
+		static_vector<model*, MAX_WORLD_MODELS>		  _pending_models;
+		static_vector<material*, MAX_WORLD_MATERIALS> _pending_materials;
+		atomic<uint64>								  _last_upload_frame = 0;
 	};
 }

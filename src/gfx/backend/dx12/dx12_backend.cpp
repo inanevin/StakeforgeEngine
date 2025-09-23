@@ -816,7 +816,10 @@ namespace SFG
 		D3D12_RESOURCE_STATES	 state			 = D3D12_RESOURCE_STATE_GENERIC_READ;
 
 		if (desc.flags.is_set(resource_flags::rf_gpu_only))
+		{
 			allocation_desc.HeapType = D3D12_HEAP_TYPE_DEFAULT;
+			state					 = D3D12_RESOURCE_STATE_COMMON;
+		}
 		else if (desc.flags.is_set(resource_flags::rf_cpu_visible))
 		{
 			allocation_desc.HeapType = D3D12_HEAP_TYPE_UPLOAD;

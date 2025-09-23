@@ -9,15 +9,18 @@ namespace SFG
 	{
 		if (!loaded.name.empty())
 		{
-			name = alloc.allocate<uint8>(loaded.name.size());
-			strcpy((char*)alloc.get(name.head), loaded.name.data());
+			_name = alloc.allocate<uint8>(loaded.name.size());
+			strcpy((char*)alloc.get(_name.head), loaded.name.data());
 		}
-		node_index = loaded.node_index;
+		_node_index = loaded.node_index;
+
+		_primitives_static_count  = static_cast<uint16>(loaded.primitives_static.size());
+		_primitives_skinned_count = static_cast<uint16>(loaded.primitives_skinned.size());
 		if (!loaded.primitives_static.empty())
 		{
-			primitives_static = alloc.allocate<primitive>(loaded.primitives_static.size());
+			_primitives_static = alloc.allocate<primitive>(loaded.primitives_static.size());
 
-			primitive*	 ptr		 = alloc.get<primitive>(primitives_static);
+			primitive*	 ptr		 = alloc.get<primitive>(_primitives_static);
 			const uint32 prims_count = static_cast<uint32>(loaded.primitives_static.size());
 			for (uint32 i = 0; i < prims_count; i++)
 			{
@@ -33,9 +36,9 @@ namespace SFG
 
 		if (!loaded.primitives_skinned.empty())
 		{
-			primitives_skinned = alloc.allocate<primitive>(loaded.primitives_skinned.size());
+			_primitives_skinned = alloc.allocate<primitive>(loaded.primitives_skinned.size());
 
-			primitive*	 ptr		 = alloc.get<primitive>(primitives_skinned);
+			primitive*	 ptr		 = alloc.get<primitive>(_primitives_skinned);
 			const uint32 prims_count = static_cast<uint32>(loaded.primitives_skinned.size());
 			for (uint32 i = 0; i < prims_count; i++)
 			{
@@ -53,14 +56,14 @@ namespace SFG
 
 	void mesh::destroy(chunk_allocator32& alloc)
 	{
-		if (name.size != 0)
-			alloc.free(name);
+		if (_name.size != 0)
+			alloc.free(_name);
 
-		if (primitives_static.size != 0)
+		if (_primitives_static.size != 0)
 		{
-			primitive* ptr = alloc.get<primitive>(primitives_static);
+			primitive* ptr = alloc.get<primitive>(_primitives_static);
 
-			const uint32 prim_count = sizeof(primitive) / primitives_static.size;
+			const uint32 prim_count = _primitives_static_count;
 			for (uint32 i = 0; i < prim_count; i++)
 			{
 				primitive& prim = ptr[i];
@@ -68,13 +71,13 @@ namespace SFG
 				alloc.free(prim.vertices);
 			}
 
-			alloc.free(primitives_static);
+			alloc.free(_primitives_static);
 		}
 
-		if (primitives_skinned.size != 0)
+		if (_primitives_skinned.size != 0)
 		{
-			primitive*	 ptr		= alloc.get<primitive>(primitives_skinned);
-			const uint32 prim_count = sizeof(primitive) / primitives_skinned.size;
+			primitive*	 ptr		= alloc.get<primitive>(_primitives_skinned);
+			const uint32 prim_count = _primitives_skinned_count;
 			for (uint32 i = 0; i < prim_count; i++)
 			{
 				primitive& prim = ptr[i];
@@ -82,11 +85,13 @@ namespace SFG
 				alloc.free(prim.vertices);
 			}
 
-			alloc.free(primitives_skinned);
+			alloc.free(_primitives_skinned);
 		}
 
-		name			   = {};
-		primitives_static  = {};
-		primitives_skinned = {};
+		_name					  = {};
+		_primitives_static		  = {};
+		_primitives_skinned		  = {};
+		_primitives_static_count  = 0;
+		_primitives_skinned_count = 0;
 	}
 }
