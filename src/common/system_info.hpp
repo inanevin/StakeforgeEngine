@@ -61,6 +61,7 @@ namespace SFG
 #define VERIFY_THREAD_MAIN()	 SFG_ASSERT(thread_info::get_thread_id_main() == std::this_thread::get_id())
 #define VERIFY_THREAD_RENDER()	 SFG_ASSERT(thread_info::get_thread_id_render() == std::this_thread::get_id())
 #define VERIFY_INIT()			 SFG_ASSERT(thread_info::get_is_init())
+#define IS_RENDER_THREAD()		 thread_info::get_thread_id_main() == std::this_thread::get_id()
 #else
 #define REGISTER_THREAD_MAIN()
 #define REGISTER_THREAD_RENDER()
@@ -133,5 +134,6 @@ namespace SFG
 		static bool			  s_is_render_active;
 	};
 
-#define VERIFY_RENDER_JOINED() SFG_ASSERT(!frame_info::get_is_render_acitve())
+#define VERIFY_RENDER_NOT_RUNNING()					 SFG_ASSERT(!frame_info::get_is_render_acitve())
+#define VERIFY_RENDER_NOT_RUNNING_OR_RENDER_THREAD() SFG_ASSERT(thread_info::get_thread_id_render() == std::this_thread::get_id() || !frame_info::get_is_render_acitve())
 }

@@ -46,7 +46,9 @@ namespace SFG
 		}
 
 		void on_allocation(void* ptr, size_t sz);
+		void on_allocation(size_t sz);
 		void on_free(void* ptr);
+		void on_free(size_t sz);
 
 		void push_category(const char* name);
 		void pop_category();
@@ -86,6 +88,10 @@ namespace SFG
 
 #define PUSH_MEMORY_CATEGORY(NAME) SFG::memory_tracer::get().push_category(NAME)
 #define POP_MEMORY_CATEGORY()	   SFG::memory_tracer::get().pop_category()
+#define PUSH_ALLOCATION(PTR, SIZE) SFG::memory_tracer::get().on_allocation(PTR, SIZE)
+#define PUSH_ALLOCATION_SZ(SIZE)   SFG::memory_tracer::get().on_allocation(SIZE)
+#define PUSH_DEALLOCATION(PTR)	   SFG::memory_tracer::get().on_free(PTR)
+#define PUSH_DEALLOCATION_SZ(SIZE) SFG::memory_tracer::get().on_free(SIZE)
 }
 
 #else
@@ -93,4 +99,8 @@ namespace SFG
 #define PUSH_MEMORY_CATEGORY(NAME)
 #define POP_MEMORY_CATEGORY()
 #define CHECK_LEAKS()
+#define PUSH_ALLOCATION(PTR, SIZE)
+#define PUSH_ALLOCATION()
+#define PUSH_DEALLOCATION(PTR)
+#define PUSH_DEALLOCATION()
 #endif

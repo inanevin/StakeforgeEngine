@@ -52,6 +52,7 @@ namespace SFG
 		world*			 _world		  = nullptr;
 		std::thread		 _render_thread;
 		binary_semaphore _frame_available_semaphore{0};
+		vector2ui16		 _window_size				 = {};
 		uint8			 _update_render_frame_index	 = 0;
 		atomic<uint8>	 _current_render_frame_index = 0;
 		atomic<uint8>	 _should_close;

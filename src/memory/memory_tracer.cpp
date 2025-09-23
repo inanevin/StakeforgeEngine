@@ -57,6 +57,17 @@ namespace SFG
 		capture_trace(track);
 	}
 
+	void memory_tracer::on_allocation(size_t sz)
+	{
+		LOCK_GUARD(_category_mtx);
+
+		if (_categories.empty() || _current_active_category == 0)
+			return;
+
+		memory_category& cat = _categories[_current_active_category - 1];
+		cat.total_size += sz;
+	}
+
 	void memory_tracer::on_free(void* ptr)
 	{
 		LOCK_GUARD(_category_mtx);
@@ -74,6 +85,16 @@ namespace SFG
 			}
 
 			return;
+		}
+	}
+
+	void memory_tracer::on_free(size_t sz)
+	{
+		if (!_categories.empty() && _current_active_category != 0)
+		{
+			memory_category& cat = _categories[_current_active_category - 1];
+			cat.total_size -= sz;
+			SFG_ASSERT(cat.total_size >= 0);
 		}
 	}
 

@@ -29,6 +29,11 @@ namespace SFG
 			size_t current_index_size  = 0;
 		};
 
+		struct per_frame_data
+		{
+			static_vector<material*, MAX_WORLD_MATERIALS> pending_materials;
+		};
+
 	public:
 		void init();
 		void uninit();
@@ -51,11 +56,11 @@ namespace SFG
 
 	private:
 	private:
-		mesh_data									  _mesh_data = {};
-		static_vector<texture*, MAX_WORLD_TEXTURES>	  _pending_textures;
-		static_vector<texture*, MAX_WORLD_TEXTURES>	  _uploaded_textures;
-		static_vector<model*, MAX_WORLD_MODELS>		  _pending_models;
-		static_vector<material*, MAX_WORLD_MATERIALS> _pending_materials;
-		atomic<uint64>								  _last_upload_frame = 0;
+		mesh_data									_mesh_data = {};
+		per_frame_data								_pfd[FRAMES_IN_FLIGHT];
+		static_vector<texture*, MAX_WORLD_TEXTURES> _pending_textures;
+		static_vector<texture*, MAX_WORLD_TEXTURES> _uploaded_textures;
+		static_vector<model*, MAX_WORLD_MODELS>		_pending_models;
+		atomic<uint64>								_last_upload_frame = 0;
 	};
 }

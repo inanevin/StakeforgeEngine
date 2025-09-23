@@ -31,7 +31,8 @@ namespace SFG
 
 		void init();
 		void uninit();
-		void tick(const vector2ui16& res, float dt);
+		void tick(uint8 data_index, const vector2ui16& res, float dt);
+		void pre_render(uint8 data_index, const vector2ui16& res);
 
 		void load_debug();
 

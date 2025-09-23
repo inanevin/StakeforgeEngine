@@ -193,8 +193,6 @@ namespace SFG
 			}
 			backend->bind_group_update_pointer(_bind_groups[i], 0, updates);
 		}
-
-		update_material_data();
 	}
 
 	gfx_id material::get_shader(world_resources& resources, uint8 flags_to_match) const
@@ -222,15 +220,6 @@ namespace SFG
 
 		if (_material_data.get_size() != 0)
 			_material_data.destroy();
-	}
-
-	void material::update_material_data()
-	{
-		for (uint8 i = 0; i < FRAMES_IN_FLIGHT; i++)
-		{
-			SFG_ASSERT(_buffers[i].is_alive());
-			_buffers[i].buffer_data(0, &_material_data, _material_data.get_size());
-		}
 	}
 
 #endif

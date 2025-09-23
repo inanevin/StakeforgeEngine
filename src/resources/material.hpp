@@ -7,6 +7,7 @@
 #include "data/bitmask.hpp"
 #include "data/ostream.hpp"
 #include "gfx/buffer.hpp"
+#include "gfx/common/gfx_constants.hpp"
 #include "memory/pool_handle.hpp"
 #include "resources/common_resources.hpp"
 
@@ -71,7 +72,6 @@ namespace SFG
 #endif
 
 		void   destroy();
-		void   update_material_data();
 		void   reset_material_data();
 		void   set_material_data(size_t padding, uint8* data, size_t sz);
 		void   add_material_data(uint8* data, size_t sz);
@@ -101,6 +101,11 @@ namespace SFG
 		inline buffer& get_buffer(uint8 frame_index)
 		{
 			return _buffers[frame_index];
+		}
+
+		inline const ostream& get_data()
+		{
+			return _material_data;
 		}
 
 	private:

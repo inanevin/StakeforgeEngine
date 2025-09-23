@@ -120,26 +120,37 @@ namespace SFG
 			bq->add_request({.buffer = &_mesh_data.big_index_buffer});
 		}
 
-		_pending_materials.clear();
+		per_frame_data& pfd = _pfd[frame_index];
+
+		for (material* mat : pfd.pending_materials)
+		{
+			buffer&		   buf	= mat->get_buffer(frame_index);
+			const ostream& data = mat->get_data();
+			buf.buffer_data(0, data.get_raw(), data.get_size());
+		}
+
+		pfd.pending_materials.clear();
 		_pending_textures.clear();
 		_pending_models.clear();
 	}
 
 	void world_resource_uploads::add_pending_texture(texture* txt)
 	{
-		VERIFY_RENDER_JOINED();
+		VERIFY_RENDER_NOT_RUNNING_OR_RENDER_THREAD();
 		_pending_textures.push_back(txt);
 	}
 
 	void world_resource_uploads::add_pending_material(material* mat)
 	{
-		VERIFY_RENDER_JOINED();
-		_pending_materials.push_back(mat);
+		VERIFY_RENDER_NOT_RUNNING_OR_RENDER_THREAD();
+
+		for (uint8 i = 0; i < FRAMES_IN_FLIGHT; i++)
+			_pfd[i].pending_materials.push_back(mat);
 	}
 
 	void world_resource_uploads::add_pending_model(model* mdl)
 	{
-		VERIFY_RENDER_JOINED();
+		VERIFY_RENDER_NOT_RUNNING_OR_RENDER_THREAD();
 		_pending_models.push_back(mdl);
 	}
 

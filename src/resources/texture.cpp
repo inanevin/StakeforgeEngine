@@ -1,6 +1,7 @@
 // Copyright (c) 2025 Inan Evin
 #include "texture.hpp"
 #include "memory/memory.hpp"
+#include "memory/memory_tracer.hpp"
 #include "io/log.hpp"
 #include "io/assert.hpp"
 #include "gfx/backend/backend.hpp"
@@ -74,6 +75,7 @@ namespace SFG
 
 			if (data == nullptr)
 			{
+				SFG_ERR("Failed loading pixel data for texture: {0}", file);
 				return false;
 			}
 
@@ -90,6 +92,13 @@ namespace SFG
 			if (meta.gen_mips == 1)
 				populate_mips(channels, format_is_linear(fmt));
 
+			PUSH_MEMORY_CATEGORY("Gfx");
+
+			for (const texture_buffer& b : _cpu_buffers)
+				_total_size += b.bpp * b.size.x * b.size.y;
+
+			PUSH_ALLOCATION_SZ(_total_size);
+
 			gfx_backend* backend = gfx_backend::get();
 			_hw					 = backend->create_texture({
 								 .texture_format = fmt,
@@ -104,6 +113,8 @@ namespace SFG
 			 });
 			_flags.set(texture::flags::hw_exists | texture::flags::upload_pending);
 			create_intermediate();
+
+			POP_MEMORY_CATEGORY();
 		}
 		catch (std::exception e)
 		{
@@ -167,10 +178,18 @@ namespace SFG
 
 		if (_flags.is_set(texture::flags::intermediate_exists))
 			backend->destroy_resource(_intermediate);
+
+		PUSH_MEMORY_CATEGORY("Gfx");
+		PUSH_DEALLOCATION_SZ(_total_size);
+		POP_MEMORY_CATEGORY();
 	}
 
 	void texture::destroy_intermediate()
 	{
+		PUSH_MEMORY_CATEGORY("Gfx");
+		PUSH_DEALLOCATION_SZ(_total_size);
+		POP_MEMORY_CATEGORY();
+
 		SFG_ASSERT(_flags.is_set(texture::flags::intermediate_exists));
 		gfx_backend* backend = gfx_backend::get();
 		backend->destroy_resource(_intermediate);
@@ -221,6 +240,11 @@ namespace SFG
 		{
 			total_size += backend->get_texture_size(buf.size.x, buf.size.y, buf.bpp);
 		}
+
+		// use total size for easy book-keeping
+		PUSH_MEMORY_CATEGORY("Gfx");
+		PUSH_ALLOCATION_SZ(_total_size);
+		POP_MEMORY_CATEGORY();
 
 		const uint32 intermediate_size = backend->align_texture_size(total_size);
 

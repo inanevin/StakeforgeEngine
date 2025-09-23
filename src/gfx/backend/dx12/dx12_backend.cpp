@@ -11,6 +11,7 @@
 #include "io/log.hpp"
 #include "memory/memory.hpp"
 #include "math/math_common.hpp"
+#include "common/system_info.hpp"
 
 #define SERIALIZE_DEBUG_INFORMATION 0
 #ifdef SERIALIZE_DEBUG_INFORMATION
@@ -788,6 +789,8 @@ namespace SFG
 
 	gfx_id dx12_backend::create_resource(const resource_desc& desc)
 	{
+		VERIFY_RENDER_NOT_RUNNING();
+
 		const gfx_id id	 = _resources.add();
 		resource&	 res = _resources.get(id);
 
@@ -917,6 +920,8 @@ namespace SFG
 
 	void dx12_backend::destroy_resource(gfx_id id)
 	{
+		VERIFY_RENDER_NOT_RUNNING();
+
 		resource& res = _resources.get(id);
 		if (res.descriptor_index != -1)
 		{
@@ -932,6 +937,8 @@ namespace SFG
 
 	gfx_id dx12_backend::create_texture(const texture_desc& desc)
 	{
+		VERIFY_RENDER_NOT_RUNNING();
+
 		const gfx_id id	 = _textures.add();
 		texture&	 txt = _textures.get(id);
 
@@ -1177,6 +1184,8 @@ namespace SFG
 
 	void dx12_backend::destroy_texture(gfx_id id)
 	{
+		VERIFY_RENDER_NOT_RUNNING();
+
 		texture& txt = _textures.get(id);
 
 		texture_shared_handle& handle = _texture_shared_handles.get(txt.shared_handle);
@@ -1212,6 +1221,8 @@ namespace SFG
 
 	gfx_id dx12_backend::create_sampler(const sampler_desc& desc)
 	{
+		VERIFY_RENDER_NOT_RUNNING();
+
 		const D3D12_TEXTURE_ADDRESS_MODE address_mode = get_address_mode(desc.flags);
 
 		D3D12_SAMPLER_DESC samplerDesc = {
@@ -1240,6 +1251,8 @@ namespace SFG
 
 	void dx12_backend::destroy_sampler(gfx_id id)
 	{
+		VERIFY_RENDER_NOT_RUNNING();
+
 		sampler&		   smp = _samplers.get(id);
 		descriptor_handle& dh  = _descriptors.get(smp.descriptor_index);
 		_heap_sampler.remove_handle(dh);
@@ -1249,6 +1262,8 @@ namespace SFG
 
 	gfx_id dx12_backend::create_swapchain(const swapchain_desc& desc)
 	{
+		VERIFY_RENDER_NOT_RUNNING();
+
 		const gfx_id id	 = _swapchains.add();
 		swapchain&	 swp = _swapchains.get(id);
 
@@ -1318,6 +1333,8 @@ namespace SFG
 
 	gfx_id dx12_backend::recreate_swapchain(const swapchain_recreate_desc& desc)
 	{
+		VERIFY_RENDER_NOT_RUNNING();
+
 		swapchain& swp = _swapchains.get(desc.swapchain);
 
 		DXGI_SWAP_CHAIN_DESC swp_desc = {};
@@ -1350,6 +1367,8 @@ namespace SFG
 
 	void dx12_backend::destroy_swapchain(gfx_id id)
 	{
+		VERIFY_RENDER_NOT_RUNNING();
+
 		swapchain& swp = _swapchains.get(id);
 
 		for (uint32 i = 0; i < BACK_BUFFER_COUNT; i++)
@@ -1366,6 +1385,8 @@ namespace SFG
 
 	gfx_id dx12_backend::create_semaphore()
 	{
+		VERIFY_RENDER_NOT_RUNNING();
+
 		const gfx_id id	 = _semaphores.add();
 		semaphore&	 sem = _semaphores.get(id);
 		throw_if_failed(_device->CreateFence(0, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(&sem.ptr)));
@@ -1380,6 +1401,8 @@ namespace SFG
 
 	void dx12_backend::destroy_semaphore(gfx_id id)
 	{
+		VERIFY_RENDER_NOT_RUNNING();
+
 		semaphore& sem = _semaphores.get(id);
 		sem.ptr.Reset();
 		_semaphores.remove(id);
@@ -1388,6 +1411,8 @@ namespace SFG
 	bool dx12_backend::compile_shader_vertex_pixel(
 		const string& source, const vector<string>& defines, const char* source_path, const char* vertex_entry, const char* pixel_entry, span<uint8>& vertex_out, span<uint8>& pixel_out, bool compile_root_sig, span<uint8>& out_signature_data) const
 	{
+		VERIFY_RENDER_NOT_RUNNING();
+
 		Microsoft::WRL::ComPtr<IDxcCompiler3> idxc_compiler;
 		throw_if_failed(DxcCreateInstance(CLSID_DxcCompiler, IID_PPV_ARGS(&idxc_compiler)));
 
@@ -1533,6 +1558,8 @@ namespace SFG
 
 	bool dx12_backend::compile_shader_compute(const string& source, const char* source_path, const char* entry, span<uint8>& out, bool compile_layout, span<uint8>& out_layout) const
 	{
+		VERIFY_RENDER_NOT_RUNNING();
+
 		Microsoft::WRL::ComPtr<IDxcCompiler3> idxc_compiler;
 		throw_if_failed(DxcCreateInstance(CLSID_DxcCompiler, IID_PPV_ARGS(&idxc_compiler)));
 
@@ -1647,6 +1674,8 @@ namespace SFG
 
 	gfx_id dx12_backend::create_shader(const shader_desc& desc)
 	{
+		VERIFY_RENDER_NOT_RUNNING();
+
 		const gfx_id id = _shaders.add();
 		shader&		 sh = _shaders.get(id);
 		sh.topology		= static_cast<uint8>(get_topology(desc.topo));
@@ -1771,6 +1800,8 @@ namespace SFG
 
 	void dx12_backend::destroy_shader(gfx_id id)
 	{
+		VERIFY_RENDER_NOT_RUNNING();
+
 		shader& sh = _shaders.get(id);
 
 		if (sh.owns_root_sig)
@@ -1781,12 +1812,16 @@ namespace SFG
 
 	gfx_id dx12_backend::create_empty_bind_group()
 	{
+		VERIFY_RENDER_NOT_RUNNING();
+
 		const gfx_id id = _bind_groups.add();
 		return id;
 	}
 
 	void dx12_backend::bind_group_add_descriptor(gfx_id group, uint8 root_param_index, uint8 type)
 	{
+		VERIFY_RENDER_NOT_RUNNING();
+
 		bind_group& bind_group = _bind_groups.get(group);
 		bind_group.bindings.push_back({});
 		group_binding& gbinding	  = bind_group.bindings.back();
@@ -1801,6 +1836,8 @@ namespace SFG
 
 	void dx12_backend::bind_group_add_constant(gfx_id group, uint8 root_param_index, uint8* data, uint8 count)
 	{
+		VERIFY_RENDER_NOT_RUNNING();
+
 		bind_group& bind_group = _bind_groups.get(group);
 		bind_group.bindings.push_back({});
 		group_binding& gbinding	  = bind_group.bindings.back();
@@ -1813,6 +1850,8 @@ namespace SFG
 
 	void dx12_backend::bind_group_add_pointer(gfx_id group, uint8 root_param_index, uint8 count, bool is_sampler)
 	{
+		VERIFY_RENDER_NOT_RUNNING();
+
 		bind_group& bind_group = _bind_groups.get(group);
 		bind_group.bindings.push_back({});
 		group_binding& gbinding	  = bind_group.bindings.back();
@@ -1835,6 +1874,8 @@ namespace SFG
 
 	void dx12_backend::bind_group_update_constants(gfx_id id, uint8 binding_index, uint8* constants, uint8 count)
 	{
+		VERIFY_RENDER_NOT_RUNNING();
+
 		bind_group&	   group   = _bind_groups.get(id);
 		group_binding& binding = group.bindings[binding_index];
 		binding.constants	   = constants;
@@ -1843,6 +1884,8 @@ namespace SFG
 
 	void dx12_backend::bind_group_update_descriptor(gfx_id id, uint8 binding_index, gfx_id res_id)
 	{
+		VERIFY_RENDER_NOT_RUNNING();
+
 		bind_group&	   group   = _bind_groups.get(id);
 		group_binding& binding = group.bindings[binding_index];
 
@@ -1853,6 +1896,8 @@ namespace SFG
 
 	void dx12_backend::bind_group_update_pointer(gfx_id id, uint8 binding_index, const vector<bind_group_pointer>& updates)
 	{
+		VERIFY_RENDER_NOT_RUNNING();
+
 		bind_group&	   group   = _bind_groups.get(id);
 		group_binding& binding = group.bindings[binding_index];
 
@@ -1905,6 +1950,8 @@ namespace SFG
 
 	void dx12_backend::destroy_bind_group(gfx_id id)
 	{
+		VERIFY_RENDER_NOT_RUNNING();
+
 		bind_group& group = _bind_groups.get(id);
 
 		const uint8 sz = static_cast<uint8>(group.bindings.size());
@@ -1933,6 +1980,8 @@ namespace SFG
 
 	gfx_id dx12_backend::create_command_buffer(const command_buffer_desc& desc)
 	{
+		VERIFY_RENDER_NOT_RUNNING();
+
 		const gfx_id	   id		= _command_buffers.add();
 		const gfx_id	   alloc_id = create_command_allocator(static_cast<uint8>(desc.type));
 		command_allocator& alloc	= _command_allocators.get(alloc_id);
@@ -1947,6 +1996,8 @@ namespace SFG
 
 	void dx12_backend::destroy_command_buffer(gfx_id id)
 	{
+		VERIFY_RENDER_NOT_RUNNING();
+
 		command_buffer& cmd = _command_buffers.get(id);
 		cmd.ptr.Reset();
 		destroy_command_allocator(cmd.allocator);
@@ -1955,6 +2006,8 @@ namespace SFG
 
 	gfx_id dx12_backend::create_command_allocator(uint8 type)
 	{
+		VERIFY_RENDER_NOT_RUNNING();
+
 		const gfx_id	   id	 = _command_allocators.add();
 		command_allocator& alloc = _command_allocators.get(id);
 		throw_if_failed(_device->CreateCommandAllocator(get_command_type(static_cast<command_type>(type)), IID_PPV_ARGS(alloc.ptr.GetAddressOf())));
@@ -1963,6 +2016,8 @@ namespace SFG
 
 	void dx12_backend::destroy_command_allocator(gfx_id id)
 	{
+		VERIFY_RENDER_NOT_RUNNING();
+
 		command_allocator& alloc = _command_allocators.get(id);
 		alloc.ptr.Reset();
 		_command_allocators.remove(id);
@@ -1970,6 +2025,8 @@ namespace SFG
 
 	gfx_id dx12_backend::create_queue(const queue_desc& desc)
 	{
+		VERIFY_RENDER_NOT_RUNNING();
+
 		const gfx_id id = _queues.add();
 		queue&		 q	= _queues.get(id);
 
@@ -1984,6 +2041,8 @@ namespace SFG
 
 	gfx_id dx12_backend::create_empty_bind_layout()
 	{
+		VERIFY_RENDER_NOT_RUNNING();
+
 		const gfx_id id = _bind_layouts.add();
 		_reuse_root_params.resize(0);
 		_reuse_static_samplers.resize(0);
@@ -1993,6 +2052,8 @@ namespace SFG
 
 	void dx12_backend::bind_layout_add_constant(gfx_id layout, uint32 count, uint32 set, uint32 binding, uint8 vis)
 	{
+		VERIFY_RENDER_NOT_RUNNING();
+
 		const D3D12_SHADER_VISIBILITY visibility = get_visibility(static_cast<shader_stage>(vis));
 		_reuse_root_params.push_back({});
 		CD3DX12_ROOT_PARAMETER1& param = _reuse_root_params.back();
@@ -2001,6 +2062,8 @@ namespace SFG
 
 	void dx12_backend::bind_layout_add_descriptor(gfx_id layout, uint8 type, uint32 set, uint32 binding, uint8 vis)
 	{
+		VERIFY_RENDER_NOT_RUNNING();
+
 		const D3D12_SHADER_VISIBILITY visibility = get_visibility(static_cast<shader_stage>(vis));
 		_reuse_root_params.push_back({});
 		CD3DX12_ROOT_PARAMETER1& param = _reuse_root_params.back();
@@ -2019,6 +2082,8 @@ namespace SFG
 
 	void dx12_backend::bind_layout_add_pointer(gfx_id layout, const vector<bind_layout_pointer_param>& pointer_params, uint8 vis)
 	{
+		VERIFY_RENDER_NOT_RUNNING();
+
 		const uint32 start = static_cast<uint32>(_reuse_root_ranges.size());
 
 		UINT offset = 0;
@@ -2059,6 +2124,8 @@ namespace SFG
 
 	void dx12_backend::bind_layout_add_immutable_sampler(gfx_id layout, uint32 set, uint32 binding, const sampler_desc& desc, uint8 vis)
 	{
+		VERIFY_RENDER_NOT_RUNNING();
+
 		const D3D12_TEXTURE_ADDRESS_MODE address_mode = get_address_mode(desc.flags);
 		const D3D12_SHADER_VISIBILITY	 visibility	  = get_visibility(static_cast<shader_stage>(vis));
 
@@ -2080,6 +2147,8 @@ namespace SFG
 
 	void dx12_backend::finalize_bind_layout(gfx_id id, bool is_compute, const char* name)
 	{
+		VERIFY_RENDER_NOT_RUNNING();
+
 		bind_layout&								layout = _bind_layouts.get(id);
 		const CD3DX12_VERSIONED_ROOT_SIGNATURE_DESC rootSig(static_cast<uint32>(_reuse_root_params.size()),
 															_reuse_root_params.data(),
@@ -2108,6 +2177,8 @@ namespace SFG
 
 	void dx12_backend::destroy_bind_layout(gfx_id id)
 	{
+		VERIFY_RENDER_NOT_RUNNING();
+
 		bind_layout& layout = _bind_layouts.get(id);
 		layout.root_signature.Reset();
 		_bind_layouts.remove(id);
@@ -2115,6 +2186,8 @@ namespace SFG
 
 	void dx12_backend::destroy_queue(gfx_id id)
 	{
+		VERIFY_RENDER_NOT_RUNNING();
+
 		queue& q = _queues.get(id);
 		q.ptr.Reset();
 		_queues.remove(id);

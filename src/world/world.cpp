@@ -187,7 +187,7 @@ namespace SFG
 		debug_console::get()->unregister_console_function("world_set_play");
 	}
 
-	void world::tick(const vector2ui16& res, float dt)
+	void world::tick(uint8 data_index, const vector2ui16& res, float dt)
 	{
 		// do your stuff.
 		auto& entities = _entity_manager.get_entities();
@@ -199,6 +199,10 @@ namespace SFG
 			const vector3& s = _entity_manager.get_entity_scale_abs(handle);
 			_entity_manager.set_entity_matrix(handle, matrix4x3::transform(p, r, s));
 		}
+	}
+
+	void world::pre_render(uint8 data_index, const vector2ui16& res)
+	{
 	}
 
 #ifdef SFG_TOOLMODE

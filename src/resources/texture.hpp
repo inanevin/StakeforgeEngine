@@ -93,6 +93,7 @@ namespace SFG
 		static_vector<texture_buffer, MAX_CPU_BUFFERS> _cpu_buffers;
 		gfx_id										   _hw			 = 0;
 		gfx_id										   _intermediate = 0;
+		uint32										   _total_size	 = 0;
 		bitmask<uint8>								   _flags		 = 0;
 	};
 

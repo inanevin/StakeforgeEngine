@@ -40,6 +40,7 @@ namespace SFG
 
 		_main_window = new window();
 		_main_window->create("Game", window_flags::wf_style_windowed, vector2i16(0, 0), render_target_size);
+		_window_size = render_target_size;
 
 		// vector<monitor_info> out_infos;
 		// process::get_all_monitors(out_infos);
@@ -104,6 +105,7 @@ namespace SFG
 
 	void game_app::uninit()
 	{
+		frame_info::s_is_render_active = false;
 		_world->uninit();
 		delete _world;
 
@@ -169,6 +171,7 @@ namespace SFG
 				window_flags.remove(window_flags::wf_size_dirty);
 				join_render();
 				_renderer->on_window_resize(ws);
+				_window_size = ws;
 				kick_off_render();
 			}
 			/* add any fast tick events here */
@@ -180,7 +183,7 @@ namespace SFG
 			while (accumulator >= FIXED_INTERVAL_US && ticks < MAX_TICKS)
 			{
 				accumulator -= FIXED_INTERVAL_US;
-				_world->tick(ws, SFG_DT);
+				_world->tick(_update_render_frame_index, ws, SFG_DT);
 				ticks++;
 			}
 
@@ -214,8 +217,8 @@ namespace SFG
 		if (_render_thread.joinable())
 			_render_thread.join();
 
-		_renderer->wait_backend();
 		frame_info::s_is_render_active = false;
+		_renderer->wait_backend();
 	}
 
 	/*
@@ -276,7 +279,7 @@ namespace SFG
 
 	void game_app::render_loop()
 	{
-		const vector2ui16& screen_size = _main_window->get_size();
+		const vector2ui16& screen_size = _window_size;
 		REGISTER_THREAD_RENDER();
 
 		int64 previous_time = time::get_cpu_microseconds();
@@ -292,6 +295,7 @@ namespace SFG
 			previous_time			 = current_time;
 #endif
 
+			_world->pre_render(index, screen_size);
 			_renderer->render(index, screen_size);
 			frame_info::s_render_frame.fetch_add(1);
 
