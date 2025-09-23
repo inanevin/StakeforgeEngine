@@ -10,6 +10,7 @@
 #include "memory/pool_allocator.hpp"
 #include "dx12_heap.hpp"
 #include "gfx/backend/dx12/sdk/d3dx12.h"
+#include "memory/memory_tracer.hpp"
 #include <functional>
 #include <wrl/client.h>
 #include <dxgi1_6.h>
@@ -85,10 +86,13 @@ namespace SFG
 			gfx_id				 dsvs[6];
 			gfx_id				 rtvs[6];
 			gfx_id				 shared_handle = 0;
-			uint8				 rtv_count	   = 0;
-			uint8				 srv_count	   = 0;
-			uint8				 dsv_count	   = 0;
-			uint8				 format		   = 0;
+#ifdef ENABLE_MEMORY_TRACER
+			uint32 size = 0;
+#endif
+			uint8 rtv_count = 0;
+			uint8 srv_count = 0;
+			uint8 dsv_count = 0;
+			uint8 format	= 0;
 		};
 
 		struct texture_shared_handle
@@ -105,10 +109,13 @@ namespace SFG
 		{
 			Microsoft::WRL::ComPtr<IDXGISwapChain3> ptr = NULL;
 			Microsoft::WRL::ComPtr<ID3D12Resource>	textures[BACK_BUFFER_COUNT];
-			gfx_id									rtv_indices[BACK_BUFFER_COUNT];
-			uint8									format		= 0;
-			uint8									image_index = 0;
-			uint8									vsync		= 0;
+#ifdef ENABLE_MEMORY_TRACER
+			uint32 size = 0;
+#endif
+			gfx_id rtv_indices[BACK_BUFFER_COUNT];
+			uint8  format	   = 0;
+			uint8  image_index = 0;
+			uint8  vsync	   = 0;
 		};
 
 		struct semaphore
@@ -305,19 +312,13 @@ namespace SFG
 		Microsoft::WRL::ComPtr<IDXGIFactory4>	   _factory	  = nullptr;
 		static Microsoft::WRL::ComPtr<IDxcLibrary> s_idxcLib;
 
-		vector<D3D12_CPU_DESCRIPTOR_HANDLE>			 _reuse_dest_descriptors_buffer	 = {};
-		vector<D3D12_CPU_DESCRIPTOR_HANDLE>			 _reuse_dest_descriptors_sampler = {};
-		vector<D3D12_CPU_DESCRIPTOR_HANDLE>			 _reuse_src_descriptors_buffer	 = {};
-		vector<D3D12_CPU_DESCRIPTOR_HANDLE>			 _reuse_src_descriptors_sampler	 = {};
-		vector<CD3DX12_RESOURCE_BARRIER>			 _reuse_barriers;
-		vector<D3D12_RENDER_PASS_RENDER_TARGET_DESC> _reuse_color_attachments;
-		vector<CD3DX12_ROOT_PARAMETER1>				 _reuse_root_params		 = {};
-		vector<CD3DX12_DESCRIPTOR_RANGE1>			 _reuse_root_ranges		 = {};
-		vector<D3D12_SUBRESOURCE_DATA>				 _reuse_subresource_data = {};
-		vector<ID3D12CommandList*>					 _reuse_lists			 = {};
-		vector<ID3D12Fence*>						 _reuse_fences			 = {};
-		vector<uint64>								 _reuse_values			 = {};
-		vector<D3D12_STATIC_SAMPLER_DESC>			 _reuse_static_samplers	 = {};
+		vector<D3D12_CPU_DESCRIPTOR_HANDLE> _reuse_dest_descriptors_buffer	= {};
+		vector<D3D12_CPU_DESCRIPTOR_HANDLE> _reuse_dest_descriptors_sampler = {};
+		vector<D3D12_CPU_DESCRIPTOR_HANDLE> _reuse_src_descriptors_buffer	= {};
+		vector<D3D12_CPU_DESCRIPTOR_HANDLE> _reuse_src_descriptors_sampler	= {};
+		vector<CD3DX12_ROOT_PARAMETER1>		_reuse_root_params				= {};
+		vector<CD3DX12_DESCRIPTOR_RANGE1>	_reuse_root_ranges				= {};
+		vector<D3D12_STATIC_SAMPLER_DESC>	_reuse_static_samplers			= {};
 
 		gfx_id _queue_graphics = 0;
 		gfx_id _queue_transfer = 0;

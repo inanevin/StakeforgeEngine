@@ -2,6 +2,7 @@
 
 #include "dx12_backend.hpp"
 #include "dx12_common.hpp"
+#include "data/static_vector.hpp"
 #include "gfx/common/descriptions.hpp"
 #include "gfx/backend/dx12/sdk/D3D12MemAlloc.h"
 #include "gfx/common/commands.hpp"
@@ -672,14 +673,8 @@ namespace SFG
 		_reuse_dest_descriptors_sampler.reserve(100);
 		_reuse_src_descriptors_buffer.reserve(100);
 		_reuse_src_descriptors_sampler.reserve(100);
-		_reuse_barriers.reserve(100);
-		_reuse_color_attachments.reserve(100);
 		_reuse_root_params.reserve(100);
 		_reuse_root_ranges.reserve(100);
-		_reuse_subresource_data.reserve(100);
-		_reuse_lists.reserve(100);
-		_reuse_fences.reserve(100);
-		_reuse_values.reserve(100);
 		_reuse_static_samplers.reserve(100);
 	}
 
@@ -747,16 +742,17 @@ namespace SFG
 
 	void dx12_backend::submit_commands(gfx_id queue_id, const gfx_id* commands, uint8 commands_count)
 	{
-		queue& q = _queues.get(queue_id);
-		_reuse_lists.resize(0);
+		queue&								  q = _queues.get(queue_id);
+		static_vector<ID3D12CommandList*, 32> lists;
+		lists.resize(0);
 
 		for (uint8 i = 0; i < commands_count; i++)
 		{
 			command_buffer& cb = _command_buffers.get(commands[i]);
-			_reuse_lists.push_back(cb.ptr.Get());
+			lists.push_back(cb.ptr.Get());
 		}
 
-		q.ptr->ExecuteCommandLists(static_cast<uint32>(commands_count), _reuse_lists.data());
+		q.ptr->ExecuteCommandLists(static_cast<uint32>(commands_count), lists.data());
 	}
 
 	void dx12_backend::queue_wait(gfx_id queue_id, const gfx_id* semaphores, const uint64* semaphore_values, uint8 semaphore_count)
@@ -789,6 +785,10 @@ namespace SFG
 
 	gfx_id dx12_backend::create_resource(const resource_desc& desc)
 	{
+		PUSH_MEMORY_CATEGORY("Gfx");
+		PUSH_ALLOCATION_SZ(desc.size);
+		POP_MEMORY_CATEGORY();
+
 		VERIFY_RENDER_NOT_RUNNING();
 
 		const gfx_id id	 = _resources.add();
@@ -920,9 +920,15 @@ namespace SFG
 
 	void dx12_backend::destroy_resource(gfx_id id)
 	{
+
 		VERIFY_RENDER_NOT_RUNNING();
 
 		resource& res = _resources.get(id);
+
+		PUSH_MEMORY_CATEGORY("Gfx");
+		PUSH_DEALLOCATION_SZ(res.size);
+		POP_MEMORY_CATEGORY();
+
 		if (res.descriptor_index != -1)
 		{
 			descriptor_handle& dh = _descriptors.get(static_cast<gfx_id>(res.descriptor_index));
@@ -941,6 +947,28 @@ namespace SFG
 
 		const gfx_id id	 = _textures.add();
 		texture&	 txt = _textures.get(id);
+
+		PUSH_MEMORY_CATEGORY("Gfx");
+
+#ifdef ENABLE_MEMORY_TRACER
+
+		{
+			const uint8 bpp	  = desc.flags.is_set(texture_flags::tf_depth_texture) ? format_get_bpp(desc.depth_stencil_format) : format_get_bpp(desc.texture_format);
+			uint16		width = desc.size.x, height = desc.size.y;
+			size_t		sz = 0;
+			for (uint8 i = 0; i < desc.mip_levels; i++)
+			{
+				sz += width * height * bpp;
+				width /= 2;
+				height /= 2;
+			}
+
+			PUSH_ALLOCATION_SZ(sz);
+			txt.size = sz;
+		}
+
+#endif
+		POP_MEMORY_CATEGORY();
 
 		const DXGI_FORMAT color_format = get_format(desc.texture_format);
 		const DXGI_FORMAT depth_format = get_format(desc.depth_stencil_format);
@@ -1188,6 +1216,10 @@ namespace SFG
 
 		texture& txt = _textures.get(id);
 
+		PUSH_MEMORY_CATEGORY("Gfx");
+		PUSH_DEALLOCATION_SZ(txt.size);
+		POP_MEMORY_CATEGORY();
+
 		texture_shared_handle& handle = _texture_shared_handles.get(txt.shared_handle);
 		if (handle.handle != 0)
 			CloseHandle(handle.handle);
@@ -1267,6 +1299,13 @@ namespace SFG
 		const gfx_id id	 = _swapchains.add();
 		swapchain&	 swp = _swapchains.get(id);
 
+#ifdef ENABLE_MEMORY_TRACER
+		PUSH_MEMORY_CATEGORY("Gfx");
+		swp.size = desc.size.x * desc.size.y * 4;
+		PUSH_ALLOCATION_SZ(swp.size);
+		POP_MEMORY_CATEGORY();
+#endif
+
 		if (desc.flags.is_set(swapchain_flags::sf_vsync_every_v_blank))
 			swp.vsync = 1;
 		else if (desc.flags.is_set(swapchain_flags::sf_vsync_every_2v_blank))
@@ -1340,6 +1379,14 @@ namespace SFG
 		DXGI_SWAP_CHAIN_DESC swp_desc = {};
 		swp.ptr->GetDesc(&swp_desc);
 
+#ifdef ENABLE_MEMORY_TRACER
+		PUSH_MEMORY_CATEGORY("Gfx");
+		PUSH_DEALLOCATION_SZ(swp.size);
+		PUSH_ALLOCATION_SZ(desc.size.x * desc.size.y * 4);
+		swp.size = desc.size.x * desc.size.y * 4;
+		POP_MEMORY_CATEGORY();
+#endif
+
 		for (uint32 i = 0; i < BACK_BUFFER_COUNT; i++)
 		{
 			swp.textures[i].Reset();
@@ -1370,6 +1417,12 @@ namespace SFG
 		VERIFY_RENDER_NOT_RUNNING();
 
 		swapchain& swp = _swapchains.get(id);
+
+#ifdef ENABLE_MEMORY_TRACER
+		PUSH_MEMORY_CATEGORY("Gfx");
+		PUSH_DEALLOCATION_SZ(swp.size);
+		POP_MEMORY_CATEGORY();
+#endif
 
 		for (uint32 i = 0; i < BACK_BUFFER_COUNT; i++)
 		{
@@ -2225,7 +2278,8 @@ namespace SFG
 		command_buffer&				buffer	 = _command_buffers.get(cmd_id);
 		ID3D12GraphicsCommandList4* cmd_list = buffer.ptr.Get();
 
-		_reuse_color_attachments.resize(cmd.color_attachment_count);
+		static_vector<D3D12_RENDER_PASS_RENDER_TARGET_DESC, 8> color_attachments;
+		color_attachments.resize(cmd.color_attachment_count);
 
 		for (uint32 i = 0; i < cmd.color_attachment_count; i++)
 		{
@@ -2242,17 +2296,18 @@ namespace SFG
 			const D3D12_RENDER_PASS_BEGINNING_ACCESS color_begin{get_load_op(att.load_op), {cv}};
 			const D3D12_RENDER_PASS_ENDING_ACCESS	 color_end{get_store_op(att.store_op), {}};
 
-			_reuse_color_attachments[i] = {dh.cpu, color_begin, color_end};
+			color_attachments[i] = {dh.cpu, color_begin, color_end};
 		}
 
-		cmd_list->BeginRenderPass(cmd.color_attachment_count, _reuse_color_attachments.data(), NULL, D3D12_RENDER_PASS_FLAG_NONE);
+		cmd_list->BeginRenderPass(cmd.color_attachment_count, color_attachments.data(), NULL, D3D12_RENDER_PASS_FLAG_NONE);
 	}
 
 	void dx12_backend::cmd_begin_render_pass_depth(gfx_id cmd_id, const command_begin_render_pass_depth& cmd)
 	{
-		command_buffer&				buffer	 = _command_buffers.get(cmd_id);
-		ID3D12GraphicsCommandList4* cmd_list = buffer.ptr.Get();
-		_reuse_color_attachments.resize(cmd.color_attachment_count);
+		command_buffer&										   buffer	= _command_buffers.get(cmd_id);
+		ID3D12GraphicsCommandList4*							   cmd_list = buffer.ptr.Get();
+		static_vector<D3D12_RENDER_PASS_RENDER_TARGET_DESC, 8> color_attachments;
+		color_attachments.resize(cmd.color_attachment_count);
 
 		for (uint32 i = 0; i < cmd.color_attachment_count; i++)
 		{
@@ -2269,7 +2324,7 @@ namespace SFG
 			const D3D12_RENDER_PASS_BEGINNING_ACCESS color_begin{get_load_op(att.load_op), {cv}};
 			const D3D12_RENDER_PASS_ENDING_ACCESS	 color_end{get_store_op(att.store_op), {}};
 
-			_reuse_color_attachments[i] = {dh.cpu, color_begin, color_end};
+			color_attachments[i] = {dh.cpu, color_begin, color_end};
 		}
 
 		const texture&							   depth_txt = _textures.get(cmd.depth_stencil_attachment.texture);
@@ -2280,14 +2335,16 @@ namespace SFG
 		const D3D12_RENDER_PASS_ENDING_ACCESS	   depth_end{get_store_op(cmd.depth_stencil_attachment.depth_store_op), {}};
 		const D3D12_RENDER_PASS_ENDING_ACCESS	   stencil_end{get_store_op(cmd.depth_stencil_attachment.stencil_store_op), {}};
 		const D3D12_RENDER_PASS_DEPTH_STENCIL_DESC depth_stencil_desc{depth_dh.cpu, depth_begin, stencil_begin, depth_end, stencil_end};
-		cmd_list->BeginRenderPass(cmd.color_attachment_count, _reuse_color_attachments.data(), &depth_stencil_desc, D3D12_RENDER_PASS_FLAG_NONE);
+		cmd_list->BeginRenderPass(cmd.color_attachment_count, color_attachments.data(), &depth_stencil_desc, D3D12_RENDER_PASS_FLAG_NONE);
 	}
 
 	void dx12_backend::cmd_begin_render_pass_swapchain(gfx_id cmd_id, const command_begin_render_pass_swapchain& cmd)
 	{
-		command_buffer&				buffer	 = _command_buffers.get(cmd_id);
-		ID3D12GraphicsCommandList4* cmd_list = buffer.ptr.Get();
-		_reuse_color_attachments.resize(cmd.color_attachment_count);
+		command_buffer&										   buffer	= _command_buffers.get(cmd_id);
+		ID3D12GraphicsCommandList4*							   cmd_list = buffer.ptr.Get();
+		static_vector<D3D12_RENDER_PASS_RENDER_TARGET_DESC, 8> color_attachments;
+
+		color_attachments.resize(cmd.color_attachment_count);
 
 		for (uint32 i = 0; i < cmd.color_attachment_count; i++)
 		{
@@ -2304,17 +2361,19 @@ namespace SFG
 			const D3D12_RENDER_PASS_BEGINNING_ACCESS color_begin{get_load_op(att.load_op), {cv}};
 			const D3D12_RENDER_PASS_ENDING_ACCESS	 color_end{get_store_op(att.store_op), {}};
 
-			_reuse_color_attachments[i] = {dh.cpu, color_begin, color_end};
+			color_attachments[i] = {dh.cpu, color_begin, color_end};
 		}
 
-		cmd_list->BeginRenderPass(cmd.color_attachment_count, _reuse_color_attachments.data(), NULL, D3D12_RENDER_PASS_FLAG_NONE);
+		cmd_list->BeginRenderPass(cmd.color_attachment_count, color_attachments.data(), NULL, D3D12_RENDER_PASS_FLAG_NONE);
 	}
 
 	void dx12_backend::cmd_begin_render_pass_swapchain_depth(gfx_id cmd_id, const command_begin_render_pass_swapchain_depth& cmd)
 	{
-		command_buffer&				buffer	 = _command_buffers.get(cmd_id);
-		ID3D12GraphicsCommandList4* cmd_list = buffer.ptr.Get();
-		_reuse_color_attachments.resize(cmd.color_attachment_count);
+		command_buffer&										   buffer	= _command_buffers.get(cmd_id);
+		ID3D12GraphicsCommandList4*							   cmd_list = buffer.ptr.Get();
+		static_vector<D3D12_RENDER_PASS_RENDER_TARGET_DESC, 8> color_attachments;
+
+		color_attachments.resize(cmd.color_attachment_count);
 
 		for (uint32 i = 0; i < cmd.color_attachment_count; i++)
 		{
@@ -2331,7 +2390,7 @@ namespace SFG
 			const D3D12_RENDER_PASS_BEGINNING_ACCESS color_begin{get_load_op(att.load_op), {cv}};
 			const D3D12_RENDER_PASS_ENDING_ACCESS	 color_end{get_store_op(att.store_op), {}};
 
-			_reuse_color_attachments[i] = {dh.cpu, color_begin, color_end};
+			color_attachments[i] = {dh.cpu, color_begin, color_end};
 		}
 
 		const texture&							   depth_txt = _textures.get(cmd.depth_stencil_attachment.texture);
@@ -2342,7 +2401,7 @@ namespace SFG
 		const D3D12_RENDER_PASS_ENDING_ACCESS	   depth_end{get_store_op(cmd.depth_stencil_attachment.depth_store_op), {}};
 		const D3D12_RENDER_PASS_ENDING_ACCESS	   stencil_end{get_store_op(cmd.depth_stencil_attachment.stencil_store_op), {}};
 		const D3D12_RENDER_PASS_DEPTH_STENCIL_DESC depth_stencil_desc{depth_dh.cpu, depth_begin, stencil_begin, depth_end, stencil_end};
-		cmd_list->BeginRenderPass(cmd.color_attachment_count, _reuse_color_attachments.data(), &depth_stencil_desc, D3D12_RENDER_PASS_FLAG_NONE);
+		cmd_list->BeginRenderPass(cmd.color_attachment_count, color_attachments.data(), &depth_stencil_desc, D3D12_RENDER_PASS_FLAG_NONE);
 	}
 
 	void dx12_backend::cmd_end_render_pass(gfx_id cmd_id, const command_end_render_pass& cmd) const
@@ -2501,7 +2560,9 @@ namespace SFG
 	{
 		command_buffer&				buffer	 = _command_buffers.get(cmd_id);
 		ID3D12GraphicsCommandList4* cmd_list = buffer.ptr.Get();
-		_reuse_subresource_data.resize(0);
+
+		static_vector<D3D12_SUBRESOURCE_DATA, MAX_TEXTURE_MIPS> subresource_data;
+
 		for (uint8 i = 0; i < cmd.mip_levels; i++)
 		{
 			const texture_buffer& tb		= cmd.textures[i];
@@ -2513,12 +2574,12 @@ namespace SFG
 				.SlicePitch = row_pitch * static_cast<LONG_PTR>(tb.size.y),
 			};
 
-			_reuse_subresource_data.push_back(texture_data);
+			subresource_data.push_back(texture_data);
 		}
 
 		resource& res = _resources.get(cmd.intermediate_buffer);
 		texture&  txt = _textures.get(cmd.destination_texture);
-		UpdateSubresources(cmd_list, txt.ptr->GetResource(), res.ptr->GetResource(), 0, cmd.mip_levels * cmd.destination_slice, cmd.mip_levels, _reuse_subresource_data.data());
+		UpdateSubresources(cmd_list, txt.ptr->GetResource(), res.ptr->GetResource(), 0, cmd.mip_levels * cmd.destination_slice, cmd.mip_levels, subresource_data.data());
 	}
 
 	void dx12_backend::cmd_copy_texture_to_buffer(gfx_id cmd_id, const command_copy_texture_to_buffer& cmd) const
@@ -2636,7 +2697,7 @@ namespace SFG
 		command_buffer&				buffer	 = _command_buffers.get(cmd_id);
 		ID3D12GraphicsCommandList4* cmd_list = buffer.ptr.Get();
 
-		_reuse_barriers.resize(0);
+		static_vector<CD3DX12_RESOURCE_BARRIER, 128> barriers;
 
 		for (uint16 i = 0; i < cmd.barrier_count; i++)
 		{
@@ -2657,11 +2718,11 @@ namespace SFG
 				res			 = txt.ptr->GetResource();
 			}
 
-			_reuse_barriers.push_back(CD3DX12_RESOURCE_BARRIER::Transition(res, get_resource_state(barrier.from_state), get_resource_state(barrier.to_state)));
+			barriers.push_back(CD3DX12_RESOURCE_BARRIER::Transition(res, get_resource_state(barrier.from_state), get_resource_state(barrier.to_state)));
 		}
 
-		if (!_reuse_barriers.empty())
-			cmd_list->ResourceBarrier(static_cast<UINT>(_reuse_barriers.size()), _reuse_barriers.data());
+		if (!barriers.empty())
+			cmd_list->ResourceBarrier(static_cast<UINT>(barriers.size()), barriers.data());
 	}
 
 }

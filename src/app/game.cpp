@@ -36,8 +36,6 @@ namespace SFG
 
 		_world = new world();
 
-		PUSH_MEMORY_CATEGORY("Gfx");
-
 		_main_window = new window();
 		_main_window->create("Game", window_flags::wf_style_windowed, vector2i16(0, 0), render_target_size);
 		_window_size = render_target_size;
@@ -53,8 +51,6 @@ namespace SFG
 
 		_renderer = new renderer();
 		_renderer->init(_main_window, _world);
-
-		POP_MEMORY_CATEGORY();
 
 		engine_data::get().init();
 
@@ -116,8 +112,6 @@ namespace SFG
 		time::uninit();
 		debug_console::uninit();
 
-		PUSH_MEMORY_CATEGORY("Gfx");
-
 		_renderer->uninit();
 		delete _renderer;
 
@@ -128,8 +122,6 @@ namespace SFG
 		backend->uninit();
 		delete gfx_backend::s_instance;
 		gfx_backend::s_instance = nullptr;
-
-		POP_MEMORY_CATEGORY();
 	}
 
 	void game_app::tick()

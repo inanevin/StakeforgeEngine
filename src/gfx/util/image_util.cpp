@@ -5,6 +5,7 @@
 #include "math/math.hpp"
 #include "gfx/common/gfx_common.hpp"
 #include "memory/memory.hpp"
+#include "memory/memory_tracer.hpp"
 
 #define STB_IMAGE_IMPLEMENTATION
 #define STB_IMAGE_RESIZE_IMPLEMENTATION
@@ -94,10 +95,11 @@ namespace SFG
 			if (h < 1)
 				h = 1;
 
-			texture_buffer mip		  = {};
-			mip.size				  = vector2ui16(w, h);
-			mip.pixels				  = (uint8*)SFG_MALLOC(w * h * buf.bpp);
-			mip.bpp					  = buf.bpp;
+			texture_buffer mip = {};
+			mip.size		   = vector2ui16(w, h);
+			mip.pixels		   = (uint8*)SFG_MALLOC(w * h * buf.bpp);
+			mip.bpp			   = buf.bpp;
+			PUSH_ALLOCATION_SZ(w * h * mip.bpp);
 			const stbir_colorspace cs = is_linear ? stbir_colorspace::STBIR_COLORSPACE_LINEAR : stbir_colorspace::STBIR_COLORSPACE_SRGB;
 
 			int ret = 0;

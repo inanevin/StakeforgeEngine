@@ -8,7 +8,6 @@
 #include "gfx/common/descriptions.hpp"
 #include "gfx/util/image_util.hpp"
 #include "project/engine_data.hpp"
-
 #ifdef SFG_TOOLMODE
 #include "io/file_system.hpp"
 #include <fstream>
@@ -79,6 +78,8 @@ namespace SFG
 				return false;
 			}
 
+			PUSH_ALLOCATION_SZ(size.x * size.y * bpp);
+
 			const texture_buffer b = {
 				.pixels = reinterpret_cast<uint8*>(data),
 				.size	= size,
@@ -91,13 +92,6 @@ namespace SFG
 
 			if (meta.gen_mips == 1)
 				populate_mips(channels, format_is_linear(fmt));
-
-			PUSH_MEMORY_CATEGORY("Gfx");
-
-			for (const texture_buffer& b : _cpu_buffers)
-				_total_size += b.bpp * b.size.x * b.size.y;
-
-			PUSH_ALLOCATION_SZ(_total_size);
 
 			gfx_backend* backend = gfx_backend::get();
 			_hw					 = backend->create_texture({
@@ -113,8 +107,6 @@ namespace SFG
 			 });
 			_flags.set(texture::flags::hw_exists | texture::flags::upload_pending);
 			create_intermediate();
-
-			POP_MEMORY_CATEGORY();
 		}
 		catch (std::exception e)
 		{
@@ -142,6 +134,8 @@ namespace SFG
 							.bpp	= bpp,
 		};
 
+		PUSH_ALLOCATION_SZ(data_size);
+
 		if (b.pixels)
 			SFG_MEMCPY(b.pixels, data, data_size);
 
@@ -163,8 +157,14 @@ namespace SFG
 	void texture::destroy_cpu()
 	{
 		for (texture_buffer& buf : _cpu_buffers)
+		{
+			PUSH_DEALLOCATION_SZ(buf.size.x * buf.size.y * buf.bpp);
 			SFG_FREE(buf.pixels);
+		}
 		_cpu_buffers.clear();
+
+		auto hw = _flags.is_set(hw_exists) ? get_hw() : 0;
+		SFG_TRACE("Destroying CPU, my hw is: {0}", hw);
 	}
 
 	void texture::destroy()
@@ -178,18 +178,10 @@ namespace SFG
 
 		if (_flags.is_set(texture::flags::intermediate_exists))
 			backend->destroy_resource(_intermediate);
-
-		PUSH_MEMORY_CATEGORY("Gfx");
-		PUSH_DEALLOCATION_SZ(_total_size);
-		POP_MEMORY_CATEGORY();
 	}
 
 	void texture::destroy_intermediate()
 	{
-		PUSH_MEMORY_CATEGORY("Gfx");
-		PUSH_DEALLOCATION_SZ(_total_size);
-		POP_MEMORY_CATEGORY();
-
 		SFG_ASSERT(_flags.is_set(texture::flags::intermediate_exists));
 		gfx_backend* backend = gfx_backend::get();
 		backend->destroy_resource(_intermediate);
@@ -240,11 +232,6 @@ namespace SFG
 		{
 			total_size += backend->get_texture_size(buf.size.x, buf.size.y, buf.bpp);
 		}
-
-		// use total size for easy book-keeping
-		PUSH_MEMORY_CATEGORY("Gfx");
-		PUSH_ALLOCATION_SZ(_total_size);
-		POP_MEMORY_CATEGORY();
 
 		const uint32 intermediate_size = backend->align_texture_size(total_size);
 

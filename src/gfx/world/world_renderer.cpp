@@ -17,12 +17,12 @@
 
 namespace SFG
 {
-#define RT_FORMAT	 format::r8g8b8a8_srgb
-#define DEPTH_FORMAT format::d16_unorm
+#define RT_FORMAT			 format::r8g8b8a8_srgb
+#define DEPTH_FORMAT		 format::d16_unorm
+#define SHARED_BUMP_ALLOC_SZ 1024 * 512
 
 	void world_renderer::init(const vector2ui16& size, texture_queue* tq, buffer_queue* bq, world* w)
 	{
-		PUSH_MEMORY_CATEGORY("Gfx");
 		_world		   = w;
 		_texture_queue = tq;
 		_buffer_queue  = bq;
@@ -88,10 +88,11 @@ namespace SFG
 
 		// Command allocations
 		{
-			const size_t total_shared_size = 1024 * 512;
+			const size_t total_shared_size = SHARED_BUMP_ALLOC_SZ;
 			const size_t lane_count		   = 2;
 			const size_t size_per_lane	   = total_shared_size / lane_count;
 			_shared_command_alloc		   = (uint8*)SFG_MALLOC(total_shared_size);
+			PUSH_ALLOCATION_SZ(total_shared_size);
 
 			uint8* alloc_head = _shared_command_alloc;
 			_pass_opaque.init({
@@ -129,25 +130,22 @@ namespace SFG
 			// alloc_head += size_per_lane;
 		}
 
-		for (uint32 i = 0; i < 2; i++)
+		for (uint32 i = 0; i < THREAD_BUFFER_COUNT; i++)
 		{
 			world_render_data& rd = _render_data[i];
 			rd.views.init(_world);
 		}
-
-		POP_MEMORY_CATEGORY();
 	}
 
 	void world_renderer::uninit()
 	{
-		PUSH_MEMORY_CATEGORY("Gfx");
-
 		_resource_uploads.uninit();
 
 		_pass_opaque.uninit();
 		// _pass_lighting_fw.uninit();
 		// _pass_post_combiner.uninit();
 
+		PUSH_DEALLOCATION_SZ(SHARED_BUMP_ALLOC_SZ);
 		SFG_FREE(_shared_command_alloc);
 
 		gfx_backend* backend = gfx_backend::get();
@@ -166,7 +164,6 @@ namespace SFG
 			pfd.entities.destroy();
 			pfd.lights.destroy();
 		}
-		POP_MEMORY_CATEGORY();
 	}
 
 	void world_renderer::populate_render_data(uint8 index, double interpolation)

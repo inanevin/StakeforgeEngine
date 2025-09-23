@@ -19,6 +19,10 @@ namespace SFG
 		case format::r8g8b8a8_unorm:
 		case format::r8g8b8a8_srgb:
 			return 4;
+		case format::d16_unorm:
+			return 2;
+		case format::d32_sfloat:
+			return 4;
 		default:
 			break;
 		}

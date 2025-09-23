@@ -820,12 +820,9 @@ namespace SFG
 		const int32 index  = std::distance(it, _gfx_data.atlases.begin());
 		uint8*		pixels = ref.buffer.pixels;
 		_gfx_data.texture_queue->subscribe_flush_callback([index, this, pixels]() {
-			PUSH_MEMORY_CATEGORY("Gfx");
-
 			atlas_ref& ref = _gfx_data.atlases[index];
 			ref.res_alive  = false;
 			delete[] pixels;
-			POP_MEMORY_CATEGORY();
 		});
 	}
 
@@ -1157,7 +1154,6 @@ namespace SFG
 
 	void debug_controller::on_window_resize(const vector2ui16& size)
 	{
-		PUSH_MEMORY_CATEGORY("Gfx");
 		gfx_backend* backend  = gfx_backend::get();
 		_gfx_data.rt_size	  = vector2ui16(size.x, size.y / 2);
 		_gfx_data.window_size = vector2ui16(size.x, size.y);
@@ -1190,7 +1186,5 @@ namespace SFG
 												   {.resource = pfd.rt_console, .pointer_index = upi_material_texture0, .type = binding_type::texture_binding},
 											   });
 		}
-
-		POP_MEMORY_CATEGORY();
 	}
 }
