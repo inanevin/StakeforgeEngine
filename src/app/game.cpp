@@ -34,6 +34,8 @@ namespace SFG
 		time::init();
 		debug_console::init();
 
+		_world = new world();
+
 		PUSH_MEMORY_CATEGORY("Gfx");
 
 		_main_window = new window();
@@ -47,8 +49,6 @@ namespace SFG
 		gfx_backend::s_instance = new gfx_backend();
 		gfx_backend* backend	= gfx_backend::get();
 		backend->init();
-
-		_world = new world();
 
 		_renderer = new renderer();
 		_renderer->init(_main_window, _world);

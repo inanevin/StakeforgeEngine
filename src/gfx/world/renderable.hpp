@@ -3,6 +3,7 @@
 #pragma once
 #include "gfx/common/gfx_common.hpp"
 #include "world/common_world.hpp"
+#include "memory/pool_handle.hpp"
 
 namespace SFG
 {

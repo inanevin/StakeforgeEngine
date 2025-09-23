@@ -16,6 +16,11 @@ using json = nlohmann::json;
 #include <algorithm>
 #include <execution>
 #include "gfx/renderer.hpp"
+#include "resources/texture.hpp"
+#include "resources/shader.hpp"
+#include "resources/material.hpp"
+#include "resources/model.hpp"
+#include "platform/time.hpp"
 
 namespace SFG
 {
@@ -43,10 +48,12 @@ namespace SFG
 		"assets/boombox/boombox_emissive.stkfrg",
 		"assets/boombox/boombox_normal.stkfrg",
 		"assets/boombox/boombox_orm.stkfrg",
+		"assets/cesium_man/cesium_man_base.stkfrg",
 	};
 
 	static vector<const char*> debug_mats = {
 		"assets/boombox/boombox_material.stkfrg",
+		"assets/cesium_man/cesium_man_material.stkfrg",
 	};
 
 	static vector<const char*> debug_shaders = {
@@ -56,66 +63,103 @@ namespace SFG
 
 	static vector<const char*> debug_models = {
 		"assets/boombox/boombox.gltf",
+		"assets/cesium_man/CesiumMan.gltf",
 	};
 
-	static vector<pool_handle<resource_id>> loaded_debug_textures = {};
-	static vector<pool_handle<resource_id>> loaded_debug_mats	  = {};
-	static vector<pool_handle<resource_id>> loaded_debug_shaders  = {};
-	static vector<pool_handle<resource_id>> loaded_debug_models	  = {};
+	static vector<pool_handle16> loaded_debug_textures		= {};
+	static vector<pool_handle16> loaded_debug_mats			= {};
+	static vector<pool_handle16> loaded_debug_shaders		= {};
+	static vector<model_loaded>	 loaded_debug_models_loaded = {};
+	static vector<pool_handle16> loaded_debug_models		= {};
 
 	void world::load_debug()
 	{
 		vector<std::function<void()>> tasks;
 
+		const int64 mr_begin = time::get_cpu_microseconds();
+
 		/* Debug */
 		for (const char* t : debug_textures)
 		{
-			const pool_handle<resource_id> handle = _resources.create_texture(TO_SIDC(t));
+			const pool_handle16 handle = _resources.create_resource<texture>(TO_SIDC(t));
 			loaded_debug_textures.push_back(handle);
 			const string abs = engine_data::get().get_working_dir() + t;
-			tasks.push_back([handle, abs, this]() { _resources.get_texture(handle).create_from_file(abs.c_str()); });
+			tasks.push_back([handle, abs, this]() { _resources.get_resource<texture>(handle).create_from_file(abs.c_str()); });
 		}
 
 		for (const char* t : debug_shaders)
 		{
-			const pool_handle<resource_id> handle = _resources.create_shader(TO_SIDC(t));
+			const pool_handle16 handle = _resources.create_resource<shader>(TO_SIDC(t));
 			loaded_debug_shaders.push_back(handle);
 			const string abs = engine_data::get().get_working_dir() + t;
-			tasks.push_back([handle, abs, this]() { _resources.get_shader(handle).create_from_file_vertex_pixel(abs.c_str(), false, renderer::get_bind_layout_global()); });
+			tasks.push_back([handle, abs, this]() { _resources.get_resource<shader>(handle).create_from_file_vertex_pixel(abs.c_str(), false, renderer::get_bind_layout_global()); });
 		}
 
 		std::for_each(std::execution::par, tasks.begin(), tasks.end(), [](std::function<void()>& task) { task(); });
 
-		for (const char* t : debug_mats)
-			loaded_debug_mats.push_back(_resources.load_material(t));
+		tasks.clear();
 
+		for (const char* t : debug_mats)
+		{
+			const pool_handle16 handle = _resources.create_resource<material>(TO_SIDC(t));
+			loaded_debug_mats.push_back(handle);
+			const string abs = engine_data::get().get_working_dir() + t;
+			tasks.push_back([handle, abs, this]() { _resources.get_resource<material>(handle).create_from_file(abs.c_str(), _resources); });
+		}
+
+		loaded_debug_models_loaded.resize(debug_models.size());
+		int i = 0;
 		for (const char* t : debug_models)
-			loaded_debug_models.push_back(_resources.load_model(t));
+		{
+			const pool_handle16 handle = _resources.create_resource<model>(TO_SIDC(t));
+			loaded_debug_models.push_back(handle);
+
+			const string relative = t;
+			const string abs	  = engine_data::get().get_working_dir() + relative;
+			const int	 index	  = i;
+			tasks.push_back([handle, abs, relative, this, index]() { loaded_debug_models_loaded[index].create_from_file(abs.c_str(), relative.c_str()); });
+			i++;
+		}
+
+		std::for_each(std::execution::par, tasks.begin(), tasks.end(), [](std::function<void()>& task) { task(); });
+
+		i = 0;
+		for (pool_handle16 handle : loaded_debug_models)
+		{
+			model& mdl = _resources.get_resource<model>(handle);
+			mdl.create_from_loaded(loaded_debug_models_loaded[i], _resources.get_aux(), _resources);
+			i++;
+		}
+
+		const int64 mr_diff = time::get_cpu_microseconds() - mr_begin;
+		SFG_INFO("Resources took: {0} ms", mr_diff / 1000);
 	}
 
 	void world::uninit()
 	{
-		for (pool_handle<resource_id> handle : loaded_debug_textures)
+		for (pool_handle16 handle : loaded_debug_textures)
 		{
-			_resources.get_texture(handle).destroy();
-			_resources.destroy_texture(handle);
+			_resources.get_resource<texture>(handle).destroy();
+			_resources.destroy_resource<texture>(handle);
 		}
 
-		for (pool_handle<resource_id> handle : loaded_debug_mats)
+		for (pool_handle16 handle : loaded_debug_mats)
 		{
-			_resources.get_material(handle).destroy();
-			_resources.destroy_material(handle);
+			_resources.get_resource<material>(handle).destroy();
+			_resources.destroy_resource<material>(handle);
 		}
 
-		for (pool_handle<resource_id> handle : loaded_debug_shaders)
+		for (pool_handle16 handle : loaded_debug_shaders)
 		{
-			_resources.get_shader(handle).destroy();
-			_resources.destroy_shader(handle);
+			_resources.get_resource<shader>(handle).destroy();
+			_resources.destroy_resource<shader>(handle);
 		}
 
-		for (pool_handle<resource_id> handle : loaded_debug_models)
+		for (pool_handle16 handle : loaded_debug_models)
 		{
-			_resources.destroy_model(handle);
+			_resources.get_resource<model>(handle).destroy(_resources, _resources.get_aux());
+
+			_resources.destroy_resource<model>(handle);
 		}
 
 		_entity_manager.uninit();
@@ -132,7 +176,7 @@ namespace SFG
 		// do your stuff.
 		auto& entities = _entity_manager.get_entities();
 
-		for (pool_handle<world_id> handle : entities.handles())
+		for (pool_handle16 handle : entities)
 		{
 			const vector3& p = _entity_manager.get_entity_position_abs(handle);
 			const quat&	   r = _entity_manager.get_entity_rotation_abs(handle);

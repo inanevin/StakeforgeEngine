@@ -7,6 +7,7 @@
 #include "data/bitmask.hpp"
 #include "data/static_vector.hpp"
 #include "gfx/common/gfx_common.hpp"
+#include "resources/common_resources.hpp"
 
 #ifdef SFG_TOOLMODE
 #include "vendor/nhlohmann/json_fwd.hpp"
@@ -38,6 +39,8 @@ namespace SFG
 	{
 
 	public:
+		static constexpr uint32 TYPE_INDEX = resource_types::resource_type_texture;
+
 		enum flags
 		{
 			hw_exists			= 1 << 0,

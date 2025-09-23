@@ -7,6 +7,8 @@
 #include "data/vector.hpp"
 #include "data/bitmask.hpp"
 #include "gfx/common/shader_description.hpp"
+#include "resources/common_resources.hpp"
+
 #include <limits>
 
 #undef min
@@ -33,6 +35,8 @@ namespace SFG
 	class shader
 	{
 	public:
+		static constexpr uint32 TYPE_INDEX = resource_types::resource_type_shader;
+
 		enum flags
 		{
 			is_skinned = 1 << 0,

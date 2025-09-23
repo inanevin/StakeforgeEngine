@@ -10,8 +10,11 @@
 #include "gfx/texture_queue.hpp"
 #include "gfx/buffer_queue.hpp"
 #include "world/world.hpp"
+#include "world/traits/trait_light.hpp"
+#include "world/traits/trait_mesh_renderer.hpp"
 #include <algorithm>
 #include <execution>
+
 namespace SFG
 {
 #define RT_FORMAT	 format::r8g8b8a8_srgb
@@ -182,8 +185,9 @@ namespace SFG
 		_pass_lighting_fw.populate_render_data(_world, index);
 		_pass_post_combiner.populate_render_data(_world, index);
 
+		/*
 		entity_manager& em			= _world->get_entity_manager();
-		auto&			renderables = em.get_view_trait_model_renderable().get_pool();
+		auto&			renderables = em.get_view_trait_mesh_renderer().get_pool();
 
 		// lights
 		{
@@ -200,18 +204,18 @@ namespace SFG
 		world_resources& resources = _world->get_resources();
 		auto&			 trait_aux = em.get_trait_aux_memory();
 
-		auto add_prim = [this](renderable_object& rb, auto& p, trait_model_renderable& trait, trait_model_renderable_node* node, uint32 entity, uint8 skinned) {
-			rb.material		= trait.get_material_handle(_world, p.material_index);
-			rb.index_count	= static_cast<uint32>(p.indices.size());
-			rb.vertex_start = static_cast<uint32>(p.runtime.vertex_start);
-			rb.index_start	= static_cast<uint32>(p.runtime.index_start);
-			rb.gpu_entity	= entity;
-			rb.is_skinned	= skinned;
+		auto add_prim = [this](renderable_object& rb, auto& p, trait_mesh_renderer& trait, trait_mesh_renderer_node* node, uint32 entity, uint8 skinned) {
+			rb.material	   = trait.get_material_handle(_world, p.material_index);
+			rb.index_count = static_cast<uint32>(p.indices.size());
+			 rb.vertex_start = static_cast<uint32>(p.runtime.vertex_start);
+			 rb.index_start	= static_cast<uint32>(p.runtime.index_start);
+			rb.gpu_entity = entity;
+			rb.is_skinned = skinned;
 		};
 
 		const float alpha = static_cast<float>(interpolation);
 
-		for (trait_model_renderable& trait : renderables)
+		for (trait_mesh_renderer& trait : renderables)
 		{
 			if (trait.flags.is_set(trait_flags::trait_flags_is_disabled))
 				continue;
@@ -222,33 +226,33 @@ namespace SFG
 
 			const pool_handle<world_id> entity = trait.entity;
 
-			rd.renderables.push_back({});
-			renderable_object& rb = rd.renderables.back();
-			rb.vertex_buffer	  = &_resource_uploads.get_big_vertex_buffer();
-			rb.index_buffer		  = &_resource_uploads.get_big_index_buffer();
+			 rd.renderables.push_back({});
+			 renderable_object& rb = rd.renderables.back();
+			 rb.vertex_buffer	  = &_resource_uploads.get_big_vertex_buffer();
+			 rb.index_buffer		  = &_resource_uploads.get_big_index_buffer();
 
-			model& mdl = resources.get_model(trait.target_model);
+			 model& mdl = resources.get_model(trait.target_model);
 
-			const vector<mesh>& meshes = mdl.get_meshes();
+			 const vector<mesh>& meshes = mdl.get_meshes();
 
-			const vector3& ent_pos			  = em.get_entity_position_abs(entity);
-			const vector3& ent_prev_pos		  = em.get_entity_prev_position_abs(entity);
-			const vector3& ent_scale		  = em.get_entity_scale_abs(entity);
-			const vector3& ent_prev_scale	  = em.get_entity_prev_scale_abs(entity);
-			const quat&	   ent_rot			  = em.get_entity_rotation_abs(entity);
-			const quat&	   ent_prev_rot		  = em.get_entity_prev_rotation_abs(entity);
-			const vector3  interpolated_pos	  = vector3::lerp(ent_prev_pos, ent_pos, alpha);
-			const vector3  interpolated_scale = vector3::lerp(ent_prev_scale, ent_scale, alpha);
-			const quat&	   interpolated_rot	  = quat::slerp(ent_prev_rot, ent_rot, alpha);
-			em.set_entity_prev_position_abs(entity, ent_prev_pos);
-			em.set_entity_prev_rotation_abs(entity, ent_prev_rot);
-			em.set_entity_prev_scale_abs(entity, ent_prev_scale);
+			 const vector3& ent_pos			  = em.get_entity_position_abs(entity);
+			 const vector3& ent_prev_pos		  = em.get_entity_prev_position_abs(entity);
+			 const vector3& ent_scale		  = em.get_entity_scale_abs(entity);
+			 const vector3& ent_prev_scale	  = em.get_entity_prev_scale_abs(entity);
+			 const quat&	   ent_rot			  = em.get_entity_rotation_abs(entity);
+			 const quat&	   ent_prev_rot		  = em.get_entity_prev_rotation_abs(entity);
+			 const vector3  interpolated_pos	  = vector3::lerp(ent_prev_pos, ent_pos, alpha);
+			 const vector3  interpolated_scale = vector3::lerp(ent_prev_scale, ent_scale, alpha);
+			 const quat&	   interpolated_rot	  = quat::slerp(ent_prev_rot, ent_rot, alpha);
+			 em.set_entity_prev_position_abs(entity, ent_prev_pos);
+			 em.set_entity_prev_rotation_abs(entity, ent_prev_rot);
+			 em.set_entity_prev_scale_abs(entity, ent_prev_scale);
 
-			const matrix4x3 entity_global = matrix4x3::transform(interpolated_pos, interpolated_rot, interpolated_scale);
+			 const matrix4x3 entity_global = matrix4x3::transform(interpolated_pos, interpolated_rot, interpolated_scale);
 
-			for (const mesh& m : meshes)
-			{
-				trait_model_renderable_node* node = trait.get_node(_world, m.node_index);
+			 for (const mesh& m : meshes)
+			 {
+				trait_mesh_renderer_node* node = trait.get_node(_world, m.node_index);
 
 				const uint32 entity = create_gpu_entity(index, {.model = entity_global * node->localMatrix});
 
@@ -261,8 +265,9 @@ namespace SFG
 				{
 					add_prim(rb, p, trait, node, entity, 0);
 				}
-			}
+			 }
 		}
+		*/
 	}
 
 	void world_renderer::on_render_joined()

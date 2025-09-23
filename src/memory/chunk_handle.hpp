@@ -6,9 +6,9 @@
 
 namespace SFG
 {
-	template <typename T> struct chunk_handle
+	struct chunk_handle32
 	{
-		T head = 0;
-		T size = 0;
+		uint32 head = 0;
+		uint32 size = 0;
 	};
 }

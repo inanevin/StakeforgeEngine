@@ -5,6 +5,7 @@
 #include "io/assert.hpp"
 #include "memory/memory.hpp"
 #include "data/vector_util.hpp"
+#include "memory/chunk_allocator.hpp"
 
 #ifdef SFG_TOOLMODE
 
@@ -210,7 +211,7 @@ namespace SFG
 		};
 
 	}
-	bool model::create_from_file(const char* file, const char* relative_path, world_resources& resources)
+	bool model_loaded::create_from_file(const char* file, const char* relative_path)
 	{
 		tinygltf::Model	   model;
 		tinygltf::TinyGLTF loader;
@@ -236,15 +237,16 @@ namespace SFG
 			return false;
 		}
 
-		_material_count = static_cast<uint8>(model.materials.size());
+		material_count = static_cast<uint8>(model.materials.size());
 
 		const size_t all_meshes_sz = model.meshes.size();
-		_all_meshes.resize(all_meshes_sz);
+		loaded_meshes.resize(all_meshes_sz);
 
 		for (size_t i = 0; i < all_meshes_sz; i++)
 		{
 			const tinygltf::Mesh& tmesh = model.meshes[i];
-			mesh&				  mesh	= _all_meshes[i];
+			mesh_loaded&		  mesh	= loaded_meshes[i];
+			mesh.name					= tmesh.name;
 
 			for (const tinygltf::Primitive& tprim : tmesh.primitives)
 			{
@@ -258,8 +260,8 @@ namespace SFG
 				const vector3 min_position = {static_cast<float>(vertex_accessor.minValues[0]), static_cast<float>(vertex_accessor.minValues[1]), static_cast<float>(vertex_accessor.minValues[2])};
 				const vector3 max_position = {static_cast<float>(vertex_accessor.maxValues[0]), static_cast<float>(vertex_accessor.maxValues[1]), static_cast<float>(vertex_accessor.maxValues[2])};
 
-				_total_aabb.bounds_min = vector3::min(_total_aabb.bounds_min, min_position);
-				_total_aabb.bounds_max = vector3::max(_total_aabb.bounds_max, max_position);
+				total_aabb.bounds_min = vector3::min(total_aabb.bounds_min, min_position);
+				total_aabb.bounds_max = vector3::max(total_aabb.bounds_max, max_position);
 
 				auto joints0  = tprim.attributes.find("JOINTS_0");
 				auto weights0 = tprim.attributes.find("WEIGHTS_0");
@@ -267,14 +269,14 @@ namespace SFG
 				// if skinned prim, fill joints & weights here & call generic fill_prim.
 				if (joints0 != tprim.attributes.end() && weights0 != tprim.attributes.end())
 				{
-					auto	   it	 = vector_util::find_if(mesh.primitives_skinned, [&tprim](const primitive_skinned& p) -> bool { return p.material_index == tprim.material; });
+					auto	   it	 = vector_util::find_if(mesh.primitives_skinned, [&tprim](const primitive_skinned_loaded& p) -> bool { return p.material_index == tprim.material; });
 					const bool found = it != mesh.primitives_skinned.end();
 					if (!found)
 						mesh.primitives_skinned.push_back({});
 
-					primitive_skinned& prim			= found ? *it : mesh.primitives_skinned.back();
-					const size_t	   start_vertex = prim.vertices.size();
-					const size_t	   start_index	= prim.indices.size();
+					primitive_skinned_loaded& prim		   = found ? *it : mesh.primitives_skinned.back();
+					const size_t			  start_vertex = prim.vertices.size();
+					const size_t			  start_index  = prim.indices.size();
 					prim.vertices.resize(start_vertex + num_vertices);
 
 					const tinygltf::Accessor&	joints_a   = model.accessors[joints0->second];
@@ -287,7 +289,7 @@ namespace SFG
 					SFG_ASSERT((joints_a.type == TINYGLTF_TYPE_VEC4 && (joints_a.componentType == TINYGLTF_COMPONENT_TYPE_UNSIGNED_SHORT || joints_a.componentType == TINYGLTF_COMPONENT_TYPE_UNSIGNED_BYTE)), "Unsupported component type!");
 					SFG_ASSERT((weights_a.type == TINYGLTF_TYPE_VEC4 && weights_a.componentType == TINYGLTF_COMPONENT_TYPE_FLOAT), "Unsupported component type!");
 					SFG_ASSERT(joints_a.count == weights_a.count);
-					SFG_ASSERT(joints_a.count == num_vertices * 4);
+					SFG_ASSERT(joints_a.count == num_vertices);
 
 					const size_t num_joints = joints_a.count;
 
@@ -322,24 +324,24 @@ namespace SFG
 					continue;
 				}
 
-				auto	   it	 = vector_util::find_if(mesh.primitives_static, [&tprim](const primitive_static& p) -> bool { return p.material_index == tprim.material; });
+				auto	   it	 = vector_util::find_if(mesh.primitives_static, [&tprim](const primitive_static_loaded& p) -> bool { return p.material_index == tprim.material; });
 				const bool found = it != mesh.primitives_static.end();
 				if (!found)
 					mesh.primitives_static.push_back({});
-				primitive_static& prim		   = found ? *it : mesh.primitives_static.back();
-				const size_t	  start_vertex = prim.vertices.size();
-				const size_t	  start_index  = prim.indices.size();
+				primitive_static_loaded& prim		  = found ? *it : mesh.primitives_static.back();
+				const size_t			 start_vertex = prim.vertices.size();
+				const size_t			 start_index  = prim.indices.size();
 				prim.vertices.resize(start_vertex + num_vertices);
 				fill_prim(prim, model, tprim, vertex_accessor, vertex_buffer_view, vertex_buffer, num_vertices, start_vertex, start_index);
 			}
 
 			const size_t all_nodes_sz = model.nodes.size();
-			_all_nodes.resize(all_nodes_sz);
+			loaded_nodes.resize(all_nodes_sz);
 
 			for (size_t i = 0; i < all_nodes_sz; i++)
 			{
 				const tinygltf::Node& tnode = model.nodes[i];
-				model_node&			  node	= _all_nodes[i];
+				model_node_loaded&	  node	= loaded_nodes[i];
 				node.name					= tnode.name;
 				node.mesh_index				= static_cast<int16>(tnode.mesh);
 
@@ -356,10 +358,10 @@ namespace SFG
 				}
 
 				for (int child : tnode.children)
-					_all_nodes[child].parent_index = i;
+					loaded_nodes[child].parent_index = i;
 
 				if (tnode.mesh != -1)
-					_all_meshes[tnode.mesh].node_index = static_cast<uint16>(i);
+					loaded_meshes[tnode.mesh].node_index = static_cast<uint16>(i);
 			}
 
 			const size_t all_skins_sz = model.skins.size();
@@ -368,12 +370,14 @@ namespace SFG
 			{
 				const tinygltf::Skin& tskin = model.skins[i];
 
-				const string			 hash_path = string(relative_path) + "/" + tskin.name;
-				const string_id			 hash	   = TO_SID(hash_path);
-				pool_handle<resource_id> handle	   = resources.create_skin(hash);
-				skin&					 skin	   = resources.get_skin(handle);
-				const size_t			 joints_sz = tskin.joints.size();
-				skin.name						   = tskin.name;
+				const string	hash_path = string(relative_path) + "/" + tskin.name;
+				const string_id hash	  = TO_SID(hash_path);
+				loaded_skins.push_back({});
+				skin_loaded& skin = loaded_skins.back();
+				skin.sid		  = hash;
+
+				const size_t joints_sz = tskin.joints.size();
+				skin.name			   = tskin.name;
 
 				skin.joints.resize(joints_sz);
 				skin.root_joint = static_cast<int16>(tskin.skeleton);
@@ -389,7 +393,7 @@ namespace SFG
 				{
 					const size_t stride		 = inverse_bind_bv.byteStride == 0 ? sizeof(float) * 16 : inverse_bind_bv.byteStride;
 					const float* raw		 = reinterpret_cast<const float*>(inverse_bind_b.data.data() + inverse_bind_a.byteOffset + inverse_bind_bv.byteOffset + j * stride);
-					const int32	 joint_index = tskin.joints[joints_sz];
+					const int32	 joint_index = tskin.joints[j];
 
 					skin_joint& sj		= skin.joints[j];
 					sj.model_node_index = static_cast<int16>(joint_index);
@@ -403,12 +407,13 @@ namespace SFG
 
 			for (size_t i = 0; i < all_anims_sz; i++)
 			{
-				tinygltf::Animation&	 tanim	   = model.animations[i];
-				const string			 hash_path = string(relative_path) + "/" + tanim.name;
-				const string_id			 hash	   = TO_SID(hash_path);
-				pool_handle<resource_id> handle	   = resources.create_animation(hash);
-				animation&				 anim	   = resources.get_animation(handle);
-				anim.name						   = tanim.name;
+				tinygltf::Animation& tanim	   = model.animations[i];
+				const string		 hash_path = string(relative_path) + "/" + tanim.name;
+				const string_id		 hash	   = TO_SID(hash_path);
+				loaded_animations.push_back({});
+				animation_loaded& anim = loaded_animations.back();
+				anim.sid			   = hash;
+				anim.name			   = tanim.name;
 
 				const size_t channels_sz = tanim.channels.size();
 
@@ -464,7 +469,7 @@ namespace SFG
 
 					if (is_translation || is_scale)
 					{
-						animation_channel_v3* channel = nullptr;
+						animation_channel_v3_loaded* channel = nullptr;
 
 						if (is_translation)
 						{
@@ -498,21 +503,21 @@ namespace SFG
 							for (size_t k = 0; k < input_count; k++)
 							{
 								size_t base = k * 3;
-								channel->keyframes_spline.push_back({});
-								animation_keyframe_v3 kf = channel->keyframes.back();
-								kf.value				 = vector3(raw_float_data[base], raw_float_data[base + 1], raw_float_data[base + 2]);
-								kf.time					 = keyframe_times[k];
+								channel->keyframes.push_back({});
+								animation_keyframe_v3& kf = channel->keyframes.back();
+								kf.value				  = vector3(raw_float_data[base], raw_float_data[base + 1], raw_float_data[base + 2]);
+								kf.time					  = keyframe_times[k];
 							}
 						}
 					}
 					else if (tchannel.target_path.compare("rotation") == 0)
 					{
 						anim.rotation_channels.push_back({});
-						animation_channel_q& channel = anim.rotation_channels.back();
-						channel.interpolation		 = interpolation;
-						channel.node_index			 = static_cast<int16>(tchannel.target_node);
+						animation_channel_q_loaded& channel = anim.rotation_channels.back();
+						channel.interpolation				= interpolation;
+						channel.node_index					= static_cast<int16>(tchannel.target_node);
 
-						if (interpolation == animation_interpolation::linear)
+						if (interpolation == animation_interpolation::cubic_spline)
 						{
 							for (size_t k = 0; k < input_count; k++)
 							{
@@ -531,10 +536,10 @@ namespace SFG
 							for (size_t k = 0; k < input_count; k++)
 							{
 								size_t base = k * 4;
-								channel.keyframes_spline.push_back({});
-								animation_keyframe_q kf = channel.keyframes.back();
-								kf.value				= quat(raw_float_data[base], raw_float_data[base + 1], raw_float_data[base + 2], raw_float_data[base + 3]);
-								kf.time					= keyframe_times[k];
+								channel.keyframes.push_back({});
+								animation_keyframe_q& kf = channel.keyframes.back();
+								kf.value				 = quat(raw_float_data[base], raw_float_data[base + 1], raw_float_data[base + 2], raw_float_data[base + 3]);
+								kf.time					 = keyframe_times[k];
 							}
 						}
 					}
@@ -545,9 +550,156 @@ namespace SFG
 			}
 		}
 
-		_total_aabb.update_half_extents();
-		_flags.set(model::flags::pending_upload);
+		total_aabb.update_half_extents();
+		SFG_INFO("Loaded model from file: {0}", file);
 		return true;
 	}
+
 #endif
+
+	model::~model()
+	{
+		SFG_ASSERT(!_flags.is_set(model::flags::hw_exists));
+	}
+
+	void model::create_from_loaded(const model_loaded& loaded, chunk_allocator32& alloc, world_resources& resources)
+	{
+		SFG_ASSERT(!_flags.is_set(model::flags::hw_exists));
+
+		_total_aabb		= loaded.total_aabb;
+		_material_count = loaded.material_count;
+
+		const uint16 node_count	 = static_cast<uint16>(loaded.loaded_nodes.size());
+		const uint16 mesh_count	 = static_cast<uint16>(loaded.loaded_meshes.size());
+		const uint16 skins_count = static_cast<uint16>(loaded.loaded_skins.size());
+		const uint16 anims_count = static_cast<uint16>(loaded.loaded_animations.size());
+
+		if (node_count != 0)
+		{
+			_nodes				  = alloc.allocate<model_node>(node_count);
+			model_node* ptr_nodes = alloc.get<model_node>(_nodes);
+
+			for (uint16 i = 0; i < node_count; i++)
+			{
+				const model_node_loaded& loaded_node = loaded.loaded_nodes[i];
+				model_node&				 node		 = ptr_nodes[i];
+				node.create_from_loaded(loaded_node, alloc);
+			}
+		}
+
+		if (mesh_count != 0)
+		{
+			_meshes			 = alloc.allocate<mesh>(mesh_count);
+			mesh* ptr_meshes = alloc.get<mesh>(_meshes);
+
+			for (uint16 i = 0; i < mesh_count; i++)
+			{
+				const mesh_loaded& loaded_mesh = loaded.loaded_meshes[i];
+				mesh&			   m		   = ptr_meshes[i];
+				m.create_from_loaded(loaded_mesh, alloc);
+			}
+		}
+
+		if (skins_count != 0)
+		{
+			_created_skins			 = alloc.allocate<pool_handle16>(skins_count);
+			pool_handle16* skins_ptr = alloc.get<pool_handle16>(_created_skins);
+
+			for (uint16 i = 0; i < skins_count; i++)
+			{
+				const skin_loaded&	loaded_skin = loaded.loaded_skins[i];
+				const pool_handle16 handle		= resources.create_resource<skin>(loaded_skin.sid);
+				skins_ptr[i]					= handle;
+				skin& created					= resources.get_resource<skin>(handle);
+				created.create_from_loaded(loaded_skin, alloc);
+			}
+		}
+
+		if (anims_count != 0)
+		{
+			_created_anims			 = alloc.allocate<pool_handle16>(anims_count);
+			pool_handle16* anims_ptr = alloc.get<pool_handle16>(_created_anims);
+
+			for (uint16 i = 0; i < anims_count; i++)
+			{
+				const animation_loaded& loaded_anim = loaded.loaded_animations[i];
+				const pool_handle16		handle		= resources.create_resource<animation>(loaded_anim.sid);
+				anims_ptr[i]						= handle;
+				animation& created					= resources.get_resource<animation>(handle);
+				created.create_from_loaded(loaded_anim, alloc);
+			}
+		}
+
+		_skins_count  = skins_count;
+		_anims_count  = anims_count;
+		_meshes_count = mesh_count;
+		_nodes_count  = node_count;
+		_flags.set(model::flags::pending_upload | model::flags::hw_exists);
+	}
+
+	void model::destroy(world_resources& resources, chunk_allocator32& alloc)
+	{
+		SFG_ASSERT(_flags.is_set(model::flags::hw_exists));
+
+		if (_nodes.size != 0)
+		{
+			model_node* ptr_nodes = alloc.get<model_node>(_nodes);
+
+			for (uint16 i = 0; i < _nodes_count; i++)
+			{
+				model_node& node = ptr_nodes[i];
+				node.destroy(alloc);
+			}
+
+			alloc.free(_nodes);
+		}
+
+		if (_meshes.size != 0)
+		{
+			mesh* ptr_meshes = alloc.get<mesh>(_meshes);
+			for (uint16 i = 0; i < _meshes_count; i++)
+			{
+				mesh& m = ptr_meshes[i];
+				m.destroy(alloc);
+			}
+
+			alloc.free(_meshes);
+		}
+
+		if (_created_skins.size != 0)
+		{
+			pool_handle16* skins_ptr = alloc.get<pool_handle16>(_created_skins);
+
+			for (uint16 i = 0; i < _skins_count; i++)
+			{
+				const pool_handle16 handle = skins_ptr[i];
+				skin&				sk	   = resources.get_resource<skin>(handle);
+				sk.destroy(alloc);
+				resources.destroy_resource<skin>(handle);
+			}
+
+			alloc.free(_created_skins);
+		}
+
+		if (_created_anims.size != 0)
+		{
+			pool_handle16* anims_ptr = alloc.get<pool_handle16>(_created_anims);
+
+			for (uint16 i = 0; i < _anims_count; i++)
+			{
+				const pool_handle16 handle = anims_ptr[i];
+				animation&			anim   = resources.get_resource<animation>(handle);
+				anim.destroy(alloc);
+				resources.destroy_resource<animation>(handle);
+			}
+
+			alloc.free(_created_anims);
+		}
+
+		_meshes		   = {};
+		_nodes		   = {};
+		_created_skins = {};
+		_created_anims = {};
+		_flags.remove(model::flags::hw_exists);
+	}
 }

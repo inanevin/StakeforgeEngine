@@ -1,6 +1,6 @@
 // Copyright (c) 2025 Inan Evin
 
-#include "trait_view.hpp"
+#include "primitive.hpp"
 
 namespace SFG
 {

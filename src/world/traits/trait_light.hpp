@@ -1,6 +1,8 @@
 // Copyright (c) 2025 Inan Evin
 #pragma once
-#include "world/common_world.hpp"
+#include "world/common_entity.hpp"
+#include "memory/pool_handle.hpp"
+#include "data/bitmask.hpp"
 #include "common_trait.hpp"
 
 namespace SFG
@@ -9,6 +11,8 @@ namespace SFG
 
 	struct trait_light
 	{
+		static constexpr uint32 TYPE_INDEX = 0;
+
 		pool_handle<world_id> entity = {};
 		bitmask<uint8>		  flags	 = 0;
 

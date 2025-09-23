@@ -2,13 +2,13 @@
 
 #pragma once
 
-#include "math/vector4.hpp"
 #include "data/string_id.hpp"
 #include "data/static_vector.hpp"
 #include "data/bitmask.hpp"
 #include "data/ostream.hpp"
 #include "gfx/buffer.hpp"
 #include "memory/pool_handle.hpp"
+#include "resources/common_resources.hpp"
 
 #ifdef SFG_TOOLMODE
 #include "vendor/nhlohmann/json.hpp"
@@ -52,6 +52,8 @@ namespace SFG
 	{
 	private:
 	public:
+		static constexpr uint32 TYPE_INDEX = resource_types::resource_type_material;
+
 		enum flags
 		{
 			is_opaque  = 1 << 0,
@@ -97,12 +99,12 @@ namespace SFG
 		}
 
 	private:
-		ostream															 _material_data				= {};
-		buffer															 _buffers[FRAMES_IN_FLIGHT] = {};
-		static_vector<pool_handle<gfx_id>, MAX_MATERIAL_SHADER_VARIANTS> _all_shaders;
-		gfx_id															 _default_shader				= 0;
-		gfx_id															 _bind_groups[FRAMES_IN_FLIGHT] = {};
-		bitmask<uint8>													 _flags							= 0;
+		ostream													   _material_data			  = {};
+		buffer													   _buffers[FRAMES_IN_FLIGHT] = {};
+		static_vector<pool_handle16, MAX_MATERIAL_SHADER_VARIANTS> _all_shaders;
+		gfx_id													   _default_shader				  = 0;
+		gfx_id													   _bind_groups[FRAMES_IN_FLIGHT] = {};
+		bitmask<uint8>											   _flags						  = 0;
 	};
 
 }

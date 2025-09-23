@@ -11,4 +11,21 @@ namespace SFG
 		T id;
 		T generation;
 	};
+
+	struct pool_handle16
+	{
+		uint16 generation = 0;
+		uint16 index	  = 0;
+
+		bool operator==(const pool_handle16& other) const
+		{
+			return generation == other.generation && index == other.index;
+		}
+
+		bool is_null() const
+		{
+			return generation == 0;
+		}
+	};
+
 }

@@ -6,9 +6,45 @@
 #include "project/engine_data.hpp"
 #include "world/world.hpp"
 #include "gfx/renderer.hpp"
+#include "world/common_world.hpp"
+
+#include "resources/texture.hpp"
+#include "resources/texture_sampler.hpp"
+#include "resources/model.hpp"
+#include "resources/shader.hpp"
+#include "resources/skin.hpp"
+#include "resources/animation.hpp"
+#include "resources/material.hpp"
 
 namespace SFG
 {
+
+	world_resources::world_resources()
+	{
+		_aux_memory.init(1024 * 1024 * 4);
+		_storages.resize(resource_types::resource_type_engine_max);
+
+		auto				  init_storage = [this]<typename T>(size_t count) { _storages[T::TYPE_INDEX].storage.init<T>(count); };
+		init_storage.template operator()<texture>(MAX_WORLD_TEXTURES);
+		init_storage.template operator()<texture_sampler>(MAX_WORLD_TEXTURES);
+		init_storage.template operator()<model>(MAX_WORLD_MODELS);
+		init_storage.template operator()<animation>(MAX_WORLD_ANIMS);
+		init_storage.template operator()<skin>(MAX_WORLD_SKINS);
+		init_storage.template operator()<shader>(MAX_WORLD_SHADERS);
+		init_storage.template operator()<material>(MAX_WORLD_MATERIALS);
+		_storages[resource_type_audio].storage.init<int>(100); // audio dummy
+		_storages[resource_type_font].storage.init<int>(100);  // fonts dummy
+	}
+
+	world_resources::~world_resources()
+	{
+		_aux_memory.uninit();
+		for (resource_storage& stg : _storages)
+		{
+			stg.storage.uninit();
+		}
+	}
+
 	void world_resources::init(world* w)
 	{
 		_world = w;
@@ -17,36 +53,28 @@ namespace SFG
 
 	void world_resources::uninit()
 	{
+		_aux_memory.reset();
+		for (resource_storage& stg : _storages)
+			stg.storage.reset();
+
 		_world = nullptr;
 		debug_console::get()->unregister_console_function("world_load_texture");
-
-		_textures.verify_uninit();
-		_models.verify_uninit();
-		_anims.verify_uninit();
-		_skins.verify_uninit();
-		_shaders.verify_uninit();
-		_materials.verify_uninit();
-
-		_textures.reset();
-		_models.reset();
-		_anims.reset();
-		_skins.reset();
-		_shaders.reset();
-		_materials.reset();
 	}
 
 #ifdef SFG_TOOLMODE
 
-	pool_handle<resource_id> world_resources::load_texture(const char* relative_path)
+	resource_handle world_resources::load_texture(const char* relative_path)
 	{
+		resource_storage& stg = _storages[texture::TYPE_INDEX];
+
 		const string_id sid = TO_SIDC(relative_path);
-		auto			it	= _texture_hashes.find(sid);
-		if (it != _texture_hashes.end())
+		auto			it	= stg.by_hashes.find(sid);
+		if (it != stg.by_hashes.end())
 			return it->second;
 		const string abs_path = engine_data::get().get_working_dir() + relative_path;
 
-		const pool_handle<resource_id> txt = create_texture(sid);
-		texture&					   res = get_texture(txt);
+		const resource_handle txt = create_resource<texture>(sid);
+		texture&			  res = get_resource<texture>(txt);
 
 		if (res.create_from_file(abs_path.c_str()))
 		{
@@ -56,47 +84,53 @@ namespace SFG
 		else
 		{
 			SFG_ERR("Failed loading texture: {0}", abs_path);
-			destroy_texture(txt);
+			destroy_resource<texture>(txt);
 		}
 
 		return txt;
 	}
 
-	pool_handle<resource_id> world_resources::load_model(const char* path)
+	resource_handle world_resources::load_model(const char* path)
 	{
+		resource_storage& stg = _storages[model::TYPE_INDEX];
+
 		const string_id sid = TO_SIDC(path);
-		auto			it	= _model_hashes.find(sid);
-		if (it != _model_hashes.end())
+		auto			it	= stg.by_hashes.find(sid);
+		if (it != stg.by_hashes.end())
 			return it->second;
 		const string abs_path = engine_data::get().get_working_dir() + path;
 
-		const pool_handle<resource_id> handle = create_model(sid);
-		model&						   mdl	  = get_model(handle);
+		const resource_handle handle = create_resource<model>(sid);
+		model&				  mdl	 = get_resource<model>(handle);
 
-		if (mdl.create_from_file(abs_path.c_str(), path, *this))
+		model_loaded loaded = {};
+		if (loaded.create_from_file(abs_path.c_str(), path))
 		{
+			mdl.create_from_loaded(loaded, _aux_memory, *this);
 			SFG_INFO("Loaded model: {0}", abs_path);
 			_world->get_renderer()->get_resource_uploads().add_pending_model(&mdl);
 		}
 		else
 		{
 			SFG_ERR("Failed loading model: {0}", abs_path);
-			destroy_model(handle);
+			destroy_resource<model>(handle);
 		}
 
 		return handle;
 	}
 
-	pool_handle<resource_id> world_resources::load_shader(const char* path)
+	resource_handle world_resources::load_shader(const char* path)
 	{
+		resource_storage& stg = _storages[shader::TYPE_INDEX];
+
 		const string_id sid = TO_SIDC(path);
-		auto			it	= _shader_hashes.find(sid);
-		if (it != _shader_hashes.end())
+		auto			it	= stg.by_hashes.find(sid);
+		if (it != stg.by_hashes.end())
 			return it->second;
 		const string abs_path = engine_data::get().get_working_dir() + path;
 
-		const pool_handle<resource_id> handle = create_shader(sid);
-		shader&						   res	  = get_shader(handle);
+		const resource_handle handle = create_resource<shader>(sid);
+		shader&				  res	 = get_resource<shader>(handle);
 
 		if (res.create_from_file_vertex_pixel(abs_path.c_str(), false, renderer::get_bind_layout_global()))
 		{
@@ -105,22 +139,24 @@ namespace SFG
 		else
 		{
 			SFG_ERR("Failed loading shader: {0}", abs_path);
-			destroy_shader(handle);
+			destroy_resource<shader>(handle);
 		}
 
 		return handle;
 	}
 
-	pool_handle<resource_id> world_resources::load_material(const char* path)
+	resource_handle world_resources::load_material(const char* path)
 	{
+		resource_storage& stg = _storages[material::TYPE_INDEX];
+
 		const string_id sid = TO_SIDC(path);
-		auto			it	= _material_hashes.find(sid);
-		if (it != _material_hashes.end())
+		auto			it	= stg.by_hashes.find(sid);
+		if (it != stg.by_hashes.end())
 			return it->second;
 		const string abs_path = engine_data::get().get_working_dir() + path;
 
-		const pool_handle<resource_id> handle = create_material(sid);
-		material&					   mat	  = get_material(handle);
+		const resource_handle handle = create_resource<material>(sid);
+		material&			  mat	 = get_resource<material>(handle);
 
 		if (mat.create_from_file(abs_path.c_str(), *this))
 		{
@@ -129,7 +165,7 @@ namespace SFG
 		else
 		{
 			SFG_ERR("Failed loading material: {0}", abs_path);
-			destroy_material(handle);
+			destroy_resource<material>(handle);
 		}
 		return handle;
 	}

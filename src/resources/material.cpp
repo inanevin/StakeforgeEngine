@@ -2,14 +2,15 @@
 
 #include "material.hpp"
 #include "data/string.hpp"
+#include "math/vector2.hpp"
+#include "math/vector4.hpp"
 #include "gfx/common/descriptions.hpp"
 #include "gfx/backend/backend.hpp"
 #include "gfx/util/gfx_util.hpp"
 #include "io/assert.hpp"
 #include "world/world_resources.hpp"
 #include "resources/texture.hpp"
-#include "math/vector2.hpp"
-#include "data/static_vector.hpp"
+#include "resources/shader.hpp"
 
 #ifdef SFG_TOOLMODE
 #include <fstream>
@@ -115,9 +116,9 @@ namespace SFG
 			}
 
 			for (const string& sh : meta.shaders)
-				_all_shaders.push_back(resources.get_shader_handle_by_hash(TO_SID(sh)));
+				_all_shaders.push_back(resources.get_resource_handle_by_hash<shader>(TO_SID(sh)));
 			SFG_ASSERT(!_all_shaders.empty());
-			_default_shader = resources.get_shader(_all_shaders[0]).get_hw();
+			_default_shader = resources.get_resource<shader>(_all_shaders[0]).get_hw();
 
 			close_material_data(resources, textures.data(), static_cast<uint8>(textures.size()));
 		}
@@ -127,6 +128,7 @@ namespace SFG
 			return false;
 		}
 
+		SFG_INFO("Created material from file: {0}", file);
 		return true;
 	}
 
@@ -184,7 +186,7 @@ namespace SFG
 			for (uint8 k = 0; k < texture_count; k++)
 			{
 				updates.push_back({
-					.resource	   = resources.get_texture_by_hash(textures[k]).get_hw(),
+					.resource	   = resources.get_resource_by_hash<texture>(textures[k]).get_hw(),
 					.pointer_index = static_cast<uint8>(upi_material_texture0 + k),
 					.type		   = binding_type::texture_binding,
 				});
@@ -197,9 +199,9 @@ namespace SFG
 
 	gfx_id material::get_shader(world_resources& resources, uint8 flags_to_match) const
 	{
-		for (pool_handle<resource_id> handle : _all_shaders)
+		for (pool_handle16 handle : _all_shaders)
 		{
-			const shader& sh = resources.get_shader(handle);
+			const shader& sh = resources.get_resource<shader>(handle);
 			if (sh.get_flags().is_set(flags_to_match))
 				return sh.get_hw();
 		}

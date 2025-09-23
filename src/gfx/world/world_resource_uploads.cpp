@@ -63,41 +63,41 @@ namespace SFG
 			_last_upload_frame = frame_info::get_render_frame();
 		}
 
-		for (model* mdl : _reuse_pending_models)
-		{
-			vector<mesh>& meshes = mdl->get_meshes();
-
-			for (mesh& m : meshes)
-			{
-				for (primitive_static& p : m.primitives_static)
-				{
-					p.runtime.vertex_start = _mesh_data.current_vertex_size;
-					p.runtime.index_start  = _mesh_data.current_index_size;
-
-					const size_t sz = sizeof(primitive_index) * p.indices.size();
-					_mesh_data.big_index_buffer.buffer_data(_mesh_data.current_index_size, p.indices.data(), sz);
-					_mesh_data.current_index_size += sz;
-
-					const size_t vsz = sizeof(vertex_static) * p.vertices.size();
-					_mesh_data.big_vertex_buffer.buffer_data(_mesh_data.current_vertex_size, p.vertices.data(), vsz);
-					_mesh_data.current_vertex_size += sz;
-				}
-
-				for (primitive_skinned& p : m.primitives_skinned)
-				{
-					p.runtime.vertex_start = _mesh_data.current_vertex_size;
-					p.runtime.index_start  = _mesh_data.current_index_size;
-
-					const size_t sz = sizeof(primitive_index) * p.indices.size();
-					_mesh_data.big_index_buffer.buffer_data(_mesh_data.current_index_size, p.indices.data(), sz);
-					_mesh_data.current_index_size += sz;
-
-					const size_t vsz = sizeof(vertex_skinned) * p.vertices.size();
-					_mesh_data.big_vertex_buffer.buffer_data(_mesh_data.current_vertex_size, p.vertices.data(), vsz);
-					_mesh_data.current_vertex_size += sz;
-				}
-			}
-		}
+		// for (model* mdl : _reuse_pending_models)
+		//{
+		//	vector<mesh>& meshes = mdl->get_meshes();
+		//
+		//	for (mesh& m : meshes)
+		//	{
+		//		for (primitive_static& p : m.primitives_static)
+		//		{
+		//			// p.runtime.vertex_start = _mesh_data.current_vertex_size;
+		//			// p.runtime.index_start  = _mesh_data.current_index_size;
+		//
+		//			const size_t sz = sizeof(primitive_index) * p.indices.size();
+		//			_mesh_data.big_index_buffer.buffer_data(_mesh_data.current_index_size, p.indices.data(), sz);
+		//			_mesh_data.current_index_size += sz;
+		//
+		//			const size_t vsz = sizeof(vertex_static) * p.vertices.size();
+		//			_mesh_data.big_vertex_buffer.buffer_data(_mesh_data.current_vertex_size, p.vertices.data(), vsz);
+		//			_mesh_data.current_vertex_size += sz;
+		//		}
+		//
+		//		for (primitive_skinned& p : m.primitives_skinned)
+		//		{
+		//			//p.runtime.vertex_start = _mesh_data.current_vertex_size;
+		//			//p.runtime.index_start  = _mesh_data.current_index_size;
+		//
+		//			const size_t sz = sizeof(primitive_index) * p.indices.size();
+		//			_mesh_data.big_index_buffer.buffer_data(_mesh_data.current_index_size, p.indices.data(), sz);
+		//			_mesh_data.current_index_size += sz;
+		//
+		//			const size_t vsz = sizeof(vertex_skinned) * p.vertices.size();
+		//			_mesh_data.big_vertex_buffer.buffer_data(_mesh_data.current_vertex_size, p.vertices.data(), vsz);
+		//			_mesh_data.current_vertex_size += sz;
+		//		}
+		//	}
+		// }
 
 		if (!_reuse_pending_models.empty())
 		{

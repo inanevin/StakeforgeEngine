@@ -349,7 +349,6 @@ namespace SFG
 		_gfx_data.texture_queue = texture_queue;
 		_gfx_data.rt_size		= vector2ui16(screen_size.x, screen_size.y / 2);
 		_gfx_data.window_size	= vector2ui16(screen_size.x, screen_size.y);
-		log::instance().add_listener(TO_SIDC("debug_controller"), std::bind(&debug_controller::on_log, this, std::placeholders::_1, std::placeholders::_2));
 
 		gfx_backend* backend = gfx_backend::get();
 
@@ -485,6 +484,8 @@ namespace SFG
 
 			in.destroy();
 		}
+
+		log::instance().add_listener(TO_SIDC("debug_controller"), std::bind(&debug_controller::on_log, this, std::placeholders::_1, std::placeholders::_2));
 	}
 
 	void debug_controller::uninit()

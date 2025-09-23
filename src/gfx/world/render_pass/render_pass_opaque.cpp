@@ -69,27 +69,27 @@ namespace SFG
 
 		world_resources& resources = w->get_resources();
 
-		for (const renderable_object& obj : wd.renderables)
-		{
-			const material&		  mat	= resources.get_material(obj.material);
-			const bitmask<uint8>& flags = mat.get_flags();
-
-			if (!flags.is_set(material::flags::is_opaque))
-				continue;
-
-			rd.draws.push_back({
-				.constants =
-					{
-						.constant0 = obj.gpu_entity,
-					},
-				.base_vertex	= obj.vertex_start,
-				.index_count	= obj.index_count,
-				.instance_count = 1,
-				.start_index	= obj.index_start,
-				.start_instance = 0,
-				.pipeline		= mat.get_shader(resources, obj.is_skinned ? shader::flags::is_skinned : 0),
-			});
-		}
+		// for (const renderable_object& obj : wd.renderables)
+		//{
+		//	const material&		  mat	= resources.get_material(obj.material);
+		//	const bitmask<uint8>& flags = mat.get_flags();
+		//
+		//	if (!flags.is_set(material::flags::is_opaque))
+		//		continue;
+		//
+		//	rd.draws.push_back({
+		//		.constants =
+		//			{
+		//				.constant0 = obj.gpu_entity,
+		//			},
+		//		.base_vertex	= obj.vertex_start,
+		//		.index_count	= obj.index_count,
+		//		.instance_count = 1,
+		//		.start_index	= obj.index_start,
+		//		.start_instance = 0,
+		//		.pipeline		= mat.get_shader(resources, obj.is_skinned ? shader::flags::is_skinned : 0),
+		//	});
+		// }
 	}
 
 	void render_pass_opaque::upload(world* w, buffer_queue* queue, uint8 data_index, uint8 frame_index)

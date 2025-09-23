@@ -1,24 +1,26 @@
 // Copyright (c) 2025 Inan Evin
-#pragma once
-#include "math/vector2.hpp"
-#include "math/vector3.hpp"
-#include "math/vector4.hpp"
-#include "math/vector4i.hpp"
+
+#include "model_node.hpp"
+#include "memory/chunk_allocator.hpp"
 
 namespace SFG
 {
-	struct vertex_static
+	void model_node::create_from_loaded(const model_node_loaded& loaded, chunk_allocator32& alloc)
 	{
-		vector3 pos	   = vector3::zero;
-		vector3 normal = vector3::zero;
-		vector2 uv	   = vector2::zero;
-	};
+		if (!loaded.name.empty())
+		{
+			name = alloc.allocate<uint8>(loaded.name.size());
+			strcpy((char*)alloc.get(name.head), loaded.name.data());
+		}
 
-	struct vertex_skinned
+		parent_index = loaded.parent_index;
+		mesh_index	 = loaded.mesh_index;
+		local_matrix = loaded.local_matrix;
+	}
+
+	void model_node::destroy(chunk_allocator32& alloc)
 	{
-		vector3 pos			 = vector3::zero;
-		vector3 normal		 = vector3::zero;
-		vector2 uv			 = vector2::zero;
-		vector4 bone_weights = vector4::zero;
-	};
+		if (name.size != 0)
+			alloc.free(name);
+	}
 }

@@ -113,14 +113,15 @@ namespace SFG
 
 			meta.desc.layout_data = {};
 			meta.desc.blobs		  = {};
-
-			return true;
 		}
 		catch (std::exception e)
 		{
 			SFG_ERR("Failed loading shader: {0}", e.what());
 			return false;
 		}
+
+		SFG_INFO("Created shader from file: {0}", path);
+		return true;
 	}
 
 #endif

@@ -2,13 +2,11 @@
 
 #pragma once
 #include "data/bitmask.hpp"
-#include "memory/pool_allocator.hpp"
 #include "common_world.hpp"
 #include "data/vector.hpp"
 #include "memory/text_allocator.hpp"
 #include "world/world_resources.hpp"
 #include "gfx/camera.hpp"
-
 #include "entity_manager.hpp"
 
 namespace SFG

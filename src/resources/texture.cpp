@@ -111,6 +111,8 @@ namespace SFG
 			return false;
 		}
 
+		SFG_INFO("Created texture from file: {0}", file);
+
 		return true;
 	}
 #endif

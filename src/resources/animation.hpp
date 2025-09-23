@@ -3,8 +3,12 @@
 
 #include "common/size_definitions.hpp"
 #include "data/vector.hpp"
+#include "data/string_id.hpp"
 #include "math/vector3.hpp"
 #include "math/quat.hpp"
+#include "world/common_world.hpp"
+#include "resources/common_resources.hpp"
+#include "memory/chunk_handle.hpp"
 
 #ifdef SFG_TOOLMODE
 #include "data/string.hpp"
@@ -12,7 +16,9 @@
 
 namespace SFG
 {
-	enum class animation_interpolation
+	class chunk_allocator32;
+
+	enum class animation_interpolation : uint8
 	{
 		linear,
 		step,
@@ -47,34 +53,74 @@ namespace SFG
 		quat  out_tangent = quat();
 	};
 
-	struct animation_channel_v3
+	struct animation_channel_v3_loaded
 	{
 		animation_interpolation				 interpolation = animation_interpolation::linear;
 		vector<animation_keyframe_v3>		 keyframes;
 		vector<animation_keyframe_v3_spline> keyframes_spline;
 		int16								 node_index = -1;
-
-		vector3 sample(float time) const;
 	};
 
-	struct animation_channel_q
+	struct animation_channel_v3
+	{
+		animation_interpolation interpolation = animation_interpolation::linear;
+		chunk_handle32			keyframes;
+		chunk_handle32			keyframes_spline;
+		int16					node_index = -1;
+
+		void create_from_loaded(const animation_channel_v3_loaded& loaded, chunk_allocator32& alloc);
+		void destroy(chunk_allocator32& alloc);
+
+		vector3 sample(float time, chunk_allocator32& alloc) const;
+	};
+
+	struct animation_channel_q_loaded
 	{
 		animation_interpolation				interpolation = animation_interpolation::linear;
 		vector<animation_keyframe_q>		keyframes;
 		vector<animation_keyframe_q_spline> keyframes_spline;
 		int16								node_index = -1;
-
-		quat sample(float time) const;
 	};
 
-	struct animation
+	struct animation_channel_q
 	{
-#ifdef SFG_TOOLMODE
-		string name = "";
-#endif
-		float						 duration = 0.0f;
-		vector<animation_channel_v3> position_channels;
-		vector<animation_channel_v3> scale_channels;
-		vector<animation_channel_q>	 rotation_channels;
+		animation_interpolation interpolation = animation_interpolation::linear;
+		chunk_handle32			keyframes;
+		chunk_handle32			keyframes_spline;
+		int16					node_index = -1;
+
+		void create_from_loaded(const animation_channel_q_loaded& loaded, chunk_allocator32& alloc);
+		void destroy(chunk_allocator32& alloc);
+
+		quat sample(float time, chunk_allocator32& alloc) const;
+	};
+
+	struct animation_loaded
+	{
+		string								name	 = "";
+		string_id							sid		 = 0;
+		float								duration = 0.0f;
+		vector<animation_channel_v3_loaded> position_channels;
+		vector<animation_channel_q_loaded>	rotation_channels;
+		vector<animation_channel_v3_loaded> scale_channels;
+	};
+
+	class animation
+	{
+	public:
+		static constexpr uint32 TYPE_INDEX = resource_types::resource_type_animation;
+
+		void create_from_loaded(const animation_loaded& loaded, chunk_allocator32& alloc);
+		void destroy(chunk_allocator32& alloc);
+
+	private:
+		float		   _duration = 0.0f;
+		chunk_handle32 _name;
+		chunk_handle32 _position_channels;
+		chunk_handle32 _scale_channels;
+		chunk_handle32 _rotation_channels;
+		uint16		   _position_count = 0;
+		uint16		   _rotation_count = 0;
+		uint16		   _scale_count	   = 0;
 	};
 }

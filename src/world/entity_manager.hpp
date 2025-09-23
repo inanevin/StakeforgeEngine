@@ -2,99 +2,92 @@
 
 #pragma once
 #include "common_world.hpp"
-#include "memory/pool_allocator.hpp"
+#include "common_entity.hpp"
+#include "traits/common_trait.hpp"
+#include "memory/pool_allocator_simple.hpp"
+#include "memory/pool_allocator16.hpp"
+#include "data/static_vector.hpp"
 #include "memory/chunk_allocator.hpp"
 #include "math/aabb.hpp"
 #include "math/matrix4x3.hpp"
-
-#include "world/traits/trait_model_renderable.hpp"
-#include "world/traits/trait_view.hpp"
-#include "world/traits/trait_light.hpp"
-#include <tuple>
+#include "math/quat.hpp"
+#include <gui/vekt.hpp>
+#include <functional>
 
 namespace SFG
 {
 	class world;
 
-	// clang-format off
-#define DEFINE_TRAIT_FUNCS(TRAITNAME, VIEWNAME)                             \
-	pool_handle<world_id> add_##TRAITNAME(pool_handle<world_id> entity, ##TRAITNAME initial = {})     \
-	{                                                                       \
-		auto&				  pool	 = ##VIEWNAME.get_pool();               \
-		pool_handle<world_id> handle = pool.add();                          \
-		auto&				  trait	 = pool.get(handle);                    \
-		trait = initial;													\
-		trait.entity				 = entity;                              \
-		##TRAITNAME::on_add(*this, trait);                                  \
-		return handle;                                                      \
-	}																		\
-	void remove_##TRAITNAME(pool_handle<world_id> handle)                   \
-	{                                                                       \
-		auto& pool	= ##VIEWNAME.get_pool();                                \
-		auto& trait = pool.get(handle);                                     \
-		##TRAITNAME::on_remove(*this, trait);                               \
-		pool.remove(handle);												\
-	}																		\
-	##TRAITNAME& get_##TRAITNAME(pool_handle<world_id> handle)              \
-	{																		\
-		auto& pool = ##VIEWNAME.get_pool();									\
-		return pool.get(handle);											\
-	}																		\
-	inline auto& get_view_##TRAITNAME()											\
-	{																		\
-		auto& view = ##VIEWNAME;											\
-		return view;														\
-	}
-
-	// clang-format on
+	struct trait_storage
+	{
+		pool_allocator16 storage;
+	};
 
 	class entity_manager
 	{
 	public:
 		entity_manager() = delete;
-		entity_manager(world& w) : _world(w){};
+		entity_manager(world& w);
+		~entity_manager();
 
 		void init();
 		void uninit();
 
-		pool_handle<world_id> create_entity(const char* name = "entity");
-		void				  destroy_entity(pool_handle<world_id> handle);
-		aabb&				  get_entity_aabb(pool_handle<world_id> entity);
+		entity_handle create_entity(const char* name = "entity");
+		void		  destroy_entity(entity_handle handle);
+		void		  add_child(entity_handle parent, entity_handle child);
+		void		  remove_child(entity_handle parent, entity_handle child);
+		void		  remove_from_parent(entity_handle entity);
+		entity_handle get_child_by_index(entity_handle parent, uint32 index);
 
-		const vector3&	 get_entity_position_abs(pool_handle<world_id> entity) const;
-		const vector3&	 get_entity_prev_position_abs(pool_handle<world_id> entity) const;
-		void			 set_entity_position_abs(pool_handle<world_id> entity, const vector3& pos);
-		void			 set_entity_prev_position_abs(pool_handle<world_id> entity, const vector3& pos);
-		const quat&		 get_entity_rotation_abs(pool_handle<world_id> entity) const;
-		const quat&		 get_entity_prev_rotation_abs(pool_handle<world_id> entity) const;
-		void			 set_entity_rotation_abs(pool_handle<world_id> entity, const quat& rot);
-		void			 set_entity_prev_rotation_abs(pool_handle<world_id> entity, const quat& rot);
-		const vector3&	 get_entity_scale_abs(pool_handle<world_id> entity) const;
-		const vector3&	 get_entity_prev_scale_abs(pool_handle<world_id> entity) const;
-		void			 set_entity_scale_abs(pool_handle<world_id> entity, const vector3& scale);
-		void			 set_entity_prev_scale_abs(pool_handle<world_id> entity, const vector3& scale);
-		const matrix4x3& get_entity_matrix(pool_handle<world_id> entity) const;
-		const matrix4x3& get_entity_prev_matrix(pool_handle<world_id> entity) const;
-		void			 set_entity_matrix(pool_handle<world_id> entity, const matrix4x3& mat);
-		void			 set_entity_prev_matrix(pool_handle<world_id> entity, const matrix4x3& mat);
+		aabb& get_entity_aabb(entity_handle entity);
+
+		const entity_meta&	 get_entity_meta(entity_handle entity) const;
+		const entity_family& get_entity_family(entity_handle entity) const;
+		const vector3&		 get_entity_position_abs(entity_handle entity) const;
+		const vector3&		 get_entity_prev_position_abs(entity_handle entity) const;
+		void				 set_entity_position_abs(entity_handle entity, const vector3& pos);
+		void				 set_entity_prev_position_abs(entity_handle entity, const vector3& pos);
+		const quat&			 get_entity_rotation_abs(entity_handle entity) const;
+		const quat&			 get_entity_prev_rotation_abs(entity_handle entity) const;
+		void				 set_entity_rotation_abs(entity_handle entity, const quat& rot);
+		void				 set_entity_prev_rotation_abs(entity_handle entity, const quat& rot);
+		const vector3&		 get_entity_scale_abs(entity_handle entity) const;
+		const vector3&		 get_entity_prev_scale_abs(entity_handle entity) const;
+		void				 set_entity_scale_abs(entity_handle entity, const vector3& scale);
+		void				 set_entity_prev_scale_abs(entity_handle entity, const vector3& scale);
+		const matrix4x3&	 get_entity_matrix(entity_handle entity) const;
+		const matrix4x3&	 get_entity_prev_matrix(entity_handle entity) const;
+		void				 set_entity_matrix(entity_handle entity, const matrix4x3& mat);
+		void				 set_entity_prev_matrix(entity_handle entity, const matrix4x3& mat);
+
+		template <typename VisitFunc> void visit_children(entity_handle parent, VisitFunc f)
+		{
+			const entity_family& fam	= get_entity_family(parent);
+			entity_handle		 entity = fam.first_child;
+
+			while (!entity.is_null())
+			{
+				f(entity);
+				visit_children(entity, f);
+				entity = get_entity_family(entity).next_sibling;
+			}
+		}
 
 		inline world& get_world()
 		{
 			return _world;
 		}
 
-		inline chunk_allocator16<MAX_TRAIT_AUX_MEMORY>& get_trait_aux_memory()
+		inline chunk_allocator32& get_trait_aux_memory()
 		{
 			return _trait_aux_memory;
 		}
 
-		inline auto& get_entities()
+		inline pool_allocator16& get_entities()
 		{
 			return _entities;
 		}
-
-		DEFINE_TRAIT_FUNCS(trait_model_renderable, _trait_renderables);
-		DEFINE_TRAIT_FUNCS(trait_light, _trait_lights);
 
 	private:
 		void reset_all_entity_data();
@@ -103,22 +96,20 @@ namespace SFG
 	private:
 		world& _world;
 
-		pool_allocator_gen<world_id, world_id, MAX_ENTITIES> _entities = {};
+		pool_allocator16					 _entities		 = {};
+		pool_allocator_simple<entity_meta>	 _metas			 = {};
+		pool_allocator_simple<entity_family> _families		 = {};
+		pool_allocator_simple<vector3>		 _positions		 = {};
+		pool_allocator_simple<vector3>		 _prev_positions = {};
+		pool_allocator_simple<quat>			 _rotations		 = {};
+		pool_allocator_simple<quat>			 _prev_rotations = {};
+		pool_allocator_simple<vector3>		 _scales		 = {};
+		pool_allocator_simple<vector3>		 _prev_scales	 = {};
+		pool_allocator_simple<aabb>			 _aabbs			 = {};
+		pool_allocator_simple<matrix4x3>	 _matrices		 = {};
+		pool_allocator_simple<matrix4x3>	 _prev_matrices	 = {};
 
-		pool_allocator_simple<entity_meta, world_id, MAX_ENTITIES> _metas		   = {};
-		pool_allocator_simple<vector3, world_id, MAX_ENTITIES>	   _positions	   = {};
-		pool_allocator_simple<vector3, world_id, MAX_ENTITIES>	   _prev_positions = {};
-		pool_allocator_simple<quat, world_id, MAX_ENTITIES>		   _rotations	   = {};
-		pool_allocator_simple<quat, world_id, MAX_ENTITIES>		   _prev_rotations = {};
-		pool_allocator_simple<vector3, world_id, MAX_ENTITIES>	   _scales		   = {};
-		pool_allocator_simple<vector3, world_id, MAX_ENTITIES>	   _prev_scales	   = {};
-		pool_allocator_simple<aabb, world_id, MAX_ENTITIES>		   _aabbs		   = {};
-		pool_allocator_simple<matrix4x3, world_id, MAX_ENTITIES>   _matrices	   = {};
-		pool_allocator_simple<matrix4x3, world_id, MAX_ENTITIES>   _prev_matrices  = {};
-
-		trait_view<trait_model_renderable, 256> _trait_renderables;
-		trait_view<trait_light, 100>			_trait_lights;
-
-		chunk_allocator16<MAX_TRAIT_AUX_MEMORY> _trait_aux_memory;
+		static_vector<trait_storage, trait_types::trait_type_allowed_max> _traits;
+		chunk_allocator32												  _trait_aux_memory;
 	};
 }
