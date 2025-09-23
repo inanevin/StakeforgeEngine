@@ -13,8 +13,7 @@ namespace SFG
 	{
 		static constexpr uint32 TYPE_INDEX = 0;
 
-		pool_handle<world_id> entity = {};
-		bitmask<uint8>		  flags	 = 0;
+		trait_meta meta;
 
 		static void on_add(entity_manager& em, trait_light& trait);
 		static void on_remove(entity_manager& em, trait_light& trait);

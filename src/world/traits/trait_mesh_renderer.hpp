@@ -1,9 +1,7 @@
 // Copyright (c) 2025 Inan Evin
 #pragma once
-#include "world/common_world.hpp"
 #include "world/common_entity.hpp"
 #include "memory/chunk_handle.hpp"
-#include "memory/pool_handle.hpp"
 #include "gfx/common/gfx_constants.hpp"
 #include "data/bitmask.hpp"
 #include "data/string_id.hpp"
@@ -27,6 +25,7 @@ namespace SFG
 		matrix4x3 localMatrix;
 	};
 
+	/*
 #ifdef SFG_TOOLMODE
 
 	struct trait_mesh_renderer_json
@@ -44,20 +43,29 @@ namespace SFG
 
 	struct trait_mesh_renderer
 	{
-		pool_handle16  entity		= {};
-		pool_handle16  target_model = {};
-		chunk_handle32 nodes		= {};
-		chunk_handle32 materials	= {};
-		bitmask<uint8> flags		= {};
+	pool_handle16  entity		= {};
+	pool_handle16  target_model = {};
+	chunk_handle32 nodes		= {};
+	chunk_handle32 materials	= {};
+	bitmask<uint8> flags		= {};
 
-		void					  set_model(world* world, string_id hash);
-		void					  set_material(world* world, uint8 index, string_id hash);
-		trait_mesh_renderer_node* get_node(world* world, uint16 node_index);
-		material&				  get_material(world* world, uint16 material_index);
-		pool_handle<resource_id>  get_material_handle(world* world, uint16 material_index);
+	void					  set_model(world* world, string_id hash);
+	void					  set_material(world* world, uint8 index, string_id hash);
+	trait_mesh_renderer_node* get_node(world* world, uint16 node_index);
+	material&				  get_material(world* world, uint16 material_index);
+	pool_handle<resource_id>  get_material_handle(world* world, uint16 material_index);
 
-		static void on_add(entity_manager& em, trait_mesh_renderer& trait);
-		static void on_remove(entity_manager& em, trait_mesh_renderer& trait);
+	static void on_add(entity_manager& em, trait_mesh_renderer& trait);
+	static void on_remove(entity_manager& em, trait_mesh_renderer& trait);
+	};
+	*/
+
+	struct trait_mesh_renderer_r
+	{
+		static constexpr uint32 TYPE_INDEX = trait_types::trait_type_mesh_renderer;
+
+		trait_meta	   meta		 = {};
+		chunk_handle32 materials = {};
 	};
 
 }

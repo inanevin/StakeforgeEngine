@@ -2,6 +2,8 @@
 
 #pragma once
 #include "common/size_definitions.hpp"
+#include "world/common_entity.hpp"
+#include "data/bitmask.hpp"
 
 namespace SFG
 {
@@ -17,5 +19,13 @@ namespace SFG
 		trait_type_light,
 		trait_type_engine_max,
 		trait_type_allowed_max = 32,
+	};
+
+	typedef pool_handle16 trait_handle;
+
+	struct trait_meta
+	{
+		entity_handle  entity;
+		bitmask<uint8> flags;
 	};
 }

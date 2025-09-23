@@ -22,14 +22,19 @@ namespace SFG
 		_prev_matrices.init(MAX_ENTITIES);
 		_families.init(MAX_ENTITIES);
 
-		_traits.resize(1);
-		_traits[trait_light::TYPE_INDEX].storage.init<trait_light>(100);
+		_traits.resize(trait_types::trait_type_allowed_max);
+
+		init_trait_storage<trait_light>(100);
 	}
 
 	entity_manager::~entity_manager()
 	{
 		for (trait_storage& stg : _traits)
-			stg.storage.uninit();
+		{
+			if (stg.storage.get_raw())
+				stg.storage.uninit();
+		}
+
 		_entities.uninit();
 	}
 
@@ -113,7 +118,7 @@ namespace SFG
 		_entities.free<world_id>(entity);
 	}
 
-	aabb& entity_manager::get_entity_aabb(entity_handle entity)
+	const aabb& entity_manager::get_entity_aabb(entity_handle entity)
 	{
 		SFG_ASSERT(_entities.is_valid(entity));
 		return _aabbs.get(entity.index);

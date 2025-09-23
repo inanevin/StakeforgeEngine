@@ -66,9 +66,9 @@ namespace SFG
 			return _material_count;
 		}
 
-		inline chunk_handle32 get_meshes() const
+		inline chunk_handle32 get_created_meshes() const
 		{
-			return _meshes;
+			return _created_meshes;
 		}
 
 		inline chunk_handle32 get_nodes() const
@@ -88,7 +88,7 @@ namespace SFG
 
 	private:
 		chunk_handle32 _nodes;
-		chunk_handle32 _meshes;
+		chunk_handle32 _created_meshes;
 		chunk_handle32 _created_skins;
 		chunk_handle32 _created_anims;
 		aabb		   _total_aabb;

@@ -163,6 +163,11 @@ namespace SFG
 			return handle_iterator(_head, _head, get_generations(), get_actives());
 		}
 
+		inline uint8* get_raw() const
+		{
+			return _raw;
+		}
+
 	private:
 		uint16* get_free_indices() const
 		{

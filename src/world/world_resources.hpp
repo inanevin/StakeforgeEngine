@@ -66,6 +66,12 @@ namespace SFG
 			return stg.storage.get<T>(handle);
 		}
 
+		template <typename T> void init_storage(uint32 count)
+		{
+			resource_storage& stg = _storages[T::TYPE_INDEX];
+			stg.storage.init<T>(count);
+		}
+
 #ifdef SFG_TOOLMODE
 		resource_handle load_texture(const char* path);
 		resource_handle load_model(const char* path);

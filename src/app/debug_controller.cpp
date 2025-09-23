@@ -1077,7 +1077,6 @@ namespace SFG
 				_input_field.caret_pos = _input_field.text_size;
 
 				continue;
-				continue;
 			}
 
 			if (button == input_code::KeyDown)

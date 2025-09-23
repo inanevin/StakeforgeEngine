@@ -139,7 +139,19 @@ namespace SFG
 
 		for (resource_handle h : loaded_debug_models)
 		{
-			_world_renderer->get_resource_uploads().add_pending_model(&_resources.get_resource<model>(h));
+			model&				 m				= _resources.get_resource<model>(h);
+			const chunk_handle32 created_meshes = m.get_created_meshes();
+			const uint16		 meshes_count	= m.get_mesh_count();
+
+			chunk_allocator32& aux	   = _resources.get_aux();
+			resource_handle*   handles = meshes_count == 0 ? nullptr : aux.get<resource_handle>(created_meshes);
+
+			for (uint16 i = 0; i < meshes_count; i++)
+			{
+				resource_handle& handle = handles[i];
+				mesh&			 m		= _resources.get_resource<mesh>(handle);
+				_world_renderer->get_resource_uploads().add_pending_mesh(&m);
+			}
 		}
 
 		for (resource_handle h : loaded_debug_mats)

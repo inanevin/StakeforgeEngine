@@ -1,10 +1,12 @@
 // Copyright (c) 2025 Inan Evin
 #pragma once
 #include "common/size_definitions.hpp"
+#include "resources/common_resources.hpp"
 #include "world/common_world.hpp"
 #include "memory/chunk_handle.hpp"
 #include "primitive.hpp"
 #include "data/string.hpp"
+#include "data/string_id.hpp"
 
 namespace SFG
 {
@@ -14,6 +16,7 @@ namespace SFG
 	struct mesh_loaded
 	{
 		string							 name		= "";
+		string_id						 sid		= 0;
 		uint16							 node_index = 0;
 		vector<primitive_static_loaded>	 primitives_static;
 		vector<primitive_skinned_loaded> primitives_skinned;
@@ -22,6 +25,8 @@ namespace SFG
 	class mesh
 	{
 	public:
+		static constexpr uint32 TYPE_INDEX = resource_types::resource_type_mesh;
+
 		inline chunk_handle32 get_primitives_static() const
 		{
 			return _primitives_static;

@@ -5,7 +5,7 @@
 #include "gfx/texture_queue.hpp"
 #include "gfx/buffer_queue.hpp"
 #include "resources/texture.hpp"
-#include "resources/model.hpp"
+#include "resources/mesh.hpp"
 #include "resources/material.hpp"
 #include "gfx/backend/backend.hpp"
 #include "gfx/common/descriptions.hpp"
@@ -66,55 +66,45 @@ namespace SFG
 			_last_upload_frame = frame_info::get_render_frame();
 		}
 
-		for (model* mdl : _pending_models)
+		for (mesh* m : _pending_meshes)
 		{
-			const chunk_handle32 meshes		  = mdl->get_meshes();
-			const uint16		 meshes_count = mdl->get_mesh_count();
+			const chunk_handle32 prims_static		= m->get_primitives_static();
+			const uint16		 prims_static_count = m->get_primitives_static_count();
+			primitive*			 ptr_static			= prims_static_count == 0 ? nullptr : resources_aux.get<primitive>(prims_static);
 
-			mesh* all_meshes = meshes_count == 0 ? nullptr : resources_aux.get<mesh>(meshes);
-
-			for (uint16 i = 0; i < meshes_count; i++)
+			for (uint16 j = 0; j < prims_static_count; j++)
 			{
-				const mesh& m = all_meshes[i];
+				primitive& p		   = ptr_static[j];
+				p.runtime.vertex_start = _mesh_data.current_vertex_size;
+				p.runtime.index_start  = _mesh_data.current_index_size;
 
-				const chunk_handle32 prims_static		= m.get_primitives_static();
-				const uint16		 prims_static_count = m.get_primitives_static_count();
-				primitive*			 ptr_static			= prims_static_count == 0 ? nullptr : resources_aux.get<primitive>(prims_static);
+				_mesh_data.big_index_buffer.buffer_data(_mesh_data.current_index_size, resources_aux.get(p.indices.head), p.indices.size);
+				_mesh_data.current_index_size += p.indices.size;
 
-				for (uint16 j = 0; j < prims_static_count; j++)
-				{
-					primitive& p		   = ptr_static[j];
-					p.runtime.vertex_start = _mesh_data.current_vertex_size;
-					p.runtime.index_start  = _mesh_data.current_index_size;
+				_mesh_data.big_vertex_buffer.buffer_data(_mesh_data.current_vertex_size, resources_aux.get(p.vertices.head), p.vertices.size);
+				_mesh_data.current_vertex_size += p.vertices.size;
+			}
 
-					_mesh_data.big_index_buffer.buffer_data(_mesh_data.current_index_size, resources_aux.get(p.indices.head), p.indices.size);
-					_mesh_data.current_index_size += p.indices.size;
+			const chunk_handle32 prims_skinned		 = m->get_primitives_skinned();
+			const uint16		 prims_skinned_count = m->get_primitives_skinned_count();
+			primitive*			 ptr_skinned		 = prims_skinned_count == 0 ? nullptr : resources_aux.get<primitive>(prims_skinned);
 
-					_mesh_data.big_vertex_buffer.buffer_data(_mesh_data.current_vertex_size, resources_aux.get(p.vertices.head), p.vertices.size);
-					_mesh_data.current_vertex_size += p.vertices.size;
-				}
+			for (uint16 j = 0; j < prims_skinned_count; j++)
+			{
+				primitive& p = ptr_skinned[j];
 
-				const chunk_handle32 prims_skinned		 = m.get_primitives_skinned();
-				const uint16		 prims_skinned_count = m.get_primitives_skinned_count();
-				primitive*			 ptr_skinned		 = prims_skinned_count == 0 ? nullptr : resources_aux.get<primitive>(prims_skinned);
+				p.runtime.vertex_start = _mesh_data.current_vertex_size;
+				p.runtime.index_start  = _mesh_data.current_index_size;
 
-				for (uint16 j = 0; j < prims_skinned_count; j++)
-				{
-					primitive& p = ptr_skinned[j];
+				_mesh_data.big_index_buffer.buffer_data(_mesh_data.current_index_size, resources_aux.get(p.indices.head), p.indices.size);
+				_mesh_data.current_index_size += p.indices.size;
 
-					p.runtime.vertex_start = _mesh_data.current_vertex_size;
-					p.runtime.index_start  = _mesh_data.current_index_size;
-
-					_mesh_data.big_index_buffer.buffer_data(_mesh_data.current_index_size, resources_aux.get(p.indices.head), p.indices.size);
-					_mesh_data.current_index_size += p.indices.size;
-
-					_mesh_data.big_vertex_buffer.buffer_data(_mesh_data.current_vertex_size, resources_aux.get(p.vertices.head), p.vertices.size);
-					_mesh_data.current_vertex_size += p.vertices.size;
-				}
+				_mesh_data.big_vertex_buffer.buffer_data(_mesh_data.current_vertex_size, resources_aux.get(p.vertices.head), p.vertices.size);
+				_mesh_data.current_vertex_size += p.vertices.size;
 			}
 		}
 
-		if (!_pending_models.empty())
+		if (!_pending_meshes.empty())
 		{
 			bq->add_request({.buffer = &_mesh_data.big_vertex_buffer});
 			bq->add_request({.buffer = &_mesh_data.big_index_buffer});
@@ -131,7 +121,7 @@ namespace SFG
 
 		pfd.pending_materials.clear();
 		_pending_textures.clear();
-		_pending_models.clear();
+		_pending_meshes.clear();
 	}
 
 	void world_resource_uploads::add_pending_texture(texture* txt)
@@ -148,10 +138,10 @@ namespace SFG
 			_pfd[i].pending_materials.push_back(mat);
 	}
 
-	void world_resource_uploads::add_pending_model(model* mdl)
+	void world_resource_uploads::add_pending_mesh(mesh* m)
 	{
 		VERIFY_RENDER_NOT_RUNNING_OR_RENDER_THREAD();
-		_pending_models.push_back(mdl);
+		_pending_meshes.push_back(m);
 	}
 
 	void world_resource_uploads::check_uploads(bool force)

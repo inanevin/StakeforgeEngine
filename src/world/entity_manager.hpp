@@ -33,15 +33,14 @@ namespace SFG
 		void init();
 		void uninit();
 
-		entity_handle create_entity(const char* name = "entity");
-		void		  destroy_entity(entity_handle handle);
-		void		  add_child(entity_handle parent, entity_handle child);
-		void		  remove_child(entity_handle parent, entity_handle child);
-		void		  remove_from_parent(entity_handle entity);
-		entity_handle get_child_by_index(entity_handle parent, uint32 index);
-
-		aabb& get_entity_aabb(entity_handle entity);
-
+		/* ---------------- entity api ---------------- */
+		entity_handle		 create_entity(const char* name = "entity");
+		void				 destroy_entity(entity_handle handle);
+		void				 add_child(entity_handle parent, entity_handle child);
+		void				 remove_child(entity_handle parent, entity_handle child);
+		void				 remove_from_parent(entity_handle entity);
+		entity_handle		 get_child_by_index(entity_handle parent, uint32 index);
+		const aabb&			 get_entity_aabb(entity_handle entity);
 		const entity_meta&	 get_entity_meta(entity_handle entity) const;
 		const entity_family& get_entity_family(entity_handle entity) const;
 		const vector3&		 get_entity_position_abs(entity_handle entity) const;
@@ -74,14 +73,46 @@ namespace SFG
 			}
 		}
 
-		inline world& get_world()
+		/* ---------------- trait api ---------------- */
+
+		template <typename T> void init_trait_storage(uint32 max_count)
 		{
-			return _world;
+			_traits[T::TYPE_INDEX].storage.init<T>(max_count);
+		}
+
+		template <typename T> trait_handle add_trait(entity_handle entity)
+		{
+			pool_allocator16& storage = _traits[T::TYPE_INDEX].storage;
+			trait_handle	  handle  = storage.allocate();
+			T&				  tr	  = storage.get<T>(handle);
+			tr						  = T();
+			tr.meta.entity			  = entity;
+			return handle;
+		}
+
+		template <typename T> void remove_trait(trait_handle handle)
+		{
+			pool_allocator16& storage = _traits[T::TYPE_INDEX].storage;
+			T&				  tr	  = storage.get<T>(handle);
+			tr.~T();
+			storage.free(handle);
 		}
 
 		inline chunk_allocator32& get_trait_aux_memory()
 		{
 			return _trait_aux_memory;
+		}
+
+		inline static_vector<trait_storage, trait_types::trait_type_allowed_max>& get_traits()
+		{
+			return _traits;
+		}
+
+		/* ---------------- rest ---------------- */
+
+		inline world& get_world()
+		{
+			return _world;
 		}
 
 		inline pool_allocator16& get_entities()

@@ -22,18 +22,16 @@ namespace SFG
 	world_resources::world_resources()
 	{
 		_aux_memory.init(1024 * 1024 * 4);
-		_storages.resize(resource_types::resource_type_engine_max);
+		_storages.resize(resource_types::resource_type_allowed_max);
 
-		auto				  init_storage = [this]<typename T>(size_t count) { _storages[T::TYPE_INDEX].storage.init<T>(count); };
-		init_storage.template operator()<texture>(MAX_WORLD_TEXTURES);
-		init_storage.template operator()<texture_sampler>(MAX_WORLD_TEXTURES);
-		init_storage.template operator()<model>(MAX_WORLD_MODELS);
-		init_storage.template operator()<animation>(MAX_WORLD_ANIMS);
-		init_storage.template operator()<skin>(MAX_WORLD_SKINS);
-		init_storage.template operator()<shader>(MAX_WORLD_SHADERS);
-		init_storage.template operator()<material>(MAX_WORLD_MATERIALS);
-		_storages[resource_type_audio].storage.init<int>(100); // audio dummy
-		_storages[resource_type_font].storage.init<int>(100);  // fonts dummy
+		init_storage<texture>(MAX_WORLD_TEXTURES);
+		init_storage<texture_sampler>(MAX_WORLD_TEXTURES);
+		init_storage<model>(MAX_WORLD_MODELS);
+		init_storage<animation>(MAX_WORLD_ANIMS);
+		init_storage<skin>(MAX_WORLD_SKINS);
+		init_storage<shader>(MAX_WORLD_SHADERS);
+		init_storage<material>(MAX_WORLD_MATERIALS);
+		init_storage<mesh>(MAX_WORLD_MESHES);
 	}
 
 	world_resources::~world_resources()
@@ -41,7 +39,8 @@ namespace SFG
 		_aux_memory.uninit();
 		for (resource_storage& stg : _storages)
 		{
-			stg.storage.uninit();
+			if (stg.storage.get_raw())
+				stg.storage.uninit();
 		}
 	}
 
@@ -108,7 +107,19 @@ namespace SFG
 		{
 			mdl.create_from_loaded(loaded, _aux_memory, *this);
 			SFG_INFO("Loaded model: {0}", abs_path);
-			_world->get_renderer()->get_resource_uploads().add_pending_model(&mdl);
+
+			const chunk_handle32 created_meshes = mdl.get_created_meshes();
+			const uint16		 meshes_count	= mdl.get_mesh_count();
+
+			chunk_allocator32& aux	   = get_aux();
+			resource_handle*   handles = meshes_count == 0 ? nullptr : aux.get<resource_handle>(created_meshes);
+
+			for (uint16 i = 0; i < meshes_count; i++)
+			{
+				resource_handle& handle = handles[i];
+				mesh&			 m		= get_resource<mesh>(handle);
+				_world->get_renderer()->get_resource_uploads().add_pending_mesh(&m);
+			}
 		}
 		else
 		{

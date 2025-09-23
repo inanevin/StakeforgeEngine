@@ -134,7 +134,7 @@ namespace SFG
 
 		void resize(size_t sz)
 		{
-			SFG_ASSERT(sz < capacity);
+			SFG_ASSERT(sz <= capacity);
 			_head = sz;
 		}
 

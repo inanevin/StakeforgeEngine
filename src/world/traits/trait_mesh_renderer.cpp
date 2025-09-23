@@ -12,6 +12,7 @@
 
 namespace SFG
 {
+	/*
 	void trait_mesh_renderer::set_model(world* world, string_id hash)
 	{
 		entity_manager& em		  = world->get_entity_manager();
@@ -124,4 +125,6 @@ namespace SFG
 		trait.flags		   = j.value<uint8>("flags", 0);
 	}
 #endif
+
+*/
 }

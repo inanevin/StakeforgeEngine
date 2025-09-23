@@ -24,7 +24,8 @@ namespace SFG
 
 	void pool_allocator16::reset()
 	{
-		SFG_MEMSET(_raw, 0, _item_size_aligned * _item_count + sizeof(uint16) * _item_count + sizeof(uint16) * _item_count + sizeof(uint8) * _item_count);
+		if (_raw)
+			SFG_MEMSET(_raw, 0, _item_size_aligned * _item_count + sizeof(uint16) * _item_count + sizeof(uint16) * _item_count + sizeof(uint8) * _item_count);
 		_head			   = 0;
 		_free_count		   = 0;
 		_item_count		   = 0;

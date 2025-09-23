@@ -14,7 +14,7 @@ namespace SFG
 	class buffer_queue;
 	class world;
 	class texture;
-	class model;
+	class mesh;
 	class material;
 	class chunk_allocator32;
 
@@ -40,7 +40,7 @@ namespace SFG
 
 		void add_pending_texture(texture* txt);
 		void add_pending_material(material* matk);
-		void add_pending_model(model* mdl);
+		void add_pending_mesh(mesh* mesh);
 		void upload(chunk_allocator32& resources_aux, texture_queue* tq, buffer_queue* bq, uint8 data_index, uint8 frame_index);
 		void check_uploads(bool force = false);
 
@@ -60,7 +60,7 @@ namespace SFG
 		per_frame_data								_pfd[FRAMES_IN_FLIGHT];
 		static_vector<texture*, MAX_WORLD_TEXTURES> _pending_textures;
 		static_vector<texture*, MAX_WORLD_TEXTURES> _uploaded_textures;
-		static_vector<model*, MAX_WORLD_MODELS>		_pending_models;
+		static_vector<mesh*, MAX_WORLD_MODELS>		_pending_meshes;
 		atomic<uint64>								_last_upload_frame = 0;
 	};
 }
