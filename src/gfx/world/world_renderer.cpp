@@ -12,6 +12,8 @@
 #include "world/world.hpp"
 #include "world/traits/trait_light.hpp"
 #include "world/traits/trait_mesh_renderer.hpp"
+#include "resources/mesh.hpp"
+#include "resources/primitive.hpp"
 #include <algorithm>
 #include <execution>
 
@@ -168,103 +170,79 @@ namespace SFG
 
 	void world_renderer::populate_render_data(uint8 index, double interpolation)
 	{
-		_resource_uploads.check_uploads();
+		buffer*		vertex_buffer = &_resource_uploads.get_big_vertex_buffer();
+		buffer*		index_buffer  = &_resource_uploads.get_big_index_buffer();
+		const float alpha		  = static_cast<float>(interpolation);
 
 		world_render_data& rd = _render_data[index];
 		rd.reset();
 
 		view_manager& views = rd.views;
 		views.generate_views(_base_size, interpolation);
-
 		const view& cam_view = views.get_views()[0];
+
+		world_resources&   resources	 = _world->get_resources();
+		entity_manager&	   em			 = _world->get_entity_manager();
+		chunk_allocator32& resources_aux = resources.get_aux();
+
+		const pool_allocator16& lights = em.get_trait_storage<trait_light>();
+		for (trait_handle h : lights)
+		{
+			trait_light& trait = lights.get<trait_light>(h);
+			if (trait.meta.flags.is_set(trait_flags::trait_flags_is_disabled))
+				continue;
+
+			rd.lights.push_back({.color = {}});
+		}
+
+		const pool_allocator16& mesh_renderers = em.get_trait_storage<trait_mesh_renderer>();
+		for (trait_handle h : mesh_renderers)
+		{
+			trait_mesh_renderer& trait			 = mesh_renderers.get<trait_mesh_renderer>(h);
+			const uint16		 materials_count = trait.material_count;
+
+			if (materials_count == 0)
+				continue;
+
+			const chunk_handle32 materials			  = trait.materials;
+			const entity_handle	 entity				  = trait.meta.entity;
+			resource_handle*	 ptr_material_handles = resources_aux.get<resource_handle>(trait.materials);
+
+			mesh&				 target_mesh = resources.get_resource<mesh>(trait.mesh);
+			const chunk_handle32 prims		 = target_mesh.get_primitives_static();
+			const uint16		 prims_count = target_mesh.get_primitives_static_count();
+			primitive*			 ptr_prims	 = prims_count > 0 ? resources_aux.get<primitive>(prims) : nullptr;
+
+			if (prims_count == 0)
+				continue;
+
+			const matrix4x3 entity_global = em.calculate_interpolated_transform_abs(entity, alpha);
+			const uint16	gpu_e		  = create_gpu_entity(index, {.model = entity_global});
+
+			for (uint16 i = 0; i < prims_count; i++)
+			{
+				primitive& prim = ptr_prims[i];
+
+				if (prim.material_index >= static_cast<int16>(materials_count) || prim.indices_count == 0)
+					continue;
+
+				create_renderable(index,
+								  {
+									  .vertex_buffer = vertex_buffer,
+									  .index_buffer	 = index_buffer,
+									  .vertex_start	 = static_cast<uint32>(prim.runtime.vertex_start),
+									  .index_start	 = static_cast<uint32>(prim.runtime.index_start),
+									  .index_count	 = prim.indices_count,
+									  .material		 = ptr_material_handles[prim.material_index],
+									  .gpu_entity	 = gpu_e,
+									  .is_skinned	 = 0,
+								  });
+			}
+		}
 
 		_pass_opaque.populate_render_data(_world, cam_view, rd, index);
 		_pass_lighting_fw.populate_render_data(_world, index);
 		_pass_post_combiner.populate_render_data(_world, index);
-
-		/*
-		entity_manager& em			= _world->get_entity_manager();
-		auto&			renderables = em.get_view_trait_mesh_renderer().get_pool();
-
-		// lights
-		{
-			const auto& lights = em.get_view_trait_light().get_pool();
-			for (const trait_light& trait : lights)
-			{
-				if (trait.flags.is_set(trait_flags::trait_flags_is_disabled))
-					continue;
-
-				rd.lights.push_back({.color = {}});
-			}
-		}
-
-		world_resources& resources = _world->get_resources();
-		auto&			 trait_aux = em.get_trait_aux_memory();
-
-		auto add_prim = [this](renderable_object& rb, auto& p, trait_mesh_renderer& trait, trait_mesh_renderer_node* node, uint32 entity, uint8 skinned) {
-			rb.material	   = trait.get_material_handle(_world, p.material_index);
-			rb.index_count = static_cast<uint32>(p.indices.size());
-			 rb.vertex_start = static_cast<uint32>(p.runtime.vertex_start);
-			 rb.index_start	= static_cast<uint32>(p.runtime.index_start);
-			rb.gpu_entity = entity;
-			rb.is_skinned = skinned;
-		};
-
-		const float alpha = static_cast<float>(interpolation);
-
-		for (trait_mesh_renderer& trait : renderables)
-		{
-			if (trait.flags.is_set(trait_flags::trait_flags_is_disabled))
-				continue;
-
-			const aabb& aabb = em.get_entity_aabb(trait.entity);
-			if (!views.visibility_test_any_view(aabb))
-				continue;
-
-			const pool_handle<world_id> entity = trait.entity;
-
-			 rd.renderables.push_back({});
-			 renderable_object& rb = rd.renderables.back();
-			 rb.vertex_buffer	  = &_resource_uploads.get_big_vertex_buffer();
-			 rb.index_buffer		  = &_resource_uploads.get_big_index_buffer();
-
-			 model& mdl = resources.get_model(trait.target_model);
-
-			 const vector<mesh>& meshes = mdl.get_meshes();
-
-			 const vector3& ent_pos			  = em.get_entity_position_abs(entity);
-			 const vector3& ent_prev_pos		  = em.get_entity_prev_position_abs(entity);
-			 const vector3& ent_scale		  = em.get_entity_scale_abs(entity);
-			 const vector3& ent_prev_scale	  = em.get_entity_prev_scale_abs(entity);
-			 const quat&	   ent_rot			  = em.get_entity_rotation_abs(entity);
-			 const quat&	   ent_prev_rot		  = em.get_entity_prev_rotation_abs(entity);
-			 const vector3  interpolated_pos	  = vector3::lerp(ent_prev_pos, ent_pos, alpha);
-			 const vector3  interpolated_scale = vector3::lerp(ent_prev_scale, ent_scale, alpha);
-			 const quat&	   interpolated_rot	  = quat::slerp(ent_prev_rot, ent_rot, alpha);
-			 em.set_entity_prev_position_abs(entity, ent_prev_pos);
-			 em.set_entity_prev_rotation_abs(entity, ent_prev_rot);
-			 em.set_entity_prev_scale_abs(entity, ent_prev_scale);
-
-			 const matrix4x3 entity_global = matrix4x3::transform(interpolated_pos, interpolated_rot, interpolated_scale);
-
-			 for (const mesh& m : meshes)
-			 {
-				trait_mesh_renderer_node* node = trait.get_node(_world, m.node_index);
-
-				const uint32 entity = create_gpu_entity(index, {.model = entity_global * node->localMatrix});
-
-				for (const primitive_skinned& p : m.primitives_skinned)
-				{
-					add_prim(rb, p, trait, node, entity, 1);
-				}
-
-				for (const primitive_static& p : m.primitives_static)
-				{
-					add_prim(rb, p, trait, node, entity, 0);
-				}
-			 }
-		}
-		*/
 	}
 
 	void world_renderer::on_render_joined()
@@ -274,7 +252,7 @@ namespace SFG
 
 	void world_renderer::upload(uint8 data_index, uint8 frame_index)
 	{
-
+		_resource_uploads.check_uploads();
 		_resource_uploads.upload(_world->get_resources().get_aux(), _texture_queue, _buffer_queue, data_index, frame_index);
 
 		world_render_data& rd  = _render_data[data_index];
@@ -368,12 +346,20 @@ namespace SFG
 		// _pass_lighting_fw.reset_target_textures(opaque_textures.data(), depth_textures.data());
 	}
 
-	uint32 world_renderer::create_gpu_entity(uint8 data_index, const gpu_entity& e)
+	uint16 world_renderer::create_gpu_entity(uint8 data_index, const gpu_entity& e)
 	{
 		world_render_data& rd  = _render_data[data_index];
 		const uint32	   idx = static_cast<uint32>(rd.entities.size());
 		rd.entities.push_back(e);
 		return idx;
+	}
+
+	uint16 world_renderer::create_renderable(uint8 data_index, const renderable_object& e)
+	{
+		world_render_data& rd = _render_data[data_index];
+		const uint16	   i  = static_cast<uint16>(rd.renderables.size());
+		rd.renderables.push_back(e);
+		return i;
 	}
 
 	void world_renderer::push_barrier_ps(gfx_id id, static_vector<barrier, MAX_BARRIERS>& barriers)

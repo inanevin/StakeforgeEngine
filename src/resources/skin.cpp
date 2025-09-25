@@ -1,29 +1,30 @@
 // Copyright (c) 2025 Inan Evin
 
 #include "skin.hpp"
+#include "skin_raw.hpp"
 #include "memory/chunk_allocator.hpp"
 
 namespace SFG
 {
-#ifdef SFG_TOOLMODE
-	void skin::create_from_loaded(const skin_loaded& loaded, chunk_allocator32& alloc)
+	void skin::create_from_raw(const skin_raw& raw, chunk_allocator32& alloc)
 	{
-		_root		  = loaded.root_joint;
-		_joints_count = static_cast<uint16>(loaded.joints.size());
+		_root		  = raw.root_joint;
+		_joints_count = static_cast<uint16>(raw.joints.size());
 
-		if (!loaded.name.empty())
+		if (!raw.name.empty())
 		{
-			_name = alloc.allocate<uint8>(loaded.name.size());
-			strcpy((char*)alloc.get(_name.head), loaded.name.data());
+			_name = alloc.allocate<uint8>(raw.name.size());
+			strcpy((char*)alloc.get(_name.head), raw.name.data());
+			strcpy((char*)(alloc.get(_name.head + _name.size)), "\0");
 		}
 
-		_joints = alloc.allocate<skin_joint>(loaded.joints.size());
+		_joints = alloc.allocate<skin_joint>(raw.joints.size());
 
 		skin_joint*	 ptr   = reinterpret_cast<skin_joint*>(alloc.get(_joints.head));
-		const uint32 count = static_cast<uint32>(loaded.joints.size());
+		const uint32 count = static_cast<uint32>(raw.joints.size());
 
 		for (uint32 i = 0; i < count; i++)
-			ptr[i] = loaded.joints[i];
+			ptr[i] = raw.joints[i];
 	}
 
 	void skin::destroy(chunk_allocator32& alloc)
@@ -36,6 +37,5 @@ namespace SFG
 		_name	= {};
 		_joints = {};
 	}
-#endif
 
 }

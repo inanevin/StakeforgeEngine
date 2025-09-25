@@ -10,12 +10,12 @@
 #include "gfx/backend/backend.hpp"
 #include "io/log.hpp"
 #include "debug_console.hpp"
-#include "project/engine_data.hpp"
 #include "world/world.hpp"
 #include "gfx/world/world_renderer.hpp"
 
 #ifdef SFG_TOOLMODE
 #include "io/file_system.hpp"
+#include "project/engine_data.hpp"
 #endif
 
 namespace SFG
@@ -52,25 +52,19 @@ namespace SFG
 		_renderer = new renderer();
 		_renderer->init(_main_window, _world);
 
+#ifdef SFG_TOOLMODE
+
 		engine_data::get().init();
 
-#ifdef SFG_TOOLMODE
 		const string& last_world = engine_data::get().get_last_world();
 		if (file_system::exists(last_world.c_str()))
 			_world->load(last_world.c_str());
 		else
 		{
 			engine_data::get().set_last_world("");
+			engine_data::get().save();
 			_world->load("");
 		}
-#endif
-
-		/*************** DEBUG *************/
-		_world->load_debug();
-		/*************** DEBUG *************/
-
-		_render_joined.store(1);
-		kick_off_render();
 
 		/*************** CONSOLE *************/
 		debug_console::get()->register_console_function("app_new_world", [this]() {
@@ -96,6 +90,15 @@ namespace SFG
 			engine_data::get().save();
 		});
 
+#endif
+
+		/*************** DEBUG *************/
+		_world->load_debug();
+		/*************** DEBUG *************/
+
+		_render_joined.store(1);
+		kick_off_render();
+
 		SET_INIT(false);
 	}
 
@@ -105,8 +108,9 @@ namespace SFG
 		_world->uninit();
 		delete _world;
 
+#ifdef SFG_TOOLMODE
 		engine_data::get().uninit();
-
+#endif
 		join_render();
 
 		time::uninit();

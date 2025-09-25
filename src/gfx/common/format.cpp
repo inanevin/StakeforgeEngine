@@ -89,6 +89,12 @@ namespace SFG
 		case format::r32g32b32a32_uint:
 			j = "r32g32b32a32_uint";
 			return;
+		case format::d16_unorm:
+			j = "d16_unorm";
+			return;
+		case format::d32_sfloat:
+			j = "d32_sfloat";
+			return;
 		}
 
 		j = "undefined";
@@ -131,6 +137,17 @@ namespace SFG
 		if (str.compare("r32g32b32a32_uint") == 0)
 		{
 			f = format::r32g32b32a32_uint;
+			return;
+		}
+		if (str.compare("d32_sfloat") == 0)
+		{
+			f = format::d32_sfloat;
+			return;
+		}
+
+		if (str.compare("d16_unorm") == 0)
+		{
+			f = format::d16_unorm;
 			return;
 		}
 

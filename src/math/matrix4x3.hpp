@@ -8,6 +8,8 @@ namespace SFG
 {
 	class quat;
 	class matrix4x4;
+	class ostream;
+	class istream;
 
 	class matrix4x3
 	{
@@ -37,6 +39,10 @@ namespace SFG
 		static matrix4x3 scale(const vector3& s);
 		static matrix4x3 rotation(const quat& q);
 		static matrix4x3 transform(const vector3& position, const quat& rotation, const vector3& scale);
+		matrix4x3		 inverse() const;
+		void			 decompose(vector3& position, quat& rotation, vector3& scale) const;
+		void			 serialize(ostream& stream) const;
+		void			 deserialize(istream& stream);
 
 		matrix4x4		 to_matrix4x4() const;
 		static matrix4x3 from_matrix4x4(const matrix4x4& mat);

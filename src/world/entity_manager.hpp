@@ -43,22 +43,29 @@ namespace SFG
 		const aabb&			 get_entity_aabb(entity_handle entity);
 		const entity_meta&	 get_entity_meta(entity_handle entity) const;
 		const entity_family& get_entity_family(entity_handle entity) const;
-		const vector3&		 get_entity_position_abs(entity_handle entity) const;
-		const vector3&		 get_entity_prev_position_abs(entity_handle entity) const;
-		void				 set_entity_position_abs(entity_handle entity, const vector3& pos);
-		void				 set_entity_prev_position_abs(entity_handle entity, const vector3& pos);
-		const quat&			 get_entity_rotation_abs(entity_handle entity) const;
-		const quat&			 get_entity_prev_rotation_abs(entity_handle entity) const;
-		void				 set_entity_rotation_abs(entity_handle entity, const quat& rot);
-		void				 set_entity_prev_rotation_abs(entity_handle entity, const quat& rot);
-		const vector3&		 get_entity_scale_abs(entity_handle entity) const;
-		const vector3&		 get_entity_prev_scale_abs(entity_handle entity) const;
-		void				 set_entity_scale_abs(entity_handle entity, const vector3& scale);
-		void				 set_entity_prev_scale_abs(entity_handle entity, const vector3& scale);
-		const matrix4x3&	 get_entity_matrix(entity_handle entity) const;
-		const matrix4x3&	 get_entity_prev_matrix(entity_handle entity) const;
-		void				 set_entity_matrix(entity_handle entity, const matrix4x3& mat);
-		void				 set_entity_prev_matrix(entity_handle entity, const matrix4x3& mat);
+
+		/* ---------------- entity transforms ---------------- */
+		void			 set_entity_position(entity_handle entity, const vector3& pos);
+		void			 set_entity_position_abs(entity_handle entity, const vector3& pos);
+		const vector3&	 get_entity_position(entity_handle entity) const;
+		vector3			 get_entity_position_abs(entity_handle entity);
+		void			 set_entity_rotation(entity_handle entity, const quat& rot);
+		void			 set_entity_rotation_abs(entity_handle entity, const quat& rot);
+		const quat&		 get_entity_rotation(entity_handle entity) const;
+		const quat&		 get_entity_rotation_abs(entity_handle entity);
+		void			 set_entity_scale(entity_handle entity, const vector3& scale);
+		void			 set_entity_scale_abs(entity_handle entity, const vector3& scale);
+		const vector3&	 get_entity_scale(entity_handle entity) const;
+		vector3			 get_entity_scale_abs(entity_handle entity);
+		const matrix4x3& get_entity_transform(entity_handle entity);
+		const matrix4x3& get_entity_transform_abs(entity_handle entity);
+		void			 set_entity_prev_position_abs(entity_handle entity, const vector3& pos);
+		void			 set_entity_prev_rotation_abs(entity_handle entity, const quat& rot);
+		void			 set_entity_prev_scale_abs(entity_handle entity, const vector3& scale);
+		const vector3&	 get_entity_prev_position_abs(entity_handle entity) const;
+		const quat&		 get_entity_prev_rotation_abs(entity_handle entity) const;
+		const vector3&	 get_entity_prev_scale_abs(entity_handle entity) const;
+		matrix4x3		 calculate_interpolated_transform_abs(entity_handle entity, float interpolation);
 
 		template <typename VisitFunc> void visit_children(entity_handle parent, VisitFunc f)
 		{
@@ -73,6 +80,18 @@ namespace SFG
 			}
 		}
 
+		template <typename VisitFunc> void visit_parents(entity_handle entity, VisitFunc f)
+		{
+			const entity_family& fam	= get_entity_family(entity);
+			entity_handle		 parent = fam.parent;
+			while (!parent.is_null())
+			{
+				f(parent);
+				visit_parents(parent, f);
+				parent = get_entity_family(parent).parent;
+			}
+		}
+
 		/* ---------------- trait api ---------------- */
 
 		template <typename T> void init_trait_storage(uint32 max_count)
@@ -83,11 +102,22 @@ namespace SFG
 		template <typename T> trait_handle add_trait(entity_handle entity)
 		{
 			pool_allocator16& storage = _traits[T::TYPE_INDEX].storage;
-			trait_handle	  handle  = storage.allocate();
+			trait_handle	  handle  = storage.allocate<T>();
 			T&				  tr	  = storage.get<T>(handle);
 			tr						  = T();
 			tr.meta.entity			  = entity;
 			return handle;
+		}
+
+		template <typename T> T& get_trait(trait_handle handle)
+		{
+			pool_allocator16& storage = _traits[T::TYPE_INDEX].storage;
+			return storage.get<T>(handle);
+		}
+		template <typename T> const pool_allocator16& get_trait_storage() const
+		{
+			const pool_allocator16& storage = _traits[T::TYPE_INDEX].storage;
+			return storage;
 		}
 
 		template <typename T> void remove_trait(trait_handle handle)
@@ -133,12 +163,13 @@ namespace SFG
 		pool_allocator_simple<vector3>		 _positions		 = {};
 		pool_allocator_simple<vector3>		 _prev_positions = {};
 		pool_allocator_simple<quat>			 _rotations		 = {};
+		pool_allocator_simple<quat>			 _rotations_abs	 = {};
 		pool_allocator_simple<quat>			 _prev_rotations = {};
 		pool_allocator_simple<vector3>		 _scales		 = {};
 		pool_allocator_simple<vector3>		 _prev_scales	 = {};
 		pool_allocator_simple<aabb>			 _aabbs			 = {};
 		pool_allocator_simple<matrix4x3>	 _matrices		 = {};
-		pool_allocator_simple<matrix4x3>	 _prev_matrices	 = {};
+		pool_allocator_simple<matrix4x3>	 _abs_matrices	 = {};
 
 		static_vector<trait_storage, trait_types::trait_type_allowed_max> _traits;
 		chunk_allocator32												  _trait_aux_memory;

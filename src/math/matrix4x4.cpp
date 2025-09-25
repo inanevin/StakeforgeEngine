@@ -2,6 +2,8 @@
 #include "matrix4x4.hpp"
 #include "math.hpp"
 #include "quat.hpp"
+#include "data/ostream.hpp"
+#include "data/istream.hpp"
 
 namespace SFG
 {
@@ -243,6 +245,17 @@ namespace SFG
 			}
 		}
 		return true;
+	}
+
+	void matrix4x4::serialize(ostream& stream) const
+	{
+		for (int i = 0; i < 16; ++i)
+			stream << m[i];
+	}
+	void matrix4x4::deserialize(istream& stream)
+	{
+		for (int i = 0; i < 16; ++i)
+			stream >> m[i];
 	}
 
 }

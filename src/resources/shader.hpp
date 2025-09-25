@@ -8,29 +8,9 @@
 #include "data/bitmask.hpp"
 #include "gfx/common/shader_description.hpp"
 #include "resources/common_resources.hpp"
-
-#include <limits>
-
-#undef min
-#undef max
-
 namespace SFG
 {
-	struct shader_desc;
-
-	struct shader_meta
-	{
-		string		   source	  = "";
-		shader_desc	   desc		  = {};
-		uint8		   is_skinned = 0;
-		vector<string> defines;
-	};
-
-#ifdef SFG_TOOLMODE
-
-	void to_json(nlohmann::json& j, const shader_meta& s);
-	void from_json(const nlohmann::json& j, shader_meta& s);
-#endif
+	struct shader_raw;
 
 	class shader
 	{
@@ -40,17 +20,14 @@ namespace SFG
 		enum flags
 		{
 			is_skinned = 1 << 0,
+			hw_exists  = 1 << 1,
 		};
 
 		~shader();
 
-#ifdef SFG_TOOLMODE
-		bool create_from_file_vertex_pixel(const char* file, bool use_embedded_layout, gfx_id layout);
-#endif
+		void   create_from_raw(shader_raw& raw, bool use_embedded_layout, gfx_id layout);
 		void   destroy();
 		gfx_id get_hw() const;
-
-		static void get_shader_block(const string& text, const string& block_ident, const string& end_ident, string& out_block);
 
 		inline const bitmask<uint8>& get_flags() const
 		{
@@ -58,7 +35,7 @@ namespace SFG
 		}
 
 	private:
-		gfx_id		   _hw	  = std::numeric_limits<gfx_id>::max();
+		gfx_id		   _hw	  = 0;
 		bitmask<uint8> _flags = 0;
 	};
 

@@ -1,12 +1,7 @@
 // Copyright (c) 2025 Inan Evin
 #pragma once
 
-#include "data/vector.hpp"
 #include "data/bitmask.hpp"
-#include "animation.hpp"
-#include "skin.hpp"
-#include "mesh.hpp"
-#include "model_node.hpp"
 #include "math/aabb.hpp"
 #include "memory/chunk_handle.hpp"
 #include "resources/common_resources.hpp"
@@ -15,22 +10,7 @@ namespace SFG
 {
 	class world_resources;
 	class chunk_allocator32;
-
-#ifdef SFG_TOOLMODE
-
-	struct model_loaded
-	{
-		vector<model_node_loaded> loaded_nodes;
-		vector<mesh_loaded>		  loaded_meshes;
-		vector<skin_loaded>		  loaded_skins;
-		vector<animation_loaded>  loaded_animations;
-		aabb					  total_aabb;
-		uint8					  material_count = 0;
-
-		bool create_from_file(const char* file, const char* relative_path);
-	};
-
-#endif
+	struct model_raw;
 
 	class model
 	{
@@ -45,10 +25,7 @@ namespace SFG
 
 		~model();
 
-#ifdef SFG_TOOLMODE
-		void create_from_loaded(const model_loaded& loaded, chunk_allocator32& alloc, world_resources& resources);
-#endif
-
+		void create_from_raw(model_raw& raw, chunk_allocator32& alloc, world_resources& resources);
 		void destroy(world_resources& resources, chunk_allocator32& alloc);
 
 		inline bitmask<uint8>& get_flags()
@@ -87,6 +64,9 @@ namespace SFG
 		}
 
 	private:
+#ifdef SFG_TOOLMODE
+		friend struct model_raw;
+#endif
 		chunk_handle32 _nodes;
 		chunk_handle32 _created_meshes;
 		chunk_handle32 _created_skins;

@@ -2,6 +2,8 @@
 
 #pragma once
 
+#ifdef SFG_TOOLMODE
+
 #include "data/string.hpp"
 
 namespace SFG
@@ -43,3 +45,5 @@ namespace SFG
 		string _last_world	= {};
 	};
 }
+
+#endif

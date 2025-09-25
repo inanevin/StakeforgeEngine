@@ -29,10 +29,11 @@ namespace SFG
 		world();
 		~world();
 
-		void init();
-		void uninit();
-		void tick(uint8 data_index, const vector2ui16& res, float dt);
-		void pre_render(uint8 data_index, const vector2ui16& res);
+		void		  init();
+		void		  uninit();
+		void		  tick(uint8 data_index, const vector2ui16& res, float dt);
+		void		  pre_render(uint8 data_index, const vector2ui16& res);
+		entity_handle add_model_to_world(resource_handle model, resource_handle* materials, uint32 material_size);
 
 		void load_debug();
 

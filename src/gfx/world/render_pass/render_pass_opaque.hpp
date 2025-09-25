@@ -15,6 +15,7 @@ namespace SFG
 	struct world_render_data;
 	class buffer_queue;
 	class world;
+	struct vector2ui16;
 	struct view;
 
 	class render_pass_opaque

@@ -14,6 +14,7 @@
 #include "platform/time.hpp"
 #include "world/world.hpp"
 #include "gfx/world/world_renderer.hpp"
+#include "resources/shader_raw.hpp"
 
 namespace SFG
 {
@@ -49,7 +50,9 @@ namespace SFG
 		_gfx_data.dummy_ubo		= backend->create_resource({.size = 4, .flags = resource_flags::rf_constant_buffer | resource_flags::rf_gpu_only});
 		_gfx_data.dummy_ssbo	= backend->create_resource({.size = 4, .flags = resource_flags::rf_storage_buffer | resource_flags::rf_gpu_only});
 
-		_shaders.swapchain.create_from_file_vertex_pixel("assets/engine/shaders/swapchain/swapchain.stkfrg", false, _gfx_data.bind_layout_global);
+		shader_raw raw = {};
+		raw.cook_from_file("assets/engine/shaders/swapchain/swapchain.stkfrg");
+		_shaders.swapchain.create_from_raw(raw, false, _gfx_data.bind_layout_global);
 
 #ifdef USE_DEBUG_CONTROLLER
 		_debug_controller.init(&_texture_queue, _gfx_data.bind_layout_global, main_window->get_size());

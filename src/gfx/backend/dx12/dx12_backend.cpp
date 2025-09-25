@@ -4,6 +4,7 @@
 #include "dx12_common.hpp"
 #include "data/static_vector.hpp"
 #include "gfx/common/descriptions.hpp"
+#include "gfx/common/texture_buffer.hpp"
 #include "gfx/backend/dx12/sdk/D3D12MemAlloc.h"
 #include "gfx/common/commands.hpp"
 #include "gfx/common/gfx_common.hpp"

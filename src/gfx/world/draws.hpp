@@ -24,10 +24,13 @@ namespace SFG
 		uint32		  start_instance = 0;
 		gfx_id		  pipeline		 = 0;
 		gfx_id		  bind_group	 = 0;
+		gfx_id		  vertex_buffer	 = 0;
+		gfx_id		  idx_buffer	 = 0;
 
 		bool operator==(const indexed_draw& other)
 		{
-			return base_vertex == other.base_vertex && index_count == other.index_count && start_index == other.start_index && start_instance == other.start_instance && pipeline == other.pipeline && bind_group == other.bind_group;
+			return vertex_buffer == other.vertex_buffer && idx_buffer == other.idx_buffer && base_vertex == other.base_vertex && index_count == other.index_count && start_index == other.start_index && start_instance == other.start_instance &&
+				   pipeline == other.pipeline && bind_group == other.bind_group;
 		}
 	};
 

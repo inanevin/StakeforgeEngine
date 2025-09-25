@@ -4,12 +4,17 @@
 
 namespace SFG
 {
+	class ostream;
+	class istream;
 
 	class vector4i16
 	{
 	public:
 		vector4i16(){};
 		vector4i16(int16 _x, int16 _y, int16 _z, int16 _w) : x(_x), y(_y), z(_z), w(_w){};
+
+		void serialize(ostream& stream) const;
+		void deserialize(istream& stream);
 
 		static vector4i16 zero;
 		static vector4i16 one;

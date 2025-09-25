@@ -10,6 +10,7 @@
 #include <Windows.h>
 #include <shellapi.h>
 #include <shellscalingapi.h>
+#include <shobjidl.h>
 
 namespace
 {
@@ -37,6 +38,43 @@ namespace
 
 namespace SFG
 {
+	string process::select_folder(const char* title)
+	{
+		string result;
+
+		IFileDialog* dialog = nullptr;
+		HRESULT		 hr		= CoCreateInstance(CLSID_FileOpenDialog, nullptr, CLSCTX_INPROC_SERVER, IID_PPV_ARGS(&dialog));
+
+		if (SUCCEEDED(hr))
+		{
+			DWORD options;
+			if (SUCCEEDED(dialog->GetOptions(&options)))
+			{
+				dialog->SetOptions(options | FOS_PICKFOLDERS | FOS_FORCEFILESYSTEM);
+			}
+
+			hr = dialog->Show(nullptr);
+			if (SUCCEEDED(hr))
+			{
+				IShellItem* item = nullptr;
+				if (SUCCEEDED(dialog->GetResult(&item)))
+				{
+					PWSTR path = nullptr;
+					if (SUCCEEDED(item->GetDisplayName(SIGDN_FILESYSPATH, &path)))
+					{
+						char buffer[MAX_PATH];
+						WideCharToMultiByte(CP_UTF8, 0, path, -1, buffer, MAX_PATH, nullptr, nullptr);
+						result = buffer;
+						CoTaskMemFree(path);
+					}
+					item->Release();
+				}
+			}
+			dialog->Release();
+		}
+
+		return result;
+	}
 
 	void process::pump_os_messages()
 	{
@@ -126,6 +164,7 @@ namespace SFG
 
 		return mask;
 	}
+
 	/*
 	void process::send_pipe_data(void* data, size_t data_size)
 	{

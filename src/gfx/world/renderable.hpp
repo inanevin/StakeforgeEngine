@@ -3,7 +3,7 @@
 #pragma once
 #include "gfx/common/gfx_common.hpp"
 #include "world/common_world.hpp"
-#include "memory/pool_handle.hpp"
+#include "resources/common_resources.hpp"
 
 namespace SFG
 {
@@ -11,13 +11,13 @@ namespace SFG
 
 	struct renderable_object
 	{
-		buffer*					 vertex_buffer = nullptr;
-		buffer*					 index_buffer  = nullptr;
-		uint32					 vertex_start  = 0;
-		uint32					 index_start   = 0;
-		uint32					 index_count   = 0;
-		pool_handle<resource_id> material	   = {};
-		gfx_id					 gpu_entity	   = 0;
-		uint8					 is_skinned	   = 0;
+		buffer*			vertex_buffer = nullptr;
+		buffer*			index_buffer  = nullptr;
+		uint32			vertex_start  = 0;
+		uint32			index_start	  = 0;
+		uint32			index_count	  = 0;
+		resource_handle material	  = {};
+		uint16			gpu_entity	  = 0;
+		uint8			is_skinned	  = 0;
 	};
 }

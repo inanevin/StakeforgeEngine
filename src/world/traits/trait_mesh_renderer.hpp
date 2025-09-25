@@ -1,12 +1,14 @@
 // Copyright (c) 2025 Inan Evin
 #pragma once
-#include "world/common_entity.hpp"
-#include "memory/chunk_handle.hpp"
-#include "gfx/common/gfx_constants.hpp"
 #include "data/bitmask.hpp"
 #include "data/string_id.hpp"
-#include "common_trait.hpp"
+#include "memory/chunk_handle.hpp"
 #include "math/matrix4x3.hpp"
+
+#include "world/traits/common_trait.hpp"
+#include "world/common_entity.hpp"
+#include "resources/common_resources.hpp"
+#include "gfx/common/gfx_constants.hpp"
 
 #ifdef SFG_TOOLMODE
 #include "vendor/nhlohmann/json_fwd.hpp"
@@ -60,12 +62,14 @@ namespace SFG
 	};
 	*/
 
-	struct trait_mesh_renderer_r
+	struct trait_mesh_renderer
 	{
 		static constexpr uint32 TYPE_INDEX = trait_types::trait_type_mesh_renderer;
 
-		trait_meta	   meta		 = {};
-		chunk_handle32 materials = {};
+		trait_meta		meta		   = {};
+		resource_handle mesh		   = {};
+		chunk_handle32	materials	   = {};
+		uint16			material_count = 0;
 	};
 
 }

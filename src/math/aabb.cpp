@@ -3,6 +3,8 @@
 #include "aabb.hpp"
 #include "plane.hpp"
 #include "math/math.hpp"
+#include "data/ostream.hpp"
+#include "data/istream.hpp"
 
 namespace SFG
 {
@@ -46,5 +48,17 @@ namespace SFG
 	{
 		bounds_min += other.bounds_min;
 		bounds_max += other.bounds_max;
+	}
+
+	void aabb::serialize(ostream& stream) const
+	{
+		stream << bounds_min;
+		stream << bounds_max;
+	}
+	void aabb::deserialize(istream& stream)
+	{
+		stream >> bounds_min;
+		stream >> bounds_max;
+		update_half_extents();
 	}
 }

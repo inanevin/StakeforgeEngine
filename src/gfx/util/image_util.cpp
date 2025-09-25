@@ -4,6 +4,7 @@
 #include "math/vector2ui16.hpp"
 #include "math/math.hpp"
 #include "gfx/common/gfx_common.hpp"
+#include "gfx/common/texture_buffer.hpp"
 #include "memory/memory.hpp"
 #include "memory/memory_tracer.hpp"
 

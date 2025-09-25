@@ -4,13 +4,13 @@
 #include "gfx/frame_processor.hpp"
 #include "data/binary_semaphore.hpp"
 #include "data/atomic.hpp"
+#include "math/vector2ui16.hpp"
 #include <thread>
 
 namespace SFG
 {
 	class window;
 	struct window_event;
-	class vector2ui;
 	class world;
 	class renderer;
 

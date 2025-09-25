@@ -145,4 +145,11 @@ namespace SFG
 		return stream;
 	}
 
+	template <typename T> ostream& operator<<(ostream& stream, T&& val)
+	{
+		T lval = val;
+		stream << lval;
+		return stream;
+	}
+
 }

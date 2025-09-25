@@ -24,6 +24,7 @@
 #include "data/istream.hpp"
 #include "serialization/serialization.hpp"
 #include "io/file_system.hpp"
+#include "resources/shader_raw.hpp"
 
 #define VEKT_STRING_CSTR
 #define VEKT_VEC4 SFG::vector4
@@ -353,16 +354,32 @@ namespace SFG
 		gfx_backend* backend = gfx_backend::get();
 
 		// gui default
-		_shaders.gui_default.create_from_file_vertex_pixel("assets/engine/shaders/gui/gui_default.stkfrg", false, global_bind_layout);
+		{
+			shader_raw raw = {};
+			raw.cook_from_file("assets/engine/shaders/gui/gui_default.stkfrg");
+			_shaders.gui_default.create_from_raw(raw, false, global_bind_layout);
+		}
 
 		// gui text
-		_shaders.gui_text.create_from_file_vertex_pixel("assets/engine/shaders/gui/gui_text.stkfrg", false, global_bind_layout);
+		{
+			shader_raw raw = {};
+			raw.cook_from_file("assets/engine/shaders/gui/gui_text.stkfrg");
+			_shaders.gui_text.create_from_raw(raw, false, global_bind_layout);
+		}
 
 		// gui sdf
-		_shaders.gui_sdf.create_from_file_vertex_pixel("assets/engine/shaders/gui/gui_sdf.stkfrg", false, global_bind_layout);
+		{
+			shader_raw raw = {};
+			raw.cook_from_file("assets/engine/shaders/gui/gui_sdf.stkfrg");
+			_shaders.gui_sdf.create_from_raw(raw, false, global_bind_layout);
+		}
 
 		// console draw
-		_shaders.debug_controller_console_draw.create_from_file_vertex_pixel("assets/engine/shaders/debug_controller/console_draw.stkfrg", false, global_bind_layout);
+		{
+			shader_raw raw = {};
+			raw.cook_from_file("assets/engine/shaders/debug_controller/console_draw.stkfrg");
+			_shaders.debug_controller_console_draw.create_from_raw(raw, false, global_bind_layout);
+		}
 
 		for (uint32 i = 0; i < FRAMES_IN_FLIGHT; i++)
 		{

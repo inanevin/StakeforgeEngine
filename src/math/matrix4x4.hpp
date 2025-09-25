@@ -8,6 +8,9 @@ namespace SFG
 {
 	class quat;
 
+	class ostream;
+	class istream;
+
 	class matrix4x4
 	{
 	public:
@@ -40,6 +43,9 @@ namespace SFG
 		vector3	  get_scale() const;
 		vector3	  get_translation() const;
 		bool	  equals(const matrix4x4& other, float epsilon = MATH_EPS) const;
+
+		void serialize(ostream& stream) const;
+		void deserialize(istream& stream);
 
 		static matrix4x4 translation(const vector3& t);
 		static matrix4x4 scale(const vector3& s);

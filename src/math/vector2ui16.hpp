@@ -4,6 +4,10 @@
 
 namespace SFG
 {
+
+	class istream;
+	class ostream;
+
 	struct vector2ui16
 	{
 	public:
@@ -12,6 +16,9 @@ namespace SFG
 
 		static vector2ui16 zero;
 		static vector2ui16 one;
+
+		void serialize(ostream& out) const;
+		void deserialize(istream& in);
 
 		uint16 x = 0;
 		uint16 y = 0;

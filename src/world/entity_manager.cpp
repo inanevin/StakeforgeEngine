@@ -14,17 +14,19 @@ namespace SFG
 		_positions.init(MAX_ENTITIES);
 		_prev_positions.init(MAX_ENTITIES);
 		_rotations.init(MAX_ENTITIES);
+		_rotations_abs.init(MAX_ENTITIES);
 		_prev_rotations.init(MAX_ENTITIES);
 		_scales.init(MAX_ENTITIES);
 		_prev_scales.init(MAX_ENTITIES);
 		_aabbs.init(MAX_ENTITIES);
 		_matrices.init(MAX_ENTITIES);
-		_prev_matrices.init(MAX_ENTITIES);
+		_abs_matrices.init(MAX_ENTITIES);
 		_families.init(MAX_ENTITIES);
 
 		_traits.resize(trait_types::trait_type_allowed_max);
 
 		init_trait_storage<trait_light>(100);
+		init_trait_storage<trait_mesh_renderer>(100);
 	}
 
 	entity_manager::~entity_manager()
@@ -50,10 +52,43 @@ namespace SFG
 		reset_all_entity_data();
 	}
 
+	void entity_manager::reset_all_entity_data()
+	{
+		_entities.reset();
+		_aabbs.reset();
+		_metas.reset();
+		_positions.reset();
+		_prev_positions.reset();
+		_rotations.reset();
+		_rotations_abs.reset();
+		_prev_rotations.reset();
+		_scales.reset();
+		_prev_scales.reset();
+		_matrices.reset();
+		_abs_matrices.reset();
+		_families.reset();
+	}
+
+	void entity_manager::reset_entity_data(world_id id)
+	{
+		_aabbs.reset(id);
+		_metas.reset(id);
+		_positions.reset(id);
+		_prev_positions.reset(id);
+		_rotations.reset(id);
+		_rotations_abs.reset(id);
+		_prev_rotations.reset(id);
+		_scales.reset(id);
+		_prev_scales.reset(id);
+		_matrices.reset(id);
+		_abs_matrices.reset(id);
+		_families.reset(id);
+	}
+
 	entity_handle entity_manager::create_entity(const char* name)
 	{
 		entity_handle handle = _entities.allocate<world_id>();
-		set_entity_scale_abs(handle, vector3::one);
+		set_entity_scale(handle, vector3::one);
 		set_entity_prev_scale_abs(handle, vector3::one);
 
 		entity_meta& meta = _metas.get(handle.index);
@@ -258,22 +293,174 @@ namespace SFG
 		return _families.get(entity.index);
 	}
 
-	const vector3& entity_manager::get_entity_position_abs(entity_handle entity) const
-	{
-		SFG_ASSERT(_entities.is_valid(entity));
-		return _positions.get(entity.index);
-	}
+	/* ----------------                   ---------------- */
+	/* ---------------- entity transforms ---------------- */
+	/* ----------------                   ---------------- */
 
-	const vector3& entity_manager::get_entity_prev_position_abs(entity_handle entity) const
+	void entity_manager::set_entity_position(entity_handle entity, const vector3& pos)
 	{
 		SFG_ASSERT(_entities.is_valid(entity));
-		return _prev_positions.get(entity.index);
+		_positions.get(entity.index) = pos;
+		_metas.get(entity.index).flags.set(entity_flags::entity_flags_local_transform_dirty | entity_flags::entity_flags_abs_transform_dirty);
+		visit_children(entity, [this](entity_handle e) { _metas.get(e.index).flags.set(entity_flags::entity_flags_abs_transform_dirty); });
 	}
 
 	void entity_manager::set_entity_position_abs(entity_handle entity, const vector3& pos)
 	{
 		SFG_ASSERT(_entities.is_valid(entity));
-		_positions.get(entity.index) = pos;
+		entity_family& fam = _families.get(entity.index);
+
+		if (fam.parent.is_null())
+		{
+			set_entity_position(entity, pos);
+			return;
+		}
+
+		const matrix4x3 inverse_parent = get_entity_transform_abs(fam.parent).inverse();
+		const vector3	local_position = inverse_parent * pos;
+		set_entity_position(entity, local_position);
+	}
+
+	const vector3& entity_manager::get_entity_position(entity_handle entity) const
+	{
+		SFG_ASSERT(_entities.is_valid(entity));
+		return _positions.get(entity.index);
+	}
+
+	vector3 entity_manager::get_entity_position_abs(entity_handle entity)
+	{
+		SFG_ASSERT(_entities.is_valid(entity));
+		return get_entity_transform_abs(entity).get_translation();
+	}
+
+	void entity_manager::set_entity_rotation(entity_handle entity, const quat& rot)
+	{
+		SFG_ASSERT(_entities.is_valid(entity));
+		_rotations.get(entity.index) = rot;
+		_metas.get(entity.index).flags.set(entity_flags::entity_flags_local_transform_dirty | entity_flags::entity_flags_abs_transform_dirty | entity_flags::entity_flags_abs_rotation_dirty);
+		visit_children(entity, [this](entity_handle e) { _metas.get(e.index).flags.set(entity_flags::entity_flags_abs_transform_dirty | entity_flags::entity_flags_abs_rotation_dirty); });
+	}
+
+	void entity_manager::set_entity_rotation_abs(entity_handle entity, const quat& rot)
+	{
+		SFG_ASSERT(_entities.is_valid(entity));
+
+		entity_family& fam	  = _families.get(entity.index);
+		entity_handle  parent = fam.parent;
+
+		if (parent.is_null())
+		{
+			set_entity_rotation(entity, rot);
+			return;
+		}
+
+		const quat parent_abs_inv = get_entity_rotation_abs(parent).conjugate();
+		const quat local_rotation = parent_abs_inv * rot;
+		set_entity_rotation(entity, local_rotation);
+	}
+
+	const quat& entity_manager::get_entity_rotation(entity_handle entity) const
+	{
+		SFG_ASSERT(_entities.is_valid(entity));
+		return _rotations.get(entity.index);
+	}
+
+	const quat& entity_manager::get_entity_rotation_abs(entity_handle entity)
+	{
+		entity_family& fam			  = _families.get(entity.index);
+		entity_handle  parent		  = fam.parent;
+		const quat&	   local_rotation = _rotations.get(entity.index);
+
+		if (parent.is_null())
+			return local_rotation;
+
+		bitmask<uint16>& flags	 = _metas.get(entity.index).flags;
+		quat&			 abs_rot = _rotations_abs.get(entity.index);
+
+		if (flags.is_set(entity_flags::entity_flags_abs_rotation_dirty))
+		{
+			abs_rot = get_entity_rotation_abs(parent) * local_rotation;
+			flags.remove(entity_flags::entity_flags_abs_rotation_dirty);
+		}
+
+		return abs_rot;
+	}
+
+	const vector3& entity_manager::get_entity_scale(entity_handle entity) const
+	{
+		SFG_ASSERT(_entities.is_valid(entity));
+		return _scales.get(entity.index);
+	}
+
+	vector3 entity_manager::get_entity_scale_abs(entity_handle entity)
+	{
+		SFG_ASSERT(_entities.is_valid(entity));
+		return get_entity_transform_abs(entity).get_scale();
+	}
+
+	void entity_manager::set_entity_scale(entity_handle entity, const vector3& scale)
+	{
+		SFG_ASSERT(_entities.is_valid(entity));
+		_scales.get(entity.index) = scale;
+		_metas.get(entity.index).flags.set(entity_flags::entity_flags_local_transform_dirty | entity_flags::entity_flags_abs_transform_dirty);
+		visit_children(entity, [this](entity_handle e) { _metas.get(e.index).flags.set(entity_flags::entity_flags_abs_transform_dirty); });
+	}
+
+	void entity_manager::set_entity_scale_abs(entity_handle entity, const vector3& scale)
+	{
+		SFG_ASSERT(_entities.is_valid(entity));
+
+		entity_family& fam	  = _families.get(entity.index);
+		entity_handle  parent = fam.parent;
+
+		if (parent.is_null())
+		{
+			set_entity_scale(entity, scale);
+			return;
+		}
+
+		const matrix4x3 parent_abs_inv		 = get_entity_transform_abs(parent).inverse();
+		const quat&		current_abs_rot		 = get_entity_rotation_abs(entity);
+		const matrix4x3 rot_matrix			 = matrix4x3::rotation(current_abs_rot);
+		const matrix4x3 desired_scale_matrix = matrix4x3::scale(scale);
+		const matrix4x3 desired_abs_linear	 = rot_matrix * desired_scale_matrix;
+		const matrix4x3 new_local_linear	 = parent_abs_inv * desired_abs_linear;
+		const vector3	new_local_scale		 = new_local_linear.get_scale();
+		set_entity_scale(entity, new_local_scale);
+	}
+
+	const matrix4x3& entity_manager::get_entity_transform(entity_handle entity)
+	{
+		SFG_ASSERT(_entities.is_valid(entity));
+		matrix4x3&		 transform = _matrices.get(entity.index);
+		bitmask<uint16>& flags	   = _metas.get(entity.index).flags;
+
+		if (flags.is_set(entity_flags::entity_flags_local_transform_dirty))
+		{
+			transform = matrix4x3::transform(_positions.get(entity.index), _rotations.get(entity.index), _scales.get(entity.index));
+			flags.remove(entity_flags::entity_flags_local_transform_dirty);
+		}
+
+		return transform;
+	}
+
+	const matrix4x3& entity_manager::get_entity_transform_abs(entity_handle entity)
+	{
+		SFG_ASSERT(_entities.is_valid(entity));
+
+		bitmask<uint16>& flags		= _metas.get(entity.index).flags;
+		matrix4x3&		 abs_matrix = _abs_matrices.get(entity.index);
+
+		if (!flags.is_set(entity_flags::entity_flags_abs_transform_dirty))
+			return abs_matrix;
+
+		entity_family& fam	  = _families.get(entity.index);
+		entity_handle  parent = fam.parent;
+
+		const matrix4x3& local_transform = get_entity_transform(entity);
+		abs_matrix						 = parent.is_null() ? local_transform : (get_entity_transform_abs(parent) * local_transform);
+		flags.remove(entity_flags::entity_flags_abs_transform_dirty);
+		return abs_matrix;
 	}
 
 	void entity_manager::set_entity_prev_position_abs(entity_handle entity, const vector3& pos)
@@ -282,46 +469,10 @@ namespace SFG
 		_prev_positions.get(entity.index) = pos;
 	}
 
-	const quat& entity_manager::get_entity_rotation_abs(entity_handle entity) const
-	{
-		SFG_ASSERT(_entities.is_valid(entity));
-		return _rotations.get(entity.index);
-	}
-
-	const quat& entity_manager::get_entity_prev_rotation_abs(entity_handle entity) const
-	{
-		SFG_ASSERT(_entities.is_valid(entity));
-		return _prev_rotations.get(entity.index);
-	}
-
-	void entity_manager::set_entity_rotation_abs(entity_handle entity, const quat& rot)
-	{
-		SFG_ASSERT(_entities.is_valid(entity));
-		_rotations.get(entity.index) = rot;
-	}
-
 	void entity_manager::set_entity_prev_rotation_abs(entity_handle entity, const quat& rot)
 	{
 		SFG_ASSERT(_entities.is_valid(entity));
 		_prev_rotations.get(entity.index) = rot;
-	}
-
-	const vector3& entity_manager::get_entity_scale_abs(entity_handle entity) const
-	{
-		SFG_ASSERT(_entities.is_valid(entity));
-		return _scales.get(entity.index);
-	}
-
-	const vector3& entity_manager::get_entity_prev_scale_abs(entity_handle entity) const
-	{
-		SFG_ASSERT(_entities.is_valid(entity));
-		return _prev_scales.get(entity.index);
-	}
-
-	void entity_manager::set_entity_scale_abs(entity_handle entity, const vector3& scale)
-	{
-		SFG_ASSERT(_entities.is_valid(entity));
-		_scales.get(entity.index) = scale;
 	}
 
 	void entity_manager::set_entity_prev_scale_abs(entity_handle entity, const vector3& scale)
@@ -330,59 +481,42 @@ namespace SFG
 		_prev_scales.get(entity.index) = scale;
 	}
 
-	const matrix4x3& entity_manager::get_entity_matrix(entity_handle entity) const
+	const vector3& entity_manager::get_entity_prev_position_abs(entity_handle entity) const
 	{
 		SFG_ASSERT(_entities.is_valid(entity));
-		return _matrices.get(entity.index);
+		return _prev_positions.get(entity.index);
 	}
 
-	const matrix4x3& entity_manager::get_entity_prev_matrix(entity_handle entity) const
+	const quat& entity_manager::get_entity_prev_rotation_abs(entity_handle entity) const
 	{
 		SFG_ASSERT(_entities.is_valid(entity));
-		return _prev_matrices.get(entity.index);
+		return _prev_rotations.get(entity.index);
 	}
 
-	void entity_manager::set_entity_matrix(entity_handle entity, const matrix4x3& mat)
+	const vector3& entity_manager::get_entity_prev_scale_abs(entity_handle entity) const
 	{
 		SFG_ASSERT(_entities.is_valid(entity));
-		_matrices.get(entity.index) = mat;
+		return _prev_scales.get(entity.index);
 	}
 
-	void entity_manager::set_entity_prev_matrix(entity_handle entity, const matrix4x3& mat)
+	matrix4x3 entity_manager::calculate_interpolated_transform_abs(entity_handle entity, float interpolation)
 	{
 		SFG_ASSERT(_entities.is_valid(entity));
-		_prev_matrices.get(entity.index) = mat;
-	}
 
-	void entity_manager::reset_all_entity_data()
-	{
-		_entities.reset();
-		_aabbs.reset();
-		_metas.reset();
-		_positions.reset();
-		_prev_positions.reset();
-		_rotations.reset();
-		_prev_rotations.reset();
-		_scales.reset();
-		_prev_scales.reset();
-		_matrices.reset();
-		_prev_matrices.reset();
-		_families.reset();
-	}
+		const vector3& ent_pos_abs		  = get_entity_position_abs(entity);
+		const quat&	   ent_rot_abs		  = get_entity_rotation_abs(entity);
+		const vector3& ent_scale_abs	  = get_entity_scale_abs(entity);
+		const vector3& ent_prev_pos_abs	  = get_entity_prev_position_abs(entity);
+		const quat&	   ent_prev_rot_abs	  = get_entity_prev_rotation_abs(entity);
+		const vector3& ent_prev_scale_abs = get_entity_prev_scale_abs(entity);
+		const vector3  interpolated_pos	  = vector3::lerp(ent_prev_pos_abs, ent_pos_abs, interpolation);
+		const vector3  interpolated_scale = vector3::lerp(ent_prev_scale_abs, ent_scale_abs, interpolation);
+		const quat&	   interpolated_rot	  = quat::slerp(ent_prev_rot_abs, ent_rot_abs, interpolation);
+		set_entity_prev_position_abs(entity, ent_prev_pos_abs);
+		set_entity_prev_rotation_abs(entity, ent_prev_rot_abs);
+		set_entity_prev_scale_abs(entity, ent_prev_scale_abs);
 
-	void entity_manager::reset_entity_data(world_id id)
-	{
-		_aabbs.reset(id);
-		_metas.reset(id);
-		_positions.reset(id);
-		_prev_positions.reset(id);
-		_rotations.reset(id);
-		_prev_rotations.reset(id);
-		_scales.reset(id);
-		_prev_scales.reset(id);
-		_matrices.reset(id);
-		_prev_matrices.reset(id);
-		_families.reset(id);
+		return matrix4x3::transform(interpolated_pos, interpolated_rot, interpolated_scale);
 	}
 
 }

@@ -5,6 +5,8 @@
 
 namespace SFG
 {
+	class ostrem;
+	class istream;
 	// LH coordinates
 	class quat
 	{
@@ -30,7 +32,11 @@ namespace SFG
 		float	dot(const quat& other) const;
 		float	magnitude() const;
 		float	sqr_magnitude() const;
+		void	normalize();
 		bool	equals(const quat& other, float epsilon = MATH_EPS) const;
+
+		void serialize(ostream& stream) const;
+		void deserialize(istream& stream);
 
 		static quat	   from_euler(float pitch_degrees, float yaw_degrees, float roll_degrees);
 		static vector3 to_euler(const quat& q);
@@ -38,6 +44,7 @@ namespace SFG
 		static quat	   lerp(const quat& a, const quat& b, float t);
 		static quat	   slerp(const quat& a, const quat& b, float t);
 		static quat	   look_at(const vector3& source_point, const vector3& target_point, const vector3& up_vector);
+		static quat	   from_rotation_matrix3x3(const float R_m[9]);
 
 		inline bool is_identity(float epsilon = MATH_EPS) const
 		{

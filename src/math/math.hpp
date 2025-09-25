@@ -11,9 +11,13 @@ namespace SFG
 {
 	namespace math
 	{
-
 		unsigned int floor_log2(unsigned int val);
 		double		 fast_pow(double base, double exponent);
+
+		template <typename T> inline T copysign(T number, T sign)
+		{
+			return std::copysignf(number, sign);
+		}
 
 		template <typename T> inline T clamp(T value, T min_val, T max_val)
 		{

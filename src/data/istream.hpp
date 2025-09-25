@@ -115,11 +115,9 @@ namespace SFG
 		{
 			stream.read(val);
 			if (endianness::should_swap())
-			{
 				endianness::swap_endian(val);
-			}
 		}
-		else if constexpr (std::is_same_v<T, string> || std::is_same_v<T, std::string>)
+		else if constexpr (std::is_same_v<T, string>)
 		{
 			uint32 sz = 0;
 			stream >> sz;

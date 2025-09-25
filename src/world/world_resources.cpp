@@ -9,13 +9,18 @@
 #include "world/common_world.hpp"
 
 #include "resources/texture.hpp"
+#include "resources/texture_raw.hpp"
 #include "resources/texture_sampler.hpp"
 #include "resources/model.hpp"
+#include "resources/mesh.hpp"
 #include "resources/shader.hpp"
 #include "resources/skin.hpp"
 #include "resources/animation.hpp"
 #include "resources/material.hpp"
 
+#ifdef SFG_TOOLMODE
+#include "resources/model_raw.hpp"
+#endif
 namespace SFG
 {
 
@@ -75,16 +80,18 @@ namespace SFG
 		const resource_handle txt = create_resource<texture>(sid);
 		texture&			  res = get_resource<texture>(txt);
 
-		if (res.create_from_file(abs_path.c_str()))
-		{
-			SFG_INFO("Loaded texture: {0}", abs_path);
-			_world->get_renderer()->get_resource_uploads().add_pending_texture(&res);
-		}
-		else
-		{
-			SFG_ERR("Failed loading texture: {0}", abs_path);
-			destroy_resource<texture>(txt);
-		}
+		// texture_raw raw = {};
+		// if (raw.create_from_file(abs_path.c_str()))
+		// {
+		// 	SFG_INFO("Loaded texture: {0}", abs_path);
+		// 	raw.populate(res);
+		// 	_world->get_renderer()->get_resource_uploads().add_pending_texture(&res);
+		// }
+		// else
+		// {
+		// 	SFG_ERR("Failed loading texture: {0}", abs_path);
+		// 	destroy_resource<texture>(txt);
+		// }
 
 		return txt;
 	}
@@ -102,30 +109,30 @@ namespace SFG
 		const resource_handle handle = create_resource<model>(sid);
 		model&				  mdl	 = get_resource<model>(handle);
 
-		model_loaded loaded = {};
-		if (loaded.create_from_file(abs_path.c_str(), path))
-		{
-			mdl.create_from_loaded(loaded, _aux_memory, *this);
-			SFG_INFO("Loaded model: {0}", abs_path);
-
-			const chunk_handle32 created_meshes = mdl.get_created_meshes();
-			const uint16		 meshes_count	= mdl.get_mesh_count();
-
-			chunk_allocator32& aux	   = get_aux();
-			resource_handle*   handles = meshes_count == 0 ? nullptr : aux.get<resource_handle>(created_meshes);
-
-			for (uint16 i = 0; i < meshes_count; i++)
-			{
-				resource_handle& handle = handles[i];
-				mesh&			 m		= get_resource<mesh>(handle);
-				_world->get_renderer()->get_resource_uploads().add_pending_mesh(&m);
-			}
-		}
-		else
-		{
-			SFG_ERR("Failed loading model: {0}", abs_path);
-			destroy_resource<model>(handle);
-		}
+		// model_raw loaded = {};
+		// if (loaded.create_from_file(abs_path.c_str(), path))
+		// {
+		// 	loaded.cook(mdl, _aux_memory, *this);
+		// 	SFG_INFO("Loaded model: {0}", abs_path);
+		//
+		// 	const chunk_handle32 created_meshes = mdl.get_created_meshes();
+		// 	const uint16		 meshes_count	= mdl.get_mesh_count();
+		//
+		// 	chunk_allocator32& aux	   = get_aux();
+		// 	resource_handle*   handles = meshes_count == 0 ? nullptr : aux.get<resource_handle>(created_meshes);
+		//
+		// 	for (uint16 i = 0; i < meshes_count; i++)
+		// 	{
+		// 		resource_handle& handle = handles[i];
+		// 		mesh&			 m		= get_resource<mesh>(handle);
+		// 		_world->get_renderer()->get_resource_uploads().add_pending_mesh(&m);
+		// 	}
+		// }
+		// else
+		// {
+		// 	SFG_ERR("Failed loading model: {0}", abs_path);
+		// 	destroy_resource<model>(handle);
+		// }
 
 		return handle;
 	}
@@ -143,15 +150,15 @@ namespace SFG
 		const resource_handle handle = create_resource<shader>(sid);
 		shader&				  res	 = get_resource<shader>(handle);
 
-		if (res.create_from_file_vertex_pixel(abs_path.c_str(), false, renderer::get_bind_layout_global()))
-		{
-			SFG_INFO("Loaded shader: {0}", abs_path);
-		}
-		else
-		{
-			SFG_ERR("Failed loading shader: {0}", abs_path);
-			destroy_resource<shader>(handle);
-		}
+		// if (res.create_from_file_vertex_pixel(abs_path.c_str(), false, renderer::get_bind_layout_global()))
+		// {
+		// 	SFG_INFO("Loaded shader: {0}", abs_path);
+		// }
+		// else
+		// {
+		// 	SFG_ERR("Failed loading shader: {0}", abs_path);
+		// 	destroy_resource<shader>(handle);
+		// }
 
 		return handle;
 	}
@@ -169,15 +176,15 @@ namespace SFG
 		const resource_handle handle = create_resource<material>(sid);
 		material&			  mat	 = get_resource<material>(handle);
 
-		if (mat.create_from_file(abs_path.c_str(), *this))
-		{
-			SFG_INFO("Loaded material: {0}", abs_path);
-		}
-		else
-		{
-			SFG_ERR("Failed loading material: {0}", abs_path);
-			destroy_resource<material>(handle);
-		}
+		// if (mat.create_from_file(abs_path.c_str(), *this))
+		//{
+		//	SFG_INFO("Loaded material: {0}", abs_path);
+		// }
+		// else
+		//{
+		//	SFG_ERR("Failed loading material: {0}", abs_path);
+		//	destroy_resource<material>(handle);
+		// }
 		return handle;
 	}
 

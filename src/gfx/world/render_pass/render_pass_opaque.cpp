@@ -8,6 +8,10 @@
 #include "gfx/buffer_queue.hpp"
 #include "gfx/world/world_render_data.hpp"
 #include "world/world.hpp"
+#include "resources/material.hpp"
+#include "resources/shader.hpp"
+#include "resources/vertex.hpp"
+#include "math/vector2ui16.hpp"
 
 namespace SFG
 {
@@ -69,27 +73,29 @@ namespace SFG
 
 		world_resources& resources = w->get_resources();
 
-		// for (const renderable_object& obj : wd.renderables)
-		//{
-		//	const material&		  mat	= resources.get_material(obj.material);
-		//	const bitmask<uint8>& flags = mat.get_flags();
-		//
-		//	if (!flags.is_set(material::flags::is_opaque))
-		//		continue;
-		//
-		//	rd.draws.push_back({
-		//		.constants =
-		//			{
-		//				.constant0 = obj.gpu_entity,
-		//			},
-		//		.base_vertex	= obj.vertex_start,
-		//		.index_count	= obj.index_count,
-		//		.instance_count = 1,
-		//		.start_index	= obj.index_start,
-		//		.start_instance = 0,
-		//		.pipeline		= mat.get_shader(resources, obj.is_skinned ? shader::flags::is_skinned : 0),
-		//	});
-		// }
+		for (const renderable_object& obj : wd.renderables)
+		{
+			const material&		  mat	= resources.get_resource<material>(obj.material);
+			const bitmask<uint8>& flags = mat.get_flags();
+
+			if (!flags.is_set(material::flags::is_opaque))
+				continue;
+
+			rd.draws.push_back({
+				.constants =
+					{
+						.constant0 = obj.gpu_entity,
+					},
+				.base_vertex	= obj.vertex_start,
+				.index_count	= obj.index_count,
+				.instance_count = 1,
+				.start_index	= obj.index_start,
+				.start_instance = 0,
+				.pipeline		= mat.get_shader(resources, obj.is_skinned ? shader::flags::is_skinned : 0),
+				.vertex_buffer	= obj.vertex_buffer->get_hw_gpu(),
+				.idx_buffer		= obj.index_buffer->get_hw_gpu(),
+			});
+		}
 	}
 
 	void render_pass_opaque::upload(world* w, buffer_queue* queue, uint8 data_index, uint8 frame_index)
@@ -193,8 +199,21 @@ namespace SFG
 
 		gfx_id last_bound_group	   = std::numeric_limits<gfx_id>::max();
 		gfx_id last_bound_pipeline = std::numeric_limits<gfx_id>::max();
+		gfx_id last_vtx			   = std::numeric_limits<gfx_id>::max();
+		gfx_id last_idx			   = std::numeric_limits<gfx_id>::max();
 
-		auto bind = [&](gfx_id group, gfx_id pipeline) {
+		auto bind = [&](gfx_id group, gfx_id pipeline, gfx_id vtx, gfx_id idx) {
+			if (vtx != last_vtx)
+			{
+				last_vtx = vtx;
+				backend->cmd_bind_vertex_buffers(cmd_buffer, {.buffer = vtx, .vertex_size = sizeof(vertex_static)});
+			}
+
+			if (idx != last_idx)
+			{
+				last_idx = idx;
+				backend->cmd_bind_index_buffers(cmd_buffer, {.buffer = idx, .bit_depth = 2});
+			}
 			if (pipeline != last_bound_pipeline)
 			{
 				last_bound_pipeline = pipeline;
@@ -210,7 +229,7 @@ namespace SFG
 
 		for (const indexed_draw& draw : rd.draws)
 		{
-			bind(draw.bind_group, draw.pipeline);
+			bind(draw.bind_group, draw.pipeline, draw.vertex_buffer, draw.idx_buffer);
 
 			backend->cmd_bind_constants(cmd_buffer, {.data = (void*)&draw.constants, .offset = 0, .count = 4});
 			backend->cmd_draw_indexed_instanced(cmd_buffer,

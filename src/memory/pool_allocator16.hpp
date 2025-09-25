@@ -153,12 +153,12 @@ namespace SFG
 			}
 		};
 
-		handle_iterator begin()
+		handle_iterator begin() const
 		{
 			return handle_iterator(0, _head, get_generations(), get_actives());
 		}
 
-		handle_iterator end()
+		handle_iterator end() const
 		{
 			return handle_iterator(_head, _head, get_generations(), get_actives());
 		}

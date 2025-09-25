@@ -12,6 +12,7 @@
 #include "world/common_world.hpp"
 #include "memory/chunk_allocator.hpp"
 #include "common/system_info.hpp"
+#include "resources/primitive.hpp"
 
 namespace SFG
 {
@@ -117,6 +118,7 @@ namespace SFG
 			buffer&		   buf	= mat->get_buffer(frame_index);
 			const ostream& data = mat->get_data();
 			buf.buffer_data(0, data.get_raw(), data.get_size());
+			bq->add_request({.buffer = &buf});
 		}
 
 		pfd.pending_materials.clear();
@@ -155,7 +157,6 @@ namespace SFG
 			for (texture* txt : _uploaded_textures)
 			{
 				txt->destroy_cpu();
-				txt->destroy_intermediate();
 			}
 			_uploaded_textures.clear();
 		}

@@ -1,31 +1,31 @@
 // Copyright (c) 2025 Inan Evin
 
 #include "animation.hpp"
+#include "animation_raw.hpp"
 #include "memory/chunk_allocator.hpp"
 
 namespace SFG
 {
-	void animation_channel_v3::create_from_loaded(const animation_channel_v3_loaded& loaded, chunk_allocator32& alloc)
+	void animation_channel_v3::create_from_raw(const animation_channel_v3_raw& raw, chunk_allocator32& alloc)
 	{
+		interpolation = raw.interpolation;
+		node_index	  = raw.node_index;
 
-		interpolation = loaded.interpolation;
-		node_index	  = loaded.node_index;
-
-		const uint32 kf_count		  = static_cast<uint32>(loaded.keyframes.size());
-		const uint32 kf_splines_count = static_cast<uint32>(loaded.keyframes_spline.size());
+		const uint32 kf_count		  = static_cast<uint32>(raw.keyframes.size());
+		const uint32 kf_splines_count = static_cast<uint32>(raw.keyframes_spline.size());
 
 		if (kf_count != 0)
 		{
 			keyframes					  = alloc.allocate<animation_keyframe_v3>(kf_count);
 			animation_keyframe_v3* ptr_kf = alloc.get<animation_keyframe_v3>(keyframes);
-			SFG_MEMCPY(ptr_kf, loaded.keyframes.data(), keyframes.size);
+			SFG_MEMCPY(ptr_kf, raw.keyframes.data(), raw.keyframes.size());
 		}
 
 		if (kf_splines_count != 0)
 		{
 			keyframes_spline					 = alloc.allocate<animation_keyframe_v3_spline>(kf_splines_count);
 			animation_keyframe_v3_spline* ptr_kf = alloc.get<animation_keyframe_v3_spline>(keyframes_spline);
-			SFG_MEMCPY(ptr_kf, loaded.keyframes_spline.data(), keyframes_spline.size);
+			SFG_MEMCPY(ptr_kf, raw.keyframes_spline.data(), raw.keyframes_spline.size());
 		}
 	}
 
@@ -124,26 +124,26 @@ namespace SFG
 		return vector3::zero;
 	}
 
-	void animation_channel_q::create_from_loaded(const animation_channel_q_loaded& loaded, chunk_allocator32& alloc)
+	void animation_channel_q::create_from_raw(const animation_channel_q_raw& raw, chunk_allocator32& alloc)
 	{
-		interpolation = loaded.interpolation;
-		node_index	  = loaded.node_index;
+		interpolation = interpolation;
+		node_index	  = node_index;
 
-		const uint32 kf_count		  = static_cast<uint32>(loaded.keyframes.size());
-		const uint32 kf_splines_count = static_cast<uint32>(loaded.keyframes_spline.size());
+		const uint32 kf_count		  = static_cast<uint32>(raw.keyframes.size());
+		const uint32 kf_splines_count = static_cast<uint32>(raw.keyframes_spline.size());
 
 		if (kf_count != 0)
 		{
 			keyframes					 = alloc.allocate<animation_keyframe_q>(kf_count);
 			animation_keyframe_q* ptr_kf = alloc.get<animation_keyframe_q>(keyframes);
-			SFG_MEMCPY(ptr_kf, loaded.keyframes.data(), keyframes.size);
+			SFG_MEMCPY(ptr_kf, raw.keyframes.data(), raw.keyframes.size());
 		}
 
 		if (kf_splines_count != 0)
 		{
 			keyframes_spline					= alloc.allocate<animation_keyframe_q_spline>(kf_splines_count);
 			animation_keyframe_q_spline* ptr_kf = alloc.get<animation_keyframe_q_spline>(keyframes_spline);
-			SFG_MEMCPY(ptr_kf, loaded.keyframes_spline.data(), keyframes_spline.size);
+			SFG_MEMCPY(ptr_kf, raw.keyframes_spline.data(), raw.keyframes_spline.size());
 		}
 	}
 
@@ -252,17 +252,18 @@ namespace SFG
 		}
 	}
 
-	void animation::create_from_loaded(const animation_loaded& loaded, chunk_allocator32& alloc)
+	void animation::create_from_raw(const animation_raw& raw, chunk_allocator32& alloc)
 	{
-		if (!loaded.name.empty())
+		if (!raw.name.empty())
 		{
-			_name = alloc.allocate<uint8>(loaded.name.size());
-			strcpy((char*)alloc.get(_name.head), loaded.name.data());
+			_name = alloc.allocate<uint8>(raw.name.size());
+			strcpy((char*)alloc.get(_name.head), raw.name.data());
+			strcpy((char*)(alloc.get(_name.head + _name.size)), "\0");
 		}
 
-		_duration = loaded.duration;
+		_duration = raw.duration;
 
-		const uint32 position_count = static_cast<uint32>(loaded.position_channels.size());
+		const uint32 position_count = static_cast<uint32>(raw.position_channels.size());
 
 		if (position_count != 0)
 		{
@@ -271,13 +272,13 @@ namespace SFG
 
 			for (uint32 i = 0; i < position_count; i++)
 			{
-				const animation_channel_v3_loaded& ch = loaded.position_channels[i];
-				animation_channel_v3&			   rt = ptr[i];
-				rt.create_from_loaded(ch, alloc);
+				const animation_channel_v3_raw& ch = raw.position_channels[i];
+				animation_channel_v3&			rt = ptr[i];
+				rt.create_from_raw(ch, alloc);
 			}
 		}
 
-		const uint32 rotation_count = static_cast<uint32>(loaded.rotation_channels.size());
+		const uint32 rotation_count = static_cast<uint32>(raw.rotation_channels.size());
 
 		if (rotation_count != 0)
 		{
@@ -286,12 +287,12 @@ namespace SFG
 
 			for (uint32 i = 0; i < rotation_count; i++)
 			{
-				const animation_channel_q_loaded& ch = loaded.rotation_channels[i];
-				animation_channel_q&			  rt = ptr[i];
-				rt.create_from_loaded(ch, alloc);
+				const animation_channel_q_raw& ch = raw.rotation_channels[i];
+				animation_channel_q&		   rt = ptr[i];
+				rt.create_from_raw(ch, alloc);
 			}
 		}
-		const uint32 scale_count = static_cast<uint32>(loaded.scale_channels.size());
+		const uint32 scale_count = static_cast<uint32>(raw.scale_channels.size());
 		if (scale_count != 0)
 		{
 
@@ -300,9 +301,9 @@ namespace SFG
 
 			for (uint32 i = 0; i < scale_count; i++)
 			{
-				const animation_channel_v3_loaded& ch = loaded.scale_channels[i];
-				animation_channel_v3&			   rt = ptr[i];
-				rt.create_from_loaded(ch, alloc);
+				const animation_channel_v3_raw& ch = raw.scale_channels[i];
+				animation_channel_v3&			rt = ptr[i];
+				rt.create_from_raw(ch, alloc);
 			}
 		}
 

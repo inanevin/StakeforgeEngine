@@ -4,9 +4,11 @@
 #include "math/matrix4x4.hpp"
 #include "math/vector4ui16.hpp"
 #include "data/vector.hpp"
+#include "math/vector2.hpp"
 #include "gfx/buffer.hpp"
 #include "gfx/common/gfx_constants.hpp"
 #include "gfx/common/gfx_common.hpp"
+#include "gfx/common/texture_buffer.hpp"
 #include "memory/text_allocator.hpp"
 #include "data/string.hpp"
 #include "vendor/moodycamel/readerwriterqueue.h"
@@ -22,7 +24,6 @@ namespace vekt
 namespace SFG
 {
 	enum class log_level;
-	class vector2ui;
 	class render_pass;
 	class bump_allocator;
 	class buffer_queue;

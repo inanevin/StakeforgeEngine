@@ -11,7 +11,7 @@ namespace SFG
 
 	struct trait_light
 	{
-		static constexpr uint32 TYPE_INDEX = 0;
+		static constexpr uint32 TYPE_INDEX = trait_types::trait_type_light;
 
 		trait_meta meta;
 

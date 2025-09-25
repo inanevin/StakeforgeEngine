@@ -26,7 +26,6 @@ namespace SFG
 	class buffer_queue;
 	class world;
 	class texture;
-	class model;
 
 #define MAX_BARRIERS 20
 
@@ -51,7 +50,8 @@ namespace SFG
 		void render(uint8 data_index, uint8 frame_index, gfx_id layout_global, gfx_id bind_group_global, uint64 prev_copy, uint64 next_copy, gfx_id sem_copy);
 		void resize(const vector2ui16& size);
 
-		uint32 create_gpu_entity(uint8 data_index, const gpu_entity& e);
+		uint16 create_gpu_entity(uint8 data_index, const gpu_entity& e);
+		uint16 create_renderable(uint8 data_index, const renderable_object& e);
 
 		inline gfx_id get_output(uint8 frame_index)
 		{

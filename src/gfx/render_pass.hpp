@@ -9,7 +9,7 @@
 
 namespace SFG
 {
-	class vector2ui16;
+	struct vector2ui16;
 	class bump_allocator;
 
 #define MAX_RP_TEXTURES 4
