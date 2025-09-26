@@ -209,7 +209,7 @@ namespace SFG
 		std::ifstream file(filePath, std::ios::binary);
 		if (!file)
 		{
-			SFG_ERR("[Font] -> Could not open file! {0}", filePath);
+			SFG_ERR("Could not open file! {0}", filePath);
 			return;
 		}
 

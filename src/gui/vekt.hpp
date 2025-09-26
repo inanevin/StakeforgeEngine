@@ -1322,17 +1322,13 @@ namespace vekt
 			ASSERT(_fonts.empty());
 		};
 
-		static inline font_manager& get()
-		{
-			static font_manager fm;
-			return fm;
-		}
-
 		void init();
 		void uninit();
 
-		font* load_font(const char* file, unsigned int size, unsigned int range_start = 0, unsigned int range_end = 128, font_type type = font_type::normal, int sdf_padding = 3, int sdf_edge = 128, float sdf_distance = 32.0f);
-		void  unload_font(font* fnt);
+		font* load_font_from_file(const char* file, unsigned int size, unsigned int range_start = 0, unsigned int range_end = 128, font_type type = font_type::normal, int sdf_padding = 3, int sdf_edge = 128, float sdf_distance = 32.0f);
+		font* load_font(unsigned char* data, unsigned int data_size, unsigned int size, unsigned int range0, unsigned int range1, font_type type = font_type::normal, int sdf_padding = 3, int sdf_edge = 128, float sdf_distance = 32.0f);
+
+		void unload_font(font* fnt);
 
 		inline void set_atlas_created_callback(atlas_cb cb)
 		{
@@ -1348,8 +1344,7 @@ namespace vekt
 		}
 
 	private:
-		void  find_atlas(font* fnt);
-		font* load_font(const unsigned char* data, unsigned int data_size, unsigned int size, unsigned int range0, unsigned int range1, font_type type, int sdf_padding, int sdf_edge, float sdf_distance);
+		void find_atlas(font* fnt);
 
 	private:
 		vector<atlas*> _atlases;
@@ -3582,7 +3577,7 @@ namespace vekt
 		ASSERT(ok);
 	}
 
-	font* font_manager::load_font(const unsigned char* data, unsigned int data_size, unsigned int size, unsigned int range0, unsigned int range1, font_type type, int sdf_padding, int sdf_edge, float sdf_distance)
+	font* font_manager::load_font(unsigned char* data, unsigned int data_size, unsigned int size, unsigned int range0, unsigned int range1, font_type type, int sdf_padding, int sdf_edge, float sdf_distance)
 	{
 
 		stbtt_fontinfo stb_font;
@@ -3721,7 +3716,7 @@ namespace vekt
 		return fnt;
 	}
 
-	font* font_manager::load_font(const char* filename, unsigned int size, unsigned int range_start, unsigned int range_end, font_type type, int sdf_padding, int sdf_edge, float sdf_distance)
+	font* font_manager::load_font_from_file(const char* filename, unsigned int size, unsigned int range_start, unsigned int range_end, font_type type, int sdf_padding, int sdf_edge, float sdf_distance)
 	{
 		if (range_start >= range_end)
 		{

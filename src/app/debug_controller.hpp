@@ -19,6 +19,7 @@ namespace vekt
 	struct draw_buffer;
 	class atlas;
 	struct font;
+	class font_manager;
 }
 
 namespace SFG
@@ -151,21 +152,22 @@ namespace SFG
 
 		struct vekt_data
 		{
-			vector<int32>  console_texts			 = {};
-			vekt::builder* builder					 = nullptr;
-			vekt::font*	   font_debug				 = nullptr;
-			vekt::font*	   font_icon				 = nullptr;
-			int32		   widget_console_bg		 = -1;
-			int32		   widget_input_field		 = -1;
-			int32		   widget_input_text		 = {};
-			int32		   widget_border			 = {};
-			int32		   widget_fps				 = 0;
-			int32		   widget_main_thread		 = 0;
-			int32		   widget_render_thread		 = 0;
-			int32		   widget_present_time		 = 0;
-			int32		   widget_global_mem		 = 0;
-			int32		   widget_gfx_mem			 = 0;
-			float		   console_total_text_size_y = 0.0f;
+			vector<int32>		console_texts			  = {};
+			vekt::builder*		builder					  = nullptr;
+			vekt::font*			font_debug				  = nullptr;
+			vekt::font*			font_icon				  = nullptr;
+			vekt::font_manager* font_manager			  = nullptr;
+			int32				widget_console_bg		  = -1;
+			int32				widget_input_field		  = -1;
+			int32				widget_input_text		  = {};
+			int32				widget_border			  = {};
+			int32				widget_fps				  = 0;
+			int32				widget_main_thread		  = 0;
+			int32				widget_render_thread	  = 0;
+			int32				widget_present_time		  = 0;
+			int32				widget_global_mem		  = 0;
+			int32				widget_gfx_mem			  = 0;
+			float				console_total_text_size_y = 0.0f;
 		};
 
 		struct input_field

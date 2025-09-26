@@ -17,6 +17,9 @@
 #include "resources/skin.hpp"
 #include "resources/animation.hpp"
 #include "resources/material.hpp"
+#include "resources/physical_material.hpp"
+#include "resources/font.hpp"
+#include "resources/audio.hpp"
 
 #ifdef SFG_TOOLMODE
 #include "resources/model_raw.hpp"
@@ -37,6 +40,9 @@ namespace SFG
 		init_storage<shader>(MAX_WORLD_SHADERS);
 		init_storage<material>(MAX_WORLD_MATERIALS);
 		init_storage<mesh>(MAX_WORLD_MESHES);
+		init_storage<font>(MAX_WORLD_FONTS);
+		init_storage<audio>(MAX_WORLD_AUDIO);
+		init_storage<physical_material>(MAX_WORLD_PHYSICAL_MATERIALS);
 	}
 
 	world_resources::~world_resources()

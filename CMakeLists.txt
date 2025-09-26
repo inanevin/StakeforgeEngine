@@ -116,6 +116,7 @@ src/app/*.cpp
 src/sfg_api.cpp
 src/sfg_api.cpp
 src/vendor/util/*.cpp
+src/vendor/miniaudio/*.c
 )
 
 file(GLOB HEADERS 
@@ -143,6 +144,7 @@ src/vendor/moodycamel/*.h
 src/vendor/nhlohmann/*.hpp
 src/vendor/util/*.hpp
 src/vendor/syoyo/*.h
+src/vendor/miniaudio/*.h
 src/sfg_api.hpp
 )
 

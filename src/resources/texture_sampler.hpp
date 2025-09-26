@@ -5,9 +5,11 @@
 #include "common/size_definitions.hpp"
 #include "gfx/common/gfx_constants.hpp"
 #include "resources/common_resources.hpp"
+#include <limits>
 
 namespace SFG
 {
+	struct texture_sampler_raw;
 
 	class texture_sampler
 	{
@@ -16,15 +18,16 @@ namespace SFG
 
 		~texture_sampler();
 
-#ifdef SFG_TOOLMODE
-		bool create_from_file(const char* file);
-#endif
+		void create_from_raw(const texture_sampler_raw& raw);
+		void destroy();
 
-		void   destroy();
-		gfx_id get_hw() const;
+		inline gfx_id get_hw() const
+		{
+			return _hw;
+		}
 
 	private:
-		gfx_id _hw;
+		gfx_id _hw = std::numeric_limits<gfx_id>::max();
 	};
 
 }

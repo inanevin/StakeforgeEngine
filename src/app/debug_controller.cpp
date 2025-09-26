@@ -455,7 +455,8 @@ namespace SFG
 				});
 		}
 
-		_vekt_data.builder = new vekt::builder();
+		_vekt_data.builder		= new vekt::builder();
+		_vekt_data.font_manager = new vekt::font_manager();
 		_vekt_data.builder->init({
 			.vertex_buffer_sz			 = 1024 * 1024 * 10,
 			.index_buffer_sz			 = 1024 * 1024 * 20,
@@ -465,14 +466,13 @@ namespace SFG
 		});
 
 		_vekt_data.builder->set_on_draw([this](const vekt::draw_buffer& buffer) { on_draw(buffer); });
-		vekt::font_manager& font_manager = vekt::font_manager::get();
 
-		font_manager.init();
-		font_manager.set_atlas_created_callback(std::bind(&debug_controller::on_atlas_created, this, std::placeholders::_1));
-		font_manager.set_atlas_updated_callback(std::bind(&debug_controller::on_atlas_updated, this, std::placeholders::_1));
-		font_manager.set_atlas_destroyed_callback(std::bind(&debug_controller::on_atlas_destroyed, this, std::placeholders::_1));
-		_vekt_data.font_debug = font_manager.load_font("assets/engine/fonts/VT323-Regular.ttf", DEBUG_FONT_SIZE);
-		_vekt_data.font_icon  = font_manager.load_font("assets/engine/fonts/icons.ttf", 12, 32, 128, vekt::font_type::sdf);
+		_vekt_data.font_manager->init();
+		_vekt_data.font_manager->set_atlas_created_callback(std::bind(&debug_controller::on_atlas_created, this, std::placeholders::_1));
+		_vekt_data.font_manager->set_atlas_updated_callback(std::bind(&debug_controller::on_atlas_updated, this, std::placeholders::_1));
+		_vekt_data.font_manager->set_atlas_destroyed_callback(std::bind(&debug_controller::on_atlas_destroyed, this, std::placeholders::_1));
+		_vekt_data.font_debug = _vekt_data.font_manager->load_font_from_file("assets/engine/fonts/VT323-Regular.ttf", DEBUG_FONT_SIZE);
+		_vekt_data.font_icon  = _vekt_data.font_manager->load_font_from_file("assets/engine/fonts/icons.ttf", 12, 32, 128, vekt::font_type::sdf);
 
 		_vekt_data.console_texts.reserve(MAX_CONSOLE_TEXT);
 		_input_field.history.reserve(MAX_CONSOLE_TEXT);
@@ -525,9 +525,11 @@ namespace SFG
 			out.destroy();
 		}
 
-		vekt::font_manager::get().unload_font(_vekt_data.font_debug);
-		vekt::font_manager::get().unload_font(_vekt_data.font_icon);
-		vekt::font_manager::get().uninit();
+		_vekt_data.font_manager->unload_font(_vekt_data.font_debug);
+		_vekt_data.font_manager->unload_font(_vekt_data.font_icon);
+		_vekt_data.font_manager->uninit();
+		delete _vekt_data.font_manager;
+		_vekt_data.font_manager = nullptr;
 
 		SFG_ASSERT(_gfx_data.atlases.empty());
 
